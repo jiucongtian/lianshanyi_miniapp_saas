@@ -1,0 +1,76 @@
+<!-- 自定义导航栏 -->
+<view class="custom-navbar">
+  <view class="navbar-content">
+    <view class="navbar-left" bindtap="goBack">
+      <t-icon name="chevron-left" size="24" color="#333" />
+    </view>
+    <view class="navbar-title">时间查询</view>
+    <view class="navbar-right"></view>
+  </view>
+</view>
+
+<!-- 页面内容 -->
+<view class="page-container">
+  <!-- 页面标题区域 -->
+  <view class="page-header">
+    <view class="header-title">选择查询时间</view>
+    <view class="header-subtitle">请选择您要查询的具体时间</view>
+  </view>
+
+  <!-- 时间选择区域 -->
+  <view class="time-selector-card">
+    <view class="card-header">
+      <t-icon name="time" size="20" color="#0052d9" />
+      <text class="card-title">时间设置</text>
+    </view>
+    
+    <view class="input-group">
+      <view class="input-label">选择时间</view>
+      <view class="input-wrapper" bindtap="onInputTap">
+        <view class="time-display {{formatedDateTime ? 'has-value' : ''}}">
+          {{formatedDateTime || '请选择年月日时'}}
+        </view>
+        <t-icon name="chevron-right" size="16" color="#999" />
+      </view>
+    </view>
+
+    <!-- 当前选择的时间显示 -->
+    <view class="selected-time-info" wx:if="{{formatedDateTime}}">
+      <view class="info-item">
+        <text class="info-label">已选择时间：</text>
+        <text class="info-value">{{formatedDateTime}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮区域 -->
+  <view class="action-section">
+    <t-button 
+      theme="primary" 
+      size="large" 
+      block
+      bindtap="onQueryData"
+      disabled="{{!formatedDateTime}}"
+    >
+      开始查询
+    </t-button>
+  </view>
+</view>
+
+<!-- 时间选择器 -->
+<t-date-time-picker
+  value="{{tempDateTimeValue}}"
+  mode="hour"
+  visible="{{showPicker}}"
+  title="选择时间"
+  cancel-btn="取消"
+  confirm-btn="确定"
+  start="{{startTime}}"
+  end="{{endTime}}"
+  bindchange="onDateTimeChange"
+  bindcancel="onPickerCancel"
+  bindclose="onPickerClose"
+/>
+
+<!-- 消息提示 -->
+<t-message id="t-message" />
