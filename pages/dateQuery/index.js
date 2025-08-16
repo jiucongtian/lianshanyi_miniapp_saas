@@ -91,29 +91,35 @@ Page({
       return;
     }
 
-    const selectedDateTime = dayjs(this.data.dateTimeValue).format('YYYY-MM-DD HH:mm');
-    
     // 显示加载状态
     wx.showLoading({
-      title: '查询中...',
+      title: '计算中...',
       mask: true
     });
 
-    // 模拟查询过程
+    // 跳转到八字页面
     setTimeout(() => {
       wx.hideLoading();
       
-      Message.success({
-        context: this,
-        offset: [120, 32],
-        duration: 4000,
-        content: `查询完成！时间：${selectedDateTime}`,
+      // 确保日期格式正确
+      const dateStr = dayjs(this.data.dateTimeValue).format('YYYY-MM-DD HH:mm:ss');
+      const timestamp = new Date(dateStr).getTime();
+      
+      wx.navigateTo({
+        url: `/pages/bazi/index?datetime=${timestamp}`,
+        success: () => {
+          console.log('跳转到八字页面成功，时间戳：', timestamp);
+        },
+        fail: (error) => {
+          console.error('跳转失败:', error);
+          Message.error({
+            context: this,
+            offset: [120, 32],
+            duration: 3000,
+            content: '页面跳转失败，请重试',
+          });
+        }
       });
-      
-      console.log("执行查询操作，选中的日期时间：", selectedDateTime);
-      
-      // 这里可以添加实际的查询逻辑
-      // 比如调用API、跳转到结果页面等
-    }, 1500);
+    }, 500);
   },
 });
