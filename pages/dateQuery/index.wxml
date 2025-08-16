@@ -1,13 +1,4 @@
-<!-- 自定义导航栏 -->
-<view class="custom-navbar">
-  <view class="navbar-content">
-    <view class="navbar-left" bindtap="goBack">
-      <t-icon name="chevron-left" size="24" color="#333" />
-    </view>
-    <view class="navbar-title">时间查询</view>
-    <view class="navbar-right"></view>
-  </view>
-</view>
+<t-navbar title="时间查询" left-arrow bind:go-back="goBack" />
 
 <!-- 页面内容 -->
 <view class="page-container">
@@ -52,7 +43,7 @@
       bindtap="onQueryData"
       disabled="{{!formatedDateTime}}"
     >
-      开始查询
+      确定
     </t-button>
   </view>
 </view>
