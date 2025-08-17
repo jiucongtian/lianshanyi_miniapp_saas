@@ -1,0 +1,53 @@
+<view class="page-container">
+  <t-navbar title="生辰八字" left-arrow bind:go-back="goBack" />
+  
+  <!-- 八字显示区域 -->
+  <view class="bazi-content">
+    <view class="bazi-title">您的生辰八字</view>
+    
+    <!-- 四柱显示 -->
+    <view class="pillars-container">
+      <!-- 年柱 -->
+      <view class="pillar-item">
+        <view class="pillar-title">年柱</view>
+        <view class="pillar-content">
+          <text class="heavenly-stem">{{yearPillar.heavenlyStem}}</text>
+          <text class="earthly-branch">{{yearPillar.earthlyBranch}}</text>
+        </view>
+      </view>
+      
+      <!-- 月柱 -->
+      <view class="pillar-item">
+        <view class="pillar-title">月柱</view>
+        <view class="pillar-content">
+          <text class="heavenly-stem">{{monthPillar.heavenlyStem}}</text>
+          <text class="earthly-branch">{{monthPillar.earthlyBranch}}</text>
+        </view>
+      </view>
+      
+      <!-- 日柱 -->
+      <view class="pillar-item">
+        <view class="pillar-title">日柱</view>
+        <view class="pillar-content">
+          <text class="heavenly-stem">{{dayPillar.heavenlyStem}}</text>
+          <text class="earthly-branch">{{dayPillar.earthlyBranch}}</text>
+        </view>
+      </view>
+      
+      <!-- 时柱 -->
+      <view class="pillar-item">
+        <view class="pillar-title">时柱</view>
+        <view class="pillar-content">
+          <text class="heavenly-stem">{{timePillar.heavenlyStem}}</text>
+          <text class="earthly-branch">{{timePillar.earthlyBranch}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 原始时间显示 -->
+    <view class="original-time">
+      <text class="time-label">阳历时间：</text>
+      <text class="time-value">{{originalTime}}</text>
+    </view>
+  </view>
+</view>

@@ -20,61 +20,32 @@
   margin-bottom: 48rpx;
 }
 
-.pillars-container {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 48rpx;
-}
-
-.pillar-item {
-  flex: 1;
-  text-align: center;
-  padding: 0 16rpx;
-  
-  &:not(:last-child) {
-    border-right: 2rpx solid #eee;
+  /* Flex 布局 2x2 */
+  .pillars-flex {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
   }
-}
-
-.pillar-title {
-  font-size: 28rpx;
-  color: #666;
-  margin-bottom: 16rpx;
-}
-
-.pillar-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.heavenly-stem {
-  font-size: 40rpx;
-  color: #0052d9;
-  font-weight: bold;
-}
-
-.earthly-branch {
-  font-size: 40rpx;
-  color: #333;
-  font-weight: bold;
-}
-
-.original-time {
-  margin-top: 32rpx;
-  padding-top: 32rpx;
-  border-top: 2rpx solid #eee;
-  text-align: center;
   
-  .time-label {
+  .pillar-item {
+    width: 49%;
+    height: 500rpx !important;
+    box-sizing: border-box;
+    margin-bottom: 20rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .pillar-title {
     font-size: 28rpx;
-    color: #666;
+    margin-bottom: 12rpx;
+    text-align: center;
   }
   
-  .time-value {
-    font-size: 28rpx;
-    color: #333;
-    margin-left: 8rpx;
+  .pillar-image {
+    width: 100%;
+    height: 100%;
+    display: block;
   }
-}
+
