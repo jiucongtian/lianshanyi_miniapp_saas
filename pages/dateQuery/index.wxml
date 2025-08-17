@@ -25,13 +25,7 @@
       </view>
     </view>
 
-    <!-- 当前选择的时间显示 -->
-    <view class="selected-time-info" wx:if="{{formatedDateTime}}">
-      <view class="info-item">
-        <text class="info-label">已选择时间：</text>
-        <text class="info-value">{{formatedDateTime}}</text>
-      </view>
-    </view>
+
   </view>
 
   <!-- 操作按钮区域 -->

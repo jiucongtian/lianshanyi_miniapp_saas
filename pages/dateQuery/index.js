@@ -101,12 +101,20 @@ Page({
     const day = dayRange[dayIndex];
     const timeInfo = timeMap[timeIndex];
     
-    const formatedTime = `${year}年${month}月${day}日 ${timeInfo.name}（${timeInfo.range}）`;
+    const formatedTime = `${year}年${month}月${day}日 ${timeInfo.name}`;
     
     // 构建日期对象（使用时辰的开始时间）
     const baseHour = timeInfo.start;
-    const dateStr = `${year}-${month}-${day} ${baseHour}:00:00`;
+    // 确保月份和日期是两位数格式
+    const formattedMonth = month.toString().padStart(2, '0');
+    const formattedDay = day.toString().padStart(2, '0');
+    const formattedHour = baseHour.toString().padStart(2, '0');
+    
+    const dateStr = `${year}-${formattedMonth}-${formattedDay} ${formattedHour}:00:00`;
+    console.log('构建的日期字符串:', dateStr);
+    
     const dateTimeValue = new Date(dateStr).getTime();
+    console.log('构建的时间戳:', dateTimeValue);
     
     this.setData({
       dateTimeValue,
