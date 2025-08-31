@@ -132,6 +132,19 @@ Page({
     });
   },
 
+  // 验证日期是否有效
+  validateDate(year, month, day) {
+    // 创建日期对象来验证
+    const testDate = new Date(year, month - 1, day);
+    
+    // 检查日期是否有效（如果无效，Date会自动调整）
+    const isValid = testDate.getFullYear() === year && 
+                   testDate.getMonth() === month - 1 && 
+                   testDate.getDate() === day;
+    
+    return isValid;
+  },
+
   // 确认选择
   onPickerConfirm() {
     const { pickerValue, yearRange, monthRange, dayRange, timeMap } = this.data;
@@ -141,6 +154,21 @@ Page({
     const month = monthRange[monthIndex];
     const day = dayRange[dayIndex];
     const timeInfo = timeMap[timeIndex];
+    
+    // 验证日期有效性
+    if (!this.validateDate(year, month, day)) {
+      console.log('日期无效:', { year, month, day });
+      
+      // 显示错误提示，但不关闭选择器
+      Message.error({
+        context: this,
+        offset: [120, 32],
+        duration: 3000,
+        content: `日期选择错误：${month}月${day}日不存在，请重新选择`,
+      });
+      
+      return; // 不关闭选择器，让用户重新选择
+    }
     
     const formatedTime = `${year}年${month}月${day}日 ${timeInfo.name}`;
     
@@ -157,6 +185,7 @@ Page({
     const dateTimeValue = new Date(dateStr).getTime();
     console.log('构建的时间戳:', dateTimeValue);
     
+    // 日期有效，保存并关闭选择器
     this.setData({
       dateTimeValue,
       formatedDateTime: formatedTime,
