@@ -1,5 +1,5 @@
 {
-  "pages": ["pages/home/index", "pages/message/index", "pages/my/index", "pages/dateQuery/index", "pages/bazi/index"],
+  "pages": ["pages/dateQuery/index", "pages/home/index", "pages/message/index", "pages/my/index", "pages/bazi/index"],
   "usingComponents": {
     "t-toast": "tdesign-miniprogram/toast/toast",
     "t-popup": "tdesign-miniprogram/popup/popup",
