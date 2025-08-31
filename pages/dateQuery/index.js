@@ -27,6 +27,42 @@ Page({
     ],
   },
   
+  // 根据小时计算对应的时辰索引
+  calculateTimeIndex(hour) {
+    for (let i = 0; i < this.data.timeMap.length; i++) {
+      const time = this.data.timeMap[i];
+      if (time.name.includes('子时')) {
+        if (hour >= 23 || hour < 1) {
+          return i;
+        }
+      } else if (hour >= time.start && hour < time.end) {
+        return i;
+      }
+    }
+    return 0; // 默认返回子时
+  },
+
+  // 根据年月日时辰计算选择器值数组
+  calculatePickerValue(year, month, day, timeIndex) {
+    return [
+      this.data.yearRange.indexOf(year),
+      month - 1,
+      day - 1,
+      timeIndex
+    ];
+  },
+
+  // 从日期对象获取选择器值
+  getPickerValueFromDate(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hour = date.getHours();
+    const timeIndex = this.calculateTimeIndex(hour);
+    
+    return this.calculatePickerValue(year, month, day, timeIndex);
+  },
+
   onLoad() {
     // 初始化年份范围（1949-2050）
     const startYear = 1949;
@@ -36,38 +72,17 @@ Page({
       (_, i) => startYear + i
     );
     
-    // 获取当前日期
+    // 获取当前时间的选择器值
     const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-    const currentDay = now.getDate();
-    const currentHour = now.getHours();
+    const initialPickerValue = this.getPickerValueFromDate(now);
     
-    // 计算当前时辰
-    let timeIndex = 0;
-    for (let i = 0; i < this.data.timeMap.length; i++) {
-      const time = this.data.timeMap[i];
-      if (time.name === '子时') {
-        if (currentHour >= 23 || currentHour < 1) {
-          timeIndex = i;
-          break;
-        }
-      } else if (currentHour >= time.start && currentHour < time.end) {
-        timeIndex = i;
-        break;
-      }
-    }
-    
-    // 设置初始值
     this.setData({
       yearRange,
-      pickerValue: [
-        yearRange.indexOf(currentYear),
-        currentMonth - 1,
-        currentDay - 1,
-        timeIndex
-      ]
+      pickerValue: initialPickerValue,
+      // 不设置 dateTimeValue 和 formatedDateTime，保持输入框为空
     });
+
+    console.log('页面初始化，选择器默认定位到当前时间，但输入框保持空白');
   },
 
   // 返回上一页
@@ -78,7 +93,33 @@ Page({
   // 点击时间输入框
   onInputTap() {
     console.log('点击输入框，打开选择器');
+    
+    let targetPickerValue;
+    
+    // 如果用户已经选择了时间，使用用户选择的时间作为默认值
+    if (this.data.dateTimeValue) {
+      console.log('用户已选择时间，使用用户选择的时间作为默认值');
+      const selectedDate = new Date(this.data.dateTimeValue);
+      targetPickerValue = this.getPickerValueFromDate(selectedDate);
+      
+      console.log('使用用户已选择的时间:', {
+        date: selectedDate.toLocaleString(),
+        pickerValue: targetPickerValue
+      });
+      
+    } else {
+      console.log('用户未选择时间，使用当前系统时间作为默认值');
+      const now = new Date();
+      targetPickerValue = this.getPickerValueFromDate(now);
+      
+      console.log('使用当前系统时间:', {
+        date: now.toLocaleString(),
+        pickerValue: targetPickerValue
+      });
+    }
+    
     this.setData({
+      pickerValue: targetPickerValue,
       showPicker: true
     });
   },
