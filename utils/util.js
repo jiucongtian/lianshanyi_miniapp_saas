@@ -22,7 +22,42 @@ const getLocalUrl = (path, name) => {
   return tempFileName;
 };
 
+/**
+ * 从时间戳提取时间参数
+ * @param {number} timestamp - 时间戳
+ * @returns {Object} 包含年月日时分的对象
+ */
+const extractTimeParams = (timestamp) => {
+  const date = new Date(timestamp);
+  
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1, // JavaScript月份从0开始，需要+1
+    day: date.getDate(),
+    hour: date.getHours(),
+    min: date.getMinutes()
+  };
+};
+
+/**
+ * 格式化时间显示
+ * @param {number} timestamp - 时间戳
+ * @returns {string} 格式化的时间字符串
+ */
+const formatDateTime = (timestamp) => {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+  
+  return `${year}年${month}月${day}日 ${formatNumber(hour)}:${formatNumber(minute)}`;
+};
+
 module.exports = {
   formatTime,
+  formatDateTime,
+  extractTimeParams,
   getLocalUrl,
 };

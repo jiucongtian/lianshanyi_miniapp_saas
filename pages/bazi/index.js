@@ -26,9 +26,46 @@ Page({
     lunarTime: '',
   },
 
-  onLoad: function() {
+  onLoad: function(options) {
+    console.log('八字页面接收到的参数:', options);
+    
     this.initDeviceSize();
     this.initAnimations();
+    
+    // 处理传递过来的参数
+    this.handleReceivedParams(options);
+  },
+
+  // 处理接收到的参数
+  handleReceivedParams: function(options) {
+    const { datetime, hasCozeData } = options;
+    
+    if (datetime) {
+      const timestamp = parseInt(datetime);
+      const date = new Date(timestamp);
+      
+      // 格式化时间显示
+      const formattedTime = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+      
+      // 检查是否有Coze数据
+      if (hasCozeData === 'true') {
+        const app = getApp();
+        const baziResult = app.globalData?.baziResult;
+        
+        if (baziResult && baziResult.timestamp === timestamp) {
+          // 如果有Coze数据，可以在这里处理和显示
+          console.log('zhCoze计算结果:', baziResult.cozeData);
+        }
+      }
+      
+      // 在控制台输出详细信息
+      console.log('八字页面参数详情:', {
+        timestamp,
+        formattedTime,
+        hasCozeData,
+        globalData: getApp().globalData?.baziResult
+      });
+    }
   },
 
   initDeviceSize: function() {

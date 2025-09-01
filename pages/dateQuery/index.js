@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import Message from 'tdesign-miniprogram/message/index';
+const { calculateBazi } = require('../../api/coze');
 
 Page({
   data: {
@@ -223,7 +224,7 @@ Page({
   },
 
   // 查询数据
-  onQueryData() {
+  async onQueryData() {
     if (!this.data.dateTimeValue) {
       Message.warning({
         context: this,
@@ -236,33 +237,102 @@ Page({
 
     // 显示加载状态
     wx.showLoading({
-      title: '计算中...',
+      title: '正在计算生辰八字...',
       mask: true
     });
 
-    // 跳转到八字页面
-    setTimeout(() => {
-      wx.hideLoading();
-      
+    try {
       // 确保日期格式正确
       const dateStr = dayjs(this.data.dateTimeValue).format('YYYY-MM-DD HH:mm:ss');
       const timestamp = new Date(dateStr).getTime();
       
-      wx.navigateTo({
-        url: `/pages/bazi/index?datetime=${timestamp}`,
-        success: () => {
-          console.log('跳转到八字页面成功，时间戳：', timestamp);
-        },
-        fail: (error) => {
-          console.error('跳转失败:', error);
-          Message.error({
-            context: this,
-            offset: [120, 32],
-            duration: 3000,
-            content: '页面跳转失败，请重试',
+      console.log('开始调用Coze API计算生辰八字，时间戳：', timestamp);
+      
+      // 调用Coze API获取生辰八字数据
+      const result = await calculateBazi(timestamp);
+      
+      if (result.success) {
+        console.log('Coze API调用成功，结果：', result);
+        
+        // API调用成功，跳转到八字页面并传递结果
+        wx.hideLoading();
+        
+        // 将结果存储到全局数据中，供八字页面使用
+        const app = getApp();
+        app.globalData = app.globalData || {};
+        app.globalData.baziResult = {
+          timestamp: timestamp,
+          cozeData: result.data,
+          parameters: result.parameters,
+          calculatedAt: new Date().getTime()
+        };
+        
+        wx.navigateTo({
+          url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=true`,
+          success: () => {
+            console.log('跳转到八字页面成功，已传递Coze数据');
+            Message.success({
+              context: this,
+              offset: [120, 32],
+              duration: 2000,
+              content: '计算完成',
+            });
+          },
+          fail: (error) => {
+            console.error('跳转失败:', error);
+            Message.error({
+              context: this,
+              offset: [120, 32],
+              duration: 3000,
+              content: '页面跳转失败，请重试',
+            });
+          }
+        });
+        
+      } else {
+        // API调用失败，显示错误信息但仍然可以跳转（使用本地计算）
+        console.error('Coze API调用失败:', result.error);
+        
+        wx.hideLoading();
+        
+        Message.warning({
+          context: this,
+          offset: [120, 32],
+          duration: 3000,
+          content: `网络计算失败，将使用本地算法：${result.error}`,
+        });
+        
+        // 延迟跳转，让用户看到提示信息
+        setTimeout(() => {
+          const timestamp = new Date(dateStr).getTime();
+          wx.navigateTo({
+            url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=false`,
+            success: () => {
+              console.log('跳转到八字页面成功，使用本地计算');
+            },
+            fail: (error) => {
+              console.error('跳转失败:', error);
+              Message.error({
+                context: this,
+                offset: [120, 32],
+                duration: 3000,
+                content: '页面跳转失败，请重试',
+              });
+            }
           });
-        }
+        }, 1500);
+      }
+      
+    } catch (error) {
+      console.error('查询数据过程中出现错误:', error);
+      wx.hideLoading();
+      
+      Message.error({
+        context: this,
+        offset: [120, 32],
+        duration: 3000,
+        content: '计算过程中出现错误，请重试',
       });
-    }, 500);
+    }
   },
 });
