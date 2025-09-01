@@ -8,25 +8,25 @@
       <!-- 年柱 -->
       <view class="pillar-item" animation="{{yearAnimation}}">
         <view class="pillar-title">年柱</view>
-        <image class="pillar-image" src="/static/bazi_images/{{yearPillar.imageName}}" mode="aspectFit" />
+        <image class="pillar-image" src="{{yearPillar.imagePath}}" mode="aspectFit" />
       </view>
 
       <!-- 月柱 -->
       <view class="pillar-item" animation="{{monthAnimation}}">
         <view class="pillar-title">月柱</view>
-        <image class="pillar-image" src="/static/bazi_images/{{monthPillar.imageName}}" mode="aspectFit" />
+        <image class="pillar-image" src="{{monthPillar.imagePath}}" mode="aspectFit" />
       </view>
 
       <!-- 日柱 -->
       <view class="pillar-item" animation="{{dayAnimation}}">
         <view class="pillar-title">日柱</view>
-        <image class="pillar-image" src="/static/bazi_images/{{dayPillar.imageName}}" mode="aspectFit" />
+        <image class="pillar-image" src="{{dayPillar.imagePath}}" mode="aspectFit" />
       </view>
 
       <!-- 时柱 -->
       <view class="pillar-item" animation="{{timeAnimation}}">
         <view class="pillar-title">时柱</view>
-        <image class="pillar-image" src="/static/bazi_images/{{timePillar.imageName}}" mode="aspectFit" />
+        <image class="pillar-image" src="{{timePillar.imagePath}}" mode="aspectFit" />
       </view>
     </view>
   </view>
