@@ -1,0 +1,82 @@
+<t-navbar title="获取生命智慧卡牌" left-arrow bind:go-back="goBack" />
+
+<!-- 页面内容 -->
+<view class="page-container">
+  <!-- 页面标题区域 -->
+  <view class="page-header">
+    <view class="header-title">填写出生年月日</view>
+    <view class="header-subtitle">请选择具体时间</view>
+  </view>
+
+  <!-- 时间选择区域 -->
+  <view class="time-selector-card">
+    <view class="card-header">
+      <t-icon name="time" size="20" color="#0052d9" />
+      <text class="card-title">选择日期</text>
+    </view>
+    
+    <view class="input-group">
+      <view class="input-label">当前日期为</view>
+      <view class="input-wrapper" bindtap="onInputTap">
+        <view class="time-display {{formatedDateTime ? 'has-value' : ''}}">
+          {{formatedDateTime || '请选择年月日时'}}
+        </view>
+        <t-icon name="chevron-right" size="16" color="#999" />
+      </view>
+    </view>
+
+
+  </view>
+
+  <!-- 操作按钮区域 -->
+  <view class="action-section">
+    <t-button 
+      theme="primary" 
+      size="large" 
+      block
+      bindtap="onQueryData"
+      disabled="{{!formatedDateTime}}"
+    >
+      确定
+    </t-button>
+  </view>
+</view>
+
+<!-- 自定义时间选择器弹出层 -->
+<t-popup visible="{{showPicker}}" placement="bottom" bind:visible-change="onPickerClose">
+  <view class="custom-picker">
+    <view class="picker-header">
+      <view class="picker-btn" bindtap="onPickerCancel">取消</view>
+      <view class="picker-title">选择时辰</view>
+      <view class="picker-btn confirm" bindtap="onPickerConfirm">确定</view>
+    </view>
+    <picker-view
+      value="{{pickerValue}}"
+      bindchange="onPickerChange"
+      class="picker-view"
+      indicator-class="picker-indicator"
+    >
+      <!-- 年份列 -->
+      <picker-view-column>
+        <view wx:for="{{yearRange}}" wx:key="index" class="picker-item">{{item}}年</view>
+      </picker-view-column>
+      <!-- 月份列 -->
+      <picker-view-column>
+        <view wx:for="{{monthRange}}" wx:key="index" class="picker-item">{{item}}月</view>
+      </picker-view-column>
+      <!-- 日期列 -->
+      <picker-view-column>
+        <view wx:for="{{dayRange}}" wx:key="index" class="picker-item">{{item}}日</view>
+      </picker-view-column>
+      <!-- 时辰列 -->
+      <picker-view-column>
+        <view wx:for="{{timeMap}}" wx:key="index" class="picker-item">
+          {{item.name}}
+        </view>
+      </picker-view-column>
+    </picker-view>
+  </view>
+</t-popup>
+
+<!-- 消息提示 -->
+<t-message id="t-message" />
