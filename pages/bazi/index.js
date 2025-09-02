@@ -40,11 +40,131 @@ Page({
   },
 
   onReady: function() {
-    // 页面渲染完成后，根据天干地支设置正确的图片路径
-    this.updateInitialImages();
+    // 页面渲染完成后，从全局数据获取八字结果并更新显示
+    this.loadBaziFromGlobalData();
   },
 
-  // 初始化时更新图片路径
+  // 从全局数据加载八字结果
+  loadBaziFromGlobalData: function() {
+    const app = getApp();
+    const baziResult = app.globalData?.baziResult;
+    
+    console.log('全局数据:', baziResult);
+    
+    if (baziResult && baziResult.cozeData) {
+      console.log('找到cozeData:', baziResult.cozeData);
+      
+      // 解析八字数据
+      const baziData = this.parseBaziData(baziResult.cozeData);
+      
+      if (baziData) {
+        console.log('解析成功，更新显示:', baziData);
+        this.updateBaziDisplay(baziData);
+      } else {
+        console.log('八字数据解析失败，使用默认数据');
+        this.updateInitialImages();
+      }
+    } else {
+      console.log('未找到全局八字数据，使用默认数据');
+      this.updateInitialImages();
+    }
+  },
+
+  // 解析八字数据
+  parseBaziData: function(cozeData) {
+    try {
+      console.log('开始解析八字数据:', cozeData);
+      
+      // 根据实际数据格式: cozeData.data 是一个JSON字符串
+      if (cozeData && cozeData.data) {
+        const dataString = cozeData.data;
+        const parsedData = JSON.parse(dataString);
+        
+        console.log('解析后的数据:', parsedData);
+        
+        // 数据格式: {"output":{"day":"甲戌","hour":"戊辰","month":"甲申","year":"乙巳"}}
+        if (parsedData.output) {
+          const output = parsedData.output;
+          return {
+            yearPillar: {
+              heavenlyStem: output.year[0],  // 乙
+              earthlyBranch: output.year[1]  // 巳
+            },
+            monthPillar: {
+              heavenlyStem: output.month[0], // 甲
+              earthlyBranch: output.month[1] // 申
+            },
+            dayPillar: {
+              heavenlyStem: output.day[0],   // 甲
+              earthlyBranch: output.day[1]   // 戌
+            },
+            timePillar: {
+              heavenlyStem: output.hour[0],  // 戊
+              earthlyBranch: output.hour[1]  // 辰
+            }
+          };
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('解析八字数据时出错:', error);
+      return null;
+    }
+  },
+
+
+
+  // 更新八字显示
+  updateBaziDisplay: function(baziData) {
+    console.log('开始更新八字显示，数据:', baziData);
+    
+    if (baziData && baziData.yearPillar && baziData.monthPillar && baziData.dayPillar && baziData.timePillar) {
+      // 生成图片路径
+      const yearImagePath = this.getBaziImagePath(baziData.yearPillar.heavenlyStem, baziData.yearPillar.earthlyBranch);
+      const monthImagePath = this.getBaziImagePath(baziData.monthPillar.heavenlyStem, baziData.monthPillar.earthlyBranch);
+      const dayImagePath = this.getBaziImagePath(baziData.dayPillar.heavenlyStem, baziData.dayPillar.earthlyBranch);
+      const timeImagePath = this.getBaziImagePath(baziData.timePillar.heavenlyStem, baziData.timePillar.earthlyBranch);
+      
+      console.log('生成的图片路径:', {
+        year: yearImagePath,
+        month: monthImagePath,
+        day: dayImagePath,
+        time: timeImagePath
+      });
+      
+      this.setData({
+        yearPillar: {
+          heavenlyStem: baziData.yearPillar.heavenlyStem,
+          earthlyBranch: baziData.yearPillar.earthlyBranch,
+          imagePath: yearImagePath
+        },
+        monthPillar: {
+          heavenlyStem: baziData.monthPillar.heavenlyStem,
+          earthlyBranch: baziData.monthPillar.earthlyBranch,
+          imagePath: monthImagePath
+        },
+        dayPillar: {
+          heavenlyStem: baziData.dayPillar.heavenlyStem,
+          earthlyBranch: baziData.dayPillar.earthlyBranch,
+          imagePath: dayImagePath
+        },
+        timePillar: {
+          heavenlyStem: baziData.timePillar.heavenlyStem,
+          earthlyBranch: baziData.timePillar.earthlyBranch,
+          imagePath: timeImagePath
+        },
+        originalTime: baziData.originalTime || '',
+        lunarTime: baziData.lunarTime || ''
+      });
+      
+      console.log('八字显示已更新，当前数据:', this.data);
+    } else {
+      console.log('八字数据不完整，无法更新显示');
+    }
+  },
+
+  // 初始化时更新图片路径（作为后备方案）
   updateInitialImages: function() {
     const { yearPillar, monthPillar, dayPillar, timePillar } = this.data;
     
@@ -75,8 +195,13 @@ Page({
         const baziResult = app.globalData?.baziResult;
         
         if (baziResult && baziResult.timestamp === timestamp) {
-          // 如果有Coze数据，可以在这里处理和显示
-          console.log('zhCoze计算结果:', baziResult.cozeData);
+          console.log('检测到Coze计算结果:', baziResult.cozeData);
+          
+          // 尝试解析并更新八字显示
+          const baziData = this.parseBaziData(baziResult.cozeData);
+          if (baziData) {
+            this.updateBaziDisplay(baziData);
+          }
         }
       }
       

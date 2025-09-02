@@ -36,6 +36,16 @@
 <img width="375" alt="image" src="https://tdesign.gtimg.com/miniprogram/template/message-1.png">
 
 
+## 📚 文档
+
+### API 接口文档
+- [API 接口文档总览](./docs/api/README.md)
+- [Coze 生辰八字计算接口](./docs/api/coze-bazi-api.md)
+
+### 功能文档
+- [时间查询页面显示逻辑](./docs/时间查询页面显示逻辑.md)
+- [生辰八字计算需求文档](./docs/生辰八字计算需求文档.md)
+
 ## 开发预览
 ### 目录结构（TODO: 生成目录结构树）
 
