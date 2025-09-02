@@ -335,4 +335,15 @@ Page({
       });
     }
   },
+
+  // 分享功能 - 激活右上角分享按钮
+  onShareAppMessage: function() {
+    return {
+      title: '生命智慧卡牌 - 生辰八字查询',
+      path: '/pages/dateQuery/index',
+      imageUrl: '', // 可以设置分享图片
+    };
+  },
+
+
 });

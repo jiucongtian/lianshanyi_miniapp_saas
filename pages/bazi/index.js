@@ -277,10 +277,10 @@ Page({
     if (tianGanPinyin && diZhiPinyin) {
       const pinyin = tianGanPinyin + diZhiPinyin;
       const imageInfo = getBaziImageByPinyin(pinyin);
-      return imageInfo ? imageInfo.imagePath : '/static/new_bazi/01_jiazi.png';
+      return imageInfo ? imageInfo.imagePath : '/static/new_bazi/01_jiazi.jpeg';
     }
     
-    return '/static/new_bazi/01_jiazi.png'; // 默认图片
+    return '/static/new_bazi/01_jiazi.jpeg'; // 默认图片
   },
 
   // 更新八字图片
@@ -309,5 +309,19 @@ Page({
       originalTime: data.originalTime,
       lunarTime: data.lunarTime
     });
-  }
+  },
+
+  // 分享功能 - 激活右上角分享按钮
+  onShareAppMessage: function() {
+    const { yearPillar, monthPillar, dayPillar, timePillar } = this.data;
+    const baziText = `${yearPillar.heavenlyStem}${yearPillar.earthlyBranch} ${monthPillar.heavenlyStem}${monthPillar.earthlyBranch} ${dayPillar.heavenlyStem}${dayPillar.earthlyBranch} ${timePillar.heavenlyStem}${timePillar.earthlyBranch}`;
+    
+    return {
+      title: `我的生命智慧卡牌：${baziText}`,
+      path: '/pages/dateQuery/index',
+      imageUrl: '', // 可以设置分享图片
+    };
+  },
+
+
 });

@@ -73,8 +73,8 @@ const generateBaziImageMap = () => {
     id: item.num,
     number: item.num.toString().padStart(2, '0'), // 补零格式，如 "01", "02"
     pinyin: item.pinyin,
-    imagePath: `/static/new_bazi/${item.num.toString().padStart(2, '0')}_${item.pinyin}.png`,
-    fileName: `${item.num.toString().padStart(2, '0')}_${item.pinyin}.png`
+    imagePath: `/static/new_bazi/${item.num.toString().padStart(2, '0')}_${item.pinyin}.jpeg`,
+    fileName: `${item.num.toString().padStart(2, '0')}_${item.pinyin}.jpeg`
   }));
 };
 

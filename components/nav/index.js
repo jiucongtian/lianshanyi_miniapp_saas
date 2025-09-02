@@ -13,54 +13,14 @@ Component({
     visible: false,
     sidebar: [
       {
-        title: '首页',
-        url: 'pages/home/index',
+        title: '八字查询',
+        url: 'pages/bazi/index',
         isSidebar: true,
       },
       {
-        title: '搜索页',
-        url: 'pages/search/index',
-        isSidebar: false,
-      },
-      {
-        title: '发布页',
-        url: 'pages/release/index',
-        isSidebar: false,
-      },
-      {
-        title: '消息列表页',
-        url: 'pages/message/index',
+        title: '时间查询',
+        url: 'pages/dateQuery/index',
         isSidebar: true,
-      },
-      {
-        title: '对话页',
-        url: 'pages/chat/index',
-        isSidebar: false,
-      },
-      {
-        title: '个人中心页',
-        url: 'pages/my/index',
-        isSidebar: true,
-      },
-      {
-        title: '个人信息表单页',
-        url: 'pages/my/info-edit/index',
-        isSidebar: false,
-      },
-      {
-        title: '设置页',
-        url: 'pages/setting/index',
-        isSidebar: false,
-      },
-      {
-        title: '数据图表页',
-        url: 'pages/dataCenter/index',
-        isSidebar: false,
-      },
-      {
-        title: '登录注册页',
-        url: 'pages/login/login',
-        isSidebar: false,
       },
     ],
     statusHeight: 0,
@@ -101,8 +61,10 @@ Component({
     },
 
     searchTurn() {
-      wx.navigateTo({
-        url: `/pages/search/index`,
+      // 搜索功能已移除
+      wx.showToast({
+        title: '搜索功能已移除',
+        icon: 'none'
       });
     },
   },

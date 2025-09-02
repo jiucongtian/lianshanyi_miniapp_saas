@@ -1,22 +1,22 @@
-<t-navbar title="时间查询" left-arrow bind:go-back="goBack" />
+<t-navbar title="获取生命智慧卡牌" left-arrow bind:go-back="goBack" />
 
 <!-- 页面内容 -->
 <view class="page-container">
   <!-- 页面标题区域 -->
   <view class="page-header">
-    <view class="header-title">选择查询时间</view>
-    <view class="header-subtitle">请选择您要查询的具体时间</view>
+    <view class="header-title">填写出生年月日</view>
+    <view class="header-subtitle">请选择具体时间</view>
   </view>
 
   <!-- 时间选择区域 -->
   <view class="time-selector-card">
     <view class="card-header">
       <t-icon name="time" size="20" color="#0052d9" />
-      <text class="card-title">时间设置</text>
+      <text class="card-title">选择日期</text>
     </view>
     
     <view class="input-group">
-      <view class="input-label">选择时间</view>
+      <view class="input-label">当前日期为</view>
       <view class="input-wrapper" bindtap="onInputTap">
         <view class="time-display {{formatedDateTime ? 'has-value' : ''}}">
           {{formatedDateTime || '请选择年月日时'}}
