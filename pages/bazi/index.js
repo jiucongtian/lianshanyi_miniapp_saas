@@ -317,7 +317,7 @@ Page({
     const baziText = `${yearPillar.heavenlyStem}${yearPillar.earthlyBranch} ${monthPillar.heavenlyStem}${monthPillar.earthlyBranch} ${dayPillar.heavenlyStem}${dayPillar.earthlyBranch} ${timePillar.heavenlyStem}${timePillar.earthlyBranch}`;
     
     return {
-      title: `我的生命智慧卡牌：${baziText}`,
+      title: '生命智慧卡牌',
       path: '/pages/dateQuery/index',
       imageUrl: '', // 可以设置分享图片
     };
