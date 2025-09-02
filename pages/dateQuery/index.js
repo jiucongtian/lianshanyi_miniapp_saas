@@ -237,7 +237,7 @@ Page({
 
     // 显示加载状态
     wx.showLoading({
-      title: '正在计算生辰八字...',
+      title: '抽取智慧卡牌...',
       mask: true
     });
 
