@@ -73,17 +73,60 @@ Page({
       (_, i) => startYear + i
     );
     
-    // 获取当前时间的选择器值
-    const now = new Date();
-    const initialPickerValue = this.getPickerValueFromDate(now);
+    // 尝试从本地存储恢复用户上次选择的时间
+    let savedDateTime = null;
+    try {
+      savedDateTime = wx.getStorageSync('userDateTime');
+      console.log('从本地存储读取到的时间数据:', savedDateTime);
+    } catch (error) {
+      console.error('读取本地存储失败:', error);
+    }
+    
+    let initialPickerValue;
+    let dateTimeValue = null;
+    let formatedDateTime = '';
+    
+    // 如果有保存的时间数据，则恢复
+    if (savedDateTime && savedDateTime.dateTimeValue) {
+      console.log('恢复用户上次选择的时间:', savedDateTime.formatedDateTime);
+      
+      dateTimeValue = savedDateTime.dateTimeValue;
+      formatedDateTime = savedDateTime.formatedDateTime;
+      
+      // 使用保存的选择器值，或者重新计算
+      if (savedDateTime.year && savedDateTime.month && savedDateTime.day && savedDateTime.timeIndex !== undefined) {
+        initialPickerValue = this.calculatePickerValue(
+          savedDateTime.year, 
+          savedDateTime.month, 
+          savedDateTime.day, 
+          savedDateTime.timeIndex
+        );
+      } else {
+        // 从时间戳重新计算选择器值
+        const savedDate = new Date(savedDateTime.dateTimeValue);
+        initialPickerValue = this.getPickerValueFromDate(savedDate);
+      }
+      
+      console.log('已恢复用户时间选择:', {
+        formatedDateTime,
+        dateTimeValue,
+        pickerValue: initialPickerValue
+      });
+    } else {
+      console.log('未找到保存的时间，使用当前时间作为默认值');
+      // 获取当前时间的选择器值
+      const now = new Date();
+      initialPickerValue = this.getPickerValueFromDate(now);
+    }
     
     this.setData({
       yearRange,
       pickerValue: initialPickerValue,
-      // 不设置 dateTimeValue 和 formatedDateTime，保持输入框为空
+      dateTimeValue,
+      formatedDateTime
     });
 
-    console.log('页面初始化，选择器默认定位到当前时间，但输入框保持空白');
+    console.log('页面初始化完成，选择器默认值已设置');
   },
 
   // 返回上一页
@@ -186,6 +229,24 @@ Page({
     const dateTimeValue = new Date(dateStr).getTime();
     console.log('构建的时间戳:', dateTimeValue);
     
+    // 保存用户选择的时间到本地存储
+    const userDateTimeData = {
+      dateTimeValue,
+      formatedDateTime: formatedTime,
+      year,
+      month,
+      day,
+      timeIndex,
+      savedAt: Date.now()
+    };
+    
+    try {
+      wx.setStorageSync('userDateTime', userDateTimeData);
+      console.log('用户时间已保存到本地存储:', userDateTimeData);
+    } catch (error) {
+      console.error('保存用户时间失败:', error);
+    }
+    
     // 日期有效，保存并关闭选择器
     this.setData({
       dateTimeValue,
@@ -222,6 +283,8 @@ Page({
       });
     }
   },
+
+
 
   // 查询数据
   async onQueryData() {
