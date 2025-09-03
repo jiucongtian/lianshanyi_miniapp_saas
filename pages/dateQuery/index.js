@@ -64,6 +64,52 @@ Page({
     return this.calculatePickerValue(year, month, day, timeIndex);
   },
 
+  // 八字缓存管理
+  getBaziCache(timestamp) {
+    try {
+      const cacheData = wx.getStorageSync('baziCache') || [];
+      const found = cacheData.find(item => item.timestamp === timestamp);
+      return found ? found.baziResult : null;
+    } catch (error) {
+      console.error('读取八字缓存失败:', error);
+      return null;
+    }
+  },
+
+  saveBaziCache(timestamp, baziResult) {
+    try {
+      let cacheData = wx.getStorageSync('baziCache') || [];
+      
+      // 检查是否已存在相同时间戳的记录
+      const existingIndex = cacheData.findIndex(item => item.timestamp === timestamp);
+      
+      const newCacheItem = {
+        timestamp,
+        baziResult,
+        cachedAt: Date.now()
+      };
+      
+      if (existingIndex >= 0) {
+        // 更新现有记录
+        cacheData[existingIndex] = newCacheItem;
+      } else {
+        // 添加新记录
+        cacheData.push(newCacheItem);
+        
+        // 如果超过20条记录，删除最旧的记录
+        if (cacheData.length > 20) {
+          cacheData.sort((a, b) => a.cachedAt - b.cachedAt);
+          cacheData = cacheData.slice(-20); // 保留最新的20条
+        }
+      }
+      
+      wx.setStorageSync('baziCache', cacheData);
+      console.log('八字缓存已保存，当前缓存条数:', cacheData.length);
+    } catch (error) {
+      console.error('保存八字缓存失败:', error);
+    }
+  },
+
   onLoad() {
     // 初始化年份范围（1949-2050）
     const startYear = 1949;
@@ -229,7 +275,7 @@ Page({
     const dateTimeValue = new Date(dateStr).getTime();
     console.log('构建的时间戳:', dateTimeValue);
     
-    // 保存用户选择的时间到本地存储
+    // 保存用户选择的时间到本地存储（暂不保存八字数据，在计算完成后再保存）
     const userDateTimeData = {
       dateTimeValue,
       formatedDateTime: formatedTime,
@@ -298,6 +344,49 @@ Page({
       return;
     }
 
+    // 确保日期格式正确
+    const dateStr = dayjs(this.data.dateTimeValue).format('YYYY-MM-DD HH:mm:ss');
+    const timestamp = new Date(dateStr).getTime();
+    
+    // 首先检查缓存中是否有该时间戳的八字数据
+    const cachedBaziResult = this.getBaziCache(timestamp);
+    
+    if (cachedBaziResult) {
+      console.log('找到缓存的八字数据，直接使用:', cachedBaziResult);
+      
+      // 使用缓存数据直接跳转
+      const app = getApp();
+      app.globalData = app.globalData || {};
+      app.globalData.baziResult = cachedBaziResult;
+      
+      wx.navigateTo({
+        url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=true`,
+        success: () => {
+          console.log('跳转到八字页面成功，使用缓存数据');
+          Message.success({
+            context: this,
+            offset: [120, 32],
+            duration: 1500,
+            content: '已加载缓存数据',
+          });
+        },
+        fail: (error) => {
+          console.error('跳转失败:', error);
+          Message.error({
+            context: this,
+            offset: [120, 32],
+            duration: 3000,
+            content: '页面跳转失败，请重试',
+          });
+        }
+      });
+      
+      return;
+    }
+
+    // 没有缓存数据，需要调用API计算
+    console.log('未找到缓存数据，开始调用API计算，时间戳：', timestamp);
+
     // 显示加载状态
     wx.showLoading({
       title: '抽取智慧卡牌...',
@@ -305,17 +394,22 @@ Page({
     });
 
     try {
-      // 确保日期格式正确
-      const dateStr = dayjs(this.data.dateTimeValue).format('YYYY-MM-DD HH:mm:ss');
-      const timestamp = new Date(dateStr).getTime();
-      
-      console.log('开始调用Coze API计算生辰八字，时间戳：', timestamp);
-      
       // 调用Coze API获取生辰八字数据
       const result = await calculateBazi(timestamp);
       
       if (result.success) {
         console.log('Coze API调用成功，结果：', result);
+        
+        // 构建八字结果数据
+        const baziResult = {
+          timestamp: timestamp,
+          cozeData: result.data,
+          parameters: result.parameters,
+          calculatedAt: new Date().getTime()
+        };
+        
+        // 保存到缓存
+        this.saveBaziCache(timestamp, baziResult);
         
         // API调用成功，跳转到八字页面并传递结果
         wx.hideLoading();
@@ -323,12 +417,7 @@ Page({
         // 将结果存储到全局数据中，供八字页面使用
         const app = getApp();
         app.globalData = app.globalData || {};
-        app.globalData.baziResult = {
-          timestamp: timestamp,
-          cozeData: result.data,
-          parameters: result.parameters,
-          calculatedAt: new Date().getTime()
-        };
+        app.globalData.baziResult = baziResult;
         
         wx.navigateTo({
           url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=true`,
@@ -367,7 +456,6 @@ Page({
         
         // 延迟跳转，让用户看到提示信息
         setTimeout(() => {
-          const timestamp = new Date(dateStr).getTime();
           wx.navigateTo({
             url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=false`,
             success: () => {
