@@ -61,11 +61,11 @@ Page({
         console.log('解析成功，更新显示:', baziData);
         this.updateBaziDisplay(baziData);
       } else {
-        console.log('八字数据解析失败，使用默认数据');
+        console.log('八字数据解析失败，显示默认数据');
         this.updateInitialImages();
       }
     } else {
-      console.log('未找到全局八字数据，使用默认数据');
+      console.log('未找到全局八字数据，显示默认数据');
       this.updateInitialImages();
     }
   },

@@ -443,36 +443,17 @@ Page({
         });
         
       } else {
-        // API调用失败，显示错误信息但仍然可以跳转（使用本地计算）
-        console.error('Coze API调用失败:', result.error);
+        // API调用失败，显示错误信息
+        console.error('服务端计算失败:', result.error);
         
         wx.hideLoading();
         
-        Message.warning({
+        Message.error({
           context: this,
           offset: [120, 32],
           duration: 3000,
-          content: `网络计算失败，将使用本地算法：${result.error}`,
+          content: `计算失败：${result.error}，请重试`,
         });
-        
-        // 延迟跳转，让用户看到提示信息
-        setTimeout(() => {
-          wx.navigateTo({
-            url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=false`,
-            success: () => {
-              console.log('跳转到八字页面成功，使用本地计算');
-            },
-            fail: (error) => {
-              console.error('跳转失败:', error);
-              Message.error({
-                context: this,
-                offset: [120, 32],
-                duration: 3000,
-                content: '页面跳转失败，请重试',
-              });
-            }
-          });
-        }, 1500);
       }
       
     } catch (error) {
