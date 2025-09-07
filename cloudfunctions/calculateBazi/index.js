@@ -50,7 +50,11 @@ async function callCozeAPI(parameters) {
       timeout: 30000 // 30秒超时
     });
 
-    console.log('Coze API 响应:', response.data);
+    console.log('=== Coze API 完整响应 ===');
+    console.log('响应状态:', response.status);
+    console.log('响应头:', response.headers);
+    console.log('响应数据完整结构:', JSON.stringify(response.data, null, 2));
+    console.log('响应数据类型:', typeof response.data);
     
     return {
       success: true,
