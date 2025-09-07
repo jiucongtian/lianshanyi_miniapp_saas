@@ -1,5 +1,6 @@
 // 云函数入口文件
 const cloud = require('wx-server-sdk')
+const axios = require('axios')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV // 使用当前云环境
@@ -35,7 +36,7 @@ async function callCozeAPI(parameters) {
   };
 
   try {
-    const response = await cloud.httpsCall({
+    const response = await axios({
       url: `${COZE_CONFIG.baseURL}/v1/workflow/run`,
       method: 'POST',
       headers: {
@@ -45,23 +46,31 @@ async function callCozeAPI(parameters) {
       data: {
         workflow_id: COZE_CONFIG.workflowId,
         parameters: parameters
-      }
+      },
+      timeout: 30000 // 30秒超时
     });
 
-    console.log('Coze API 响应:', response);
+    console.log('Coze API 响应:', response.data);
     
-    if (response.statusCode === 200) {
-      return {
-        success: true,
-        data: response.data,
-        parameters
-      };
-    } else {
-      throw new Error(`API请求失败: ${response.statusCode}`);
-    }
+    return {
+      success: true,
+      data: response.data,
+      parameters
+    };
   } catch (error) {
     console.error('Coze API 请求失败:', error);
-    throw error;
+    
+    // 处理axios错误
+    if (error.response) {
+      // 服务器返回了错误状态码
+      throw new Error(`API请求失败: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`);
+    } else if (error.request) {
+      // 请求已发出但没有收到响应
+      throw new Error('网络请求失败，请检查网络连接');
+    } else {
+      // 其他错误
+      throw new Error(`请求配置错误: ${error.message}`);
+    }
   }
 }
 
