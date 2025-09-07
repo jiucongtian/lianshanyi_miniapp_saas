@@ -79,7 +79,7 @@
   },
   "simulatorPluginLibVersion": {},
   "cloudfunctionRoot": "cloudfunctions/",
-  "cloudfunctionTemplateRoot": "cloudfunctionTemplate",
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
   "cloudbaseRoot": "cloudbase/",
   "enableCloudbase": true
 }
