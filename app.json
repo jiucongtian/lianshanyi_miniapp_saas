@@ -17,5 +17,6 @@
   "resolveAlias": {
     "~/*": "/*"
   },
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "cloud": true
 }

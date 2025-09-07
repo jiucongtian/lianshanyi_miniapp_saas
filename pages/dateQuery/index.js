@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import Message from 'tdesign-miniprogram/message/index';
-const { calculateBazi } = require('../../api/coze');
+// 使用云开发API替代直接调用Coze API
+const { calculateBazi } = require('../../api/cloud');
 
 Page({
   data: {

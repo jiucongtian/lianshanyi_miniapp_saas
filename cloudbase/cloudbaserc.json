@@ -1,0 +1,14 @@
+{
+  "version": "2.0",
+  "envId": "cloud1-0g6p5vvq5b58b3b6",
+  "functionRoot": "../cloudfunctions",
+  "functions": [
+    {
+      "name": "calculateBazi",
+      "timeout": 10,
+      "envVariables": {},
+      "runtime": "Nodejs16.13",
+      "memorySize": 256
+    }
+  ]
+}
