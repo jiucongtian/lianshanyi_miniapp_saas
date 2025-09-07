@@ -1,15 +1,28 @@
-# Windows
-[Dd]esktop.ini
-Thumbs.db
-$RECYCLE.BIN/
-
-# macOS
+# 微信小程序
 .DS_Store
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-__MACOSX
-
-# Node.js
 node_modules/
+miniprogram_npm/
+
+# 云开发敏感配置
+cloudbase/cloudbaserc.json
+cloudfunctions/*/node_modules/
+
+# 环境配置文件（如果包含敏感信息）
+.env
+.env.local
+.env.production
+
+# 日志文件
+*.log
+npm-debug.log*
+
+# 临时文件
+*.tmp
+*.temp
+
+# IDE配置
+.vscode/
+.idea/
+
+# 系统文件
+Thumbs.db

@@ -27,10 +27,11 @@ function extractTimeParams(timestamp) {
  * @returns {Promise} 返回工作流执行结果
  */
 async function callCozeAPI(parameters) {
+  // 从环境变量中读取配置，提高安全性
   const COZE_CONFIG = {
-    token: 'sat_JBr8tgHf8a8IkpwoFMpNWiioLFdqdAWj9O8HVRZ7DFmYqQf2wKzf92vRqKjQQMdv',
-    baseURL: 'https://api.coze.cn',
-    workflowId: '7544388114807095337'
+    token: process.env.COZE_TOKEN || 'sat_JBr8tgHf8a8IkpwoFMpNWiioLFdqdAWj9O8HVRZ7DFmYqQf2wKzf92vRqKjQQMdv', // 兜底值
+    baseURL: process.env.COZE_BASE_URL || 'https://api.coze.cn',
+    workflowId: process.env.COZE_WORKFLOW_ID || '7544388114807095337'
   };
 
   try {

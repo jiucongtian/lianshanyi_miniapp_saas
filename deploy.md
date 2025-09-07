@@ -38,11 +38,25 @@ tcb functions:deploy calculateBazi --envId your-env-id
 ### 环境ID配置
 请将`app.js`中的环境ID `cloud1-0g6p5vvq5b58b3b6` 替换为您实际的云环境ID。
 
-### API密钥安全
-建议将Coze API的token配置到云开发的环境变量中，而不是硬编码在代码里：
+### API密钥安全配置 ⚠️ 重要！
 
-1. 在云开发控制台中设置环境变量
-2. 在云函数中通过`process.env.COZE_TOKEN`获取
+**必须**将Coze API的token配置到云开发的环境变量中，而不是硬编码在代码里：
+
+#### 配置步骤：
+1. **通过微信开发者工具配置**：
+   - 打开云开发控制台
+   - 进入"云函数" → 选择 `calculateBazi`
+   - 点击"版本管理" → "环境变量"
+   - 添加环境变量：
+     - `COZE_TOKEN`: `your_actual_coze_token`
+     - `COZE_BASE_URL`: `https://api.coze.cn`
+     - `COZE_WORKFLOW_ID`: `7544388114807095337`
+
+2. **或通过配置文件**：
+   - 修改 `cloudbase/cloudbaserc.json` 中的 `envVariables`
+   - 将实际的token替换占位符
+
+详细配置方法请参考：`环境变量配置指南.md`
 
 ## 4. 测试验证
 

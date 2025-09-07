@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "envId": "cloud1-9gmddzrkb0fa17c9",
+  "envId": "your-cloud-env-id-here",
   "functionRoot": "../cloudfunctions",
   "functions": [
     {
@@ -9,7 +9,7 @@
       "envVariables": {
         "COZE_TOKEN": "your_coze_api_token_here",
         "COZE_BASE_URL": "https://api.coze.cn",
-        "COZE_WORKFLOW_ID": "7544388114807095337"
+        "COZE_WORKFLOW_ID": "your_workflow_id_here"
       },
       "runtime": "Nodejs16.13",
       "memorySize": 256
