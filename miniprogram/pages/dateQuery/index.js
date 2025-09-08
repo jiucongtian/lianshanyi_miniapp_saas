@@ -2,6 +2,8 @@ import dayjs from 'dayjs';
 import Message from 'tdesign-miniprogram/message/index';
 // 使用云开发API替代直接调用Coze API
 const { calculateBazi } = require('../../api/cloud');
+// 引入配置
+const { config } = require('../../config/index');
 
 Page({
   data: {
@@ -349,10 +351,14 @@ Page({
     const dateStr = dayjs(this.data.dateTimeValue).format('YYYY-MM-DD HH:mm:ss');
     const timestamp = new Date(dateStr).getTime();
     
-    // 首先检查缓存中是否有该时间戳的八字数据
-    const cachedBaziResult = this.getBaziCache(timestamp);
+    // 检查是否为调试模式
+    const isDebugMode = config.debugMode;
+    console.log('当前调试模式状态:', isDebugMode);
     
-    if (cachedBaziResult) {
+    // 在非调试模式下检查缓存中是否有该时间戳的八字数据
+    const cachedBaziResult = !isDebugMode ? this.getBaziCache(timestamp) : null;
+    
+    if (cachedBaziResult && !isDebugMode) {
       console.log('找到缓存的八字数据，直接使用:', cachedBaziResult);
       
       // 使用缓存数据直接跳转
@@ -385,12 +391,16 @@ Page({
       return;
     }
 
-    // 没有缓存数据，需要调用API计算
-    console.log('未找到缓存数据，开始调用API计算，时间戳：', timestamp);
+    // 没有缓存数据或调试模式，需要调用API计算
+    if (isDebugMode) {
+      console.log('调试模式开启，跳过缓存直接调用API计算，时间戳：', timestamp);
+    } else {
+      console.log('未找到缓存数据，开始调用API计算，时间戳：', timestamp);
+    }
 
     // 显示加载状态
     wx.showLoading({
-      title: '抽取智慧卡牌...',
+      title: isDebugMode ? '调试模式：重新计算...' : '抽取智慧卡牌...',
       mask: true
     });
 
@@ -428,7 +438,7 @@ Page({
               context: this,
               offset: [120, 32],
               duration: 2000,
-              content: '计算完成',
+              content: isDebugMode ? '调试模式：重新计算完成' : '计算完成',
             });
           },
           fail: (error) => {
