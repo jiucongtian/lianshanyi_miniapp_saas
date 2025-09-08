@@ -32,12 +32,21 @@ function extractTimeParams(timestamp) {
  * @returns {Promise} 返回工作流执行结果
  */
 async function callCozeAPI(parameters) {
-  // 从环境变量中读取配置，提高安全性
+  // 从环境变量中读取配置
   const COZE_CONFIG = {
-    token: process.env.COZE_TOKEN || 'sat_JBr8tgHf8a8IkpwoFMpNWiioLFdqdAWj9O8HVRZ7DFmYqQf2wKzf92vRqKjQQMdv', // 兜底值
+    token: process.env.COZE_TOKEN,
     baseURL: process.env.COZE_BASE_URL || 'https://api.coze.cn',
-    workflowId: process.env.COZE_WORKFLOW_ID || '7544388114807095337'
+    workflowId: process.env.COZE_WORKFLOW_ID
   };
+
+  // 检查必需的环境变量
+  if (!COZE_CONFIG.token) {
+    throw new Error('缺少必需的环境变量 COZE_TOKEN，请在 cloudbase/cloudbaserc.json 中的 envVariables 中配置');
+  }
+  
+  if (!COZE_CONFIG.workflowId) {
+    throw new Error('缺少必需的环境变量 COZE_WORKFLOW_ID，请在 cloudbase/cloudbaserc.json 中的 envVariables 中配置');
+  }
 
   try {
     const response = await axios({
