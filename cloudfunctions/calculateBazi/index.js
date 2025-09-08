@@ -69,6 +69,24 @@ async function callCozeAPI(parameters) {
     console.log('响应数据完整结构:', JSON.stringify(response.data, null, 2));
     console.log('响应数据类型:', typeof response.data);
     
+    // 检查Coze API是否返回了错误
+    if (response.data.code !== 0) {
+      console.error('Coze API 返回错误:', response.data);
+      
+      // 根据错误码提供更友好的错误信息
+      let friendlyMessage = response.data.msg || '未知错误';
+      
+      if (response.data.code === 4028) {
+        friendlyMessage = '免费配额已用完，请升级到付费计划或稍后再试';
+      } else if (response.data.code === 401) {
+        friendlyMessage = 'API认证失败，请检查token配置';
+      } else if (response.data.code === 429) {
+        friendlyMessage = '请求过于频繁，请稍后再试';
+      }
+      
+      throw new Error(friendlyMessage);
+    }
+    
     return {
       success: true,
       data: response.data,
