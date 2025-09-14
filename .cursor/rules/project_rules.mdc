@@ -1,0 +1,68 @@
+---
+alwaysApply: true
+---
+## mock数据的定义
+每个模块单独一个文件，存储在mock目录中
+
+## 限制
+没有我的允许，不要执行npm run dev指令
+不要创建用于测试的页面
+
+## 关于接口的说明
+
+## 命令规范
+所有API命名都是 模块名称Api.js
+
+## 关于接口文档
+当生成或修改API接口或者mock接口时，需要同步生成对应的API文档，API文档按照模块分不同的文件，每个文件命令按照API的命名规范，模块+API。API放到docs目录中，文档格式如下：
+
+- 接口名称
+描述接口主要是做什么用的，用简单的话描述，比如获取用户基本信息，更新用户基本信息
+-接口地址
+对应API文件的真实地址，比如/user/info
+-请求方式
+    - get
+    - post
+只允许使用这两种方式
+- 功能说明
+对接口功能的描述，可以使用mermaid，也可以使用其他方式
+- 请求参数
+以json格式先示例，然后按以下格式说明参数的用途
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| 任意参数 | any | 否 | 测试参数，函数会将接收到的所有参数打印到日志中 |
+
+-返回数据
+###成功响应
+
+```json
+{
+  "success": true,
+  "message": "测试云函数执行成功！",
+  "timestamp": 1694678400000,
+  "data": {
+    "openid": "用户的openid",
+    "appid": "小程序的appid", 
+    "unionid": "用户的unionid",
+    "receivedParams": {
+      "传入的参数": "参数值"
+    },
+    "executionTime": "2023-09-14T08:00:00.000Z"
+  }
+}
+```
+
+### 返回字段说明
+
+| 字段名                 | 类型       | 说明 |
+|-----------------------|-----------|------|
+| success               | boolean   | 执行是否成功 |
+| message               | string    | 执行结果消息 |
+| timestamp             | number    | 执行时间戳 |
+| data                  | object    | 详细数据 |
+| data.openid           | string    | 用户的微信openid |
+| data.appid            | string    | 小程序的appid |
+| data.unionid          | string    | 用户的微信unionid（可能为空） |
+| data.receivedParams   | object    | 函数接收到的参数 |
+| data.executionTime    | string    | 执行时间（ISO格式）           |

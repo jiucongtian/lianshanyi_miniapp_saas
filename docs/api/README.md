@@ -9,6 +9,7 @@
 | 接口名称 | 文档链接 | 状态 | 描述 |
 |----------|----------|------|------|
 | Coze 生辰八字计算 | [coze-bazi-api.md](./coze-bazi-api.md) | ✅ 已完成 | 调用Coze平台计算生辰八字信息 |
+| 测试云函数 | [testFunction-api.md](./testFunction-api.md) | ✅ 已完成 | 用于测试的简单云函数，打印日志并返回基本信息 |
 
 ### 待添加接口
 
@@ -76,6 +77,7 @@ const result = await api.call(params);
 docs/api/
 ├── README.md              # 本文件，接口文档索引
 ├── coze-bazi-api.md      # Coze生辰八字计算接口
+├── testFunction-api.md   # 测试云函数接口
 └── [future-api].md       # 未来的其他接口文档
 ```
 
@@ -92,4 +94,4 @@ docs/api/
 
 ---
 
-*最后更新时间：2024年1月*
+*最后更新时间：2025年9月*
