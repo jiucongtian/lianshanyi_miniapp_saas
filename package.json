@@ -17,10 +17,6 @@
   "author": "leejim",
   "license": "MIT",
   "description": "a start-kit for wechat miniprogram powerby TDesign miniprogram",
-  "dependencies": {
-    "js-calendar-converter": "^0.0.7",
-    "tdesign-miniprogram": "^1.8.6"
-  },
   "devDependencies": {
     "eslint": "^8.49.0",
     "eslint-config-airbnb-base": "^15.0.0",
