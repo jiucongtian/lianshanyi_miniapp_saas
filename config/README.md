@@ -142,6 +142,19 @@ npm run build:new-account
 
 3. 检查更新结果，然后在微信开发者工具中重新打开项目
 
+
+
+
+
+
+#### 推送cloudbaserc中的环境变量到微信云开发控制台中的对应云函数
+
+进入cloudbase目录，然后执行下边的命令
+```bash
+ tcb functions:deploy calculateBazi --envId cloud1-9gmddzrkb0fa17c9
+```
+
+
 ## 🎉 优势
 
 - ✅ **集中管理**：所有配置集中在一个地方，避免遗漏
