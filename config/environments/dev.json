@@ -5,7 +5,7 @@
   "projectName": "lianshan",
   "packageName": "lianshanyi-miniprogram",
   "cloudConfig": {
-    "cozeToken": "your_coze_api_token_here",
+    "cozeToken": "sat_JBr8tgHf8a8IkpwoFMpNWiioLFdqdAWj9O8HVRZ7DFmYqQf2wKzf92vRqKjQQMdv",
     "cozeBaseUrl": "https://api.coze.cn",
     "cozeWorkflowId": "7544388114807095337"
   },
