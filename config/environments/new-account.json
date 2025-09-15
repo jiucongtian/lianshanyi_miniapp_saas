@@ -1,0 +1,16 @@
+{
+  "name": "新小程序账号",
+  "appId": "YOUR_NEW_APPID_HERE",
+  "cloudEnvId": "YOUR_NEW_CLOUD_ENV_ID_HERE", 
+  "projectName": "new-project-name",
+  "packageName": "new-miniprogram-name",
+  "cloudConfig": {
+    "cozeToken": "your_new_coze_api_token_here",
+    "cozeBaseUrl": "https://api.coze.cn",
+    "cozeWorkflowId": "your_new_workflow_id_here"
+  },
+  "debug": {
+    "useMock": false,
+    "debugMode": false
+  }
+}

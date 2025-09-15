@@ -1,0 +1,16 @@
+{
+  "name": "开发环境",
+  "appId": "wx7f533056fa52caf0",
+  "cloudEnvId": "cloud1-9gmddzrkb0fa17c9",
+  "projectName": "lianshan",
+  "packageName": "lianshanyi-miniprogram",
+  "cloudConfig": {
+    "cozeToken": "your_coze_api_token_here",
+    "cozeBaseUrl": "https://api.coze.cn",
+    "cozeWorkflowId": "7544388114807095337"
+  },
+  "debug": {
+    "useMock": true,
+    "debugMode": true
+  }
+}

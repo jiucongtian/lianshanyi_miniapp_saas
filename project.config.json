@@ -59,7 +59,7 @@
   "compileType": "miniprogram",
   "libVersion": "3.9.1",
   "appid": "wx7f533056fa52caf0",
-  "projectname": "miniprogram-starter",
+  "projectname": "lianshan",
   "miniprogramRoot": "miniprogram/",
   "condition": {
     "miniprogram": {
