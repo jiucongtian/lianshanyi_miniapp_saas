@@ -1,7 +1,7 @@
 {
-  "name": "新小程序账号",
-  "appId": "wx7f533056fa52caf0",
-  "cloudEnvId": "cloud1-9gmddzrkb0fa17c9",
+  "name": "身心游卡牌开发环境",
+  "appId": "wx0046975c758be473",
+  "cloudEnvId": "cloudbase-8g06skyf81a65a87",
   "projectName": "lianshan",
   "packageName": "lianshanyi-miniprogram",
   "cloudConfig": {
