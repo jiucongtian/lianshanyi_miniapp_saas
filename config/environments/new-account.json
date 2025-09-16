@@ -1,16 +1,16 @@
 {
   "name": "新小程序账号",
-  "appId": "YOUR_NEW_APPID_HERE",
-  "cloudEnvId": "YOUR_NEW_CLOUD_ENV_ID_HERE", 
-  "projectName": "new-project-name",
-  "packageName": "new-miniprogram-name",
+  "appId": "wx7f533056fa52caf0",
+  "cloudEnvId": "cloud1-9gmddzrkb0fa17c9",
+  "projectName": "lianshan",
+  "packageName": "lianshanyi-miniprogram",
   "cloudConfig": {
-    "cozeToken": "your_new_coze_api_token_here",
+    "cozeToken": "sat_JBr8tgHf8a8IkpwoFMpNWiioLFdqdAWj9O8HVRZ7DFmYqQf2wKzf92vRqKjQQMdv",
     "cozeBaseUrl": "https://api.coze.cn",
-    "cozeWorkflowId": "your_new_workflow_id_here"
+    "cozeWorkflowId": "7544388114807095337"
   },
   "debug": {
-    "useMock": false,
-    "debugMode": false
+    "useMock": true,
+    "debugMode": true
   }
 }
