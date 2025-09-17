@@ -40,12 +40,6 @@ npm run build:dev
 npm run build:new-account
 ```
 
-### 4. 直接使用构建脚本
-
-```bash
-node config/build.js [环境名称]
-```
-
 ## ⚙️ 配置文件说明
 
 每个环境配置文件包含以下字段：
@@ -153,7 +147,8 @@ npm run build:new-account
 ```bash
  tcb functions:deploy calculateBazi --envId cloud1-9gmddzrkb0fa17c9
 ```
-
+- 如果提示“command not found: tcb”说明没有安装腾讯云开发CLI工具
+- 使用“npm install -g @cloudbase/cli”安装CLI
 
 ## 🎉 优势
 
