@@ -1,6 +1,6 @@
 import Message from 'tdesign-miniprogram/message/index';
 // 使用云开发API替代直接调用Coze API
-const { calculateBazi } = require('../../api/cloud');
+const { calculateBazi, createUser, searchProfile, createProfile } = require('../../api/cloud');
 // 引入配置
 const { config } = require('../../config/index');
 
@@ -66,49 +66,41 @@ Page({
     return this.calculatePickerValue(year, month, day, timeIndex);
   },
 
-  // 八字缓存管理
-  getBaziCache(timestamp) {
+  // 云端档案管理
+  async searchBaziProfile(birthDate) {
     try {
-      const cacheData = wx.getStorageSync('baziCache') || [];
-      const found = cacheData.find(item => item.timestamp === timestamp);
-      return found ? found.baziResult : null;
+      const result = await searchProfile({ birthDate });
+      return result.success ? result.data.profiles : [];
     } catch (error) {
-      console.error('读取八字缓存失败:', error);
+      console.error('搜索八字档案失败:', error);
+      return [];
+    }
+  },
+
+  async saveBaziProfile(profileData) {
+    try {
+      const result = await createProfile(profileData);
+      if (result.success) {
+        console.log('八字档案已保存到云端:', result.data.profileId);
+        return result.data;
+      } else {
+        console.error('保存八字档案失败:', result.error);
+        return null;
+      }
+    } catch (error) {
+      console.error('保存八字档案失败:', error);
       return null;
     }
   },
 
-  saveBaziCache(timestamp, baziResult) {
+  // 确保用户已注册
+  async ensureUserRegistered() {
     try {
-      let cacheData = wx.getStorageSync('baziCache') || [];
-      
-      // 检查是否已存在相同时间戳的记录
-      const existingIndex = cacheData.findIndex(item => item.timestamp === timestamp);
-      
-      const newCacheItem = {
-        timestamp,
-        baziResult,
-        cachedAt: Date.now()
-      };
-      
-      if (existingIndex >= 0) {
-        // 更新现有记录
-        cacheData[existingIndex] = newCacheItem;
-      } else {
-        // 添加新记录
-        cacheData.push(newCacheItem);
-        
-        // 如果超过20条记录，删除最旧的记录
-        if (cacheData.length > 20) {
-          cacheData.sort((a, b) => a.cachedAt - b.cachedAt);
-          cacheData = cacheData.slice(-20); // 保留最新的20条
-        }
-      }
-      
-      wx.setStorageSync('baziCache', cacheData);
-      console.log('八字缓存已保存，当前缓存条数:', cacheData.length);
+      const result = await createUser();
+      return result.success;
     } catch (error) {
-      console.error('保存八字缓存失败:', error);
+      console.error('用户注册失败:', error);
+      return false;
     }
   },
 
@@ -346,41 +338,66 @@ Page({
       return;
     }
 
+    // 确保用户已注册
+    const userRegistered = await this.ensureUserRegistered();
+    if (!userRegistered) {
+      Message.error({
+        context: this,
+        offset: [120, 32],
+        duration: 3000,
+        content: '用户注册失败，请重试',
+      });
+      return;
+    }
+
     // 确保日期格式正确
     const date = new Date(this.data.dateTimeValue);
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    const timestamp = new Date(dateStr).getTime();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hour = date.getHours();
+    const minute = date.getMinutes();
+    
+    const birthDate = { year, month, day, hour, minute };
+    const timestamp = this.data.dateTimeValue;
     
     // 检查是否为调试模式
     const isDebugMode = config.debugMode;
     console.log('当前调试模式状态:', isDebugMode);
     
-    // 在非调试模式下检查缓存中是否有该时间戳的八字数据
-    const cachedBaziResult = !isDebugMode ? this.getBaziCache(timestamp) : null;
+    // 在非调试模式下检查云端是否有该时间的八字档案
+    let existingProfiles = [];
+    if (!isDebugMode) {
+      existingProfiles = await this.searchBaziProfile(birthDate);
+      console.log('云端搜索结果:', existingProfiles);
+    }
     
-    if (cachedBaziResult && !isDebugMode) {
-      console.log('找到缓存的八字数据，直接使用:', cachedBaziResult);
+    if (existingProfiles.length > 0 && !isDebugMode) {
+      console.log('找到云端八字档案，直接使用:', existingProfiles[0]);
       
-      // 使用缓存数据直接跳转
+      // 使用云端档案数据直接跳转
+      const profile = existingProfiles[0];
+      const baziResult = {
+        timestamp: timestamp,
+        cozeData: this.convertProfileToBaziResult(profile),
+        parameters: { year, month, day, hour, min: minute },
+        calculatedAt: new Date(profile.createTime).getTime(),
+        profileId: profile._id
+      };
+      
       const app = getApp();
       app.globalData = app.globalData || {};
-      app.globalData.baziResult = cachedBaziResult;
+      app.globalData.baziResult = baziResult;
       
       wx.navigateTo({
-        url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=true`,
+        url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=true&profileId=${profile._id}`,
         success: () => {
-          console.log('跳转到八字页面成功，使用缓存数据');
+          console.log('跳转到八字页面成功，使用云端档案数据');
           Message.success({
             context: this,
             offset: [120, 32],
             duration: 1500,
-            content: '已加载缓存数据',
+            content: '已加载云端档案',
           });
         },
         fail: (error) => {
@@ -397,11 +414,11 @@ Page({
       return;
     }
 
-    // 没有缓存数据或调试模式，需要调用API计算
+    // 没有云端档案或调试模式，需要调用API计算
     if (isDebugMode) {
-      console.log('调试模式开启，跳过缓存直接调用API计算，时间戳：', timestamp);
+      console.log('调试模式开启，跳过云端档案直接调用API计算');
     } else {
-      console.log('未找到缓存数据，开始调用API计算，时间戳：', timestamp);
+      console.log('未找到云端档案，开始调用API计算');
     }
 
     // 显示加载状态
@@ -425,8 +442,14 @@ Page({
           calculatedAt: new Date().getTime()
         };
         
-        // 保存到缓存
-        this.saveBaziCache(timestamp, baziResult);
+        // 保存到云端档案（非调试模式）
+        if (!isDebugMode) {
+          const profileData = this.convertBaziResultToProfile(baziResult, birthDate);
+          const savedProfile = await this.saveBaziProfile(profileData);
+          if (savedProfile) {
+            baziResult.profileId = savedProfile.profileId;
+          }
+        }
         
         // API调用成功，跳转到八字页面并传递结果
         wx.hideLoading();
@@ -436,8 +459,9 @@ Page({
         app.globalData = app.globalData || {};
         app.globalData.baziResult = baziResult;
         
+        const urlParams = `datetime=${timestamp}&hasCozeData=true${baziResult.profileId ? '&profileId=' + baziResult.profileId : ''}`;
         wx.navigateTo({
-          url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=true`,
+          url: `/pages/bazi/index?${urlParams}`,
           success: () => {
             console.log('跳转到八字页面成功，已传递Coze数据');
             Message.success({
@@ -483,6 +507,91 @@ Page({
         content: '计算过程中出现错误，请重试',
       });
     }
+  },
+
+  // 数据转换辅助函数
+  convertProfileToBaziResult(profile) {
+    // 将云端档案数据转换为八字结果格式
+    return {
+      data: JSON.stringify({
+        output: {
+          year: profile.baziData.year.gan + profile.baziData.year.zhi,
+          month: profile.baziData.month.gan + profile.baziData.month.zhi,
+          day: profile.baziData.day.gan + profile.baziData.day.zhi,
+          hour: profile.baziData.hour.gan + profile.baziData.hour.zhi
+        }
+      })
+    };
+  },
+
+  convertBaziResultToProfile(baziResult, birthDate) {
+    // 解析Coze API返回的八字数据
+    let parsedData;
+    try {
+      parsedData = JSON.parse(baziResult.cozeData.data);
+    } catch (error) {
+      console.error('解析八字数据失败:', error);
+      return null;
+    }
+
+    if (!parsedData.output) {
+      console.error('八字数据格式不正确');
+      return null;
+    }
+
+    const output = parsedData.output;
+    
+    // 生成档案名称
+    const date = new Date(baziResult.timestamp);
+    const profileName = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日档案`;
+    
+    return {
+      profileName,
+      birthDate: {
+        year: birthDate.year,
+        month: birthDate.month,
+        day: birthDate.day,
+        hour: birthDate.hour,
+        minute: birthDate.minute || 0,
+        isLunar: false
+      },
+      baziData: {
+        year: {
+          gan: output.year[0],
+          zhi: output.year[1],
+          ganzhiIndex: this.getGanZhiIndex(output.year[0], output.year[1])
+        },
+        month: {
+          gan: output.month[0],
+          zhi: output.month[1],
+          ganzhiIndex: this.getGanZhiIndex(output.month[0], output.month[1])
+        },
+        day: {
+          gan: output.day[0],
+          zhi: output.day[1],
+          ganzhiIndex: this.getGanZhiIndex(output.day[0], output.day[1])
+        },
+        hour: {
+          gan: output.hour[0],
+          zhi: output.hour[1],
+          ganzhiIndex: this.getGanZhiIndex(output.hour[0], output.hour[1])
+        }
+      },
+      gender: 0,
+      description: '自动生成的八字档案'
+    };
+  },
+
+  // 计算干支索引（简化版，实际应该使用完整的干支对照表）
+  getGanZhiIndex(gan, zhi) {
+    const ganMap = { '甲': 1, '乙': 2, '丙': 3, '丁': 4, '戊': 5, '己': 6, '庚': 7, '辛': 8, '壬': 9, '癸': 10 };
+    const zhiMap = { '子': 1, '丑': 2, '寅': 3, '卯': 4, '辰': 5, '巳': 6, '午': 7, '未': 8, '申': 9, '酉': 10, '戌': 11, '亥': 12 };
+    
+    const ganIndex = ganMap[gan] || 1;
+    const zhiIndex = zhiMap[zhi] || 1;
+    
+    // 简化的干支组合索引计算，实际应该使用六十甲子的准确对照
+    return ((ganIndex - 1) * 6 + zhiIndex) % 60 || 60;
   },
 
   // 分享功能 - 激活右上角分享按钮

@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "envId": "cloudbase-8g06skyf81a65a87",
+  "envId": "cloud1-9gmddzrkb0fa17c9",
   "functionRoot": "../cloudfunctions",
   "functions": [
     {
@@ -11,6 +11,18 @@
         "COZE_BASE_URL": "https://api.coze.cn",
         "COZE_WORKFLOW_ID": "7544388114807095337"
       },
+      "runtime": "Nodejs16.13",
+      "memorySize": 256
+    },
+    {
+      "name": "userManagement",
+      "timeout": 10,
+      "runtime": "Nodejs16.13",
+      "memorySize": 256
+    },
+    {
+      "name": "profileManagement",
+      "timeout": 10,
       "runtime": "Nodejs16.13",
       "memorySize": 256
     }

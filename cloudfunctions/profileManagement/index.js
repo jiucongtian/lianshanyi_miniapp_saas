@@ -1,0 +1,343 @@
+// 云函数入口文件
+const cloud = require('wx-server-sdk')
+
+cloud.init({
+  env: cloud.DYNAMIC_CURRENT_ENV // 使用当前云环境
+})
+
+const db = cloud.database()
+
+// 云函数入口函数
+exports.main = async (event, context) => {
+  const wxContext = cloud.getWXContext()
+  const { action, data } = event
+  
+  try {
+    switch (action) {
+      case 'createProfile':
+        return await createProfile(wxContext, data)
+      case 'getProfiles':
+        return await getProfiles(wxContext, data)
+      case 'getProfile':
+        return await getProfile(wxContext, data)
+      case 'updateProfile':
+        return await updateProfile(wxContext, data)
+      case 'deleteProfile':
+        return await deleteProfile(wxContext, data)
+      case 'searchProfile':
+        return await searchProfile(wxContext, data)
+      default:
+        return {
+          success: false,
+          error: '未知操作类型'
+        }
+    }
+  } catch (error) {
+    console.error('档案管理云函数执行失败:', error)
+    return {
+      success: false,
+      error: error.message || '操作失败'
+    }
+  }
+}
+
+/**
+ * 创建八字档案
+ */
+async function createProfile(wxContext, profileData) {
+  const { OPENID } = wxContext
+  const now = new Date()
+  
+  try {
+    // 验证必填字段
+    if (!profileData.profileName || !profileData.birthDate || !profileData.baziData) {
+      throw new Error('缺少必填字段：档案名称、生日信息或八字数据')
+    }
+    
+    // 获取用户ID
+    const userResult = await db.collection('users').where({
+      openid: OPENID,
+      isActive: true
+    }).get()
+    
+    if (userResult.data.length === 0) {
+      throw new Error('用户不存在，请先注册')
+    }
+    
+    const userId = userResult.data[0]._id
+    
+    // 创建档案文档
+    const profileDoc = {
+      userId,
+      openid: OPENID,
+      profileName: profileData.profileName,
+      birthDate: {
+        year: profileData.birthDate.year,
+        month: profileData.birthDate.month,
+        day: profileData.birthDate.day,
+        hour: profileData.birthDate.hour,
+        minute: profileData.birthDate.minute || 0,
+        isLunar: profileData.birthDate.isLunar || false
+      },
+      baziData: {
+        year: {
+          gan: profileData.baziData.year.gan,
+          zhi: profileData.baziData.year.zhi,
+          ganzhiIndex: profileData.baziData.year.ganzhiIndex
+        },
+        month: {
+          gan: profileData.baziData.month.gan,
+          zhi: profileData.baziData.month.zhi,
+          ganzhiIndex: profileData.baziData.month.ganzhiIndex
+        },
+        day: {
+          gan: profileData.baziData.day.gan,
+          zhi: profileData.baziData.day.zhi,
+          ganzhiIndex: profileData.baziData.day.ganzhiIndex
+        },
+        hour: {
+          gan: profileData.baziData.hour.gan,
+          zhi: profileData.baziData.hour.zhi,
+          ganzhiIndex: profileData.baziData.hour.ganzhiIndex
+        },
+        ...(profileData.baziData.lunarDate && { lunarDate: profileData.baziData.lunarDate })
+      },
+      gender: profileData.gender || 0,
+      description: profileData.description || '',
+      createTime: now,
+      updateTime: now,
+      isActive: true
+    }
+    
+    const result = await db.collection('profiles').add({
+      data: profileDoc
+    })
+    
+    return {
+      success: true,
+      message: '档案创建成功',
+      data: {
+        profileId: result._id,
+        profile: profileDoc
+      }
+    }
+  } catch (error) {
+    console.error('创建档案失败:', error)
+    throw new Error(error.message || '档案创建失败')
+  }
+}
+
+/**
+ * 获取用户的所有档案
+ */
+async function getProfiles(wxContext, queryData = {}) {
+  const { OPENID } = wxContext
+  const { page = 1, limit = 20 } = queryData
+  
+  try {
+    const skip = (page - 1) * limit
+    
+    // 查询用户的档案列表
+    const result = await db.collection('profiles')
+      .where({
+        openid: OPENID,
+        isActive: true
+      })
+      .orderBy('createTime', 'desc')
+      .skip(skip)
+      .limit(limit)
+      .get()
+    
+    // 获取总数
+    const countResult = await db.collection('profiles')
+      .where({
+        openid: OPENID,
+        isActive: true
+      })
+      .count()
+    
+    return {
+      success: true,
+      data: {
+        profiles: result.data,
+        total: countResult.total,
+        page,
+        limit,
+        hasMore: skip + result.data.length < countResult.total
+      }
+    }
+  } catch (error) {
+    console.error('获取档案列表失败:', error)
+    throw new Error('获取档案列表失败')
+  }
+}
+
+/**
+ * 获取单个档案详情
+ */
+async function getProfile(wxContext, queryData) {
+  const { OPENID } = wxContext
+  const { profileId } = queryData
+  
+  if (!profileId) {
+    throw new Error('缺少档案ID')
+  }
+  
+  try {
+    const result = await db.collection('profiles')
+      .where({
+        _id: profileId,
+        openid: OPENID,
+        isActive: true
+      })
+      .get()
+    
+    if (result.data.length === 0) {
+      return {
+        success: false,
+        error: '档案不存在'
+      }
+    }
+    
+    return {
+      success: true,
+      data: result.data[0]
+    }
+  } catch (error) {
+    console.error('获取档案详情失败:', error)
+    throw new Error('获取档案详情失败')
+  }
+}
+
+/**
+ * 更新档案
+ */
+async function updateProfile(wxContext, updateData) {
+  const { OPENID } = wxContext
+  const { profileId, ...profileData } = updateData
+  
+  if (!profileId) {
+    throw new Error('缺少档案ID')
+  }
+  
+  try {
+    const now = new Date()
+    const updateDoc = {
+      updateTime: now,
+      ...(profileData.profileName && { profileName: profileData.profileName }),
+      ...(profileData.birthDate && { birthDate: profileData.birthDate }),
+      ...(profileData.baziData && { baziData: profileData.baziData }),
+      ...(profileData.gender !== undefined && { gender: profileData.gender }),
+      ...(profileData.description !== undefined && { description: profileData.description })
+    }
+    
+    const result = await db.collection('profiles')
+      .where({
+        _id: profileId,
+        openid: OPENID,
+        isActive: true
+      })
+      .update({
+        data: updateDoc
+      })
+    
+    if (result.stats.updated === 0) {
+      return {
+        success: false,
+        error: '档案不存在或更新失败'
+      }
+    }
+    
+    return {
+      success: true,
+      message: '档案更新成功'
+    }
+  } catch (error) {
+    console.error('更新档案失败:', error)
+    throw new Error('更新档案失败')
+  }
+}
+
+/**
+ * 删除档案（软删除）
+ */
+async function deleteProfile(wxContext, deleteData) {
+  const { OPENID } = wxContext
+  const { profileId } = deleteData
+  
+  if (!profileId) {
+    throw new Error('缺少档案ID')
+  }
+  
+  try {
+    const result = await db.collection('profiles')
+      .where({
+        _id: profileId,
+        openid: OPENID,
+        isActive: true
+      })
+      .update({
+        data: {
+          isActive: false,
+          updateTime: new Date()
+        }
+      })
+    
+    if (result.stats.updated === 0) {
+      return {
+        success: false,
+        error: '档案不存在或删除失败'
+      }
+    }
+    
+    return {
+      success: true,
+      message: '档案删除成功'
+    }
+  } catch (error) {
+    console.error('删除档案失败:', error)
+    throw new Error('删除档案失败')
+  }
+}
+
+/**
+ * 根据生日和八字搜索已有档案
+ */
+async function searchProfile(wxContext, searchData) {
+  const { OPENID } = wxContext
+  const { birthDate, baziData } = searchData
+  
+  try {
+    let whereCondition = {
+      openid: OPENID,
+      isActive: true
+    }
+    
+    // 根据生日搜索
+    if (birthDate) {
+      whereCondition = {
+        ...whereCondition,
+        'birthDate.year': birthDate.year,
+        'birthDate.month': birthDate.month,
+        'birthDate.day': birthDate.day,
+        'birthDate.hour': birthDate.hour
+      }
+    }
+    
+    const result = await db.collection('profiles')
+      .where(whereCondition)
+      .orderBy('createTime', 'desc')
+      .get()
+    
+    return {
+      success: true,
+      data: {
+        profiles: result.data,
+        count: result.data.length
+      }
+    }
+  } catch (error) {
+    console.error('搜索档案失败:', error)
+    throw new Error('搜索档案失败')
+  }
+}

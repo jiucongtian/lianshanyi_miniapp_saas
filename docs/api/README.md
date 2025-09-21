@@ -10,14 +10,16 @@
 |----------|----------|------|------|
 | Coze 生辰八字计算 | [coze-bazi-api.md](./coze-bazi-api.md) | ✅ 已完成 | 调用Coze平台计算生辰八字信息 |
 | 测试云函数 | [testFunction-api.md](./testFunction-api.md) | ✅ 已完成 | 用于测试的简单云函数，打印日志并返回基本信息 |
+| 用户管理 | [userManagement-api.md](./userManagement-api.md) | ✅ 已完成 | 用户注册、信息获取和更新功能 |
+| 档案管理 | [profileManagement-api.md](./profileManagement-api.md) | ✅ 已完成 | 八字档案的增删改查功能 |
 
 ### 待添加接口
 
 | 接口名称 | 计划状态 | 描述 |
 |----------|----------|------|
-| 用户登录接口 | 📋 计划中 | 用户登录验证 |
-| 个人信息接口 | 📋 计划中 | 获取和更新用户个人信息 |
-| 历史记录接口 | 📋 计划中 | 查询用户的八字计算历史 |
+| 档案分享接口 | 📋 计划中 | 生成档案分享链接 |
+| 数据统计接口 | 📋 计划中 | 用户使用统计和分析 |
+| 批量导入接口 | 📋 计划中 | 批量导入八字档案 |
 
 ## 📝 文档规范
 
@@ -75,10 +77,12 @@ const result = await api.call(params);
 
 ```
 docs/api/
-├── README.md              # 本文件，接口文档索引
-├── coze-bazi-api.md      # Coze生辰八字计算接口
-├── testFunction-api.md   # 测试云函数接口
-└── [future-api].md       # 未来的其他接口文档
+├── README.md                    # 本文件，接口文档索引
+├── coze-bazi-api.md            # Coze生辰八字计算接口
+├── testFunction-api.md         # 测试云函数接口
+├── userManagement-api.md       # 用户管理云函数接口
+├── profileManagement-api.md    # 档案管理云函数接口
+└── [future-api].md             # 未来的其他接口文档
 ```
 
 ## 🏷️ 状态标识
