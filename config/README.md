@@ -151,6 +151,7 @@ npm run build:new-account
  tcb login //登录进去，如果提示云环境不存在，很有可能登陆的是另外一个环境
  tcb logou //注销
  tcb env list //列出来云环境
+ tcb db createCollection users --envId cloudbase-8g06skyf81a65a87 //创建数据库
 ```
 
 - 如果提示“command not found: tcb”说明没有安装腾讯云开发CLI工具
