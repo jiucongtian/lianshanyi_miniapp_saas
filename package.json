@@ -9,6 +9,7 @@
     "lint:fix-eslint": "eslint --ext .js,.ts ./ --max-warnings 0 --ignore-path .gitignore --ignore-path .eslintignore --fix",
     "lint:fix-prettier": "prettier ./ --ignore-path .gitignore --ignore-path .eslintignore --ignore-path .prettierignore --write './**/*.{js,ts}' --ignore-unknown",
     "build:dev": "node config/build.js dev",
+    "build:product": "node config/build.js product",
     "build:new-account": "node config/build.js new-account",
     "build:list": "node config/build.js"
   },
