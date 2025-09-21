@@ -37,7 +37,7 @@ npm run build:dev
 ### 3. 切换到新小程序账号
 
 ```bash
-npm run build:new-account
+npm run build:product
 ```
 
 ## ⚙️ 配置文件说明
@@ -90,7 +90,7 @@ node config/build.js prod
 - `project.private.config.json` - 私有配置
 - `miniprogram/app.js` - 小程序主入口
 - `cloudbase/cloudbaserc.json` - 云开发配置
-- `miniprogram/config.js` - 小程序配置
+- `miniprogram/config/index.js` - 小程序配置
 - `miniprogram/config/index.js` - 配置文件
 - `miniprogram/package.json` - 包配置
 

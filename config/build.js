@@ -104,18 +104,6 @@ class ConfigBuilder {
    * 更新小程序配置
    */
   updateMiniprogramConfig(config) {
-    const configFilePath = path.join(this.rootPath, 'miniprogram/config.js');
-    let content = fs.readFileSync(configFilePath, 'utf8');
-    
-    // 替换配置
-    content = content.replace(
-      /isMock:\s*(true|false)/,
-      `isMock: ${config.debug.useMock}`
-    );
-    
-    fs.writeFileSync(configFilePath, content);
-    console.log('✅ 更新 miniprogram/config.js');
-    
     // 更新 config/index.js
     const indexConfigPath = path.join(this.rootPath, 'miniprogram/config/index.js');
     let indexContent = fs.readFileSync(indexConfigPath, 'utf8');
@@ -170,7 +158,6 @@ class ConfigBuilder {
       console.log('   - project.private.config.json');
       console.log('   - miniprogram/app.js');
       console.log('   - cloudbase/cloudbaserc.json');
-      console.log('   - miniprogram/config.js');
       console.log('   - miniprogram/config/index.js');
       console.log('   - miniprogram/package.json');
       
