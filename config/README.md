@@ -145,8 +145,14 @@ npm run build:new-account
 
 进入cloudbase目录，然后执行下边的命令
 ```bash
- tcb functions:deploy calculateBazi --envId cloud1-9gmddzrkb0fa17c9
+ tcb fn deploy calculateBazi --envId cloudbase-8g06skyf81a65a87
 ```
+```bash
+ tcb login //登录进去，如果提示云环境不存在，很有可能登陆的是另外一个环境
+ tcb logou //注销
+ tcb env list //列出来云环境
+```
+
 - 如果提示“command not found: tcb”说明没有安装腾讯云开发CLI工具
 - 使用“npm install -g @cloudbase/cli”安装CLI
 
