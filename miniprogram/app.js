@@ -1,9 +1,9 @@
 // app.js
-import config from './config';
+import config from './config/index';
 import Mock from './mock/index';
 import createBus from './utils/eventBus';
 
-if (config.isMock) {
+if (config.useMock) {
   Mock();
 }
 

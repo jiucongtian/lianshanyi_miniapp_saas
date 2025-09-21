@@ -5,4 +5,5 @@ export const config = {
   debugMode: true,
 };
 
-export default { config };
+// 同时提供默认导出以兼容现有代码
+export default config;
