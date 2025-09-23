@@ -42,15 +42,24 @@ async function createUser(wxContext, userData = {}) {
   const { OPENID, UNIONID } = wxContext
   const now = new Date()
   
+  console.log('云函数 createUser 开始执行')
+  console.log('OPENID:', OPENID)
+  console.log('UNIONID:', UNIONID)
+  console.log('userData:', userData)
+  
   try {
     // 检查用户是否已存在
+    console.log('正在查询用户是否存在...')
     const existingUser = await db.collection('users').where({
       openid: OPENID
     }).get()
     
+    console.log('查询结果:', existingUser)
+    
     if (existingUser.data.length > 0) {
       // 用户已存在，更新最后登录时间
-      await db.collection('users').doc(existingUser.data[0]._id).update({
+      console.log('用户已存在，正在更新用户信息...')
+      const updateResult = await db.collection('users').doc(existingUser.data[0]._id).update({
         data: {
           lastLoginTime: now,
           updateTime: now,
@@ -65,6 +74,8 @@ async function createUser(wxContext, userData = {}) {
         }
       })
       
+      console.log('用户信息更新结果:', updateResult)
+      
       return {
         success: true,
         message: '用户信息已更新',
@@ -75,6 +86,7 @@ async function createUser(wxContext, userData = {}) {
       }
     } else {
       // 创建新用户
+      console.log('用户不存在，正在创建新用户...')
       const userDoc = {
         openid: OPENID,
         ...(UNIONID && { unionid: UNIONID }),
@@ -91,9 +103,12 @@ async function createUser(wxContext, userData = {}) {
         isActive: true
       }
       
+      console.log('准备插入的用户文档:', userDoc)
       const result = await db.collection('users').add({
         data: userDoc
       })
+      
+      console.log('用户创建结果:', result)
       
       return {
         success: true,

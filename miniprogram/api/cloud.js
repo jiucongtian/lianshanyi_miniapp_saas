@@ -67,6 +67,8 @@ function extractTimeParameters(timestamp) {
  */
 async function createUser(userData = {}) {
   try {
+    console.log('API: 开始调用userManagement云函数，参数:', userData);
+    
     const result = await wx.cloud.callFunction({
       name: 'userManagement',
       data: {
@@ -75,9 +77,10 @@ async function createUser(userData = {}) {
       }
     });
 
+    console.log('API: 云函数调用完成，结果:', result);
     return result.result;
   } catch (error) {
-    console.error('创建用户失败:', error);
+    console.error('API: 创建用户失败:', error);
     return {
       success: false,
       error: error.message || '用户操作失败'

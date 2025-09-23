@@ -105,6 +105,8 @@ Page({
   },
 
   onLoad() {
+    console.log('时间查询页面加载');
+    
     // 初始化年份范围（1949-2050）
     const startYear = 1949;
     const endYear = 2050;
@@ -593,6 +595,7 @@ Page({
     // 简化的干支组合索引计算，实际应该使用六十甲子的准确对照
     return ((ganIndex - 1) * 6 + zhiIndex) % 60 || 60;
   },
+
 
   // 分享功能 - 激活右上角分享按钮
   onShareAppMessage: function() {
