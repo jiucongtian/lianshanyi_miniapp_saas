@@ -23,6 +23,7 @@
 | createTime | date | 是 | - | 用户首次使用时间 |
 | updateTime | date | 是 | - | 用户信息最后更新时间 |
 | lastLoginTime | date | 否 | - | 用户最后登录时间 |
+| userLevel | string | 否 | 索引 | 用户级别(normal:普通用户,primary:初阶用户,internal:内部用户)，默认normal |
 | isActive | boolean | 否 | - | 用户是否活跃状态，默认true |
 
 ## 数据示例
@@ -42,6 +43,7 @@
   "createTime": "2023-09-14T08:00:00.000Z",
   "updateTime": "2023-09-14T08:00:00.000Z",
   "lastLoginTime": "2023-09-14T08:00:00.000Z",
+  "userLevel": "normal",
   "isActive": true
 }
 ```
@@ -51,10 +53,12 @@
 ### 主要索引
 - `openid`: 唯一索引，用于快速查找用户
 - `unionid`: 普通索引，用于跨应用用户识别
+- `userLevel`: 普通索引，用于按用户级别查询和统计
 
 ### 查询优化
 - 通过openid查询用户是最常用的查询方式，设置为唯一索引
 - unionid用于跨应用场景，设置为普通索引
+- userLevel用于用户级别管理和权限控制，设置为普通索引
 - createTime可用于用户增长分析
 
 ## 与其他数据表的关系
@@ -70,10 +74,15 @@
 2. **数据完整性**: openid为必填字段，其他字段可选
 3. **时间戳管理**: createTime在创建时设置，updateTime在每次更新时自动更新
 4. **软删除**: 使用isActive字段进行软删除，不直接删除用户数据
+5. **用户级别管理**: 
+   - 新用户默认级别为"normal"（普通用户）
+   - 级别可选值：normal（普通用户）、primary（初阶用户）、internal（内部用户）
+   - 用户级别变更需要管理员权限或特定业务逻辑触发
 
 ## 扩展性考虑
 
-1. **用户等级系统**: 可添加level、vipExpireTime等字段
+1. **用户权限系统**: 基于userLevel可以扩展更细粒度的权限控制
 2. **用户偏好设置**: 可添加preferences对象字段存储用户个性化设置
 3. **统计数据**: 可添加profileCount、lastActiveTime等统计字段
 4. **第三方集成**: unionid字段为后续跨平台集成预留
+5. **级别升级机制**: 可添加levelUpgradeTime、upgradeReason等字段记录级别变更历史

@@ -20,6 +20,12 @@ exports.main = async (event, context) => {
         return await getUserInfo(wxContext)
       case 'updateUserInfo':
         return await updateUserInfo(wxContext, data)
+      case 'updateUserLevel':
+        return await updateUserLevel(wxContext, data)
+      case 'getUsersByLevel':
+        return await getUsersByLevel(wxContext, data)
+      case 'getUserLevelStats':
+        return await getUserLevelStats(wxContext)
       default:
         return {
           success: false,
@@ -100,6 +106,7 @@ async function createUser(wxContext, userData = {}) {
         createTime: now,
         updateTime: now,
         lastLoginTime: now,
+        userLevel: 'normal', // 新用户默认为普通用户
         isActive: true
       }
       
@@ -194,5 +201,141 @@ async function updateUserInfo(wxContext, userData) {
   } catch (error) {
     console.error('更新用户信息失败:', error)
     throw new Error('更新用户信息失败')
+  }
+}
+
+/**
+ * 更新用户级别
+ * 注意：此功能需要管理员权限，实际使用时应添加权限验证
+ */
+async function updateUserLevel(wxContext, data) {
+  const { targetOpenid, newLevel, operatorOpenid } = data
+  const now = new Date()
+  
+  // 验证级别有效性
+  const validLevels = ['normal', 'primary', 'internal']
+  if (!validLevels.includes(newLevel)) {
+    return {
+      success: false,
+      error: '无效的用户级别，支持的级别：normal, primary, internal'
+    }
+  }
+  
+  try {
+    // TODO: 这里应该添加操作员权限验证
+    // 例如：验证operatorOpenid是否有管理员权限
+    
+    const result = await db.collection('users').where({
+      openid: targetOpenid,
+      isActive: true
+    }).update({
+      data: {
+        userLevel: newLevel,
+        updateTime: now
+      }
+    })
+    
+    if (result.stats.updated === 0) {
+      return {
+        success: false,
+        error: '目标用户不存在或更新失败'
+      }
+    }
+    
+    return {
+      success: true,
+      message: `用户级别已更新为 ${newLevel}`,
+      data: {
+        targetOpenid,
+        newLevel,
+        updateTime: now
+      }
+    }
+  } catch (error) {
+    console.error('更新用户级别失败:', error)
+    throw new Error('更新用户级别失败')
+  }
+}
+
+/**
+ * 按级别查询用户列表
+ */
+async function getUsersByLevel(wxContext, data) {
+  const { level, limit = 20, skip = 0 } = data
+  
+  // 验证级别有效性
+  const validLevels = ['normal', 'primary', 'internal']
+  if (!validLevels.includes(level)) {
+    return {
+      success: false,
+      error: '无效的用户级别，支持的级别：normal, primary, internal'
+    }
+  }
+  
+  try {
+    const result = await db.collection('users')
+      .where({
+        userLevel: level,
+        isActive: true
+      })
+      .orderBy('createTime', 'desc')
+      .skip(skip)
+      .limit(limit)
+      .get()
+    
+    return {
+      success: true,
+      data: {
+        users: result.data,
+        count: result.data.length,
+        level
+      }
+    }
+  } catch (error) {
+    console.error('查询用户列表失败:', error)
+    throw new Error('查询用户列表失败')
+  }
+}
+
+/**
+ * 获取用户级别统计
+ */
+async function getUserLevelStats(wxContext) {
+  try {
+    // 获取各级别用户数量
+    const normalCount = await db.collection('users').where({
+      userLevel: 'normal',
+      isActive: true
+    }).count()
+    
+    const primaryCount = await db.collection('users').where({
+      userLevel: 'primary',
+      isActive: true
+    }).count()
+    
+    const internalCount = await db.collection('users').where({
+      userLevel: 'internal',
+      isActive: true
+    }).count()
+    
+    const totalCount = await db.collection('users').where({
+      isActive: true
+    }).count()
+    
+    return {
+      success: true,
+      data: {
+        stats: {
+          normal: normalCount.total,
+          primary: primaryCount.total,
+          internal: internalCount.total,
+          total: totalCount.total
+        },
+        timestamp: new Date()
+      }
+    }
+  } catch (error) {
+    console.error('获取用户级别统计失败:', error)
+    throw new Error('获取用户级别统计失败')
   }
 }

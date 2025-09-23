@@ -1,0 +1,53 @@
+[
+  {
+    "_id": "user_60a1b2c3d4e5f6789abcdef0",
+    "openid": "oABCD1234567890abcdef1234567890ab",
+    "unionid": "uABCD1234567890abcdef1234567890ab",
+    "nickName": "张三",
+    "avatarUrl": "https://thirdwx.qlogo.cn/mmopen/xxxxx",
+    "gender": 1,
+    "country": "中国",
+    "province": "北京",
+    "city": "北京",
+    "language": "zh_CN",
+    "createTime": "2023-09-14T08:00:00.000Z",
+    "updateTime": "2023-09-14T08:00:00.000Z",
+    "lastLoginTime": "2023-09-14T08:00:00.000Z",
+    "userLevel": "normal",
+    "isActive": true
+  },
+  {
+    "_id": "user_60a1b2c3d4e5f6789abcdef1",
+    "openid": "oEFGH1234567890abcdef1234567890cd",
+    "unionid": "uEFGH1234567890abcdef1234567890cd",
+    "nickName": "李四",
+    "avatarUrl": "https://thirdwx.qlogo.cn/mmopen/yyyyy",
+    "gender": 2,
+    "country": "中国",
+    "province": "上海",
+    "city": "上海",
+    "language": "zh_CN",
+    "createTime": "2023-09-15T08:00:00.000Z",
+    "updateTime": "2023-09-15T08:00:00.000Z",
+    "lastLoginTime": "2023-09-15T08:00:00.000Z",
+    "userLevel": "primary",
+    "isActive": true
+  },
+  {
+    "_id": "user_60a1b2c3d4e5f6789abcdef2",
+    "openid": "oIJKL1234567890abcdef1234567890ef",
+    "unionid": "uIJKL1234567890abcdef1234567890ef",
+    "nickName": "王五",
+    "avatarUrl": "https://thirdwx.qlogo.cn/mmopen/zzzzz",
+    "gender": 1,
+    "country": "中国",
+    "province": "广东",
+    "city": "深圳",
+    "language": "zh_CN",
+    "createTime": "2023-09-16T08:00:00.000Z",
+    "updateTime": "2023-09-16T08:00:00.000Z",
+    "lastLoginTime": "2023-09-16T08:00:00.000Z",
+    "userLevel": "internal",
+    "isActive": true
+  }
+]
