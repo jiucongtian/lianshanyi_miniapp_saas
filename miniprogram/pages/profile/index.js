@@ -206,20 +206,84 @@ Page({
   },
 
   /**
+   * 格式化生日时间（用于卡牌页面）
+   */
+  formatBirthTimeForCard(birthDate) {
+    const minute = birthDate.minute || 0;
+    const minuteStr = minute < 10 ? `0${minute}` : `${minute}`;
+    return `${birthDate.year}年${birthDate.month}月${birthDate.day}日 ${birthDate.hour}:${minuteStr}`;
+  },
+
+  /**
+   * 格式化农历时间（用于卡牌页面）
+   */
+  formatLunarTimeForCard(lunarDate) {
+    return `农历${lunarDate.year}年${lunarDate.month}月${lunarDate.day}日${lunarDate.isLeap ? '(闰月)' : ''}`;
+  },
+
+  /**
    * 点击档案项
    */
   onProfileTap(e) {
     const profileId = e.currentTarget.dataset.id;
     console.log('点击档案:', profileId);
     
-    // 由于卡牌页面是TabBar页面，不能通过URL传参
-    // 将档案ID存储到全局数据中
+    // 从当前档案列表中找到点击的档案数据
+    const selectedProfile = this.data.profileList.find(profile => profile._id === profileId);
+    if (!selectedProfile) {
+      console.error('未找到档案数据:', profileId);
+      wx.showToast({
+        title: '档案数据异常',
+        icon: 'error'
+      });
+      return;
+    }
+    
+    console.log('找到档案数据:', selectedProfile);
+    
+    // 将完整的档案数据存储到全局数据中
     const app = getApp();
-    app.globalData.selectedProfileId = profileId;
+    if (!app.globalData) {
+      app.globalData = {};
+    }
+    
+    // 构建卡牌页面需要的完整数据结构
+    app.globalData.cardData = {
+      profileId: selectedProfile._id,
+      profileName: selectedProfile.profileName,
+      originalTime: this.formatBirthTimeForCard(selectedProfile.birthDate),
+      lunarTime: selectedProfile.baziData.lunarDate ? this.formatLunarTimeForCard(selectedProfile.baziData.lunarDate) : '',
+      baziData: {
+        yearPillar: {
+          heavenlyStem: selectedProfile.baziData.year.gan,
+          earthlyBranch: selectedProfile.baziData.year.zhi
+        },
+        monthPillar: {
+          heavenlyStem: selectedProfile.baziData.month.gan,
+          earthlyBranch: selectedProfile.baziData.month.zhi
+        },
+        dayPillar: {
+          heavenlyStem: selectedProfile.baziData.day.gan,
+          earthlyBranch: selectedProfile.baziData.day.zhi
+        },
+        timePillar: {
+          heavenlyStem: selectedProfile.baziData.hour.gan,
+          earthlyBranch: selectedProfile.baziData.hour.zhi
+        }
+      }
+    };
+    
+    console.log('已设置全局卡牌数据:', app.globalData.cardData);
     
     // 跳转到卡牌页面显示档案的八字卡牌
     wx.switchTab({
-      url: '/pages/card/index'
+      url: '/pages/card/index',
+      success: () => {
+        console.log('成功跳转到卡牌页面');
+      },
+      fail: (error) => {
+        console.error('跳转失败:', error);
+      }
     });
   },
 

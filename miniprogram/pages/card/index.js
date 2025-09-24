@@ -58,15 +58,30 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
-    // TabBar切换时检查全局数据中是否有选中的档案ID
+    console.log('卡牌页面 onShow 触发');
+    
+    // 检查全局数据中是否有卡牌数据
     const app = getApp();
-    const globalProfileId = app.globalData?.selectedProfileId;
-    if (globalProfileId && globalProfileId !== this.data.profileId) {
-      console.log('onShow: 从全局数据获取档案ID:', globalProfileId);
-      this.setData({ profileId: globalProfileId });
-      this.loadProfileData();
+    const cardData = app.globalData?.cardData;
+    const currentProfileId = this.data.profileId;
+    
+    console.log('onShow: cardData:', cardData);
+    console.log('onShow: currentProfileId:', currentProfileId);
+    
+    if (cardData && cardData.profileId !== currentProfileId) {
+      console.log('onShow: 从全局数据加载卡牌数据');
+      this.loadCardDataFromGlobal(cardData);
       // 清除全局数据，避免重复使用
-      app.globalData.selectedProfileId = null;
+      app.globalData.cardData = null;
+    } else if (!cardData && !currentProfileId) {
+      console.log('onShow: 没有卡牌数据，显示默认数据');
+      this.updateInitialImages();
+      this.setData({ loading: false });
+    } else {
+      console.log('onShow: 无需处理，cardData存在:', !!cardData, 'currentProfileId:', currentProfileId);
+      if (!cardData) {
+        this.setData({ loading: false });
+      }
     }
   },
 
@@ -111,6 +126,33 @@ Page({
       path: '/pages/card/index',
       imageUrl: '', // 可以设置分享图片
     };
+  },
+
+  // 从全局数据加载卡牌数据
+  loadCardDataFromGlobal(cardData) {
+    console.log('loadCardDataFromGlobal 开始执行，cardData:', cardData);
+    
+    this.setData({ loading: true });
+    
+    try {
+      // 更新档案基本信息
+      this.setData({
+        profileId: cardData.profileId,
+        profileName: cardData.profileName,
+        originalTime: cardData.originalTime,
+        lunarTime: cardData.lunarTime
+      });
+      
+      // 更新八字显示
+      this.updateBaziDisplay(cardData.baziData);
+      
+      console.log('从全局数据加载卡牌数据成功');
+    } catch (error) {
+      console.error('从全局数据加载卡牌数据失败:', error);
+      this.updateInitialImages();
+    } finally {
+      this.setData({ loading: false });
+    }
   },
 
   // 处理接收到的参数
@@ -173,6 +215,8 @@ Page({
   // 加载档案数据
   async loadProfileData() {
     const { profileId } = this.data;
+    console.log('loadProfileData 开始执行，profileId:', profileId);
+    
     if (!profileId) {
       console.log('没有档案ID，显示默认数据');
       this.updateInitialImages();
@@ -183,17 +227,24 @@ Page({
     this.setData({ loading: true });
 
     try {
+      console.log('准备调用云函数，参数:', { action: 'getProfile', profileId });
+      
       const result = await wx.cloud.callFunction({
         name: 'profileManagement',
         data: {
           action: 'getProfile',
-          profileId: profileId
+          data: {
+            profileId: profileId
+          }
         }
       });
 
-      if (result.result.success) {
+      console.log('云函数调用结果:', result);
+
+      if (result.result && result.result.success) {
         const profile = result.result.data;
         console.log('加载档案数据成功:', profile);
+        console.log('档案八字数据:', profile.baziData);
         
         // 更新档案信息
         this.setData({
@@ -205,7 +256,8 @@ Page({
         // 更新八字显示
         this.updateBaziFromProfile(profile.baziData);
       } else {
-        console.error('获取档案失败:', result.result.error);
+        console.error('获取档案失败:', result.result ? result.result.error : '云函数返回格式错误');
+        console.error('完整返回结果:', result);
         wx.showToast({
           title: '档案加载失败',
           icon: 'error'
@@ -226,7 +278,12 @@ Page({
 
   // 从档案数据更新八字显示
   updateBaziFromProfile(baziData) {
-    if (!baziData) return;
+    console.log('updateBaziFromProfile 开始执行，baziData:', baziData);
+    
+    if (!baziData) {
+      console.log('baziData 为空，返回');
+      return;
+    }
 
     const baziFormatted = {
       yearPillar: {
@@ -247,6 +304,7 @@ Page({
       }
     };
 
+    console.log('格式化后的八字数据:', baziFormatted);
     this.updateBaziDisplay(baziFormatted);
   },
 
