@@ -1,5 +1,11 @@
 {
-  "pages": ["pages/dateQuery/index", "pages/bazi/index"],
+  "pages": [
+    "pages/card/index",
+    "pages/profile/index", 
+    "pages/mine/index",
+    "pages/dateQuery/index", 
+    "pages/bazi/index"
+  ],
   "usingComponents": {
     "t-toast": "miniprogram_npm/tdesign-miniprogram/toast/toast",
     "t-popup": "miniprogram_npm/tdesign-miniprogram/popup/popup",
@@ -13,7 +19,26 @@
     "navigationBarTitleText": "",
     "navigationBarTextStyle": "black"
   },
-
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#667eea",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/card/index",
+        "text": "卡牌"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "档案"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的"
+      }
+    ]
+  },
   "resolveAlias": {
     "~/*": "/*"
   },

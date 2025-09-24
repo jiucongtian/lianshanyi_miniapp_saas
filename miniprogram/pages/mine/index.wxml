@@ -1,0 +1,7 @@
+<!--pages/mine/index.wxml-->
+<view class="mine-container">
+  <view class="content">
+    <text class="placeholder-text">我的页面</text>
+    <text class="subtitle">内容待填充</text>
+  </view>
+</view>

@@ -1,0 +1,7 @@
+<!--pages/card/index.wxml-->
+<view class="card-container">
+  <view class="content">
+    <text class="placeholder-text">卡牌页面</text>
+    <text class="subtitle">内容待填充</text>
+  </view>
+</view>

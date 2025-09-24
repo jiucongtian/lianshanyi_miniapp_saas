@@ -1,0 +1,7 @@
+<!--pages/profile/index.wxml-->
+<view class="profile-container">
+  <view class="content">
+    <text class="placeholder-text">档案页面</text>
+    <text class="subtitle">内容待填充</text>
+  </view>
+</view>
