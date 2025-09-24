@@ -143,6 +143,11 @@ Page({
         lunarTime: cardData.lunarTime
       });
       
+      // 设置全局当前档案ID
+      const app = getApp();
+      app.globalData.currentProfileId = cardData.profileId;
+      console.log('已设置全局当前档案ID:', cardData.profileId);
+      
       // 更新八字显示
       this.updateBaziDisplay(cardData.baziData);
       
@@ -245,6 +250,11 @@ Page({
         const profile = result.result.data;
         console.log('加载档案数据成功:', profile);
         console.log('档案八字数据:', profile.baziData);
+        
+        // 设置全局当前档案ID
+        const app = getApp();
+        app.globalData.currentProfileId = profileId;
+        console.log('已设置全局当前档案ID:', profileId);
         
         // 更新档案信息
         this.setData({

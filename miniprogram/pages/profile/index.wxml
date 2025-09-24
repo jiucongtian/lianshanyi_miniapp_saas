@@ -25,7 +25,7 @@
     <!-- 档案项列表 -->
     <view class="profile-items" wx:elif="{{profileList.length > 0}}">
       <view 
-        class="profile-item" 
+        class="profile-item {{item._id === currentProfileId ? 'selected' : ''}}" 
         wx:for="{{profileList}}" 
         wx:key="_id"
         bindtap="onProfileTap"

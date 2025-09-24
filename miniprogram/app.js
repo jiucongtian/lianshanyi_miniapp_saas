@@ -53,6 +53,7 @@ App({
   },
   globalData: {
     userInfo: null,
+    currentProfileId: null, // 当前选中的档案ID
   },
 
   /** 全局事件总线 */

@@ -8,7 +8,8 @@ Page({
     profileList: [],
     loading: false,
     page: 1,
-    hasMore: true
+    hasMore: true,
+    currentProfileId: null // 当前选中的档案ID
   },
 
   /**
@@ -30,6 +31,12 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
+    // 获取全局当前选中的档案ID
+    const app = getApp();
+    const currentProfileId = app.globalData?.currentProfileId || null;
+    this.setData({ currentProfileId });
+    console.log('档案列表页面显示，当前选中档案ID:', currentProfileId);
+    
     // 每次显示页面时刷新数据，以防从其他页面返回时数据有更新
     this.loadProfileList();
   },
@@ -246,6 +253,11 @@ Page({
     if (!app.globalData) {
       app.globalData = {};
     }
+    
+    // 设置当前选中的档案ID
+    app.globalData.currentProfileId = selectedProfile._id;
+    this.setData({ currentProfileId: selectedProfile._id });
+    console.log('已设置全局当前档案ID:', selectedProfile._id);
     
     // 构建卡牌页面需要的完整数据结构
     app.globalData.cardData = {
