@@ -1,7 +1,98 @@
 <!--pages/profile/index.wxml-->
 <view class="profile-container">
-  <view class="content">
-    <text class="placeholder-text">档案页面</text>
-    <text class="subtitle">内容待填充</text>
+  <!-- 页面头部 -->
+  <view class="header">
+    <view class="header-content">
+      <view class="title-section">
+        <text class="page-title">我的档案</text>
+        <text class="page-subtitle">共{{profileList.length}}个档案</text>
+      </view>
+      <view class="add-button" bindtap="onAddProfile">
+        <text class="add-icon">+</text>
+        <text class="add-text">添加</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 档案列表 -->
+  <view class="profile-list">
+    <!-- 加载状态 -->
+    <view class="loading-container" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 档案项列表 -->
+    <view class="profile-items" wx:elif="{{profileList.length > 0}}">
+      <view 
+        class="profile-item" 
+        wx:for="{{profileList}}" 
+        wx:key="_id"
+        bindtap="onProfileTap"
+        data-id="{{item._id}}"
+      >
+        <view class="profile-card">
+          <!-- 档案基本信息 -->
+          <view class="profile-info">
+            <view class="profile-header">
+              <text class="profile-name">{{item.profileName}}</text>
+              <view class="gender-badge gender-{{item.gender}}">
+                <text class="gender-text">{{item.gender === 1 ? '男' : item.gender === 2 ? '女' : '未知'}}</text>
+              </view>
+            </view>
+            
+            <view class="birth-info">
+              <text class="birth-date">{{item.birthDate.year}}年{{item.birthDate.month}}月{{item.birthDate.day}}日</text>
+              <text class="birth-time">{{item.birthDate.hour}}:{{item.birthDate.minute || '00'}}</text>
+              <text class="calendar-type" wx:if="{{item.birthDate.isLunar}}">(农历)</text>
+            </view>
+            
+            <!-- 八字信息 -->
+            <view class="bazi-info">
+              <view class="bazi-pillars">
+                <view class="pillar">
+                  <text class="pillar-label">年</text>
+                  <text class="pillar-value">{{item.baziData.year.gan}}{{item.baziData.year.zhi}}</text>
+                </view>
+                <view class="pillar">
+                  <text class="pillar-label">月</text>
+                  <text class="pillar-value">{{item.baziData.month.gan}}{{item.baziData.month.zhi}}</text>
+                </view>
+                <view class="pillar">
+                  <text class="pillar-label">日</text>
+                  <text class="pillar-value">{{item.baziData.day.gan}}{{item.baziData.day.zhi}}</text>
+                </view>
+                <view class="pillar">
+                  <text class="pillar-label">时</text>
+                  <text class="pillar-value">{{item.baziData.hour.gan}}{{item.baziData.hour.zhi}}</text>
+                </view>
+              </view>
+            </view>
+            
+            <!-- 创建时间 -->
+            <view class="create-time">
+              <text class="time-text">创建于 {{item.createTimeFormatted}}</text>
+            </view>
+          </view>
+          
+          <!-- 右侧箭头 -->
+          <view class="profile-arrow">
+            <text class="arrow-icon">></text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-container" wx:else>
+      <view class="empty-content">
+        <view class="empty-icon">📋</view>
+        <text class="empty-title">还没有档案</text>
+        <text class="empty-desc">创建您的第一个生辰八字档案</text>
+        <view class="empty-button" bindtap="onAddProfile">
+          <text class="button-text">立即创建</text>
+        </view>
+      </view>
+    </view>
   </view>
 </view>
