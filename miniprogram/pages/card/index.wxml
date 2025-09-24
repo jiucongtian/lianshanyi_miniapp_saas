@@ -1,22 +1,5 @@
-<!--pages/card/index.wxml-->
 <view class="page-container">
-  <!-- 加载状态 -->
-  <view class="loading-container" wx:if="{{loading}}">
-    <view class="loading-spinner"></view>
-    <text class="loading-text">加载中...</text>
-  </view>
-
-  <!-- 八字卡牌内容 -->
-  <view class="bazi-content" wx:else>
-    <!-- 档案信息头部 -->
-    <view class="profile-header" wx:if="{{profileName}}">
-      <text class="profile-title">{{profileName}}</text>
-      <view class="time-info" wx:if="{{originalTime}}">
-        <text class="time-text">{{originalTime}}</text>
-        <text class="lunar-text" wx:if="{{lunarTime}}">{{lunarTime}}</text>
-      </view>
-    </view>
-
+  <view class="bazi-content">
     <view class="bazi-title">生命智慧卡牌</view>
 
     <!-- 使用 flex 布局展示四柱 -->
@@ -25,28 +8,24 @@
       <view class="pillar-item" animation="{{yearAnimation}}">
         <view class="pillar-title">年卡</view>
         <image class="pillar-image" src="{{yearPillar.imagePath}}" mode="aspectFit" />
-        <view class="pillar-text">{{yearPillar.heavenlyStem}}{{yearPillar.earthlyBranch}}</view>
       </view>
 
       <!-- 月柱 -->
       <view class="pillar-item" animation="{{monthAnimation}}">
         <view class="pillar-title">月卡</view>
         <image class="pillar-image" src="{{monthPillar.imagePath}}" mode="aspectFit" />
-        <view class="pillar-text">{{monthPillar.heavenlyStem}}{{monthPillar.earthlyBranch}}</view>
       </view>
 
       <!-- 日柱 -->
       <view class="pillar-item" animation="{{dayAnimation}}">
         <view class="pillar-title">日卡</view>
         <image class="pillar-image" src="{{dayPillar.imagePath}}" mode="aspectFit" />
-        <view class="pillar-text">{{dayPillar.heavenlyStem}}{{dayPillar.earthlyBranch}}</view>
       </view>
 
       <!-- 时柱 -->
       <view class="pillar-item" animation="{{timeAnimation}}">
         <view class="pillar-title">时卡</view>
         <image class="pillar-image" src="{{timePillar.imagePath}}" mode="aspectFit" />
-        <view class="pillar-text">{{timePillar.heavenlyStem}}{{timePillar.earthlyBranch}}</view>
       </view>
     </view>
   </view>
