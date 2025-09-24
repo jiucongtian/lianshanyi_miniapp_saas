@@ -212,9 +212,14 @@ Page({
     const profileId = e.currentTarget.dataset.id;
     console.log('点击档案:', profileId);
     
-    // 跳转到八字详情页面
-    wx.navigateTo({
-      url: `/pages/bazi/index?profileId=${profileId}`
+    // 由于卡牌页面是TabBar页面，不能通过URL传参
+    // 将档案ID存储到全局数据中
+    const app = getApp();
+    app.globalData.selectedProfileId = profileId;
+    
+    // 跳转到卡牌页面显示档案的八字卡牌
+    wx.switchTab({
+      url: '/pages/card/index'
     });
   },
 

@@ -1,4 +1,5 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "卡牌"
+  "navigationBarTitleText": "生命智慧卡牌",
+  "enablePullDownRefresh": true
 }
