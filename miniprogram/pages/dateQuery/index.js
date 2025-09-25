@@ -391,6 +391,10 @@ Page({
       app.globalData = app.globalData || {};
       app.globalData.baziResult = baziResult;
       
+      // 设置云端档案为当前档案
+      app.setCurrentProfile(profile);
+      console.log('云端档案已设置为当前档案:', profile._id);
+      
       wx.navigateTo({
         url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=true&profileId=${profile._id}`,
         success: () => {
@@ -450,6 +454,13 @@ Page({
           const savedProfile = await this.saveBaziProfile(profileData);
           if (savedProfile) {
             baziResult.profileId = savedProfile.profileId;
+            
+            // 设置新创建的档案为当前档案
+            const app = getApp();
+            if (savedProfile.profile) {
+              app.setCurrentProfile(savedProfile.profile);
+              console.log('新创建的档案已设置为当前档案:', savedProfile.profileId);
+            }
           }
         }
         

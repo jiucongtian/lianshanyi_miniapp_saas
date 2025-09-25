@@ -1,4 +1,6 @@
 // pages/profile/index.js
+const { formatBirthTime, formatLunarTime, convertProfileToCardData } = require('../../utils/util');
+
 Page({
 
   /**
@@ -212,21 +214,6 @@ Page({
     return `${year}-${month}-${day}`;
   },
 
-  /**
-   * 格式化生日时间（用于卡牌页面）
-   */
-  formatBirthTimeForCard(birthDate) {
-    const minute = birthDate.minute || 0;
-    const minuteStr = minute < 10 ? `0${minute}` : `${minute}`;
-    return `${birthDate.year}年${birthDate.month}月${birthDate.day}日 ${birthDate.hour}:${minuteStr}`;
-  },
-
-  /**
-   * 格式化农历时间（用于卡牌页面）
-   */
-  formatLunarTimeForCard(lunarDate) {
-    return `农历${lunarDate.year}年${lunarDate.month}月${lunarDate.day}日${lunarDate.isLeap ? '(闰月)' : ''}`;
-  },
 
   /**
    * 点击档案项
@@ -254,38 +241,10 @@ Page({
       app.globalData = {};
     }
     
-    // 设置当前选中的档案ID
-    app.globalData.currentProfileId = selectedProfile._id;
+    // 使用app的方法设置当前档案（这会自动处理所有相关数据）
+    app.setCurrentProfile(selectedProfile);
     this.setData({ currentProfileId: selectedProfile._id });
     console.log('已设置全局当前档案ID:', selectedProfile._id);
-    
-    // 构建卡牌页面需要的完整数据结构
-    app.globalData.cardData = {
-      profileId: selectedProfile._id,
-      profileName: selectedProfile.profileName,
-      originalTime: this.formatBirthTimeForCard(selectedProfile.birthDate),
-      lunarTime: selectedProfile.baziData.lunarDate ? this.formatLunarTimeForCard(selectedProfile.baziData.lunarDate) : '',
-      baziData: {
-        yearPillar: {
-          heavenlyStem: selectedProfile.baziData.year.gan,
-          earthlyBranch: selectedProfile.baziData.year.zhi
-        },
-        monthPillar: {
-          heavenlyStem: selectedProfile.baziData.month.gan,
-          earthlyBranch: selectedProfile.baziData.month.zhi
-        },
-        dayPillar: {
-          heavenlyStem: selectedProfile.baziData.day.gan,
-          earthlyBranch: selectedProfile.baziData.day.zhi
-        },
-        timePillar: {
-          heavenlyStem: selectedProfile.baziData.hour.gan,
-          earthlyBranch: selectedProfile.baziData.hour.zhi
-        }
-      }
-    };
-    
-    console.log('已设置全局卡牌数据:', app.globalData.cardData);
     
     // 跳转到卡牌页面显示档案的八字卡牌
     wx.switchTab({

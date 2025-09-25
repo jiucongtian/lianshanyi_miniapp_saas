@@ -1,5 +1,6 @@
-// 引入八字图片映射表 [[memory:7739041]]
+// 引入八字图片映射表
 const { getBaziImageById, getBaziImageByPinyin } = require('../../utils/baziImageMap');
+const { formatBirthTime, formatLunarTime } = require('../../utils/util');
 
 Page({
   data: {
@@ -47,8 +48,17 @@ Page({
   onShow: function() {
     console.log('卡牌页面 onShow 触发');
     
-    // 检查全局数据中是否有卡牌数据
     const app = getApp();
+    
+    // 优先检查是否有当前档案数据
+    const currentProfileData = app.getCurrentProfile();
+    if (currentProfileData) {
+      console.log('onShow: 找到当前档案数据，直接显示:', currentProfileData._id);
+      this.loadProfileData(currentProfileData);
+      return;
+    }
+    
+    // 检查全局数据中是否有临时卡牌数据（从其他页面跳转过来的）
     const cardData = app.globalData?.cardData;
     
     console.log('onShow: cardData:', cardData);
@@ -59,7 +69,17 @@ Page({
       // 清除全局数据，避免重复使用
       app.globalData.cardData = null;
     } else {
-      console.log('onShow: 没有卡牌数据，检查其他数据源');
+      console.log('onShow: 没有卡牌数据，等待档案初始化或检查其他数据源');
+      // 如果档案还没有初始化完成，等待一下
+      if (!app.globalData.profilesLoaded) {
+        console.log('onShow: 档案尚未初始化完成，等待...');
+        setTimeout(() => {
+          this.onShow(); // 递归调用，等待档案初始化完成
+        }, 100);
+        return;
+      }
+      
+      // 最后的备选方案：检查是否有八字计算结果
       this.loadBaziFromGlobalData();
     }
   },
@@ -143,6 +163,45 @@ Page({
     } catch (error) {
       console.error('解析八字数据时出错:', error);
       return null;
+    }
+  },
+
+  // 从档案数据加载卡牌显示
+  loadProfileData: function(profileData) {
+    console.log('loadProfileData 开始执行，profileData:', profileData);
+    
+    try {
+      // 构建八字数据格式
+      const baziData = {
+        yearPillar: {
+          heavenlyStem: profileData.baziData.year.gan,
+          earthlyBranch: profileData.baziData.year.zhi
+        },
+        monthPillar: {
+          heavenlyStem: profileData.baziData.month.gan,
+          earthlyBranch: profileData.baziData.month.zhi
+        },
+        dayPillar: {
+          heavenlyStem: profileData.baziData.day.gan,
+          earthlyBranch: profileData.baziData.day.zhi
+        },
+        timePillar: {
+          heavenlyStem: profileData.baziData.hour.gan,
+          earthlyBranch: profileData.baziData.hour.zhi
+        }
+      };
+
+      // 使用工具函数格式化时间显示
+      baziData.originalTime = formatBirthTime(profileData.birthDate);
+      baziData.lunarTime = profileData.baziData.lunarDate ? formatLunarTime(profileData.baziData.lunarDate) : '';
+
+      // 更新八字显示
+      this.updateBaziDisplay(baziData);
+      
+      console.log('从档案数据加载卡牌显示成功');
+    } catch (error) {
+      console.error('从档案数据加载卡牌显示失败:', error);
+      this.updateInitialImages();
     }
   },
 
