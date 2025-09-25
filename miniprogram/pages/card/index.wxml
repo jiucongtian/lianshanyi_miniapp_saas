@@ -2,8 +2,21 @@
   <view class="bazi-content">
     <view class="bazi-title">生命智慧卡牌</view>
 
-    <!-- 使用 flex 布局展示四柱 -->
-    <view class="pillars-flex">
+    <!-- 加载状态 -->
+    <view class="loading-state" wx:if="{{isLoading}}">
+      <view class="loading-icon">⏳</view>
+      <view class="loading-text">正在加载卡牌数据...</view>
+    </view>
+
+    <!-- 无数据状态 -->
+    <view class="empty-state" wx:elif="{{!isDataLoaded}}">
+      <view class="empty-icon">🃏</view>
+      <view class="empty-text">暂无卡牌数据</view>
+      <view class="empty-desc">请先创建一个档案或选择现有档案</view>
+    </view>
+
+    <!-- 卡牌内容 -->
+    <view class="pillars-flex" wx:else>
       <!-- 年柱 -->
       <view class="pillar-item" animation="{{yearAnimation}}">
         <view class="pillar-title">年卡</view>

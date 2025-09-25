@@ -6,25 +6,27 @@ Page({
   data: {
     deviceSize: 'medium',
     showTimePopup: false,
+    isDataLoaded: false, // 标记数据是否已加载
+    isLoading: true, // 标记是否正在加载
     yearPillar: { 
-      heavenlyStem: '甲',
-      earthlyBranch: '子',
-      imagePath: ''  // 将在onReady中设置
+      heavenlyStem: '',
+      earthlyBranch: '',
+      imagePath: ''
     },
     monthPillar: {
-      heavenlyStem: '乙',
-      earthlyBranch: '丑',
-      imagePath: ''  // 将在onReady中设置
+      heavenlyStem: '',
+      earthlyBranch: '',
+      imagePath: ''
     },
     dayPillar: {
-      heavenlyStem: '丙',
-      earthlyBranch: '寅',
-      imagePath: ''  // 将在onReady中设置
+      heavenlyStem: '',
+      earthlyBranch: '',
+      imagePath: ''
     },
     timePillar: {
-      heavenlyStem: '丁',
-      earthlyBranch: '卯',
-      imagePath: ''  // 将在onReady中设置
+      heavenlyStem: '',
+      earthlyBranch: '',
+      imagePath: ''
     },
     originalTime: '',
     lunarTime: '',
@@ -41,12 +43,18 @@ Page({
   },
 
   onReady: function() {
-    // 页面渲染完成后，从全局数据获取八字结果并更新显示
-    this.loadBaziFromGlobalData();
+    // 页面渲染完成，等待onShow中的数据加载逻辑
+    console.log('卡牌页面渲染完成');
   },
 
   onShow: function() {
     console.log('卡牌页面 onShow 触发');
+    
+    // 重置加载状态
+    this.setData({
+      isLoading: true,
+      isDataLoaded: false
+    });
     
     const app = getApp();
     
@@ -100,13 +108,19 @@ Page({
       if (baziData) {
         console.log('解析成功，更新显示:', baziData);
         this.updateBaziDisplay(baziData);
+        
+        // 设置数据加载完成状态
+        this.setData({
+          isLoading: false,
+          isDataLoaded: true
+        });
       } else {
-        console.log('八字数据解析失败，显示默认数据');
-        this.updateInitialImages();
+        console.log('八字数据解析失败，显示无数据状态');
+        this.showNoDataState();
       }
     } else {
-      console.log('未找到全局八字数据，显示默认数据');
-      this.updateInitialImages();
+      console.log('未找到全局八字数据，显示无数据状态');
+      this.showNoDataState();
     }
   },
 
@@ -198,10 +212,16 @@ Page({
       // 更新八字显示
       this.updateBaziDisplay(baziData);
       
+      // 设置数据加载完成状态
+      this.setData({
+        isLoading: false,
+        isDataLoaded: true
+      });
+      
       console.log('从档案数据加载卡牌显示成功');
     } catch (error) {
       console.error('从档案数据加载卡牌显示失败:', error);
-      this.updateInitialImages();
+      this.showNoDataState();
     }
   },
 
@@ -213,10 +233,16 @@ Page({
       // 更新八字显示
       this.updateBaziDisplay(cardData.baziData);
       
+      // 设置数据加载完成状态
+      this.setData({
+        isLoading: false,
+        isDataLoaded: true
+      });
+      
       console.log('从全局数据加载卡牌数据成功');
     } catch (error) {
       console.error('从全局数据加载卡牌数据失败:', error);
-      this.updateInitialImages();
+      this.showNoDataState();
     }
   },
 
@@ -334,15 +360,18 @@ Page({
     }
   },
 
-  // 初始化时更新图片路径（作为后备方案）
-  updateInitialImages: function() {
-    const { yearPillar, monthPillar, dayPillar, timePillar } = this.data;
-    
+  // 显示无数据状态
+  showNoDataState: function() {
+    console.log('显示无数据状态');
     this.setData({
-      'yearPillar.imagePath': this.getBaziImagePath(yearPillar.heavenlyStem, yearPillar.earthlyBranch),
-      'monthPillar.imagePath': this.getBaziImagePath(monthPillar.heavenlyStem, monthPillar.earthlyBranch),
-      'dayPillar.imagePath': this.getBaziImagePath(dayPillar.heavenlyStem, dayPillar.earthlyBranch),
-      'timePillar.imagePath': this.getBaziImagePath(timePillar.heavenlyStem, timePillar.earthlyBranch)
+      isLoading: false,
+      isDataLoaded: false,
+      yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
+      monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
+      dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
+      timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
+      originalTime: '',
+      lunarTime: ''
     });
   },
 
