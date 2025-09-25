@@ -64,17 +64,8 @@ npm install
 
 最低基础库版本`^2.6.5`
 
-
-## 贡献成员
-
-<a href="https://github.com/TDesignOteam/tdesign-miniprogram-starter/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=TDesignOteam/tdesign-miniprogram-starter" />
-</a>
-
-## 反馈
-
-有任何问题，建议通过 [Github issues](https://github.com/TDesignOteam/tdesign-miniprogram-starter/issues) 反馈。
-
-## 开源协议
-
-TDesign 遵循 [MIT 协议](https://github.com/TDesignOteam/tdesign-miniprogram-starter/blob/main/LICENSE)。
+## 提示找不到tdesign
+- 进入miniprogram目录
+- 执行npm install tdesign-miniprogram --production
+- 执行npm install --production
+- 微信开发者工具中点击顶部菜单栏的「工具」>「构建 npm」

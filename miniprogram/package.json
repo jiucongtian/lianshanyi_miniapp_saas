@@ -4,6 +4,6 @@
   "description": "联山易小程序",
   "main": "app.js",
   "dependencies": {
-    "tdesign-miniprogram": "^1.8.6"
+    "tdesign-miniprogram": "^1.10.1"
   }
 }
