@@ -395,10 +395,15 @@ Page({
       app.setCurrentProfile(profile);
       console.log('云端档案已设置为当前档案:', profile._id);
       
-      wx.navigateTo({
-        url: `/pages/bazi/index?datetime=${timestamp}&hasCozeData=true&profileId=${profile._id}`,
+      // 构建卡牌数据并设置到全局变量
+      const cardData = this.buildCardDataFromProfile(profile, baziResult);
+      app.globalData.cardData = cardData;
+      console.log('卡牌数据已设置到全局变量:', cardData);
+      
+      wx.switchTab({
+        url: '/pages/card/index',
         success: () => {
-          console.log('跳转到八字页面成功，使用云端档案数据');
+          console.log('跳转到卡牌页面成功，使用云端档案数据');
           Message.success({
             context: this,
             offset: [120, 32],
@@ -464,19 +469,23 @@ Page({
           }
         }
         
-        // API调用成功，跳转到八字页面并传递结果
+        // API调用成功，跳转到卡牌页面并传递结果
         wx.hideLoading();
         
-        // 将结果存储到全局数据中，供八字页面使用
+        // 将结果存储到全局数据中，供卡牌页面使用
         const app = getApp();
         app.globalData = app.globalData || {};
         app.globalData.baziResult = baziResult;
         
-        const urlParams = `datetime=${timestamp}&hasCozeData=true${baziResult.profileId ? '&profileId=' + baziResult.profileId : ''}`;
-        wx.navigateTo({
-          url: `/pages/bazi/index?${urlParams}`,
+        // 构建卡牌数据并设置到全局变量
+        const cardData = this.buildCardDataFromBaziResult(baziResult, birthDate);
+        app.globalData.cardData = cardData;
+        console.log('卡牌数据已设置到全局变量:', cardData);
+        
+        wx.switchTab({
+          url: '/pages/card/index',
           success: () => {
-            console.log('跳转到八字页面成功，已传递Coze数据');
+            console.log('跳转到卡牌页面成功，已传递Coze数据');
             Message.success({
               context: this,
               offset: [120, 32],
@@ -607,6 +616,96 @@ Page({
     return ((ganIndex - 1) * 6 + zhiIndex) % 60 || 60;
   },
 
+
+  // 从档案数据构建卡牌数据
+  buildCardDataFromProfile(profile, baziResult) {
+    console.log('从档案数据构建卡牌数据:', profile);
+    
+    // 构建八字数据格式
+    const baziData = {
+      yearPillar: {
+        heavenlyStem: profile.baziData.year.gan,
+        earthlyBranch: profile.baziData.year.zhi
+      },
+      monthPillar: {
+        heavenlyStem: profile.baziData.month.gan,
+        earthlyBranch: profile.baziData.month.zhi
+      },
+      dayPillar: {
+        heavenlyStem: profile.baziData.day.gan,
+        earthlyBranch: profile.baziData.day.zhi
+      },
+      timePillar: {
+        heavenlyStem: profile.baziData.hour.gan,
+        earthlyBranch: profile.baziData.hour.zhi
+      }
+    };
+
+    // 格式化时间显示
+    const { formatBirthTime, formatLunarTime } = require('../../utils/util');
+    baziData.originalTime = formatBirthTime(profile.birthDate);
+    baziData.lunarTime = profile.baziData.lunarDate ? formatLunarTime(profile.baziData.lunarDate) : '';
+
+    return {
+      baziData,
+      timestamp: baziResult.timestamp,
+      profileId: profile._id,
+      calculatedAt: baziResult.calculatedAt
+    };
+  },
+
+  // 从八字结果构建卡牌数据
+  buildCardDataFromBaziResult(baziResult, birthDate) {
+    console.log('从八字结果构建卡牌数据:', baziResult);
+    
+    // 解析八字数据
+    let parsedData;
+    try {
+      parsedData = JSON.parse(baziResult.cozeData.data);
+    } catch (error) {
+      console.error('解析八字数据失败:', error);
+      return null;
+    }
+
+    if (!parsedData.output) {
+      console.error('八字数据格式不正确');
+      return null;
+    }
+
+    const output = parsedData.output;
+    
+    // 构建八字数据格式
+    const baziData = {
+      yearPillar: {
+        heavenlyStem: output.year[0],
+        earthlyBranch: output.year[1]
+      },
+      monthPillar: {
+        heavenlyStem: output.month[0],
+        earthlyBranch: output.month[1]
+      },
+      dayPillar: {
+        heavenlyStem: output.day[0],
+        earthlyBranch: output.day[1]
+      },
+      timePillar: {
+        heavenlyStem: output.hour[0],
+        earthlyBranch: output.hour[1]
+      }
+    };
+
+    // 格式化时间显示
+    const { formatBirthTime } = require('../../utils/util');
+    baziData.originalTime = formatBirthTime(birthDate);
+    baziData.lunarTime = ''; // 新计算的数据暂时没有农历时间
+
+    return {
+      baziData,
+      timestamp: baziResult.timestamp,
+      profileId: baziResult.profileId,
+      calculatedAt: baziResult.calculatedAt
+    };
+  },
 
   // 分享功能 - 激活右上角分享按钮
   onShareAppMessage: function() {
