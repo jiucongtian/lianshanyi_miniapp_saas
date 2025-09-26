@@ -14,3 +14,56 @@ alwaysApply: true
 - 存放到docs目录中的database文件夹里
 - 每个数据表单独一个文件
 - 文件名为 数据表名+db
+
+## 云函数返回数据结构规范
+
+### 统一Bean函数要求
+- 所有云函数返回的数据结构都必须定义一个统一的bean函数
+- 不直接使用云端返回的原始结果
+- 通过bean函数进行数据格式化和验证
+- Bean函数定义在客户端（小程序端），用于处理云函数返回的数据
+
+### 数据安全检查
+- 云端返回的结果必须进行完整性检查
+- 验证必需字段是否存在
+- 验证数据类型是否正确
+- 提供默认值或错误处理，避免程序崩溃
+- 记录详细的错误日志用于调试
+
+### 客户端Bean函数示例结构
+```javascript
+// 在客户端定义统一的响应处理Bean函数
+function createResponseBean(cloudResult) {
+  // 检查云函数调用是否成功
+  if (!cloudResult || !cloudResult.result) {
+    return {
+      success: false,
+      data: null,
+      error: '云函数调用失败',
+      code: -1,
+      timestamp: new Date().getTime()
+    };
+  }
+  
+  const result = cloudResult.result;
+  
+  // 验证必需字段
+  if (typeof result.success !== 'boolean') {
+    return {
+      success: false,
+      data: null,
+      error: '响应格式错误：缺少success字段',
+      code: -2,
+      timestamp: new Date().getTime()
+    };
+  }
+  
+  return {
+    success: result.success,
+    data: result.data || null,
+    error: result.error || null,
+    code: result.code || 0,
+    timestamp: new Date().getTime()
+  };
+}
+```
