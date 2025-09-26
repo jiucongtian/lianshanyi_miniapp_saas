@@ -350,7 +350,9 @@ Page({
         name: 'profileManagement',
         data: {
           action: 'deleteProfile',
-          profileId: profileId
+          data: {
+            profileId: profileId
+          }
         }
       });
 

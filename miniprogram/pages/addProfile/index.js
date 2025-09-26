@@ -220,10 +220,12 @@ Page({
         name: 'profileManagement',
         data: {
           action: 'updateProfile',
-          profileId: this.data.editingProfileId,
-          profileName: this.data.formData.name.trim(),
-          birthDate: birthDate,
-          gender: this.data.formData.gender
+          data: {
+            profileId: this.data.editingProfileId,
+            profileName: this.data.formData.name.trim(),
+            birthDate: birthDate,
+            gender: this.data.formData.gender
+          }
         }
       });
 
@@ -317,7 +319,7 @@ Page({
           // 设置表单数据
           formData = {
             name: editingProfile.profileName || editingProfile.name || '',
-            gender: editingProfile.gender || 1
+            gender: editingProfile.gender !== undefined ? editingProfile.gender : 1
           };
           
           // 设置档案ID
