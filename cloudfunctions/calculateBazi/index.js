@@ -37,14 +37,24 @@ function parseBaziData(cozeResponse) {
     console.log('Coze响应数据:', JSON.stringify(cozeResponse, null, 2));
     
     // 检查响应格式
-    if (!cozeResponse || !cozeResponse.data) {
-      throw new Error('Coze响应数据格式不正确');
+    if (!cozeResponse) {
+      throw new Error('Coze响应数据为空');
+    }
+    
+    // 检查Coze API返回的数据结构
+    if (!cozeResponse.data) {
+      throw new Error('Coze响应数据格式不正确，缺少data字段');
     }
     
     // 解析data字段（JSON字符串）
     let parsedData;
     if (typeof cozeResponse.data === 'string') {
-      parsedData = JSON.parse(cozeResponse.data);
+      try {
+        parsedData = JSON.parse(cozeResponse.data);
+      } catch (parseError) {
+        console.error('解析data字段失败:', parseError);
+        throw new Error(`data字段JSON解析失败: ${parseError.message}`);
+      }
     } else {
       parsedData = cozeResponse.data;
     }
@@ -53,16 +63,29 @@ function parseBaziData(cozeResponse) {
     
     // 检查输出格式
     if (!parsedData.output) {
+      console.error('解析后的数据缺少output字段，可用字段:', Object.keys(parsedData));
       throw new Error('八字数据格式不正确，缺少output字段');
     }
     
     const output = parsedData.output;
+    console.log('output字段内容:', JSON.stringify(output, null, 2));
     
     // 验证必需字段
     const requiredFields = ['year', 'month', 'day', 'hour'];
     for (const field of requiredFields) {
-      if (!output[field] || typeof output[field] !== 'string' || output[field].length !== 2) {
-        throw new Error(`八字数据格式不正确，${field}字段无效: ${output[field]}`);
+      if (!output[field]) {
+        console.error(`缺少${field}字段，output内容:`, output);
+        throw new Error(`八字数据格式不正确，缺少${field}字段`);
+      }
+      
+      if (typeof output[field] !== 'string') {
+        console.error(`${field}字段类型错误，期望string，实际:`, typeof output[field], '值:', output[field]);
+        throw new Error(`八字数据格式不正确，${field}字段类型错误，期望字符串，实际: ${typeof output[field]}`);
+      }
+      
+      if (output[field].length !== 2) {
+        console.error(`${field}字段长度错误，期望2，实际:`, output[field].length, '值:', output[field]);
+        throw new Error(`八字数据格式不正确，${field}字段长度错误，期望2个字符，实际: ${output[field].length}个字符`);
       }
     }
     
@@ -91,6 +114,7 @@ function parseBaziData(cozeResponse) {
     
   } catch (error) {
     console.error('解析八字数据失败:', error);
+    console.error('错误堆栈:', error.stack);
     throw new Error(`八字数据解析失败: ${error.message}`);
   }
 }
@@ -201,8 +225,27 @@ exports.main = async (event, context) => {
     console.log('Coze API 返回结果:', result);
     
     // 解析Coze数据为标准化的八字数据结构
-    const baziData = parseBaziData(result.data);
-    console.log('解析后的八字数据:', baziData);
+    let baziData;
+    try {
+      baziData = parseBaziData(result.data);
+      console.log('解析后的八字数据:', baziData);
+      
+      if (!baziData) {
+        throw new Error('parseBaziData返回了空值');
+      }
+    } catch (parseError) {
+      console.error('解析八字数据失败:', parseError);
+      return {
+        success: false,
+        error: `八字数据解析失败: ${parseError.message}`,
+        rawCozeData: result.data,  // 保留原始coze数据用于调试
+        parameters,
+        timestamp: event.timestamp,
+        openid: wxContext.OPENID,
+        appid: wxContext.APPID,
+        unionid: wxContext.UNIONID,
+      };
+    }
     
     return {
       success: true,

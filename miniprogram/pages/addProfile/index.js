@@ -6,6 +6,16 @@ const { config } = require('../../config/index');
 
 Page({
   data: {
+    // 表单数据
+    formData: {
+      name: '', // 姓名
+      gender: 1, // 性别，1=男，0=女，默认男
+    },
+    // 表单验证
+    nameError: '', // 姓名错误信息
+    isFormValid: false, // 表单是否有效
+    
+    // 时间选择相关
     dateTimeValue: null, // 初始为空，让用户自己选择
     formatedDateTime: '', // 格式化后的时间显示
     showPicker: false,
@@ -28,6 +38,81 @@ Page({
       { name: '戌时(19-21)', range: '19:00-21:00', start: 19, end: 21 },
       { name: '亥时(21-23)', range: '21:00-23:00', start: 21, end: 23 }
     ],
+  },
+
+  // 表单验证方法
+  validateForm() {
+    const { formData, formatedDateTime } = this.data;
+    let isValid = true;
+    let nameError = '';
+
+    // 验证姓名
+    if (!formData.name || formData.name.trim() === '') {
+      nameError = '请输入姓名';
+      isValid = false;
+    } else if (formData.name.trim().length < 2) {
+      nameError = '姓名至少需要2个字符';
+      isValid = false;
+    } else if (formData.name.trim().length > 20) {
+      nameError = '姓名不能超过20个字符';
+      isValid = false;
+    }
+
+    // 验证出生时间
+    if (!formatedDateTime) {
+      isValid = false;
+    }
+
+    this.setData({
+      nameError,
+      isFormValid: isValid
+    });
+
+    return isValid;
+  },
+
+  // 姓名输入变化
+  onNameChange(e) {
+    const name = e.detail.value;
+    this.setData({
+      'formData.name': name
+    });
+    // 实时验证
+    this.validateForm();
+  },
+
+  // 姓名输入失焦
+  onNameBlur(e) {
+    const name = e.detail.value;
+    this.setData({
+      'formData.name': name
+    });
+    this.validateForm();
+  },
+
+  // 性别选择
+  onGenderSelect(e) {
+    const gender = parseInt(e.currentTarget.dataset.gender);
+    this.setData({
+      'formData.gender': gender
+    });
+    console.log('选择性别:', gender === 1 ? '男' : '女');
+  },
+
+  // 表单提交
+  async onSubmit() {
+    if (!this.validateForm()) {
+      Message.warning({
+        context: this,
+        offset: [120, 32],
+        duration: 3000,
+        content: '请完善必填信息',
+      });
+      return;
+    }
+
+    // 调用原有的查询数据方法
+    await this.onQueryData();
   },
   
   // 根据小时计算对应的时辰索引
@@ -298,6 +383,9 @@ Page({
 
     console.log('确认选择时间:', formatedTime);
     
+    // 时间选择后重新验证表单
+    this.validateForm();
+    
     // 显示选择成功提示
     Message.success({
       context: this,
@@ -445,6 +533,20 @@ Page({
       if (result.success) {
         console.log('Coze API调用成功，结果：', result);
         
+        // 检查八字数据是否存在
+        if (!result.baziData) {
+          console.error('Coze API返回成功但baziData为空:', result);
+          wx.hideLoading();
+          
+          Message.error({
+            context: this,
+            offset: [120, 32],
+            duration: 3000,
+            content: '八字数据解析失败，请重试',
+          });
+          return;
+        }
+        
         // 构建八字结果数据（使用标准化的数据结构）
         const baziResult = {
           timestamp: timestamp,
@@ -559,17 +661,33 @@ Page({
     // 使用标准化的八字数据
     if (!baziResult.baziData) {
       console.error('八字数据格式不正确，缺少baziData字段');
+      console.error('baziResult完整数据:', baziResult);
       return null;
     }
 
     const baziData = baziResult.baziData;
     
-    // 生成档案名称
-    const date = new Date(baziResult.timestamp);
-    const profileName = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日档案`;
+    // 验证八字数据结构
+    const requiredPillars = ['yearPillar', 'monthPillar', 'dayPillar', 'timePillar'];
+    for (const pillar of requiredPillars) {
+      if (!baziData[pillar]) {
+        console.error(`八字数据缺少${pillar}字段:`, baziData);
+        return null;
+      }
+      
+      if (!baziData[pillar].heavenlyStem || !baziData[pillar].earthlyBranch) {
+        console.error(`${pillar}字段格式不正确:`, baziData[pillar]);
+        return null;
+      }
+    }
+    
+    // 生成档案名称（使用用户填写的姓名）
+    const { formData } = this.data;
+    const profileName = formData.name ? `${formData.name}的档案` : `${birthDate.year}年${birthDate.month}月${birthDate.day}日档案`;
     
     return {
       profileName,
+      name: formData.name || '', // 用户填写的姓名
       birthDate: {
         year: birthDate.year,
         month: birthDate.month,
@@ -600,8 +718,8 @@ Page({
           ganzhiIndex: this.getGanZhiIndex(baziData.timePillar.heavenlyStem, baziData.timePillar.earthlyBranch)
         }
       },
-      gender: 0,
-      description: '自动生成的八字档案'
+      gender: formData.gender, // 使用用户选择的性别
+      description: '用户创建的八字档案'
     };
   },
 
@@ -662,10 +780,25 @@ Page({
     // 使用标准化的八字数据
     if (!baziResult.baziData) {
       console.error('八字数据格式不正确，缺少baziData字段');
+      console.error('baziResult完整数据:', baziResult);
       return null;
     }
 
     const baziData = baziResult.baziData;
+    
+    // 验证八字数据结构
+    const requiredPillars = ['yearPillar', 'monthPillar', 'dayPillar', 'timePillar'];
+    for (const pillar of requiredPillars) {
+      if (!baziData[pillar]) {
+        console.error(`八字数据缺少${pillar}字段:`, baziData);
+        return null;
+      }
+      
+      if (!baziData[pillar].heavenlyStem || !baziData[pillar].earthlyBranch) {
+        console.error(`${pillar}字段格式不正确:`, baziData[pillar]);
+        return null;
+      }
+    }
 
     // 格式化时间显示
     const { formatBirthTime } = require('../../utils/util');
