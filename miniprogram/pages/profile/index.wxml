@@ -28,12 +28,10 @@
         class="profile-item {{item._id === currentProfileId ? 'selected' : ''}}" 
         wx:for="{{profileList}}" 
         wx:key="_id"
-        bindtap="onProfileTap"
-        data-id="{{item._id}}"
       >
         <view class="profile-card">
           <!-- 档案基本信息 -->
-          <view class="profile-info">
+          <view class="profile-info" bindtap="onProfileTap" data-id="{{item._id}}">
             <view class="profile-header">
               <text class="profile-name">{{item.profileName}}</text>
               <view class="gender-badge gender-{{item.gender}}">
@@ -75,9 +73,14 @@
             </view>
           </view>
           
-          <!-- 右侧箭头 -->
-          <view class="profile-arrow">
-            <text class="arrow-icon">></text>
+          <!-- 操作按钮区域 -->
+          <view class="profile-actions">
+            <view class="action-button edit-button" catchtap="onEditProfile" data-id="{{item._id}}">
+              <text class="action-icon">✏️</text>
+            </view>
+            <view class="action-button delete-button" catchtap="onDeleteProfile" data-id="{{item._id}}">
+              <text class="action-icon">🗑️</text>
+            </view>
           </view>
         </view>
       </view>

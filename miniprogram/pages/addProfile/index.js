@@ -6,6 +6,10 @@ const { config } = require('../../config/index');
 
 Page({
   data: {
+    // 页面模式：create=创建，edit=编辑
+    pageMode: 'create',
+    // 编辑模式下的档案ID
+    editingProfileId: null,
     // 表单数据
     formData: {
       name: '', // 姓名
@@ -111,8 +115,12 @@ Page({
       return;
     }
 
-    // 调用原有的查询数据方法
-    await this.onQueryData();
+    // 根据页面模式调用不同的处理方法
+    if (this.data.pageMode === 'edit') {
+      await this.onUpdateProfile();
+    } else {
+      await this.onQueryData();
+    }
   },
   
   // 根据小时计算对应的时辰索引
@@ -178,6 +186,91 @@ Page({
     }
   },
 
+  // 更新档案
+  async onUpdateProfile() {
+    if (!this.data.editingProfileId) {
+      Message.error({
+        context: this,
+        offset: [120, 32],
+        duration: 3000,
+        content: '档案ID异常，无法更新',
+      });
+      return;
+    }
+
+    // 确保日期格式正确
+    const date = new Date(this.data.dateTimeValue);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hour = date.getHours();
+    const minute = date.getMinutes();
+    
+    const birthDate = { year, month, day, hour, minute };
+
+    // 显示加载状态
+    wx.showLoading({
+      title: '更新档案中...',
+      mask: true
+    });
+
+    try {
+      // 调用云函数更新档案
+      const result = await wx.cloud.callFunction({
+        name: 'profileManagement',
+        data: {
+          action: 'updateProfile',
+          profileId: this.data.editingProfileId,
+          profileName: this.data.formData.name.trim(),
+          birthDate: birthDate,
+          gender: this.data.formData.gender
+        }
+      });
+
+      wx.hideLoading();
+
+      if (result.result.success) {
+        console.log('档案更新成功');
+        
+        // 清除本地存储的编辑数据
+        try {
+          wx.removeStorageSync('editingProfile');
+        } catch (error) {
+          console.error('清除编辑数据失败:', error);
+        }
+        
+        Message.success({
+          context: this,
+          offset: [120, 32],
+          duration: 2000,
+          content: '档案更新成功',
+        });
+        
+        // 延迟返回上一页，让用户看到成功提示
+        setTimeout(() => {
+          wx.navigateBack();
+        }, 1500);
+      } else {
+        console.error('更新档案失败:', result.result.error);
+        Message.error({
+          context: this,
+          offset: [120, 32],
+          duration: 3000,
+          content: result.result.error || '更新失败，请重试',
+        });
+      }
+    } catch (error) {
+      console.error('更新档案过程中出现错误:', error);
+      wx.hideLoading();
+      Message.error({
+        context: this,
+        offset: [120, 32],
+        duration: 3000,
+        content: '更新过程中出现错误，请重试',
+      });
+    }
+  },
+
   // 确保用户已注册
   async ensureUserRegistered() {
     try {
@@ -189,8 +282,14 @@ Page({
     }
   },
 
-  onLoad() {
-    console.log('时间查询页面加载');
+  onLoad(options) {
+    console.log('时间查询页面加载，参数:', options);
+    
+    // 检查是否为编辑模式
+    const isEditMode = options.mode === 'edit';
+    this.setData({
+      pageMode: isEditMode ? 'edit' : 'create'
+    });
     
     // 初始化年份范围（1949-2050）
     const startYear = 1949;
@@ -200,60 +299,134 @@ Page({
       (_, i) => startYear + i
     );
     
-    // 尝试从本地存储恢复用户上次选择的时间
-    let savedDateTime = null;
-    try {
-      savedDateTime = wx.getStorageSync('userDateTime');
-      console.log('从本地存储读取到的时间数据:', savedDateTime);
-    } catch (error) {
-      console.error('读取本地存储失败:', error);
-    }
-    
     let initialPickerValue;
     let dateTimeValue = null;
     let formatedDateTime = '';
+    let formData = {
+      name: '',
+      gender: 1
+    };
     
-    // 如果有保存的时间数据，则恢复
-    if (savedDateTime && savedDateTime.dateTimeValue) {
-      console.log('恢复用户上次选择的时间:', savedDateTime.formatedDateTime);
-      
-      dateTimeValue = savedDateTime.dateTimeValue;
-      formatedDateTime = savedDateTime.formatedDateTime;
-      
-      // 使用保存的选择器值，或者重新计算
-      if (savedDateTime.year && savedDateTime.month && savedDateTime.day && savedDateTime.timeIndex !== undefined) {
-        initialPickerValue = this.calculatePickerValue(
-          savedDateTime.year, 
-          savedDateTime.month, 
-          savedDateTime.day, 
-          savedDateTime.timeIndex
-        );
-      } else {
-        // 从时间戳重新计算选择器值
-        const savedDate = new Date(savedDateTime.dateTimeValue);
-        initialPickerValue = this.getPickerValueFromDate(savedDate);
+    if (isEditMode) {
+      // 编辑模式：从本地存储获取要编辑的档案数据
+      try {
+        const editingProfile = wx.getStorageSync('editingProfile');
+        if (editingProfile) {
+          console.log('编辑模式：加载档案数据', editingProfile);
+          
+          // 设置表单数据
+          formData = {
+            name: editingProfile.profileName || editingProfile.name || '',
+            gender: editingProfile.gender || 1
+          };
+          
+          // 设置档案ID
+          this.setData({
+            editingProfileId: editingProfile._id
+          });
+          
+          // 设置出生时间
+          const birthDate = editingProfile.birthDate;
+          if (birthDate) {
+            const timeIndex = this.calculateTimeIndex(birthDate.hour);
+            initialPickerValue = this.calculatePickerValue(
+              birthDate.year,
+              birthDate.month,
+              birthDate.day,
+              timeIndex
+            );
+            
+            // 构建时间显示
+            const timeInfo = this.data.timeMap[timeIndex];
+            formatedDateTime = `${birthDate.year}年${birthDate.month}月${birthDate.day}日 ${timeInfo.name}`;
+            
+            // 构建时间戳
+            const formattedMonth = birthDate.month.toString().padStart(2, '0');
+            const formattedDay = birthDate.day.toString().padStart(2, '0');
+            const formattedHour = birthDate.hour.toString().padStart(2, '0');
+            const dateStr = `${birthDate.year}-${formattedMonth}-${formattedDay} ${formattedHour}:00:00`;
+            dateTimeValue = new Date(dateStr).getTime();
+          }
+        } else {
+          console.error('编辑模式：未找到要编辑的档案数据');
+          wx.showToast({
+            title: '档案数据异常',
+            icon: 'error'
+          });
+          setTimeout(() => {
+            wx.navigateBack();
+          }, 1500);
+          return;
+        }
+      } catch (error) {
+        console.error('编辑模式：读取档案数据失败', error);
+        wx.showToast({
+          title: '数据读取失败',
+          icon: 'error'
+        });
+        setTimeout(() => {
+          wx.navigateBack();
+        }, 1500);
+        return;
+      }
+    } else {
+      // 创建模式：尝试从本地存储恢复用户上次选择的时间
+      let savedDateTime = null;
+      try {
+        savedDateTime = wx.getStorageSync('userDateTime');
+        console.log('从本地存储读取到的时间数据:', savedDateTime);
+      } catch (error) {
+        console.error('读取本地存储失败:', error);
       }
       
-      console.log('已恢复用户时间选择:', {
-        formatedDateTime,
-        dateTimeValue,
-        pickerValue: initialPickerValue
-      });
-    } else {
-      console.log('未找到保存的时间，使用当前时间作为默认值');
-      // 获取当前时间的选择器值
-      const now = new Date();
-      initialPickerValue = this.getPickerValueFromDate(now);
+      // 如果有保存的时间数据，则恢复
+      if (savedDateTime && savedDateTime.dateTimeValue) {
+        console.log('恢复用户上次选择的时间:', savedDateTime.formatedDateTime);
+        
+        dateTimeValue = savedDateTime.dateTimeValue;
+        formatedDateTime = savedDateTime.formatedDateTime;
+        
+        // 使用保存的选择器值，或者重新计算
+        if (savedDateTime.year && savedDateTime.month && savedDateTime.day && savedDateTime.timeIndex !== undefined) {
+          initialPickerValue = this.calculatePickerValue(
+            savedDateTime.year, 
+            savedDateTime.month, 
+            savedDateTime.day, 
+            savedDateTime.timeIndex
+          );
+        } else {
+          // 从时间戳重新计算选择器值
+          const savedDate = new Date(savedDateTime.dateTimeValue);
+          initialPickerValue = this.getPickerValueFromDate(savedDate);
+        }
+        
+        console.log('已恢复用户时间选择:', {
+          formatedDateTime,
+          dateTimeValue,
+          pickerValue: initialPickerValue
+        });
+      } else {
+        console.log('未找到保存的时间，使用当前时间作为默认值');
+        // 获取当前时间的选择器值
+        const now = new Date();
+        initialPickerValue = this.getPickerValueFromDate(now);
+      }
     }
     
     this.setData({
       yearRange,
       pickerValue: initialPickerValue,
       dateTimeValue,
-      formatedDateTime
+      formatedDateTime,
+      formData
     });
 
-    console.log('页面初始化完成，选择器默认值已设置');
+    console.log('页面初始化完成，模式:', isEditMode ? '编辑' : '创建');
+    
+    // 编辑模式下需要验证表单
+    if (isEditMode) {
+      this.validateForm();
+    }
   },
 
   // 返回上一页

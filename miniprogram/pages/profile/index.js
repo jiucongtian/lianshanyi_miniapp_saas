@@ -265,5 +265,134 @@ Page({
     wx.navigateTo({
       url: '/pages/addProfile/index'
     });
+  },
+
+  /**
+   * 编辑档案
+   */
+  onEditProfile(e) {
+    const profileId = e.currentTarget.dataset.id;
+    console.log('编辑档案:', profileId);
+    
+    // 从当前档案列表中找到要编辑的档案数据
+    const profileToEdit = this.data.profileList.find(profile => profile._id === profileId);
+    if (!profileToEdit) {
+      console.error('未找到要编辑的档案数据:', profileId);
+      wx.showToast({
+        title: '档案数据异常',
+        icon: 'error'
+      });
+      return;
+    }
+    
+    // 将档案数据存储到本地存储，供编辑页面使用
+    try {
+      wx.setStorageSync('editingProfile', profileToEdit);
+      console.log('档案数据已存储到本地，准备跳转到编辑页面');
+      
+      wx.navigateTo({
+        url: '/pages/addProfile/index?mode=edit',
+        success: () => {
+          console.log('成功跳转到编辑页面');
+        },
+        fail: (error) => {
+          console.error('跳转到编辑页面失败:', error);
+          wx.showToast({
+            title: '跳转失败',
+            icon: 'error'
+          });
+        }
+      });
+    } catch (error) {
+      console.error('存储档案数据失败:', error);
+      wx.showToast({
+        title: '数据存储失败',
+        icon: 'error'
+      });
+    }
+  },
+
+  /**
+   * 删除档案
+   */
+  onDeleteProfile(e) {
+    const profileId = e.currentTarget.dataset.id;
+    const profileName = this.data.profileList.find(profile => profile._id === profileId)?.profileName || '未知档案';
+    
+    console.log('删除档案:', profileId, profileName);
+    
+    // 显示确认对话框
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除档案"${profileName}"吗？删除后无法恢复。`,
+      confirmText: '删除',
+      confirmColor: '#d32f2f',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          this.deleteProfile(profileId);
+        }
+      }
+    });
+  },
+
+  /**
+   * 执行删除档案操作
+   */
+  async deleteProfile(profileId) {
+    try {
+      wx.showLoading({
+        title: '删除中...',
+        mask: true
+      });
+
+      const result = await wx.cloud.callFunction({
+        name: 'profileManagement',
+        data: {
+          action: 'deleteProfile',
+          profileId: profileId
+        }
+      });
+
+      wx.hideLoading();
+
+      if (result.result.success) {
+        console.log('档案删除成功:', profileId);
+        
+        // 从本地列表中移除已删除的档案
+        const updatedProfileList = this.data.profileList.filter(profile => profile._id !== profileId);
+        this.setData({
+          profileList: updatedProfileList
+        });
+        
+        // 如果删除的是当前选中的档案，清除当前选中状态
+        if (this.data.currentProfileId === profileId) {
+          const app = getApp();
+          app.globalData.currentProfileId = null;
+          this.setData({ currentProfileId: null });
+        }
+        
+        wx.showToast({
+          title: '删除成功',
+          icon: 'success',
+          duration: 2000
+        });
+      } else {
+        console.error('删除档案失败:', result.result.error);
+        wx.showToast({
+          title: result.result.error || '删除失败',
+          icon: 'error',
+          duration: 2000
+        });
+      }
+    } catch (error) {
+      console.error('删除档案过程中出现错误:', error);
+      wx.hideLoading();
+      wx.showToast({
+        title: '删除失败，请重试',
+        icon: 'error',
+        duration: 2000
+      });
+    }
   }
 })
