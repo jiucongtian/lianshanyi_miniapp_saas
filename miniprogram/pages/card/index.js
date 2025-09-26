@@ -8,6 +8,7 @@ Page({
     showTimePopup: false,
     isDataLoaded: false, // 标记数据是否已加载
     isLoading: true, // 标记是否正在加载
+    currentProfileName: '生命智慧卡牌', // 当前档案名称，默认为生命智慧卡牌
     // 图片预览相关
     showImagePreview: false,
     previewImagePath: '',
@@ -113,6 +114,7 @@ Page({
       this.setData({
         isLoading: false,
         isDataLoaded: true,
+        currentProfileName: baziResult.profileName || '生命智慧卡牌', // 更新档案名称
         // 重置预览状态
         showImagePreview: false,
         previewImagePath: ''
@@ -160,6 +162,7 @@ Page({
       this.setData({
         isLoading: false,
         isDataLoaded: true,
+        currentProfileName: profileData.profileName || '生命智慧卡牌', // 更新档案名称
         // 重置预览状态
         showImagePreview: false,
         previewImagePath: ''
@@ -184,6 +187,7 @@ Page({
       this.setData({
         isLoading: false,
         isDataLoaded: true,
+        currentProfileName: cardData.profileName || '生命智慧卡牌', // 更新档案名称
         // 重置预览状态
         showImagePreview: false,
         previewImagePath: ''
@@ -315,6 +319,7 @@ Page({
     this.setData({
       isLoading: false,
       isDataLoaded: false,
+      currentProfileName: '生命智慧卡牌', // 保持默认档案名称
       yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
       monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
       dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },

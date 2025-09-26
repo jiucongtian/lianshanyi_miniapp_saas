@@ -1,6 +1,6 @@
 <view class="page-container">
   <view class="bazi-content">
-    <view class="bazi-title">生命智慧卡牌</view>
+    <view class="bazi-title">{{currentProfileName}}</view>
 
     <!-- 加载状态 -->
     <view class="loading-state" wx:if="{{isLoading}}">

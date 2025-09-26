@@ -638,6 +638,7 @@ Page({
   convertProfileToBaziResult(profile) {
     // 将云端档案数据转换为标准化的八字数据格式
     return {
+      profileName: profile.profileName, // 添加档案名称
       yearPillar: {
         heavenlyStem: profile.baziData.year.gan,
         earthlyBranch: profile.baziData.year.zhi
