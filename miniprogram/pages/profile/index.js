@@ -263,7 +263,7 @@ Page({
    */
   onAddProfile() {
     wx.navigateTo({
-      url: '/pages/dateQuery/index'
+      url: '/pages/addProfile/index'
     });
   }
 })

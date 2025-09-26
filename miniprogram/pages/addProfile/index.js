@@ -684,7 +684,7 @@ Page({
   onShareAppMessage: function() {
     return {
       title: '生命智慧卡牌',
-      path: '/pages/dateQuery/index',
+      path: '/pages/addProfile/index',
       imageUrl: '', // 可以设置分享图片
     };
   },

@@ -3,7 +3,7 @@
     "pages/card/index",
     "pages/profile/index", 
     "pages/mine/index",
-    "pages/dateQuery/index", 
+    "pages/addProfile/index", 
     "pages/bazi/index"
   ],
   "usingComponents": {

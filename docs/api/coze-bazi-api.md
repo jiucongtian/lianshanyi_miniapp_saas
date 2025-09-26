@@ -168,7 +168,7 @@ function parseBaziResult(cozeData) {
 ## 相关文件
 
 - `api/coze.js` - 接口调用模块
-- `pages/dateQuery/index.js` - 时间查询页面
+- `pages/addProfile/index.js` - 新增档案页面
 - `pages/bazi/index.js` - 八字显示页面
 - `utils/baziImageMap.js` - 八字图片映射表
 

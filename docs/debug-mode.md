@@ -61,7 +61,7 @@ export const config = {
 
 ## 技术实现
 
-调试模式的核心逻辑位于 `miniprogram/pages/dateQuery/index.js` 文件：
+调试模式的核心逻辑位于 `miniprogram/pages/addProfile/index.js` 文件：
 
 ```javascript
 // 检查是否为调试模式

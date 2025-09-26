@@ -71,8 +71,8 @@
           "scene": null
         },
         {
-          "name": "dateQuery",
-          "pathName": "pages/dateQuery/index",
+          "name": "addProfile",
+          "pathName": "pages/addProfile/index",
           "query": "",
           "scene": null
         }

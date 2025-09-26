@@ -18,8 +18,8 @@ Component({
         isSidebar: true,
       },
       {
-        title: '时间查询',
-        url: 'pages/dateQuery/index',
+        title: '新增档案',
+        url: 'pages/addProfile/index',
         isSidebar: true,
       },
     ],
