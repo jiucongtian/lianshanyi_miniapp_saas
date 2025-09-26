@@ -8,6 +8,9 @@ Page({
     showTimePopup: false,
     isDataLoaded: false, // 标记数据是否已加载
     isLoading: true, // 标记是否正在加载
+    // 图片预览相关
+    showImagePreview: false,
+    previewImagePath: '',
     yearPillar: { 
       heavenlyStem: '',
       earthlyBranch: '',
@@ -377,6 +380,45 @@ Page({
       },
       originalTime: data.originalTime,
       lunarTime: data.lunarTime
+    });
+  },
+
+  // 图片点击事件
+  onImageTap: function(e) {
+    const pillar = e.currentTarget.dataset.pillar;
+    const pillarData = this.data[`${pillar}Pillar`];
+    
+    if (pillarData && pillarData.imagePath) {
+      this.setData({
+        showImagePreview: true,
+        previewImagePath: pillarData.imagePath
+      });
+    }
+  },
+
+  // 关闭图片预览
+  closeImagePreview: function() {
+    this.setData({
+      showImagePreview: false,
+      previewImagePath: ''
+    });
+  },
+
+  // 防止点击预览容器时关闭预览
+  preventClose: function() {
+    // 空函数，阻止事件冒泡
+  },
+
+  // 图片加载成功
+  onImageLoad: function(e) {
+    // 图片加载成功
+  },
+
+  // 图片加载失败
+  onImageError: function(e) {
+    wx.showToast({
+      title: '图片加载失败',
+      icon: 'none'
     });
   },
 
