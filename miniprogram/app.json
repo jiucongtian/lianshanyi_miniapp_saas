@@ -27,15 +27,21 @@
     "list": [
       {
         "pagePath": "pages/card/index",
-        "text": "卡牌"
+        "text": "卡牌",
+        "iconPath": "static/icons/card.png",
+        "selectedIconPath": "static/icons/card-active.png"
       },
       {
         "pagePath": "pages/profile/index",
-        "text": "档案"
+        "text": "档案",
+        "iconPath": "static/icons/profile.png",
+        "selectedIconPath": "static/icons/profile-active.png"
       },
       {
         "pagePath": "pages/mine/index",
-        "text": "我的"
+        "text": "我的",
+        "iconPath": "static/icons/mine.png",
+        "selectedIconPath": "static/icons/mine-active.png"
       }
     ]
   },
