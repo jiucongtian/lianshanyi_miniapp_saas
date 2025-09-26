@@ -112,7 +112,10 @@ Page({
       // 设置数据加载完成状态
       this.setData({
         isLoading: false,
-        isDataLoaded: true
+        isDataLoaded: true,
+        // 重置预览状态
+        showImagePreview: false,
+        previewImagePath: ''
       });
     } else {
       console.log('未找到全局八字数据，显示无数据状态');
@@ -156,7 +159,10 @@ Page({
       // 设置数据加载完成状态
       this.setData({
         isLoading: false,
-        isDataLoaded: true
+        isDataLoaded: true,
+        // 重置预览状态
+        showImagePreview: false,
+        previewImagePath: ''
       });
       
       console.log('从档案数据加载卡牌显示成功');
@@ -177,7 +183,10 @@ Page({
       // 设置数据加载完成状态
       this.setData({
         isLoading: false,
-        isDataLoaded: true
+        isDataLoaded: true,
+        // 重置预览状态
+        showImagePreview: false,
+        previewImagePath: ''
       });
       
       console.log('从全局数据加载卡牌数据成功');
