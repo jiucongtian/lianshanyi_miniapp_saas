@@ -525,7 +525,7 @@ Page({
     const formattedDay = day.toString().padStart(2, '0');
     const formattedHour = baseHour.toString().padStart(2, '0');
     
-    const dateStr = `${year}-${formattedMonth}-${formattedDay} ${formattedHour}:00:00`;
+    const dateStr = `${year}-${formattedMonth}-${formattedDay}${formattedHour}:00:00`;
     console.log('构建的日期字符串:', dateStr);
     
     const dateTimeValue = new Date(dateStr).getTime();
