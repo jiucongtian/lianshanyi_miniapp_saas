@@ -381,7 +381,7 @@ Page({
       const profile = existingProfiles[0];
       const baziResult = {
         timestamp: timestamp,
-        cozeData: this.convertProfileToBaziResult(profile),
+        baziData: this.convertProfileToBaziResult(profile),  // 使用标准化的八字数据
         parameters: { year, month, day, hour, min: minute },
         calculatedAt: new Date(profile.createTime).getTime(),
         profileId: profile._id
@@ -445,10 +445,11 @@ Page({
       if (result.success) {
         console.log('Coze API调用成功，结果：', result);
         
-        // 构建八字结果数据
+        // 构建八字结果数据（使用标准化的数据结构）
         const baziResult = {
           timestamp: timestamp,
-          cozeData: result.data,
+          baziData: result.baziData,  // 标准化的八字数据
+          rawCozeData: result.rawCozeData,  // 原始coze数据（用于调试）
           parameters: result.parameters,
           calculatedAt: new Date().getTime()
         };
@@ -533,35 +534,35 @@ Page({
 
   // 数据转换辅助函数
   convertProfileToBaziResult(profile) {
-    // 将云端档案数据转换为八字结果格式
+    // 将云端档案数据转换为标准化的八字数据格式
     return {
-      data: JSON.stringify({
-        output: {
-          year: profile.baziData.year.gan + profile.baziData.year.zhi,
-          month: profile.baziData.month.gan + profile.baziData.month.zhi,
-          day: profile.baziData.day.gan + profile.baziData.day.zhi,
-          hour: profile.baziData.hour.gan + profile.baziData.hour.zhi
-        }
-      })
+      yearPillar: {
+        heavenlyStem: profile.baziData.year.gan,
+        earthlyBranch: profile.baziData.year.zhi
+      },
+      monthPillar: {
+        heavenlyStem: profile.baziData.month.gan,
+        earthlyBranch: profile.baziData.month.zhi
+      },
+      dayPillar: {
+        heavenlyStem: profile.baziData.day.gan,
+        earthlyBranch: profile.baziData.day.zhi
+      },
+      timePillar: {
+        heavenlyStem: profile.baziData.hour.gan,
+        earthlyBranch: profile.baziData.hour.zhi
+      }
     };
   },
 
   convertBaziResultToProfile(baziResult, birthDate) {
-    // 解析Coze API返回的八字数据
-    let parsedData;
-    try {
-      parsedData = JSON.parse(baziResult.cozeData.data);
-    } catch (error) {
-      console.error('解析八字数据失败:', error);
+    // 使用标准化的八字数据
+    if (!baziResult.baziData) {
+      console.error('八字数据格式不正确，缺少baziData字段');
       return null;
     }
 
-    if (!parsedData.output) {
-      console.error('八字数据格式不正确');
-      return null;
-    }
-
-    const output = parsedData.output;
+    const baziData = baziResult.baziData;
     
     // 生成档案名称
     const date = new Date(baziResult.timestamp);
@@ -579,24 +580,24 @@ Page({
       },
       baziData: {
         year: {
-          gan: output.year[0],
-          zhi: output.year[1],
-          ganzhiIndex: this.getGanZhiIndex(output.year[0], output.year[1])
+          gan: baziData.yearPillar.heavenlyStem,
+          zhi: baziData.yearPillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziData.yearPillar.heavenlyStem, baziData.yearPillar.earthlyBranch)
         },
         month: {
-          gan: output.month[0],
-          zhi: output.month[1],
-          ganzhiIndex: this.getGanZhiIndex(output.month[0], output.month[1])
+          gan: baziData.monthPillar.heavenlyStem,
+          zhi: baziData.monthPillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziData.monthPillar.heavenlyStem, baziData.monthPillar.earthlyBranch)
         },
         day: {
-          gan: output.day[0],
-          zhi: output.day[1],
-          ganzhiIndex: this.getGanZhiIndex(output.day[0], output.day[1])
+          gan: baziData.dayPillar.heavenlyStem,
+          zhi: baziData.dayPillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziData.dayPillar.heavenlyStem, baziData.dayPillar.earthlyBranch)
         },
         hour: {
-          gan: output.hour[0],
-          zhi: output.hour[1],
-          ganzhiIndex: this.getGanZhiIndex(output.hour[0], output.hour[1])
+          gan: baziData.timePillar.heavenlyStem,
+          zhi: baziData.timePillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziData.timePillar.heavenlyStem, baziData.timePillar.earthlyBranch)
         }
       },
       gender: 0,
@@ -658,41 +659,13 @@ Page({
   buildCardDataFromBaziResult(baziResult, birthDate) {
     console.log('从八字结果构建卡牌数据:', baziResult);
     
-    // 解析八字数据
-    let parsedData;
-    try {
-      parsedData = JSON.parse(baziResult.cozeData.data);
-    } catch (error) {
-      console.error('解析八字数据失败:', error);
+    // 使用标准化的八字数据
+    if (!baziResult.baziData) {
+      console.error('八字数据格式不正确，缺少baziData字段');
       return null;
     }
 
-    if (!parsedData.output) {
-      console.error('八字数据格式不正确');
-      return null;
-    }
-
-    const output = parsedData.output;
-    
-    // 构建八字数据格式
-    const baziData = {
-      yearPillar: {
-        heavenlyStem: output.year[0],
-        earthlyBranch: output.year[1]
-      },
-      monthPillar: {
-        heavenlyStem: output.month[0],
-        earthlyBranch: output.month[1]
-      },
-      dayPillar: {
-        heavenlyStem: output.day[0],
-        earthlyBranch: output.day[1]
-      },
-      timePillar: {
-        heavenlyStem: output.hour[0],
-        earthlyBranch: output.hour[1]
-      }
-    };
+    const baziData = baziResult.baziData;
 
     // 格式化时间显示
     const { formatBirthTime } = require('../../utils/util');

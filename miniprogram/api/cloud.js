@@ -27,8 +27,10 @@ async function calculateBazi(timestamp) {
     if (result.result && result.result.success) {
       return {
         success: true,
-        data: result.result.data,
-        parameters: result.result.parameters
+        baziData: result.result.baziData,  // 标准化的八字数据
+        rawCozeData: result.result.rawCozeData,  // 原始coze数据（用于调试）
+        parameters: result.result.parameters,
+        timestamp: result.result.timestamp
       };
     } else {
       return {

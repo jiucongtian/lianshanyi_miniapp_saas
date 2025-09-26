@@ -51,80 +51,18 @@ Page({
     
     console.log('全局数据:', baziResult);
     
-    if (baziResult && baziResult.cozeData) {
-      console.log('找到cozeData:', baziResult.cozeData);
+    if (baziResult && baziResult.baziData) {
+      console.log('找到标准化八字数据:', baziResult.baziData);
       
-      // 解析八字数据
-      const baziData = this.parseBaziData(baziResult.cozeData);
-      
-      if (baziData) {
-        console.log('解析成功，更新显示:', baziData);
-        this.updateBaziDisplay(baziData);
-      } else {
-        console.log('八字数据解析失败，显示默认数据');
-        this.updateInitialImages();
-      }
+      // 直接使用标准化的八字数据
+      console.log('使用标准化数据，更新显示:', baziResult.baziData);
+      this.updateBaziDisplay(baziResult.baziData);
     } else {
       console.log('未找到全局八字数据，显示默认数据');
       this.updateInitialImages();
     }
   },
 
-  // 解析八字数据
-  parseBaziData: function(cozeData) {
-    try {
-      console.log('=== 开始解析八字数据 ===');
-      console.log('cozeData 完整结构:', JSON.stringify(cozeData, null, 2));
-      console.log('cozeData.data 类型:', typeof cozeData?.data);
-      console.log('cozeData.data 内容:', cozeData?.data);
-      
-      // 根据实际数据格式: cozeData.data 是一个JSON字符串
-      if (cozeData && cozeData.data) {
-        const dataString = cozeData.data;
-        console.log('准备解析的 dataString:', dataString);
-        
-        let parsedData;
-        try {
-          parsedData = JSON.parse(dataString);
-          console.log('JSON 解析成功，parsedData:', JSON.stringify(parsedData, null, 2));
-        } catch (jsonError) {
-          console.error('JSON 解析失败:', jsonError);
-          console.log('尝试直接使用 cozeData.data:', dataString);
-          parsedData = dataString;
-        }
-        
-        console.log('最终解析后的数据:', parsedData);
-        
-        // 数据格式: {"output":{"day":"甲戌","hour":"戊辰","month":"甲申","year":"乙巳"}}
-        if (parsedData.output) {
-          const output = parsedData.output;
-          return {
-            yearPillar: {
-              heavenlyStem: output.year[0],  // 乙
-              earthlyBranch: output.year[1]  // 巳
-            },
-            monthPillar: {
-              heavenlyStem: output.month[0], // 甲
-              earthlyBranch: output.month[1] // 申
-            },
-            dayPillar: {
-              heavenlyStem: output.day[0],   // 甲
-              earthlyBranch: output.day[1]   // 戌
-            },
-            timePillar: {
-              heavenlyStem: output.hour[0],  // 戊
-              earthlyBranch: output.hour[1]  // 辰
-            }
-          };
-        }
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('解析八字数据时出错:', error);
-      return null;
-    }
-  },
 
 
 
@@ -208,12 +146,11 @@ Page({
         const baziResult = app.globalData?.baziResult;
         
         if (baziResult && baziResult.timestamp === timestamp) {
-          console.log('检测到Coze计算结果:', baziResult.cozeData);
+          console.log('检测到标准化八字数据:', baziResult.baziData);
           
-          // 尝试解析并更新八字显示
-          const baziData = this.parseBaziData(baziResult.cozeData);
-          if (baziData) {
-            this.updateBaziDisplay(baziData);
+          // 直接使用标准化的八字数据
+          if (baziResult.baziData) {
+            this.updateBaziDisplay(baziResult.baziData);
           }
         }
       }

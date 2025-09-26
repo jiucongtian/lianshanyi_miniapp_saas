@@ -27,6 +27,75 @@ function extractTimeParams(timestamp) {
 }
 
 /**
+ * 解析Coze API返回的八字数据
+ * @param {Object} cozeResponse - Coze API响应数据
+ * @returns {Object} 标准化的八字数据结构
+ */
+function parseBaziData(cozeResponse) {
+  try {
+    console.log('=== 开始解析Coze八字数据 ===');
+    console.log('Coze响应数据:', JSON.stringify(cozeResponse, null, 2));
+    
+    // 检查响应格式
+    if (!cozeResponse || !cozeResponse.data) {
+      throw new Error('Coze响应数据格式不正确');
+    }
+    
+    // 解析data字段（JSON字符串）
+    let parsedData;
+    if (typeof cozeResponse.data === 'string') {
+      parsedData = JSON.parse(cozeResponse.data);
+    } else {
+      parsedData = cozeResponse.data;
+    }
+    
+    console.log('解析后的数据:', JSON.stringify(parsedData, null, 2));
+    
+    // 检查输出格式
+    if (!parsedData.output) {
+      throw new Error('八字数据格式不正确，缺少output字段');
+    }
+    
+    const output = parsedData.output;
+    
+    // 验证必需字段
+    const requiredFields = ['year', 'month', 'day', 'hour'];
+    for (const field of requiredFields) {
+      if (!output[field] || typeof output[field] !== 'string' || output[field].length !== 2) {
+        throw new Error(`八字数据格式不正确，${field}字段无效: ${output[field]}`);
+      }
+    }
+    
+    // 构建标准化的八字数据结构
+    const baziData = {
+      yearPillar: {
+        heavenlyStem: output.year[0],
+        earthlyBranch: output.year[1]
+      },
+      monthPillar: {
+        heavenlyStem: output.month[0],
+        earthlyBranch: output.month[1]
+      },
+      dayPillar: {
+        heavenlyStem: output.day[0],
+        earthlyBranch: output.day[1]
+      },
+      timePillar: {
+        heavenlyStem: output.hour[0],
+        earthlyBranch: output.hour[1]
+      }
+    };
+    
+    console.log('标准化八字数据:', JSON.stringify(baziData, null, 2));
+    return baziData;
+    
+  } catch (error) {
+    console.error('解析八字数据失败:', error);
+    throw new Error(`八字数据解析失败: ${error.message}`);
+  }
+}
+
+/**
  * 调用Coze工作流
  * @param {Object} parameters - 工作流参数
  * @returns {Promise} 返回工作流执行结果
@@ -131,10 +200,16 @@ exports.main = async (event, context) => {
     const result = await callCozeAPI(parameters);
     console.log('Coze API 返回结果:', result);
     
+    // 解析Coze数据为标准化的八字数据结构
+    const baziData = parseBaziData(result.data);
+    console.log('解析后的八字数据:', baziData);
+    
     return {
       success: true,
-      data: result.data,
+      baziData: baziData,  // 标准化的八字数据
+      rawCozeData: result.data,  // 保留原始coze数据用于调试
       parameters,
+      timestamp: event.timestamp,
       openid: wxContext.OPENID,
       appid: wxContext.APPID,
       unionid: wxContext.UNIONID,
