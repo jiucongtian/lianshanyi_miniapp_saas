@@ -681,9 +681,9 @@ Page({
       }
     }
     
-    // 生成档案名称（使用用户填写的姓名）
+    // 生成档案名称（使用用户填写的姓名，已通过表单验证）
     const { formData } = this.data;
-    const profileName = formData.name ? `${formData.name}的档案` : `${birthDate.year}年${birthDate.month}月${birthDate.day}日档案`;
+    const profileName = formData.name.trim();
     
     return {
       profileName,

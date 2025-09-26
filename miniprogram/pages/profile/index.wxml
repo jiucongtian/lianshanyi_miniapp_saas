@@ -37,7 +37,7 @@
             <view class="profile-header">
               <text class="profile-name">{{item.profileName}}</text>
               <view class="gender-badge gender-{{item.gender}}">
-                <text class="gender-text">{{item.gender === 1 ? '男' : item.gender === 2 ? '女' : '未知'}}</text>
+                <text class="gender-text">{{item.gender === 1 ? '男' : item.gender === 0 ? '女' : '未知'}}</text>
               </view>
             </view>
             
