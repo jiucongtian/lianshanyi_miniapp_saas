@@ -489,14 +489,14 @@ Page({
       console.log('卡牌数据已设置到全局变量:', cardData);
       
       wx.switchTab({
-        url: '/pages/card/index',
+        url: '/pages/profile/index',
         success: () => {
-          console.log('跳转到卡牌页面成功，使用云端档案数据');
+          console.log('找到云端档案，跳转到档案页面');
           Message.success({
             context: this,
             offset: [120, 32],
             duration: 1500,
-            content: '已加载云端档案',
+            content: '已找到云端档案，请选择查看',
           });
         },
         fail: (error) => {
@@ -522,7 +522,7 @@ Page({
 
     // 显示加载状态
     wx.showLoading({
-      title: isDebugMode ? '调试模式：重新计算...' : '抽取智慧卡牌...',
+      title: isDebugMode ? '调试模式：重新计算...' : '正在计算八字，请稍候...',
       mask: true
     });
 
@@ -572,28 +572,19 @@ Page({
           }
         }
         
-        // API调用成功，跳转到卡牌页面并传递结果
+        // API调用成功，跳转到档案页面
         wx.hideLoading();
         
-        // 将结果存储到全局数据中，供卡牌页面使用
-        const app = getApp();
-        app.globalData = app.globalData || {};
-        app.globalData.baziResult = baziResult;
-        
-        // 构建卡牌数据并设置到全局变量
-        const cardData = this.buildCardDataFromBaziResult(baziResult, birthDate);
-        app.globalData.cardData = cardData;
-        console.log('卡牌数据已设置到全局变量:', cardData);
-        
+        // 档案创建成功后，跳转到档案页面让用户管理档案
         wx.switchTab({
-          url: '/pages/card/index',
+          url: '/pages/profile/index',
           success: () => {
-            console.log('跳转到卡牌页面成功，已传递Coze数据');
+            console.log('档案创建成功，跳转到档案页面');
             Message.success({
               context: this,
               offset: [120, 32],
               duration: 2000,
-              content: isDebugMode ? '调试模式：重新计算完成' : '计算完成',
+              content: '档案创建成功！请选择档案查看卡牌',
             });
           },
           fail: (error) => {

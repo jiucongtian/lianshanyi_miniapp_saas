@@ -91,42 +91,11 @@ Page({
         return;
       }
       
-      // 最后的备选方案：检查是否有八字计算结果
-      this.loadBaziFromGlobalData();
-    }
-  },
-
-  // 从全局数据加载八字结果
-  loadBaziFromGlobalData: function() {
-    const app = getApp();
-    const baziResult = app.globalData?.baziResult;
-    
-    console.log('全局八字数据:', baziResult);
-    
-    if (baziResult && baziResult.baziData) {
-      console.log('找到标准化八字数据:', baziResult.baziData);
-      
-      // 将八字数据转换为全局卡牌数据格式
-      const cardData = {
-        profileId: baziResult.profileId || null,
-        profileName: baziResult.profileName || '生命智慧卡牌',
-        originalTime: baziResult.originalTime || '',
-        lunarTime: baziResult.lunarTime || '',
-        baziData: baziResult.baziData
-      };
-      
-      // 更新全局卡牌数据
-      app.globalData.cardData = cardData;
-      
-      // 统一使用全局卡牌数据加载
-      this.loadCardDataFromGlobal(cardData);
-      
-      console.log('从八字数据转换为全局卡牌数据并加载成功');
-    } else {
-      console.log('未找到全局八字数据，显示无数据状态');
+      // 没有数据，显示无数据状态
       this.showNoDataState();
     }
   },
+
 
 
   // 从档案数据加载卡牌显示
