@@ -3,8 +3,7 @@
     "pages/card/index",
     "pages/profile/index", 
     "pages/mine/index",
-    "pages/addProfile/index", 
-    "pages/bazi/index"
+    "pages/addProfile/index"
   ],
   "usingComponents": {
     "t-toast": "miniprogram_npm/tdesign-miniprogram/toast/toast",
