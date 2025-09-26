@@ -194,24 +194,12 @@ Page({
     return profiles.map(profile => {
       return {
         ...profile,
-        createTimeFormatted: this.formatDateTime(profile.createTime),
         birthDate: {
           ...profile.birthDate,
           minute: profile.birthDate.minute || 0
         }
       };
     });
-  },
-
-  /**
-   * 格式化日期时间
-   */
-  formatDateTime(dateString) {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
   },
 
 
