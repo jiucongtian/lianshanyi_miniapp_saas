@@ -39,6 +39,14 @@ Page({
     this.setData({ currentProfileId });
     console.log('档案列表页面显示，当前选中档案ID:', currentProfileId);
     
+    // 检查是否有新添加的档案需要选中
+    const newlyAddedProfileId = app.globalData?.newlyAddedProfileId;
+    if (newlyAddedProfileId) {
+      console.log('检测到新添加的档案ID:', newlyAddedProfileId);
+      // 清除标记，避免重复处理
+      app.globalData.newlyAddedProfileId = null;
+    }
+    
     // 每次显示页面时刷新数据，以防从其他页面返回时数据有更新
     this.loadProfileList();
   },
@@ -109,6 +117,9 @@ Page({
           hasMore: result.result.data.hasMore,
           loading: false
         });
+        
+        // 加载完成后检查并设置默认选中
+        this.checkAndSetDefaultSelection(profiles);
       } else {
         console.error('获取档案列表失败:', result.result.error);
         wx.showToast({
@@ -200,6 +211,90 @@ Page({
         }
       };
     });
+  },
+
+  /**
+   * 检查并设置默认选中
+   */
+  checkAndSetDefaultSelection(profiles) {
+    if (!profiles || profiles.length === 0) {
+      // 如果没有档案，清除当前选中
+      this.clearCurrentSelection();
+      return;
+    }
+
+    const app = getApp();
+    const currentProfileId = this.data.currentProfileId;
+    const newlyAddedProfileId = app.globalData?.newlyAddedProfileId;
+    
+    // 优先处理新添加的档案
+    if (newlyAddedProfileId) {
+      const newProfile = profiles.find(profile => profile._id === newlyAddedProfileId);
+      if (newProfile) {
+        console.log('选中新添加的档案:', newProfile.profileName);
+        app.setCurrentProfile(newProfile);
+        this.setData({ currentProfileId: newProfile._id });
+        // 清除新添加档案的标记
+        app.globalData.newlyAddedProfileId = null;
+        return;
+      }
+    }
+    
+    // 检查当前选中的档案是否还存在于列表中
+    const currentProfileExists = currentProfileId && profiles.some(profile => profile._id === currentProfileId);
+    
+    if (!currentProfileExists) {
+      // 如果当前选中的档案不存在，自动选中第一个档案
+      this.autoSelectFirstProfile(profiles);
+    }
+  },
+
+  /**
+   * 自动选中第一个档案
+   */
+  autoSelectFirstProfile(profiles) {
+    if (!profiles || profiles.length === 0) {
+      this.clearCurrentSelection();
+      return;
+    }
+
+    const firstProfile = profiles[0];
+    console.log('自动选中第一个档案:', firstProfile._id, firstProfile.profileName);
+    
+    // 设置到全局数据
+    const app = getApp();
+    app.setCurrentProfile(firstProfile);
+    
+    // 更新本地状态
+    this.setData({ currentProfileId: firstProfile._id });
+  },
+
+  /**
+   * 清除当前选中状态
+   */
+  clearCurrentSelection() {
+    console.log('清除当前选中状态');
+    const app = getApp();
+    if (app.globalData) {
+      app.globalData.currentProfileId = null;
+      app.globalData.currentProfile = null;
+    }
+    this.setData({ currentProfileId: null });
+  },
+
+  /**
+   * 处理删除当前选中档案后的选中逻辑
+   */
+  handleDeletedCurrentProfile(updatedProfileList) {
+    if (updatedProfileList.length > 0) {
+      // 如果还有其他档案，自动选中第一个
+      this.autoSelectFirstProfile(updatedProfileList);
+      console.log('删除当前选中档案后，自动选中第一个档案');
+    } else {
+      // 如果没有档案了，清除选中状态
+      this.clearCurrentSelection();
+      console.log('删除最后一个档案，清除选中状态');
+    }
   },
 
 
@@ -355,11 +450,9 @@ Page({
           profileList: updatedProfileList
         });
         
-        // 如果删除的是当前选中的档案，清除当前选中状态
+        // 如果删除的是当前选中的档案，需要重新选中
         if (this.data.currentProfileId === profileId) {
-          const app = getApp();
-          app.globalData.currentProfileId = null;
-          this.setData({ currentProfileId: null });
+          this.handleDeletedCurrentProfile(updatedProfileList);
         }
         
         wx.showToast({

@@ -234,6 +234,13 @@ Page({
       if (result.result.success) {
         console.log('档案更新成功');
         
+        // 更新全局当前档案数据（如果更新的是当前选中的档案）
+        const app = getApp();
+        if (app.globalData?.currentProfileId === this.data.editingProfileId && result.result.data?.profile) {
+          app.setCurrentProfile(result.result.data.profile);
+          console.log('已更新全局当前档案数据');
+        }
+        
         // 清除本地存储的编辑数据
         try {
           wx.removeStorageSync('editingProfile');
@@ -742,6 +749,8 @@ Page({
             const app = getApp();
             if (savedProfile.profile) {
               app.setCurrentProfile(savedProfile.profile);
+              // 设置新添加档案标记，用于档案列表页面的默认选中
+              app.globalData.newlyAddedProfileId = savedProfile.profileId;
               console.log('新创建的档案已设置为当前档案:', savedProfile.profileId);
             }
           }
