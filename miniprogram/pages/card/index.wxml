@@ -1,6 +1,6 @@
 <view class="page-container">
   <view class="bazi-content">
-    <view class="bazi-title">生命智慧卡牌</view>
+    <view class="bazi-title">{{currentProfileName}}</view>
 
     <!-- 加载状态 -->
     <view class="loading-state" wx:if="{{isLoading}}">
@@ -20,26 +20,39 @@
       <!-- 年柱 -->
       <view class="pillar-item" animation="{{yearAnimation}}">
         <view class="pillar-title">年卡</view>
-        <image class="pillar-image" src="{{yearPillar.imagePath}}" mode="aspectFit" />
+        <image class="pillar-image" src="{{yearPillar.imagePath}}" mode="aspectFit" bindtap="onImageTap" data-pillar="year" />
       </view>
 
       <!-- 月柱 -->
       <view class="pillar-item" animation="{{monthAnimation}}">
         <view class="pillar-title">月卡</view>
-        <image class="pillar-image" src="{{monthPillar.imagePath}}" mode="aspectFit" />
+        <image class="pillar-image" src="{{monthPillar.imagePath}}" mode="aspectFit" bindtap="onImageTap" data-pillar="month" />
       </view>
 
       <!-- 日柱 -->
       <view class="pillar-item" animation="{{dayAnimation}}">
         <view class="pillar-title">日卡</view>
-        <image class="pillar-image" src="{{dayPillar.imagePath}}" mode="aspectFit" />
+        <image class="pillar-image" src="{{dayPillar.imagePath}}" mode="aspectFit" bindtap="onImageTap" data-pillar="day" />
       </view>
 
       <!-- 时柱 -->
       <view class="pillar-item" animation="{{timeAnimation}}">
         <view class="pillar-title">时卡</view>
-        <image class="pillar-image" src="{{timePillar.imagePath}}" mode="aspectFit" />
+        <image class="pillar-image" src="{{timePillar.imagePath}}" mode="aspectFit" bindtap="onImageTap" data-pillar="time" />
       </view>
     </view>
+  </view>
+
+  <!-- 图片预览悬浮窗 -->
+  <view class="image-preview-overlay" wx:if="{{showImagePreview}}" bindtap="closeImagePreview">
+    <image 
+      class="preview-image" 
+      src="{{previewImagePath}}" 
+      mode="aspectFit" 
+      catchtap="preventClose" 
+      bindload="onImageLoad" 
+      binderror="onImageError"
+      lazy-load="{{false}}"
+    />
   </view>
 </view>

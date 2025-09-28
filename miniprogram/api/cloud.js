@@ -6,46 +6,71 @@
 const { extractTimeParams } = require('../utils/util');
 
 /**
- * 调用生辰八字计算云函数
+ * 调用生辰八字计算云函数（带重试机制）
  * @param {number} timestamp - 时间戳
+ * @param {number} retryCount - 重试次数，默认3次
  * @returns {Promise} 返回计算结果
  */
-async function calculateBazi(timestamp) {
-  try {
-    console.log('调用云函数calculateBazi，参数:', { timestamp });
-    
-    // 调用云函数
-    const result = await wx.cloud.callFunction({
-      name: 'calculateBazi',
-      data: {
-        timestamp: timestamp
-      }
-    });
+async function calculateBazi(timestamp, retryCount = 3) {
+  for (let attempt = 1; attempt <= retryCount; attempt++) {
+    try {
+      console.log(`调用云函数calculateBazi，第${attempt}次尝试，参数:`, { timestamp });
+      
+      // 调用云函数
+      const result = await wx.cloud.callFunction({
+        name: 'calculateBazi',
+        data: {
+          timestamp: timestamp
+        }
+      });
 
-    console.log('云函数返回结果:', result);
-    
-    if (result.result && result.result.success) {
-      return {
-        success: true,
-        baziData: result.result.baziData,  // 标准化的八字数据
-        rawCozeData: result.result.rawCozeData,  // 原始coze数据（用于调试）
-        parameters: result.result.parameters,
-        timestamp: result.result.timestamp
-      };
-    } else {
-      return {
-        success: false,
-        error: result.result?.error || '云函数调用失败',
-        code: result.result?.code
-      };
+      console.log('云函数返回结果:', result);
+      
+      if (result.result && result.result.success) {
+        return {
+          success: true,
+          baziData: result.result.baziData,  // 标准化的八字数据
+          rawCozeData: result.result.rawCozeData,  // 原始coze数据（用于调试）
+          parameters: result.result.parameters,
+          timestamp: result.result.timestamp
+        };
+      } else {
+        // 如果是最后一次尝试，返回错误
+        if (attempt === retryCount) {
+          return {
+            success: false,
+            error: result.result?.error || '云函数调用失败',
+            code: result.result?.code
+          };
+        }
+        // 否则继续重试
+        console.log(`第${attempt}次尝试失败，准备重试...`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // 递增延迟
+        continue;
+      }
+    } catch (error) {
+      console.error(`第${attempt}次云函数调用失败:`, error);
+      
+      // 如果是最后一次尝试，返回错误
+      if (attempt === retryCount) {
+        return {
+          success: false,
+          error: error.message || '云函数调用失败',
+          code: error.errCode || -1
+        };
+      }
+      
+      // 检查是否是超时错误
+      if (error.errCode === -504003) {
+        console.log(`第${attempt}次尝试超时，准备重试...`);
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // 超时错误使用更长的延迟
+        continue;
+      }
+      
+      // 其他错误，短暂延迟后重试
+      console.log(`第${attempt}次尝试失败，准备重试...`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
-  } catch (error) {
-    console.error('云函数调用失败:', error);
-    return {
-      success: false,
-      error: error.message || '云函数调用失败',
-      code: error.errCode || -1
-    };
   }
 }
 

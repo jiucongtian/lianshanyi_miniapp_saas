@@ -8,6 +8,10 @@ Page({
     showTimePopup: false,
     isDataLoaded: false, // 标记数据是否已加载
     isLoading: true, // 标记是否正在加载
+    currentProfileName: '生命智慧卡牌', // 当前档案名称，默认为生命智慧卡牌
+    // 图片预览相关
+    showImagePreview: false,
+    previewImagePath: '',
     yearPillar: { 
       heavenlyStem: '',
       earthlyBranch: '',
@@ -61,7 +65,7 @@ Page({
     // 优先检查是否有当前档案数据
     const currentProfileData = app.getCurrentProfile();
     if (currentProfileData) {
-      console.log('onShow: 找到当前档案数据，直接显示:', currentProfileData._id);
+      console.log('onShow: 找到当前档案数据，转换为全局卡牌数据:', currentProfileData._id);
       this.loadProfileData(currentProfileData);
       return;
     }
@@ -87,35 +91,11 @@ Page({
         return;
       }
       
-      // 最后的备选方案：检查是否有八字计算结果
-      this.loadBaziFromGlobalData();
-    }
-  },
-
-  // 从全局数据加载八字结果
-  loadBaziFromGlobalData: function() {
-    const app = getApp();
-    const baziResult = app.globalData?.baziResult;
-    
-    console.log('全局数据:', baziResult);
-    
-    if (baziResult && baziResult.baziData) {
-      console.log('找到标准化八字数据:', baziResult.baziData);
-      
-      // 直接使用标准化的八字数据
-      console.log('使用标准化数据，更新显示:', baziResult.baziData);
-      this.updateBaziDisplay(baziResult.baziData);
-      
-      // 设置数据加载完成状态
-      this.setData({
-        isLoading: false,
-        isDataLoaded: true
-      });
-    } else {
-      console.log('未找到全局八字数据，显示无数据状态');
+      // 没有数据，显示无数据状态
       this.showNoDataState();
     }
   },
+
 
 
   // 从档案数据加载卡牌显示
@@ -123,40 +103,18 @@ Page({
     console.log('loadProfileData 开始执行，profileData:', profileData);
     
     try {
-      // 构建八字数据格式
-      const baziData = {
-        yearPillar: {
-          heavenlyStem: profileData.baziData.year.gan,
-          earthlyBranch: profileData.baziData.year.zhi
-        },
-        monthPillar: {
-          heavenlyStem: profileData.baziData.month.gan,
-          earthlyBranch: profileData.baziData.month.zhi
-        },
-        dayPillar: {
-          heavenlyStem: profileData.baziData.day.gan,
-          earthlyBranch: profileData.baziData.day.zhi
-        },
-        timePillar: {
-          heavenlyStem: profileData.baziData.hour.gan,
-          earthlyBranch: profileData.baziData.hour.zhi
-        }
-      };
-
-      // 使用工具函数格式化时间显示
-      baziData.originalTime = formatBirthTime(profileData.birthDate);
-      baziData.lunarTime = profileData.baziData.lunarDate ? formatLunarTime(profileData.baziData.lunarDate) : '';
-
-      // 更新八字显示
-      this.updateBaziDisplay(baziData);
+      // 将档案数据转换为全局卡牌数据格式
+      const { convertProfileToCardData } = require('../../utils/util');
+      const cardData = convertProfileToCardData(profileData);
       
-      // 设置数据加载完成状态
-      this.setData({
-        isLoading: false,
-        isDataLoaded: true
-      });
+      // 更新全局卡牌数据
+      const app = getApp();
+      app.globalData.cardData = cardData;
       
-      console.log('从档案数据加载卡牌显示成功');
+      // 统一使用全局卡牌数据加载
+      this.loadCardDataFromGlobal(cardData);
+      
+      console.log('从档案数据转换为全局卡牌数据并加载成功');
     } catch (error) {
       console.error('从档案数据加载卡牌显示失败:', error);
       this.showNoDataState();
@@ -174,7 +132,11 @@ Page({
       // 设置数据加载完成状态
       this.setData({
         isLoading: false,
-        isDataLoaded: true
+        isDataLoaded: true,
+        currentProfileName: cardData.profileName || '生命智慧卡牌', // 更新档案名称
+        // 重置预览状态
+        showImagePreview: false,
+        previewImagePath: ''
       });
       
       console.log('从全局数据加载卡牌数据成功');
@@ -303,6 +265,7 @@ Page({
     this.setData({
       isLoading: false,
       isDataLoaded: false,
+      currentProfileName: '生命智慧卡牌', // 保持默认档案名称
       yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
       monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
       dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
@@ -377,6 +340,45 @@ Page({
       },
       originalTime: data.originalTime,
       lunarTime: data.lunarTime
+    });
+  },
+
+  // 图片点击事件
+  onImageTap: function(e) {
+    const pillar = e.currentTarget.dataset.pillar;
+    const pillarData = this.data[`${pillar}Pillar`];
+    
+    if (pillarData && pillarData.imagePath) {
+      this.setData({
+        showImagePreview: true,
+        previewImagePath: pillarData.imagePath
+      });
+    }
+  },
+
+  // 关闭图片预览
+  closeImagePreview: function() {
+    this.setData({
+      showImagePreview: false,
+      previewImagePath: ''
+    });
+  },
+
+  // 防止点击预览容器时关闭预览
+  preventClose: function() {
+    // 空函数，阻止事件冒泡
+  },
+
+  // 图片加载成功
+  onImageLoad: function(e) {
+    // 图片加载成功
+  },
+
+  // 图片加载失败
+  onImageError: function(e) {
+    wx.showToast({
+      title: '图片加载失败',
+      icon: 'none'
     });
   },
 

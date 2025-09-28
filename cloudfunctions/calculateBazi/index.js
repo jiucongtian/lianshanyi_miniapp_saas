@@ -153,7 +153,7 @@ async function callCozeAPI(parameters) {
         workflow_id: COZE_CONFIG.workflowId,
         parameters: parameters
       },
-      timeout: 30000 // 30秒超时
+      timeout: 25000 // 25秒超时，给云函数留出处理时间
     });
 
     console.log('=== Coze API 完整响应 ===');
