@@ -5,12 +5,7 @@
     "pages/mine/index",
     "pages/addProfile/index"
   ],
-  "usingComponents": {
-    "t-toast": "miniprogram_npm/tdesign-miniprogram/toast/toast",
-    "t-popup": "miniprogram_npm/tdesign-miniprogram/popup/popup",
-    "t-icon": "miniprogram_npm/tdesign-miniprogram/icon/icon",
-    "t-message": "miniprogram_npm/tdesign-miniprogram/message/message"
-  },
+  "usingComponents": {},
   "subpackages": [],
   "window": {
     "backgroundTextStyle": "light",
@@ -47,6 +42,7 @@
   "resolveAlias": {
     "~/*": "/*"
   },
+  "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json",
   "cloud": true
 }
