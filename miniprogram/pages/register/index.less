@@ -41,13 +41,17 @@
   .avatar-wrapper {
     position: relative;
     display: inline-block;
-    margin-bottom: 30rpx;
+    margin-bottom: 20rpx;
+    background: transparent;
+    border: none;
+    padding: 0;
     
     .user-avatar {
       width: 160rpx;
       height: 160rpx;
       border-radius: 50%;
       border: 6rpx solid #f0f0f0;
+      transition: all 0.3s ease;
     }
     
     .avatar-mask {
@@ -65,30 +69,42 @@
       .avatar-text {
         color: #ffffff;
         font-size: 24rpx;
+        text-align: center;
+      }
+    }
+    
+    .avatar-edit-icon {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 48rpx;
+      height: 48rpx;
+      background: #667eea;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 4rpx solid #ffffff;
+      
+      .edit-text {
+        color: #ffffff;
+        font-size: 24rpx;
+      }
+    }
+    
+    &:active {
+      .user-avatar {
+        transform: scale(0.95);
       }
     }
   }
   
-  .avatar-button {
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    color: #ffffff;
-    border: none;
-    border-radius: 50rpx;
-    padding: 20rpx 40rpx;
-    font-size: 28rpx;
-    
-    &.has-avatar {
-      background: #f8f9fa;
-      color: #666666;
-    }
-    
-    &:disabled {
-      opacity: 0.6;
-    }
-    
-    .button-text {
-      font-size: 28rpx;
-    }
+  .avatar-tip {
+    display: block;
+    font-size: 24rpx;
+    color: #999999;
+    text-align: center;
+    margin-bottom: 20rpx;
   }
 }
 
@@ -113,6 +129,15 @@
         color: #ff4757;
         margin-left: 8rpx;
         font-size: 28rpx;
+      }
+    }
+    
+    .nickname-input {
+      border: 2rpx solid #e9ecef;
+      
+      &:focus {
+        border-color: #667eea;
+        background: #ffffff;
       }
     }
     

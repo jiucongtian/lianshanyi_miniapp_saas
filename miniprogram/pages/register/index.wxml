@@ -12,23 +12,24 @@
   <view class="form-container">
     <!-- 头像授权区域 -->
     <view class="avatar-section">
-      <view class="avatar-wrapper">
+      <button 
+        class="avatar-wrapper" 
+        open-type="chooseAvatar" 
+        bindchooseavatar="onChooseAvatar"
+      >
         <image 
           class="user-avatar" 
           src="{{userInfo.avatarUrl || '/static/icons/default-avatar.png'}}"
           mode="aspectFill"
         />
         <view class="avatar-mask" wx:if="{{!userInfo.avatarUrl}}">
-          <text class="avatar-text">点击获取头像</text>
+          <text class="avatar-text">点击选择头像</text>
         </view>
-      </view>
-      <button 
-        class="avatar-button {{userInfo.avatarUrl ? 'has-avatar' : ''}}" 
-        bindtap="onGetUserProfile"
-        disabled="{{loading}}"
-      >
-        <text class="button-text">{{userInfo.avatarUrl ? '重新获取头像' : '获取微信头像'}}</text>
+        <view class="avatar-edit-icon" wx:if="{{userInfo.avatarUrl}}">
+          <text class="edit-text">✏️</text>
+        </view>
       </button>
+      <text class="avatar-tip">点击上方头像区域选择头像</text>
     </view>
 
     <!-- 基本信息表单 -->
@@ -40,8 +41,8 @@
           <text class="required-mark">*</text>
         </view>
         <input 
-          class="form-input"
-          type="text"
+          class="form-input nickname-input"
+          type="nickname"
           placeholder="请输入您的昵称"
           value="{{userInfo.nickName}}"
           bindinput="onNickNameInput"
@@ -69,27 +70,6 @@
         </picker>
       </view>
 
-      <!-- 地区选择 -->
-      <view class="form-item">
-        <view class="form-label">
-          <text class="label-text">地区</text>
-        </view>
-        <picker 
-          class="form-picker"
-          mode="region"
-          value="{{userInfo.region}}"
-          bindchange="onRegionChange"
-        >
-          <view class="picker-content">
-            <text class="picker-text">
-              {{userInfo.region[0] && userInfo.region[1] && userInfo.region[2] ? 
-                userInfo.region[0] + ' ' + userInfo.region[1] + ' ' + userInfo.region[2] : 
-                '请选择地区'}}
-            </text>
-            <text class="picker-arrow">></text>
-          </view>
-        </picker>
-      </view>
     </view>
 
     <!-- 用户协议 -->

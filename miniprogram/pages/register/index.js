@@ -11,8 +11,7 @@ Page({
     userInfo: {
       nickName: '',
       avatarUrl: '',
-      gender: 0, // 0:保密, 1:男, 2:女
-      region: ['', '', ''] // 地区选择器数据
+      gender: 0 // 0:保密, 1:男, 2:女
     },
     
     // 表单状态
@@ -68,42 +67,23 @@ Page({
   },
 
   /**
-   * 获取用户头像和昵称
+   * 选择头像回调
    */
-  async onGetUserProfile() {
-    try {
-      this.setData({ loading: true });
-      
-      const result = await userManager.requestUserAuthorization();
-      
-      if (result.success && result.data) {
-        this.setData({
-          'userInfo.nickName': result.data.nickName || '',
-          'userInfo.avatarUrl': result.data.avatarUrl || '',
-          'userInfo.gender': result.data.gender || 0,
-          loading: false
-        });
-        this.validateForm();
-        
-        wx.showToast({
-          title: '信息获取成功',
-          icon: 'success'
-        });
-      } else {
-        this.setData({ loading: false });
-        wx.showToast({
-          title: result.error || '获取信息失败',
-          icon: 'error'
-        });
-      }
-    } catch (error) {
-      console.error('获取用户信息失败:', error);
-      this.setData({ loading: false });
-      wx.showToast({
-        title: '获取信息失败',
-        icon: 'error'
-      });
-    }
+  onChooseAvatar(e) {
+    const { avatarUrl } = e.detail;
+    console.log('用户选择的头像:', avatarUrl);
+    
+    this.setData({
+      'userInfo.avatarUrl': avatarUrl
+    });
+    
+    this.validateForm();
+    
+    wx.showToast({
+      title: '头像选择成功',
+      icon: 'success',
+      duration: 1500
+    });
   },
 
   /**
@@ -126,15 +106,6 @@ Page({
     this.validateForm();
   },
 
-  /**
-   * 地区选择处理
-   */
-  onRegionChange(e) {
-    this.setData({
-      'userInfo.region': e.detail.value
-    });
-    this.validateForm();
-  },
 
   /**
    * 用户协议同意状态切换
@@ -188,9 +159,7 @@ Page({
       const registrationData = {
         nickName: userInfo.nickName.trim(),
         gender: userInfo.gender,
-        country: userInfo.region[0] || '',
-        province: userInfo.region[1] || '',
-        city: userInfo.region[2] || ''
+        avatarUrl: userInfo.avatarUrl || ''
       };
       
       console.log('提交注册数据:', registrationData);
