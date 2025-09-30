@@ -276,21 +276,16 @@ Page({
       wx.navigateTo({
         url: returnUrl,
         fail: () => {
-          // 如果跳转失败，回到首页
+          // 如果跳转失败，跳转到我的页面
           wx.switchTab({
-            url: '/pages/profile/index'
+            url: '/pages/mine/index'
           });
         }
       });
-    } else if (source === 'profile_limit') {
-      // 如果来源是档案数量限制，跳转到档案页面
-      wx.switchTab({
-        url: '/pages/profile/index'
-      });
     } else {
-      // 默认跳转到档案页面
+      // 默认跳转到我的页面（注册和编辑都跳转到我的页面）
       wx.switchTab({
-        url: '/pages/profile/index'
+        url: '/pages/mine/index'
       });
     }
   },
