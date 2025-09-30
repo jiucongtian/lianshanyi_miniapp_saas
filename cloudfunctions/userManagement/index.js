@@ -49,6 +49,7 @@ exports.main = async (event, context) => {
 
 /**
  * 创建或更新用户信息
+ * 使用upsert模式防止并发创建重复用户
  */
 async function createUser(wxContext, userData = {}) {
   const { OPENID, UNIONID } = wxContext
@@ -60,45 +61,80 @@ async function createUser(wxContext, userData = {}) {
   console.log('userData:', userData)
   
   try {
-    // 检查用户是否已存在
-    console.log('正在查询用户是否存在...')
-    const existingUser = await db.collection('users').where({
-      openid: OPENID
-    }).get()
+    // 先尝试更新现有用户，如果不存在则创建新用户
+    // 这种方式可以避免并发创建重复用户的问题
+    console.log('尝试更新现有用户信息...')
     
-    console.log('查询结果:', existingUser)
+    const updateData = {
+      lastLoginTime: now,
+      updateTime: now,
+      ...(UNIONID && { unionid: UNIONID }), // 如果有unionid则更新
+      ...(userData.nickName && { nickName: userData.nickName }),
+      ...(userData.avatarUrl && { avatarUrl: userData.avatarUrl }),
+      ...(userData.gender !== undefined && { gender: userData.gender }),
+      ...(userData.country && { country: userData.country }),
+      ...(userData.province && { province: userData.province }),
+      ...(userData.city && { city: userData.city }),
+      ...(userData.language && { language: userData.language })
+    }
     
-    if (existingUser.data.length > 0) {
-      // 用户已存在，更新最后登录时间
-      console.log('用户已存在，正在更新用户信息...')
-      const updateResult = await db.collection('users').doc(existingUser.data[0]._id).update({
-        data: {
-          lastLoginTime: now,
-          updateTime: now,
-          ...(UNIONID && { unionid: UNIONID }), // 如果有unionid则更新
-          ...(userData.nickName && { nickName: userData.nickName }),
-          ...(userData.avatarUrl && { avatarUrl: userData.avatarUrl }),
-          ...(userData.gender !== undefined && { gender: userData.gender }),
-          ...(userData.country && { country: userData.country }),
-          ...(userData.province && { province: userData.province }),
-          ...(userData.city && { city: userData.city }),
-          ...(userData.language && { language: userData.language })
-        }
-      })
-      
-      console.log('用户信息更新结果:', updateResult)
+    const updateResult = await db.collection('users').where({
+      openid: OPENID,
+      isActive: true
+    }).update({
+      data: updateData
+    })
+    
+    console.log('更新结果:', updateResult)
+    
+    if (updateResult.stats.updated > 0) {
+      // 用户已存在并更新成功，获取用户信息
+      console.log('用户已存在，更新成功')
+      const userResult = await db.collection('users').where({
+        openid: OPENID,
+        isActive: true
+      }).get()
       
       return {
         success: true,
         message: '用户信息已更新',
         data: {
-          userId: existingUser.data[0]._id,
+          userId: userResult.data[0]._id,
           isNewUser: false
         }
       }
     } else {
-      // 创建新用户
+      // 用户不存在，创建新用户
       console.log('用户不存在，正在创建新用户...')
+      
+      // 再次检查是否存在（防止并发创建）
+      const existingUser = await db.collection('users').where({
+        openid: OPENID
+      }).get()
+      
+      if (existingUser.data.length > 0) {
+        // 如果在创建前发现已存在用户（可能是并发创建的），直接返回现有用户
+        console.log('发现并发创建的用户，返回现有用户信息')
+        const existingUserData = existingUser.data[0]
+        
+        // 更新最后登录时间
+        await db.collection('users').doc(existingUserData._id).update({
+          data: {
+            lastLoginTime: now,
+            updateTime: now
+          }
+        })
+        
+        return {
+          success: true,
+          message: '用户信息已更新',
+          data: {
+            userId: existingUserData._id,
+            isNewUser: false
+          }
+        }
+      }
+      
       const userDoc = {
         openid: OPENID,
         ...(UNIONID && { unionid: UNIONID }),
@@ -123,24 +159,49 @@ async function createUser(wxContext, userData = {}) {
       }
       
       console.log('准备插入的用户文档:', userDoc)
-      const result = await db.collection('users').add({
-        data: userDoc
-      })
       
-      console.log('用户创建结果:', result)
-      
-      return {
-        success: true,
-        message: '用户创建成功',
-        data: {
-          userId: result._id,
-          isNewUser: true
+      try {
+        const result = await db.collection('users').add({
+          data: userDoc
+        })
+        
+        console.log('用户创建结果:', result)
+        
+        return {
+          success: true,
+          message: '用户创建成功',
+          data: {
+            userId: result._id,
+            isNewUser: true
+          }
+        }
+      } catch (createError) {
+        // 如果创建失败（可能是因为并发创建导致的重复），再次查询现有用户
+        console.log('用户创建失败，可能是并发创建，再次查询现有用户:', createError)
+        
+        const retryUser = await db.collection('users').where({
+          openid: OPENID
+        }).get()
+        
+        if (retryUser.data.length > 0) {
+          console.log('找到并发创建的用户，返回现有用户信息')
+          return {
+            success: true,
+            message: '用户信息已更新',
+            data: {
+              userId: retryUser.data[0]._id,
+              isNewUser: false
+            }
+          }
+        } else {
+          // 如果还是没有找到用户，抛出原始错误
+          throw createError
         }
       }
     }
   } catch (error) {
     console.error('创建/更新用户失败:', error)
-    throw new Error('用户操作失败')
+    throw new Error('用户操作失败: ' + error.message)
   }
 }
 
