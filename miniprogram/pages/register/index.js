@@ -261,8 +261,17 @@ Page({
             mask: true
           });
           
+          // 从当前用户信息中获取openid
+          const currentUser = userManager.getCurrentUser();
+          if (!currentUser || !currentUser.openid) {
+            throw new Error('无法获取用户身份信息');
+          }
+          
+          // 使用openid-时间戳格式作为文件名，避免覆盖问题
+          const cloudPath = `avatars/${currentUser.openid}-${Date.now()}.jpg`;
+          
           const uploadResult = await wx.cloud.uploadFile({
-            cloudPath: `avatars/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.jpg`,
+            cloudPath: cloudPath,
             filePath: tempAvatarPath
           });
           
@@ -310,8 +319,9 @@ Page({
           this.deleteOldAvatar(oldAvatarUrl);
         }
         
-        // 更新原始数据，避免重复保存
+        // 更新原始数据和用户信息，避免重复保存
         this.setData({
+          'userInfo.avatarUrl': finalAvatarUrl, // 更新为云存储URL
           originalUserInfo: JSON.parse(JSON.stringify(registrationData)),
           tempAvatarPath: '' // 清空临时文件路径
         });
