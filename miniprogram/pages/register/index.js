@@ -78,21 +78,48 @@ Page({
   /**
    * 选择头像回调
    */
-  onChooseAvatar(e) {
+  async onChooseAvatar(e) {
     const { avatarUrl } = e.detail;
     console.log('用户选择的头像:', avatarUrl);
     
-    this.setData({
-      'userInfo.avatarUrl': avatarUrl
-    });
-    
-    this.validateForm();
-    
-    wx.showToast({
-      title: '头像选择成功',
-      icon: 'success',
-      duration: 1500
-    });
+    try {
+      // 显示上传提示
+      wx.showLoading({
+        title: '上传头像中...',
+        mask: true
+      });
+      
+      // 将临时文件上传到云存储
+      const uploadResult = await wx.cloud.uploadFile({
+        cloudPath: `avatars/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.jpg`,
+        filePath: avatarUrl
+      });
+      
+      console.log('头像上传成功:', uploadResult);
+      
+      // 更新用户信息中的头像URL为云存储URL
+      this.setData({
+        'userInfo.avatarUrl': uploadResult.fileID
+      });
+      
+      this.validateForm();
+      
+      wx.hideLoading();
+      wx.showToast({
+        title: '头像上传成功',
+        icon: 'success',
+        duration: 1500
+      });
+      
+    } catch (error) {
+      console.error('头像上传失败:', error);
+      wx.hideLoading();
+      wx.showToast({
+        title: '头像上传失败',
+        icon: 'error',
+        duration: 2000
+      });
+    }
   },
 
   /**
