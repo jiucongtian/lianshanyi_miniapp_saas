@@ -20,6 +20,9 @@ Page({
     agreeTerms: false,
     loading: false,
     
+    // 临时文件路径（用于上传）
+    tempAvatarPath: '',
+    
     // 性别选项
     genderOptions: [
       { label: '保密', value: 0 },
@@ -78,48 +81,17 @@ Page({
   /**
    * 选择头像回调
    */
-  async onChooseAvatar(e) {
+  onChooseAvatar(e) {
     const { avatarUrl } = e.detail;
     console.log('用户选择的头像:', avatarUrl);
     
-    try {
-      // 显示上传提示
-      wx.showLoading({
-        title: '上传头像中...',
-        mask: true
-      });
-      
-      // 将临时文件上传到云存储
-      const uploadResult = await wx.cloud.uploadFile({
-        cloudPath: `avatars/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.jpg`,
-        filePath: avatarUrl
-      });
-      
-      console.log('头像上传成功:', uploadResult);
-      
-      // 更新用户信息中的头像URL为云存储URL
-      this.setData({
-        'userInfo.avatarUrl': uploadResult.fileID
-      });
-      
-      this.validateForm();
-      
-      wx.hideLoading();
-      wx.showToast({
-        title: '头像上传成功',
-        icon: 'success',
-        duration: 1500
-      });
-      
-    } catch (error) {
-      console.error('头像上传失败:', error);
-      wx.hideLoading();
-      wx.showToast({
-        title: '头像上传失败',
-        icon: 'error',
-        duration: 2000
-      });
-    }
+    // 保存临时文件路径，在保存时再上传
+    this.setData({
+      tempAvatarPath: avatarUrl,
+      'userInfo.avatarUrl': avatarUrl // 先显示本地预览
+    });
+    
+    this.validateForm();
   },
 
   /**
@@ -215,11 +187,43 @@ Page({
       this.setData({ loading: true });
       
       // 准备注册数据
-      const { userInfo, source } = this.data;
+      const { userInfo, source, tempAvatarPath } = this.data;
+      let finalAvatarUrl = userInfo.avatarUrl || '';
+      
+      // 如果有临时头像文件，先上传到云存储
+      if (tempAvatarPath) {
+        try {
+          wx.showLoading({
+            title: '上传头像中...',
+            mask: true
+          });
+          
+          const uploadResult = await wx.cloud.uploadFile({
+            cloudPath: `avatars/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.jpg`,
+            filePath: tempAvatarPath
+          });
+          
+          console.log('头像上传成功:', uploadResult);
+          finalAvatarUrl = uploadResult.fileID;
+          
+          wx.hideLoading();
+        } catch (uploadError) {
+          console.error('头像上传失败:', uploadError);
+          wx.hideLoading();
+          this.setData({ loading: false });
+          wx.showToast({
+            title: '头像上传失败',
+            icon: 'error',
+            duration: 2000
+          });
+          return;
+        }
+      }
+      
       const registrationData = {
         nickName: userInfo.nickName.trim(),
         gender: userInfo.gender,
-        avatarUrl: userInfo.avatarUrl || '',
+        avatarUrl: finalAvatarUrl,
         phoneNumber: userInfo.phoneNumber.trim() || ''
       };
       
