@@ -3,6 +3,9 @@ import Message from 'tdesign-miniprogram/message/index';
 const { calculateBazi, createUser, searchProfile, createProfile } = require('../../api/cloud');
 // 引入配置
 const { config } = require('../../config/index');
+// 引入用户管理器和权限管理器
+const { userManager } = require('../../utils/userManager');
+const { permissionManager, USER_TYPES } = require('../../utils/permissionManager');
 
 Page({
   data: {
@@ -115,11 +118,107 @@ Page({
       return;
     }
 
+    // 如果是创建模式，检查用户配额
+    if (this.data.pageMode === 'create') {
+      const quotaCheck = await this.checkUserQuota();
+      if (!quotaCheck.canCreate) {
+        return; // 配额检查失败，已在方法内处理错误提示
+      }
+    }
+
     // 根据页面模式调用不同的处理方法
     if (this.data.pageMode === 'edit') {
       await this.onUpdateProfile();
     } else {
       await this.onQueryData();
+    }
+  },
+
+  /**
+   * 检查用户配额
+   */
+  async checkUserQuota() {
+    try {
+      const result = await userManager.checkUserQuota();
+      
+      if (result.success) {
+        const { canCreateMore, userType, currentCount, quota } = result.data;
+        
+        if (!canCreateMore) {
+          // 显示配额超限提示
+          let content = `档案数量已达上限（${quota}个）`;
+          let confirmText = '我知道了';
+          
+          const upgradeHint = permissionManager.getUpgradeHint();
+          if (upgradeHint) {
+            content += `\n${upgradeHint.action}可${upgradeHint.benefits.join('、')}`;
+            confirmText = upgradeHint.action;
+          }
+          
+          wx.showModal({
+            title: '档案数量限制',
+            content,
+            confirmText,
+            cancelText: '取消',
+            success: (res) => {
+              if (res.confirm && upgradeHint) {
+                this.handleUpgradeAction(userType);
+              }
+            }
+          });
+          
+          return { canCreate: false };
+        }
+        
+        return { canCreate: true };
+      } else {
+        console.error('检查配额失败:', result.error);
+        Message.error({
+          context: this,
+          offset: [120, 32],
+          duration: 3000,
+          content: '检查权限失败，请重试',
+        });
+        return { canCreate: false };
+      }
+    } catch (error) {
+      console.error('检查配额出错:', error);
+      Message.error({
+        context: this,
+        offset: [120, 32],
+        duration: 3000,
+        content: '检查权限失败，请重试',
+      });
+      return { canCreate: false };
+    }
+  },
+
+  /**
+   * 处理升级操作
+   */
+  handleUpgradeAction(userType) {
+    if (userType === USER_TYPES.GUEST) {
+      // 临时用户跳转到注册页面
+      wx.navigateTo({
+        url: '/pages/register/index?source=add_profile&returnUrl=' + encodeURIComponent('/pages/addProfile/index')
+      });
+    } else if (userType === USER_TYPES.NORMAL) {
+      // 普通用户显示高级版介绍
+      wx.showModal({
+        title: '升级高级版',
+        content: '高级版功能：\n• 无限档案创建\n• 高级八字分析\n• 专属客服支持\n• 数据云端备份',
+        confirmText: '了解详情',
+        cancelText: '暂不升级',
+        success: (res) => {
+          if (res.confirm) {
+            // TODO: 跳转到高级版购买页面
+            wx.showToast({
+              title: '功能开发中',
+              icon: 'none'
+            });
+          }
+        }
+      });
     }
   },
   

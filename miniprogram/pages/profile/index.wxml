@@ -5,12 +5,38 @@
     <view class="header-content">
       <view class="title-section">
         <text class="page-title">我的档案</text>
-        <text class="page-subtitle">共{{profileList.length}}个档案</text>
+        <text class="page-subtitle" wx:if="{{profileQuota === -1}}">共{{profileList.length}}个</text>
+        <text class="page-subtitle" wx:else>{{profileList.length}}/{{profileQuota}}</text>
+        <view class="user-type-badge user-type-{{userType}}">
+          <text class="user-type-text">{{userTypeName}}</text>
+        </view>
       </view>
-      <view class="add-button" bindtap="onAddProfile">
+      <view class="add-button {{canCreateMore ? 'enabled' : 'disabled'}}" bindtap="onAddProfile">
         <text class="add-icon">+</text>
-        <text class="add-text">添加</text>
+        <text class="add-text">{{canCreateMore ? '添加' : '已满'}}</text>
       </view>
+    </view>
+  </view>
+
+  <!-- 升级引导卡片 -->
+  <view class="upgrade-card" wx:if="{{showUpgradeCard && upgradeHint}}">
+    <view class="upgrade-content" bindtap="onUpgradeCardTap">
+      <view class="upgrade-icon">
+        <text wx:if="{{userType === 'guest'}}">🎉</text>
+        <text wx:elif="{{userType === 'normal'}}">⭐</text>
+      </view>
+      <view class="upgrade-info">
+        <text class="upgrade-title">{{upgradeHint.action}}解锁更多功能</text>
+        <view class="upgrade-benefits">
+          <text class="benefit-item" wx:for="{{upgradeHint.benefits}}" wx:key="*this">· {{item}}</text>
+        </view>
+      </view>
+      <view class="upgrade-action">
+        <text class="action-text">{{upgradeHint.action}}</text>
+      </view>
+    </view>
+    <view class="close-button" catchtap="onCloseUpgradeCard">
+      <text class="close-icon">×</text>
     </view>
   </view>
 

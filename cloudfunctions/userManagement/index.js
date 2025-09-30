@@ -26,6 +26,12 @@ exports.main = async (event, context) => {
         return await getUsersByLevel(wxContext, data)
       case 'getUserLevelStats':
         return await getUserLevelStats(wxContext)
+      case 'upgradeUserType':
+        return await upgradeUserType(wxContext, data)
+      case 'checkUserQuota':
+        return await checkUserQuota(wxContext)
+      case 'updateUsedProfiles':
+        return await updateUsedProfiles(wxContext, data)
       default:
         return {
           success: false,
@@ -106,7 +112,13 @@ async function createUser(wxContext, userData = {}) {
         createTime: now,
         updateTime: now,
         lastLoginTime: now,
-        userLevel: 'normal', // 新用户默认为普通用户
+        userType: 'guest', // 新用户默认为临时用户
+        userLevel: 'normal',
+        registrationTime: null,
+        upgradeTime: null,
+        profileQuota: 1, // 临时用户默认配额为1
+        usedProfiles: 0,
+        permissions: ['view', 'create_limited'], // 临时用户权限
         isActive: true
       }
       
@@ -337,5 +349,205 @@ async function getUserLevelStats(wxContext) {
   } catch (error) {
     console.error('获取用户级别统计失败:', error)
     throw new Error('获取用户级别统计失败')
+  }
+}
+
+/**
+ * 升级用户类型
+ */
+async function upgradeUserType(wxContext, data) {
+  const { OPENID } = wxContext
+  const { targetUserType, registrationData } = data
+  const now = new Date()
+  
+  // 验证用户类型有效性
+  const validUserTypes = ['guest', 'normal', 'premium']
+  if (!validUserTypes.includes(targetUserType)) {
+    return {
+      success: false,
+      error: '无效的用户类型，支持的类型：guest, normal, premium'
+    }
+  }
+  
+  try {
+    // 获取当前用户信息
+    const userResult = await db.collection('users').where({
+      openid: OPENID,
+      isActive: true
+    }).get()
+    
+    if (userResult.data.length === 0) {
+      return {
+        success: false,
+        error: '用户不存在'
+      }
+    }
+    
+    const currentUser = userResult.data[0]
+    const currentUserType = currentUser.userType || 'guest'
+    
+    // 验证升级路径
+    if (currentUserType === 'premium' && targetUserType !== 'premium') {
+      return {
+        success: false,
+        error: '高级用户不能降级'
+      }
+    }
+    
+    // 准备更新数据
+    let updateData = {
+      userType: targetUserType,
+      updateTime: now
+    }
+    
+    // 设置权限和配额
+    switch (targetUserType) {
+      case 'guest':
+        updateData.profileQuota = 1
+        updateData.permissions = ['view', 'create_limited']
+        break
+      case 'normal':
+        updateData.profileQuota = 20
+        updateData.permissions = ['view', 'create', 'export', 'share']
+        if (currentUserType === 'guest') {
+          updateData.registrationTime = now
+          // 如果有注册数据，更新用户信息
+          if (registrationData) {
+            updateData = { ...updateData, ...registrationData }
+          }
+        }
+        break
+      case 'premium':
+        updateData.profileQuota = -1 // -1表示无限制
+        updateData.permissions = ['all']
+        if (currentUserType !== 'premium') {
+          updateData.upgradeTime = now
+        }
+        break
+    }
+    
+    // 执行更新
+    const result = await db.collection('users').doc(currentUser._id).update({
+      data: updateData
+    })
+    
+    return {
+      success: true,
+      message: `用户类型已升级为 ${targetUserType}`,
+      data: {
+        oldUserType: currentUserType,
+        newUserType: targetUserType,
+        updateTime: now,
+        profileQuota: updateData.profileQuota,
+        permissions: updateData.permissions
+      }
+    }
+  } catch (error) {
+    console.error('升级用户类型失败:', error)
+    throw new Error('升级用户类型失败')
+  }
+}
+
+/**
+ * 检查用户档案配额
+ */
+async function checkUserQuota(wxContext) {
+  const { OPENID } = wxContext
+  
+  try {
+    // 获取用户信息
+    const userResult = await db.collection('users').where({
+      openid: OPENID,
+      isActive: true
+    }).get()
+    
+    if (userResult.data.length === 0) {
+      return {
+        success: false,
+        error: '用户不存在'
+      }
+    }
+    
+    const user = userResult.data[0]
+    const userType = user.userType || 'guest'
+    const profileQuota = user.profileQuota || 1
+    const usedProfiles = user.usedProfiles || 0
+    
+    // 获取实际档案数量
+    const profileCount = await db.collection('profiles').where({
+      openid: OPENID,
+      isActive: true
+    }).count()
+    
+    // 更新用户的已使用档案数
+    if (profileCount.total !== usedProfiles) {
+      await db.collection('users').doc(user._id).update({
+        data: {
+          usedProfiles: profileCount.total,
+          updateTime: new Date()
+        }
+      })
+    }
+    
+    return {
+      success: true,
+      data: {
+        userType,
+        profileQuota,
+        usedProfiles: profileCount.total,
+        canCreateMore: profileQuota === -1 || profileCount.total < profileQuota,
+        remainingQuota: profileQuota === -1 ? -1 : Math.max(0, profileQuota - profileCount.total)
+      }
+    }
+  } catch (error) {
+    console.error('检查用户配额失败:', error)
+    throw new Error('检查用户配额失败')
+  }
+}
+
+/**
+ * 更新用户已使用档案数量
+ */
+async function updateUsedProfiles(wxContext, data) {
+  const { OPENID } = wxContext
+  const { increment = 0 } = data // increment可以是正数（增加）或负数（减少）
+  
+  try {
+    // 获取用户信息
+    const userResult = await db.collection('users').where({
+      openid: OPENID,
+      isActive: true
+    }).get()
+    
+    if (userResult.data.length === 0) {
+      return {
+        success: false,
+        error: '用户不存在'
+      }
+    }
+    
+    const user = userResult.data[0]
+    const currentUsedProfiles = user.usedProfiles || 0
+    const newUsedProfiles = Math.max(0, currentUsedProfiles + increment)
+    
+    // 更新已使用档案数
+    await db.collection('users').doc(user._id).update({
+      data: {
+        usedProfiles: newUsedProfiles,
+        updateTime: new Date()
+      }
+    })
+    
+    return {
+      success: true,
+      data: {
+        oldUsedProfiles: currentUsedProfiles,
+        newUsedProfiles: newUsedProfiles,
+        increment
+      }
+    }
+  } catch (error) {
+    console.error('更新已使用档案数失败:', error)
+    throw new Error('更新已使用档案数失败')
   }
 }

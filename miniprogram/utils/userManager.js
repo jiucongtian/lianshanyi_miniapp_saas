@@ -4,6 +4,7 @@
  */
 
 const { createUser, getUserInfo } = require('../api/cloud');
+const { permissionManager } = require('./permissionManager');
 
 /**
  * 用户管理器类
@@ -38,6 +39,9 @@ class UserManager {
           isNewUser: result.data.isNewUser,
           lastSaveTime: new Date().getTime()
         };
+        
+        // 设置权限管理器的用户信息
+        permissionManager.setUserInfo(this.userInfo);
         
         this.isInitialized = true;
         console.log('UserManager: 用户信息初始化成功', this.userInfo);
@@ -198,11 +202,132 @@ class UserManager {
   }
 
   /**
+   * 获取完整用户信息（包含权限数据）
+   * @returns {Promise<Object>} 完整用户信息
+   */
+  async getFullUserInfo() {
+    try {
+      console.log('UserManager: 获取完整用户信息...');
+      const result = await wx.cloud.callFunction({
+        name: 'userManagement',
+        data: {
+          action: 'getUserInfo'
+        }
+      });
+
+      if (result.result.success) {
+        const fullUserInfo = result.result.data;
+        // 更新本地用户信息
+        this.userInfo = {
+          ...this.userInfo,
+          ...fullUserInfo,
+          lastSaveTime: new Date().getTime()
+        };
+        
+        // 更新权限管理器
+        permissionManager.setUserInfo(this.userInfo);
+        
+        console.log('UserManager: 完整用户信息获取成功', this.userInfo);
+        return {
+          success: true,
+          data: this.userInfo
+        };
+      } else {
+        console.error('UserManager: 获取完整用户信息失败', result.result.error);
+        return result.result;
+      }
+    } catch (error) {
+      console.error('UserManager: 获取完整用户信息出错', error);
+      return {
+        success: false,
+        error: error.message || '获取用户信息失败'
+      };
+    }
+  }
+
+  /**
+   * 升级用户类型
+   * @param {string} targetUserType 目标用户类型
+   * @param {Object} registrationData 注册数据（可选）
+   * @returns {Promise<Object>} 升级结果
+   */
+  async upgradeUserType(targetUserType, registrationData = null) {
+    try {
+      console.log('UserManager: 升级用户类型', targetUserType, registrationData);
+      const result = await wx.cloud.callFunction({
+        name: 'userManagement',
+        data: {
+          action: 'upgradeUserType',
+          data: {
+            targetUserType,
+            registrationData
+          }
+        }
+      });
+
+      if (result.result.success) {
+        // 刷新用户信息
+        await this.getFullUserInfo();
+        console.log('UserManager: 用户类型升级成功');
+        return result.result;
+      } else {
+        console.error('UserManager: 用户类型升级失败', result.result.error);
+        return result.result;
+      }
+    } catch (error) {
+      console.error('UserManager: 升级用户类型出错', error);
+      return {
+        success: false,
+        error: error.message || '升级失败'
+      };
+    }
+  }
+
+  /**
+   * 检查用户档案配额
+   * @returns {Promise<Object>} 配额检查结果
+   */
+  async checkUserQuota() {
+    try {
+      console.log('UserManager: 检查用户配额...');
+      const result = await wx.cloud.callFunction({
+        name: 'userManagement',
+        data: {
+          action: 'checkUserQuota'
+        }
+      });
+
+      if (result.result.success) {
+        console.log('UserManager: 配额检查成功', result.result.data);
+        return result.result;
+      } else {
+        console.error('UserManager: 配额检查失败', result.result.error);
+        return result.result;
+      }
+    } catch (error) {
+      console.error('UserManager: 检查配额出错', error);
+      return {
+        success: false,
+        error: error.message || '检查配额失败'
+      };
+    }
+  }
+
+  /**
+   * 获取权限管理器实例
+   * @returns {PermissionManager} 权限管理器
+   */
+  getPermissionManager() {
+    return permissionManager;
+  }
+
+  /**
    * 清除用户信息缓存
    */
   clearUserInfo() {
     this.userInfo = null;
     this.isInitialized = false;
+    permissionManager.setUserInfo(null);
     console.log('UserManager: 用户信息缓存已清除');
   }
 

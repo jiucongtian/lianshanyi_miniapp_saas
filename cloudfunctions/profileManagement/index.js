@@ -54,7 +54,7 @@ async function createProfile(wxContext, profileData) {
       throw new Error('缺少必填字段：档案名称、生日信息或八字数据')
     }
     
-    // 获取用户ID
+    // 获取用户信息
     const userResult = await db.collection('users').where({
       openid: OPENID,
       isActive: true
@@ -64,7 +64,37 @@ async function createProfile(wxContext, profileData) {
       throw new Error('用户不存在，请先注册')
     }
     
-    const userId = userResult.data[0]._id
+    const user = userResult.data[0]
+    const userId = user._id
+    const userType = user.userType || 'guest'
+    const profileQuota = user.profileQuota || 1
+    
+    // 检查档案数量限制（高级用户无限制）
+    if (profileQuota !== -1) {
+      const existingProfileCount = await db.collection('profiles').where({
+        openid: OPENID,
+        isActive: true
+      }).count()
+      
+      if (existingProfileCount.total >= profileQuota) {
+        let errorMessage = `档案数量已达上限（${profileQuota}个）`
+        if (userType === 'guest') {
+          errorMessage += '，注册后可创建更多档案'
+        } else if (userType === 'normal') {
+          errorMessage += '，升级高级版可无限制创建档案'
+        }
+        return {
+          success: false,
+          error: errorMessage,
+          code: 'QUOTA_EXCEEDED',
+          data: {
+            userType,
+            currentCount: existingProfileCount.total,
+            quota: profileQuota
+          }
+        }
+      }
+    }
     
     // 创建档案文档
     const profileDoc = {

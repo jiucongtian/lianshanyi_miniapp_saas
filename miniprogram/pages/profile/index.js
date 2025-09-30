@@ -1,5 +1,7 @@
 // pages/profile/index.js
 const { formatBirthTime, formatLunarTime, convertProfileToCardData } = require('../../utils/util');
+const { userManager } = require('../../utils/userManager');
+const { permissionManager, USER_TYPES } = require('../../utils/permissionManager');
 
 Page({
 
@@ -11,7 +13,19 @@ Page({
     loading: false,
     page: 1,
     hasMore: true,
-    currentProfileId: null // 当前选中的档案ID
+    currentProfileId: null, // 当前选中的档案ID
+    
+    // 用户信息和权限
+    userInfo: null,
+    userType: 'guest',
+    userTypeName: '临时用户',
+    profileQuota: 1,
+    usedProfiles: 0,
+    canCreateMore: true,
+    upgradeHint: null,
+    
+    // 显示状态
+    showUpgradeCard: false
   },
 
   /**
@@ -19,7 +33,7 @@ Page({
    */
   onLoad(options) {
     console.log('档案页面加载');
-    this.loadProfileList();
+    this.initializeUserInfo();
   },
 
   /**
@@ -48,7 +62,7 @@ Page({
     }
     
     // 每次显示页面时刷新数据，以防从其他页面返回时数据有更新
-    this.loadProfileList();
+    this.refreshUserInfoAndProfiles();
   },
 
   /**
@@ -89,6 +103,83 @@ Page({
       title: '我的生辰八字档案',
       path: '/pages/profile/index'
     };
+  },
+
+  /**
+   * 初始化用户信息
+   */
+  async initializeUserInfo() {
+    try {
+      // 获取完整用户信息
+      const result = await userManager.getFullUserInfo();
+      if (result.success) {
+        this.updateUserDisplayInfo(result.data);
+      }
+    } catch (error) {
+      console.error('初始化用户信息失败:', error);
+    }
+    
+    // 加载档案列表
+    this.loadProfileList();
+  },
+
+  /**
+   * 刷新用户信息和档案列表
+   */
+  async refreshUserInfoAndProfiles() {
+    // 更新用户信息
+    await this.updateUserInfo();
+    // 加载档案列表
+    this.loadProfileList();
+  },
+
+  /**
+   * 更新用户信息
+   */
+  async updateUserInfo() {
+    try {
+      const result = await userManager.getFullUserInfo();
+      if (result.success) {
+        this.updateUserDisplayInfo(result.data);
+      }
+    } catch (error) {
+      console.error('更新用户信息失败:', error);
+    }
+  },
+
+  /**
+   * 更新用户显示信息
+   */
+  updateUserDisplayInfo(userInfo) {
+    if (!userInfo) return;
+    
+    // 设置权限管理器的用户信息
+    permissionManager.setUserInfo(userInfo);
+    
+    const userType = userInfo.userType || 'guest';
+    const userTypeName = permissionManager.getUserTypeName(userType);
+    const profileQuota = userInfo.profileQuota || 1;
+    const usedProfiles = userInfo.usedProfiles || 0;
+    const upgradeHint = permissionManager.getUpgradeHint();
+    
+    this.setData({
+      userInfo,
+      userType,
+      userTypeName,
+      profileQuota,
+      usedProfiles,
+      canCreateMore: profileQuota === -1 || usedProfiles < profileQuota,
+      upgradeHint,
+      showUpgradeCard: upgradeHint !== null
+    });
+    
+    console.log('用户显示信息已更新:', {
+      userType,
+      userTypeName,
+      profileQuota,
+      usedProfiles,
+      upgradeHint
+    });
   },
 
   /**
@@ -345,9 +436,94 @@ Page({
    * 添加新档案
    */
   onAddProfile() {
+    // 检查是否可以创建更多档案
+    if (!this.data.canCreateMore) {
+      this.showQuotaExceededDialog();
+      return;
+    }
+    
     wx.navigateTo({
       url: '/pages/addProfile/index'
     });
+  },
+
+  /**
+   * 显示配额超限对话框
+   */
+  showQuotaExceededDialog() {
+    const { userType, profileQuota, upgradeHint } = this.data;
+    
+    let content = `档案数量已达上限（${profileQuota}个）`;
+    let confirmText = '我知道了';
+    
+    if (upgradeHint) {
+      content += `\n${upgradeHint.action}可${upgradeHint.benefits.join('、')}`;
+      confirmText = upgradeHint.action;
+    }
+    
+    wx.showModal({
+      title: '档案数量限制',
+      content,
+      confirmText,
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm && upgradeHint) {
+          this.handleUpgradeAction();
+        }
+      }
+    });
+  },
+
+  /**
+   * 处理升级操作
+   */
+  handleUpgradeAction() {
+    const { userType } = this.data;
+    
+    if (userType === USER_TYPES.GUEST) {
+      // 临时用户跳转到注册页面
+      wx.navigateTo({
+        url: '/pages/register/index?source=profile_limit&returnUrl=' + encodeURIComponent('/pages/profile/index')
+      });
+    } else if (userType === USER_TYPES.NORMAL) {
+      // 普通用户显示高级版介绍
+      this.showPremiumInfo();
+    }
+  },
+
+  /**
+   * 显示高级版信息
+   */
+  showPremiumInfo() {
+    wx.showModal({
+      title: '升级高级版',
+      content: '高级版功能：\n• 无限档案创建\n• 高级八字分析\n• 专属客服支持\n• 数据云端备份',
+      confirmText: '了解详情',
+      cancelText: '暂不升级',
+      success: (res) => {
+        if (res.confirm) {
+          // TODO: 跳转到高级版购买页面
+          wx.showToast({
+            title: '功能开发中',
+            icon: 'none'
+          });
+        }
+      }
+    });
+  },
+
+  /**
+   * 升级卡片点击处理
+   */
+  onUpgradeCardTap() {
+    this.handleUpgradeAction();
+  },
+
+  /**
+   * 关闭升级卡片
+   */
+  onCloseUpgradeCard() {
+    this.setData({ showUpgradeCard: false });
   },
 
   /**
