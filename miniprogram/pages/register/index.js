@@ -23,6 +23,9 @@ Page({
     // 临时文件路径（用于上传）
     tempAvatarPath: '',
     
+    // 原始用户数据（用于变更检测）
+    originalUserInfo: null,
+    
     // 性别选项
     genderOptions: [
       { label: '保密', value: 0 },
@@ -65,11 +68,16 @@ Page({
     try {
       const currentUser = userManager.getCurrentUser();
       if (currentUser) {
+        const userInfo = {
+          nickName: currentUser.nickName || '',
+          avatarUrl: currentUser.avatarUrl || '',
+          gender: currentUser.gender || 0,
+          phoneNumber: currentUser.phoneNumber || ''
+        };
+        
         this.setData({
-          'userInfo.nickName': currentUser.nickName || '',
-          'userInfo.avatarUrl': currentUser.avatarUrl || '',
-          'userInfo.gender': currentUser.gender || 0,
-          'userInfo.phoneNumber': currentUser.phoneNumber || ''
+          userInfo: userInfo,
+          originalUserInfo: JSON.parse(JSON.stringify(userInfo)) // 深拷贝保存原始数据
         });
         this.validateForm();
       }
@@ -172,6 +180,50 @@ Page({
   },
 
   /**
+   * 检测用户数据是否有变更
+   */
+  hasUserDataChanged() {
+    const { userInfo, originalUserInfo, tempAvatarPath } = this.data;
+    
+    if (!originalUserInfo) {
+      // 如果没有原始数据，说明是新建用户，认为有变更
+      return true;
+    }
+    
+    // 检查基本信息是否变更
+    const basicInfoChanged = 
+      userInfo.nickName !== originalUserInfo.nickName ||
+      userInfo.gender !== originalUserInfo.gender ||
+      userInfo.phoneNumber !== originalUserInfo.phoneNumber;
+    
+    // 检查头像是否变更（有新选择的头像或头像URL不同）
+    const avatarChanged = tempAvatarPath || userInfo.avatarUrl !== originalUserInfo.avatarUrl;
+    
+    return basicInfoChanged || avatarChanged;
+  },
+
+  /**
+   * 删除云存储中的旧头像
+   */
+  async deleteOldAvatar(oldAvatarUrl) {
+    if (!oldAvatarUrl || !oldAvatarUrl.startsWith('cloud://')) {
+      // 如果不是云存储URL，直接返回
+      return;
+    }
+    
+    try {
+      console.log('删除旧头像:', oldAvatarUrl);
+      await wx.cloud.deleteFile({
+        fileList: [oldAvatarUrl]
+      });
+      console.log('旧头像删除成功');
+    } catch (error) {
+      console.error('删除旧头像失败:', error);
+      // 删除失败不影响主流程，只记录错误
+    }
+  },
+
+  /**
    * 提交注册
    */
   async onSubmitRegister() {
@@ -183,12 +235,23 @@ Page({
       return;
     }
 
+    // 检查是否有数据变更
+    if (!this.hasUserDataChanged()) {
+      wx.showToast({
+        title: '没有数据变更',
+        icon: 'none',
+        duration: 1500
+      });
+      return;
+    }
+
     try {
       this.setData({ loading: true });
       
       // 准备注册数据
-      const { userInfo, source, tempAvatarPath } = this.data;
+      const { userInfo, source, tempAvatarPath, originalUserInfo } = this.data;
       let finalAvatarUrl = userInfo.avatarUrl || '';
+      let oldAvatarUrl = originalUserInfo ? originalUserInfo.avatarUrl : '';
       
       // 如果有临时头像文件，先上传到云存储
       if (tempAvatarPath) {
@@ -241,6 +304,18 @@ Page({
       this.setData({ loading: false });
       
       if (result.success) {
+        // 如果头像有变更且上传成功，删除旧头像
+        if (tempAvatarPath && oldAvatarUrl && oldAvatarUrl !== finalAvatarUrl) {
+          // 异步删除旧头像，不阻塞主流程
+          this.deleteOldAvatar(oldAvatarUrl);
+        }
+        
+        // 更新原始数据，避免重复保存
+        this.setData({
+          originalUserInfo: JSON.parse(JSON.stringify(registrationData)),
+          tempAvatarPath: '' // 清空临时文件路径
+        });
+        
         wx.showToast({
           title: source === 'edit' ? '更新成功！' : '注册成功！',
           icon: 'success',
