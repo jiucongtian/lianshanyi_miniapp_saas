@@ -65,6 +65,106 @@
   }
 }
 
+/* 操作按钮区域 */
+.action-section {
+  padding: 32rpx;
+  
+  .action-card {
+    background: #fff;
+    border-radius: 16rpx;
+    padding: 32rpx;
+    margin-bottom: 24rpx;
+    box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+    
+    .action-header {
+      margin-bottom: 24rpx;
+      
+      .action-title {
+        display: block;
+        font-size: 32rpx;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 8rpx;
+      }
+      
+      .action-subtitle {
+        display: block;
+        font-size: 24rpx;
+        color: #666;
+      }
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 16rpx;
+      margin-bottom: 24rpx;
+      
+      .action-button {
+        flex: 1;
+        height: 80rpx;
+        border-radius: 12rpx;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28rpx;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        
+        &.primary {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #fff;
+          
+          &:active {
+            transform: translateY(2rpx);
+            box-shadow: 0 4rpx 8rpx rgba(102, 126, 234, 0.3);
+          }
+        }
+        
+        &.secondary {
+          background: #f8f9fa;
+          color: #667eea;
+          border: 2rpx solid #e9ecef;
+          
+          &:active {
+            background: #e9ecef;
+            transform: translateY(1rpx);
+          }
+        }
+        
+        .button-icon {
+          font-size: 32rpx;
+          margin-right: 8rpx;
+        }
+        
+        .button-text {
+          font-size: 28rpx;
+        }
+      }
+    }
+    
+    .benefits-list {
+      .benefit-item {
+        display: flex;
+        align-items: center;
+        padding: 12rpx 0;
+        
+        .benefit-icon {
+          font-size: 24rpx;
+          margin-right: 12rpx;
+          width: 32rpx;
+          text-align: center;
+        }
+        
+        .benefit-text {
+          font-size: 24rpx;
+          color: #666;
+        }
+      }
+    }
+  }
+}
+
 /* 用户详细信息 */
 .user-details {
   padding: 32rpx;

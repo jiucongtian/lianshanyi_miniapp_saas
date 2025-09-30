@@ -3,8 +3,8 @@
   <!-- 页面头部 -->
   <view class="header">
     <view class="header-content">
-      <text class="page-title">欢迎注册连山易</text>
-      <text class="page-subtitle">完成注册，解锁更多功能</text>
+      <text class="page-title">{{source === 'edit' ? '编辑个人资料' : '欢迎注册连山易'}}</text>
+      <text class="page-subtitle">{{source === 'edit' ? '更新您的个人信息' : '完成注册，解锁更多功能'}}</text>
     </view>
   </view>
 
@@ -70,6 +70,21 @@
         </picker>
       </view>
 
+      <!-- 手机号输入 -->
+      <view class="form-item">
+        <view class="form-label">
+          <text class="label-text">手机号</text>
+        </view>
+        <input 
+          class="form-input phone-input"
+          type="number"
+          placeholder="请输入您的手机号"
+          value="{{userInfo.phoneNumber}}"
+          bindinput="onPhoneNumberInput"
+          maxlength="11"
+        />
+      </view>
+
     </view>
 
     <!-- 用户协议 -->
@@ -90,17 +105,17 @@
         disabled="{{!formValid || loading}}"
         bindtap="onSubmitRegister"
       >
-        <text class="button-text" wx:if="{{!loading}}">完成注册</text>
-        <text class="button-text" wx:else>注册中...</text>
+        <text class="button-text" wx:if="{{!loading}}">{{source === 'edit' ? '保存修改' : '完成注册'}}</text>
+        <text class="button-text" wx:else>{{source === 'edit' ? '保存中...' : '注册中...'}}</text>
       </button>
       
-      <button class="skip-button" bindtap="onSkipRegister">
+      <button class="skip-button" bindtap="onSkipRegister" wx:if="{{source !== 'edit'}}">
         <text class="button-text">跳过，继续使用临时账户</text>
       </button>
     </view>
 
     <!-- 注册说明 -->
-    <view class="info-section">
+    <view class="info-section" wx:if="{{source !== 'edit'}}">
       <view class="info-card">
         <text class="info-title">注册后您将获得：</text>
         <view class="benefit-list">

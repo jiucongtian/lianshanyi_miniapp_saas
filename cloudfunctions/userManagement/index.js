@@ -80,6 +80,9 @@ async function createUser(wxContext, userData = {}) {
     if (userData.gender !== undefined && userData.gender !== 0) {
       updateData.gender = userData.gender
     }
+    if (userData.phoneNumber !== undefined) {
+      updateData.phoneNumber = userData.phoneNumber
+    }
     
     const updateResult = await db.collection('users').where({
       openid: OPENID,
@@ -144,6 +147,7 @@ async function createUser(wxContext, userData = {}) {
         nickName: userData.nickName || '',
         avatarUrl: userData.avatarUrl || '',
         gender: userData.gender || 0,
+        phoneNumber: userData.phoneNumber || '',
         createTime: now,
         updateTime: now,
         lastLoginTime: now,
@@ -245,6 +249,7 @@ async function updateUserInfo(wxContext, userData) {
       ...(userData.nickName !== undefined && { nickName: userData.nickName }),
       ...(userData.avatarUrl !== undefined && { avatarUrl: userData.avatarUrl }),
       ...(userData.gender !== undefined && { gender: userData.gender }),
+      ...(userData.phoneNumber !== undefined && { phoneNumber: userData.phoneNumber }),
     }
     
     const result = await db.collection('users').where({

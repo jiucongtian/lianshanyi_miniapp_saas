@@ -16,6 +16,7 @@
 | nickName | string | 否 | - | 用户昵称 |
 | avatarUrl | string | 否 | - | 用户头像URL |
 | gender | number | 否 | - | 用户性别(0:未知,1:男,2:女) |
+| phoneNumber | string | 否 | - | 用户手机号 |
 | createTime | date | 是 | - | 用户首次使用时间 |
 | updateTime | date | 是 | - | 用户信息最后更新时间 |
 | lastLoginTime | date | 否 | - | 用户最后登录时间 |
@@ -37,6 +38,7 @@
   "nickName": "张三",
   "avatarUrl": "https://thirdwx.qlogo.cn/mmopen/xxxxx",
   "gender": 1,
+  "phoneNumber": "13800138000",
   "createTime": "2023-09-14T08:00:00.000Z",
   "updateTime": "2023-09-14T08:00:00.000Z",
   "lastLoginTime": "2023-09-14T08:00:00.000Z",

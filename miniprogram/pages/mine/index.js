@@ -12,9 +12,7 @@ Page({
     error: '',
     userTypeText: '',
     genderText: '',
-    locationText: '',
-    createTimeText: '',
-    lastLoginTimeText: ''
+    phoneNumberText: ''
   },
 
   /**
@@ -135,43 +133,18 @@ Page({
     };
     const genderText = genderMap[userInfo.gender] || '未知';
 
-    // 处理地区（已移除相关字段）
-    let locationText = '未设置';
-
-    // 处理时间格式
-    const createTimeText = this.formatDateTime(userInfo.createTime);
-    const lastLoginTimeText = userInfo.lastLoginTime ? 
-      this.formatDateTime(userInfo.lastLoginTime) : '从未登录';
+    // 处理手机号
+    const phoneNumberText = userInfo.phoneNumber && userInfo.phoneNumber.trim() !== '' 
+      ? userInfo.phoneNumber 
+      : '未设置';
 
     this.setData({
       userTypeText,
       genderText,
-      locationText,
-      createTimeText,
-      lastLoginTimeText
+      phoneNumberText
     });
   },
 
-  /**
-   * 格式化日期时间
-   */
-  formatDateTime(dateString) {
-    if (!dateString) return '未知';
-    
-    try {
-      const date = new Date(dateString);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      
-      return `${year}-${month}-${day} ${hours}:${minutes}`;
-    } catch (error) {
-      console.error('日期格式化失败:', error);
-      return '格式错误';
-    }
-  },
 
   /**
    * 刷新用户信息
@@ -180,6 +153,41 @@ Page({
     console.log('刷新用户信息');
     this.loadUserInfo();
   },
+
+  /**
+   * 跳转到注册页面
+   */
+  onRegister() {
+    console.log('用户点击注册按钮');
+    wx.navigateTo({
+      url: '/pages/register/index?source=mine&returnUrl=/pages/mine/index',
+      fail: (error) => {
+        console.error('跳转注册页面失败:', error);
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'error'
+        });
+      }
+    });
+  },
+
+  /**
+   * 编辑用户资料
+   */
+  onEditProfile() {
+    console.log('用户点击编辑资料按钮');
+    wx.navigateTo({
+      url: '/pages/register/index?source=edit&returnUrl=/pages/mine/index',
+      fail: (error) => {
+        console.error('跳转编辑页面失败:', error);
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'error'
+        });
+      }
+    });
+  },
+
 
   /**
    * 调用用户管理云函数

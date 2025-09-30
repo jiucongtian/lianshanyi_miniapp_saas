@@ -11,7 +11,8 @@ Page({
     userInfo: {
       nickName: '',
       avatarUrl: '',
-      gender: 0 // 0:保密, 1:男, 2:女
+      gender: 0, // 0:保密, 1:男, 2:女
+      phoneNumber: ''
     },
     
     // 表单状态
@@ -43,6 +44,13 @@ Page({
       returnUrl: options.returnUrl || ''
     });
     
+    // 根据来源设置页面标题
+    if (options.source === 'edit') {
+      wx.setNavigationBarTitle({
+        title: '编辑资料'
+      });
+    }
+    
     // 尝试获取用户已有信息
     this.loadExistingUserInfo();
   },
@@ -57,7 +65,8 @@ Page({
         this.setData({
           'userInfo.nickName': currentUser.nickName || '',
           'userInfo.avatarUrl': currentUser.avatarUrl || '',
-          'userInfo.gender': currentUser.gender || 0
+          'userInfo.gender': currentUser.gender || 0,
+          'userInfo.phoneNumber': currentUser.phoneNumber || ''
         });
         this.validateForm();
       }
@@ -106,6 +115,16 @@ Page({
     this.validateForm();
   },
 
+  /**
+   * 手机号输入处理
+   */
+  onPhoneNumberInput(e) {
+    this.setData({
+      'userInfo.phoneNumber': e.detail.value
+    });
+    this.validateForm();
+  },
+
 
   /**
    * 用户协议同意状态切换
@@ -122,9 +141,23 @@ Page({
    */
   validateForm() {
     const { userInfo, agreeTerms } = this.data;
-    const isValid = userInfo.nickName.trim().length > 0 && agreeTerms;
+    const isNickNameValid = userInfo.nickName.trim().length > 0;
+    const isPhoneValid = this.validatePhoneNumber(userInfo.phoneNumber);
+    const isValid = isNickNameValid && isPhoneValid && agreeTerms;
     
     this.setData({ formValid: isValid });
+  },
+
+  /**
+   * 验证手机号格式
+   */
+  validatePhoneNumber(phoneNumber) {
+    if (!phoneNumber || phoneNumber.trim() === '') {
+      return true; // 手机号不是必填项
+    }
+    
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    return phoneRegex.test(phoneNumber);
   },
 
   /**
@@ -155,23 +188,30 @@ Page({
       this.setData({ loading: true });
       
       // 准备注册数据
-      const { userInfo } = this.data;
+      const { userInfo, source } = this.data;
       const registrationData = {
         nickName: userInfo.nickName.trim(),
         gender: userInfo.gender,
-        avatarUrl: userInfo.avatarUrl || ''
+        avatarUrl: userInfo.avatarUrl || '',
+        phoneNumber: userInfo.phoneNumber.trim() || ''
       };
       
       console.log('提交注册数据:', registrationData);
       
-      // 升级用户类型为普通用户
-      const result = await userManager.upgradeUserType(USER_TYPES.NORMAL, registrationData);
+      let result;
+      if (source === 'edit') {
+        // 编辑模式：更新用户信息
+        result = await userManager.updateUserInfo(registrationData);
+      } else {
+        // 注册模式：升级用户类型为普通用户
+        result = await userManager.upgradeUserType(USER_TYPES.NORMAL, registrationData);
+      }
       
       this.setData({ loading: false });
       
       if (result.success) {
         wx.showToast({
-          title: '注册成功！',
+          title: source === 'edit' ? '更新成功！' : '注册成功！',
           icon: 'success',
           duration: 2000
         });
@@ -181,17 +221,18 @@ Page({
           this.handleRegistrationSuccess();
         }, 2000);
       } else {
+        console.error('操作失败:', result);
         wx.showToast({
-          title: result.error || '注册失败',
+          title: result.error || (source === 'edit' ? '更新失败' : '注册失败'),
           icon: 'error',
           duration: 3000
         });
       }
     } catch (error) {
-      console.error('注册过程出错:', error);
+      console.error('操作过程出错:', error);
       this.setData({ loading: false });
       wx.showToast({
-        title: '注册失败，请重试',
+        title: this.data.source === 'edit' ? '更新失败，请重试' : '注册失败，请重试',
         icon: 'error'
       });
     }
