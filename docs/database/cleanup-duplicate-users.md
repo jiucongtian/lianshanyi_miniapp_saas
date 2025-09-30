@@ -39,9 +39,6 @@ db.collection('users').aggregate()
   nickName: 优先选择非空值,
   avatarUrl: 优先选择非空值,
   gender: 优先选择非0值,
-  country: 优先选择非空值,
-  province: 优先选择非空值,
-  city: 优先选择非空值,
   
   // 时间信息：选择合理的时间
   createTime: 选择最早的时间,
@@ -50,7 +47,6 @@ db.collection('users').aggregate()
   
   // 用户状态：选择最高级别
   userType: 优先级 premium > normal > guest,
-  userLevel: 优先级 internal > primary > normal,
   
   // 配额信息：选择最大值
   profileQuota: 选择最大值,

@@ -8,10 +8,6 @@
 {
   nickName: "微信用户", 
   gender: 0, 
-  language: "", 
-  city: "", 
-  province: "", 
-  country: "", 
   avatarUrl: "默认头像URL"
 }
 ```
@@ -101,3 +97,4 @@ wx.getUserProfile({
 4. **符合微信最新政策**，只在用户主动授权时获取真实信息
 
 修复后，用户的昵称等信息将不再被"微信用户"覆盖！
+

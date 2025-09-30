@@ -20,18 +20,16 @@ exports.main = async (event, context) => {
         return await getUserInfo(wxContext)
       case 'updateUserInfo':
         return await updateUserInfo(wxContext, data)
-      case 'updateUserLevel':
-        return await updateUserLevel(wxContext, data)
-      case 'getUsersByLevel':
-        return await getUsersByLevel(wxContext, data)
-      case 'getUserLevelStats':
-        return await getUserLevelStats(wxContext)
       case 'upgradeUserType':
         return await upgradeUserType(wxContext, data)
       case 'checkUserQuota':
         return await checkUserQuota(wxContext)
       case 'updateUsedProfiles':
         return await updateUsedProfiles(wxContext, data)
+      case 'deleteUsers':
+        return await deleteUsers(wxContext, data)
+      case 'deleteInactiveUsers':
+        return await deleteInactiveUsers(wxContext, data)
       default:
         return {
           success: false,
@@ -81,18 +79,6 @@ async function createUser(wxContext, userData = {}) {
     }
     if (userData.gender !== undefined && userData.gender !== 0) {
       updateData.gender = userData.gender
-    }
-    if (userData.country && userData.country.trim() !== '') {
-      updateData.country = userData.country
-    }
-    if (userData.province && userData.province.trim() !== '') {
-      updateData.province = userData.province
-    }
-    if (userData.city && userData.city.trim() !== '') {
-      updateData.city = userData.city
-    }
-    if (userData.language && userData.language.trim() !== '') {
-      updateData.language = userData.language
     }
     
     const updateResult = await db.collection('users').where({
@@ -158,15 +144,10 @@ async function createUser(wxContext, userData = {}) {
         nickName: userData.nickName || '',
         avatarUrl: userData.avatarUrl || '',
         gender: userData.gender || 0,
-        country: userData.country || '',
-        province: userData.province || '',
-        city: userData.city || '',
-        language: userData.language || 'zh_CN',
         createTime: now,
         updateTime: now,
         lastLoginTime: now,
         userType: 'guest', // 新用户默认为临时用户
-        userLevel: 'normal',
         registrationTime: null,
         upgradeTime: null,
         profileQuota: 1, // 临时用户默认配额为1
@@ -264,10 +245,6 @@ async function updateUserInfo(wxContext, userData) {
       ...(userData.nickName !== undefined && { nickName: userData.nickName }),
       ...(userData.avatarUrl !== undefined && { avatarUrl: userData.avatarUrl }),
       ...(userData.gender !== undefined && { gender: userData.gender }),
-      ...(userData.country !== undefined && { country: userData.country }),
-      ...(userData.province !== undefined && { province: userData.province }),
-      ...(userData.city !== undefined && { city: userData.city }),
-      ...(userData.language !== undefined && { language: userData.language })
     }
     
     const result = await db.collection('users').where({
@@ -294,141 +271,8 @@ async function updateUserInfo(wxContext, userData) {
   }
 }
 
-/**
- * 更新用户级别
- * 注意：此功能需要管理员权限，实际使用时应添加权限验证
- */
-async function updateUserLevel(wxContext, data) {
-  const { targetOpenid, newLevel, operatorOpenid } = data
-  const now = new Date()
-  
-  // 验证级别有效性
-  const validLevels = ['normal', 'primary', 'internal']
-  if (!validLevels.includes(newLevel)) {
-    return {
-      success: false,
-      error: '无效的用户级别，支持的级别：normal, primary, internal'
-    }
-  }
-  
-  try {
-    // TODO: 这里应该添加操作员权限验证
-    // 例如：验证operatorOpenid是否有管理员权限
-    
-    const result = await db.collection('users').where({
-      openid: targetOpenid,
-      isActive: true
-    }).update({
-      data: {
-        userLevel: newLevel,
-        updateTime: now
-      }
-    })
-    
-    if (result.stats.updated === 0) {
-      return {
-        success: false,
-        error: '目标用户不存在或更新失败'
-      }
-    }
-    
-    return {
-      success: true,
-      message: `用户级别已更新为 ${newLevel}`,
-      data: {
-        targetOpenid,
-        newLevel,
-        updateTime: now
-      }
-    }
-  } catch (error) {
-    console.error('更新用户级别失败:', error)
-    throw new Error('更新用户级别失败')
-  }
-}
 
-/**
- * 按级别查询用户列表
- */
-async function getUsersByLevel(wxContext, data) {
-  const { level, limit = 20, skip = 0 } = data
-  
-  // 验证级别有效性
-  const validLevels = ['normal', 'primary', 'internal']
-  if (!validLevels.includes(level)) {
-    return {
-      success: false,
-      error: '无效的用户级别，支持的级别：normal, primary, internal'
-    }
-  }
-  
-  try {
-    const result = await db.collection('users')
-      .where({
-        userLevel: level,
-        isActive: true
-      })
-      .orderBy('createTime', 'desc')
-      .skip(skip)
-      .limit(limit)
-      .get()
-    
-    return {
-      success: true,
-      data: {
-        users: result.data,
-        count: result.data.length,
-        level
-      }
-    }
-  } catch (error) {
-    console.error('查询用户列表失败:', error)
-    throw new Error('查询用户列表失败')
-  }
-}
 
-/**
- * 获取用户级别统计
- */
-async function getUserLevelStats(wxContext) {
-  try {
-    // 获取各级别用户数量
-    const normalCount = await db.collection('users').where({
-      userLevel: 'normal',
-      isActive: true
-    }).count()
-    
-    const primaryCount = await db.collection('users').where({
-      userLevel: 'primary',
-      isActive: true
-    }).count()
-    
-    const internalCount = await db.collection('users').where({
-      userLevel: 'internal',
-      isActive: true
-    }).count()
-    
-    const totalCount = await db.collection('users').where({
-      isActive: true
-    }).count()
-    
-    return {
-      success: true,
-      data: {
-        stats: {
-          normal: normalCount.total,
-          primary: primaryCount.total,
-          internal: internalCount.total,
-          total: totalCount.total
-        },
-        timestamp: new Date()
-      }
-    }
-  } catch (error) {
-    console.error('获取用户级别统计失败:', error)
-    throw new Error('获取用户级别统计失败')
-  }
-}
 
 /**
  * 升级用户类型
@@ -627,5 +471,119 @@ async function updateUsedProfiles(wxContext, data) {
   } catch (error) {
     console.error('更新已使用档案数失败:', error)
     throw new Error('更新已使用档案数失败')
+  }
+}
+
+/**
+ * 批量删除用户（根据条件）
+ * 注意：此功能需要管理员权限，实际使用时应添加权限验证
+ */
+async function deleteUsers(wxContext, data) {
+  const { conditions, operatorOpenid } = data
+  
+  // TODO: 这里应该添加操作员权限验证
+  // 例如：验证operatorOpenid是否有管理员权限
+  
+  try {
+    // 构建删除条件
+    const deleteConditions = {
+      isActive: true, // 只删除活跃用户
+      ...conditions // 合并传入的条件
+    }
+    
+    console.log('准备删除用户，条件:', deleteConditions)
+    
+    // 先查询要删除的用户数量
+    const countResult = await db.collection('users').where(deleteConditions).count()
+    console.log(`找到 ${countResult.total} 个符合条件的用户`)
+    
+    if (countResult.total === 0) {
+      return {
+        success: true,
+        message: '没有找到符合条件的用户',
+        data: {
+          deletedCount: 0
+        }
+      }
+    }
+    
+    // 执行批量删除
+    const deleteResult = await db.collection('users').where(deleteConditions).remove()
+    
+    console.log('删除结果:', deleteResult)
+    
+    return {
+      success: true,
+      message: `成功删除 ${deleteResult.stats.removed} 个用户`,
+      data: {
+        deletedCount: deleteResult.stats.removed,
+        conditions: deleteConditions
+      }
+    }
+  } catch (error) {
+    console.error('批量删除用户失败:', error)
+    throw new Error('批量删除用户失败: ' + error.message)
+  }
+}
+
+/**
+ * 删除非活跃用户（软删除）
+ * 将 isActive 设为 false，而不是真正删除记录
+ */
+async function deleteInactiveUsers(wxContext, data) {
+  const { operatorOpenid, daysInactive = 30 } = data
+  
+  // TODO: 这里应该添加操作员权限验证
+  
+  try {
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - daysInactive)
+    
+    console.log(`准备软删除 ${daysInactive} 天前未活跃的用户，截止日期: ${cutoffDate}`)
+    
+    // 查找需要软删除的用户
+    const inactiveUsers = await db.collection('users').where({
+      isActive: true,
+      lastLoginTime: db.command.lt(cutoffDate) // 小于截止日期
+    }).get()
+    
+    console.log(`找到 ${inactiveUsers.data.length} 个非活跃用户`)
+    
+    if (inactiveUsers.data.length === 0) {
+      return {
+        success: true,
+        message: '没有找到非活跃用户',
+        data: {
+          softDeletedCount: 0
+        }
+      }
+    }
+    
+    // 批量软删除（更新 isActive 为 false）
+    const updateResult = await db.collection('users').where({
+      isActive: true,
+      lastLoginTime: db.command.lt(cutoffDate)
+    }).update({
+      data: {
+        isActive: false,
+        deactivateTime: new Date(),
+        updateTime: new Date()
+      }
+    })
+    
+    console.log('软删除结果:', updateResult)
+    
+    return {
+      success: true,
+      message: `成功软删除 ${updateResult.stats.updated} 个非活跃用户`,
+      data: {
+        softDeletedCount: updateResult.stats.updated,
+        cutoffDate: cutoffDate,
+        daysInactive: daysInactive
+      }
+    }
+  } catch (error) {
+    console.error('软删除非活跃用户失败:', error)
+    throw new Error('软删除非活跃用户失败: ' + error.message)
   }
 }

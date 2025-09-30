@@ -16,15 +16,10 @@
 | nickName | string | 否 | - | 用户昵称 |
 | avatarUrl | string | 否 | - | 用户头像URL |
 | gender | number | 否 | - | 用户性别(0:未知,1:男,2:女) |
-| country | string | 否 | - | 用户所在国家 |
-| province | string | 否 | - | 用户所在省份 |
-| city | string | 否 | - | 用户所在城市 |
-| language | string | 否 | - | 用户语言 |
 | createTime | date | 是 | - | 用户首次使用时间 |
 | updateTime | date | 是 | - | 用户信息最后更新时间 |
 | lastLoginTime | date | 否 | - | 用户最后登录时间 |
 | userType | string | 否 | 索引 | 用户类型(guest:临时用户,normal:普通用户,premium:高级用户)，默认guest |
-| userLevel | string | 否 | 索引 | 用户级别(normal:普通用户,primary:初阶用户,internal:内部用户)，默认normal |
 | registrationTime | date | 否 | - | 用户注册时间（从临时用户升级为普通用户的时间） |
 | upgradeTime | date | 否 | - | 用户升级时间（升级为高级用户的时间） |
 | profileQuota | number | 否 | - | 档案配额（临时用户:1, 普通用户:20, 高级用户:无限制） |
@@ -42,15 +37,10 @@
   "nickName": "张三",
   "avatarUrl": "https://thirdwx.qlogo.cn/mmopen/xxxxx",
   "gender": 1,
-  "country": "中国",
-  "province": "北京",
-  "city": "北京",
-  "language": "zh_CN",
   "createTime": "2023-09-14T08:00:00.000Z",
   "updateTime": "2023-09-14T08:00:00.000Z",
   "lastLoginTime": "2023-09-14T08:00:00.000Z",
   "userType": "guest",
-  "userLevel": "normal",
   "registrationTime": null,
   "upgradeTime": null,
   "profileQuota": 1,
@@ -66,13 +56,11 @@
 - `openid`: **唯一索引**，用于快速查找用户，**必须设置以防止重复用户记录**
 - `unionid`: 普通索引，用于跨应用用户识别
 - `userType`: 普通索引，用于按用户类型查询和统计
-- `userLevel`: 普通索引，用于按用户级别查询和统计
 
 ### 查询优化
 - 通过openid查询用户是最常用的查询方式，设置为唯一索引
 - unionid用于跨应用场景，设置为普通索引
 - userType用于用户分类管理和权限控制，设置为普通索引
-- userLevel用于用户级别管理和权限控制，设置为普通索引
 - createTime可用于用户增长分析
 
 ### 重要提醒
@@ -103,10 +91,6 @@
    - 临时用户：最多创建1个档案
    - 普通用户：最多创建20个档案
    - 高级用户：无限制创建档案
-7. **用户级别管理**: 
-   - 新用户默认级别为"normal"（普通用户）
-   - 级别可选值：normal（普通用户）、primary（初阶用户）、internal（内部用户）
-   - 用户级别变更需要管理员权限或特定业务逻辑触发
 8. **权限管理**:
    - 临时用户权限：["view", "create_limited"]
    - 普通用户权限：["view", "create", "export", "share"]
@@ -149,7 +133,7 @@
 
 ## 扩展性考虑
 
-1. **用户权限系统**: 基于userType和userLevel可以扩展更细粒度的权限控制
+1. **用户权限系统**: 基于userType可以扩展更细粒度的权限控制
 2. **用户偏好设置**: 可添加preferences对象字段存储用户个性化设置
 3. **统计数据**: 可添加profileCount、lastActiveTime等统计字段
 4. **第三方集成**: unionid字段为后续跨平台集成预留

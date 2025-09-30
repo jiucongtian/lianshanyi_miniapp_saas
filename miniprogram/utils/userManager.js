@@ -96,11 +96,7 @@ class UserManager {
     return !!(
       (userData.nickName && userData.nickName.trim() !== '' && userData.nickName !== '微信用户') ||
       (userData.avatarUrl && userData.avatarUrl.trim() !== '') ||
-      (userData.gender !== undefined && userData.gender !== 0) ||
-      (userData.country && userData.country.trim() !== '') ||
-      (userData.province && userData.province.trim() !== '') ||
-      (userData.city && userData.city.trim() !== '') ||
-      (userData.language && userData.language.trim() !== '')
+      (userData.gender !== undefined && userData.gender !== 0)
     );
   }
 

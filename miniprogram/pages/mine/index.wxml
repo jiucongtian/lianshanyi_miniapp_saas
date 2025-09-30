@@ -11,7 +11,7 @@
     </view>
     <view class="user-info">
       <text class="user-name">{{userInfo.nickName || '未设置昵称'}}</text>
-      <text class="user-level">{{userLevelText}}</text>
+      <text class="user-level">{{userTypeText}}</text>
     </view>
     <view class="refresh-btn" bindtap="refreshUserInfo">
       <text class="refresh-icon">🔄</text>

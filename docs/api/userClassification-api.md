@@ -56,9 +56,6 @@ graph TD
     "registrationData": {
       "nickName": "张三",
       "gender": 1,
-      "country": "中国",
-      "province": "北京", 
-      "city": "北京"
     }
   }
 }

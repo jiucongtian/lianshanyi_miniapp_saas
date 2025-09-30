@@ -10,7 +10,7 @@ Page({
     userInfo: {},
     loading: true,
     error: '',
-    userLevelText: '',
+    userTypeText: '',
     genderText: '',
     locationText: '',
     createTimeText: '',
@@ -119,13 +119,13 @@ Page({
    * 处理用户信息，格式化显示文本
    */
   processUserInfo(userInfo) {
-    // 处理用户级别
-    const levelMap = {
+    // 处理用户类型（使用userType字段，与profile页面保持一致）
+    const typeMap = {
+      'guest': '临时用户',
       'normal': '普通用户',
-      'primary': '初阶用户', 
-      'internal': '内部用户'
+      'premium': '高级用户'
     };
-    const userLevelText = levelMap[userInfo.userLevel] || '未知级别';
+    const userTypeText = typeMap[userInfo.userType] || '临时用户';
 
     // 处理性别
     const genderMap = {
@@ -135,15 +135,8 @@ Page({
     };
     const genderText = genderMap[userInfo.gender] || '未知';
 
-    // 处理地区
+    // 处理地区（已移除相关字段）
     let locationText = '未设置';
-    if (userInfo.country || userInfo.province || userInfo.city) {
-      const parts = [];
-      if (userInfo.country) parts.push(userInfo.country);
-      if (userInfo.province) parts.push(userInfo.province);
-      if (userInfo.city) parts.push(userInfo.city);
-      locationText = parts.join(' ');
-    }
 
     // 处理时间格式
     const createTimeText = this.formatDateTime(userInfo.createTime);
@@ -151,7 +144,7 @@ Page({
       this.formatDateTime(userInfo.lastLoginTime) : '从未登录';
 
     this.setData({
-      userLevelText,
+      userTypeText,
       genderText,
       locationText,
       createTimeText,

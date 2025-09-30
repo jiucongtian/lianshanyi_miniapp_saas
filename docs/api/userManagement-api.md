@@ -30,10 +30,6 @@ POST（云函数调用）
     "nickName": "张三",
     "avatarUrl": "https://thirdwx.qlogo.cn/mmopen/xxxxx",
     "gender": 1,
-    "country": "中国",
-    "province": "北京",
-    "city": "北京",
-    "language": "zh_CN"
   }
 }
 ```
@@ -46,10 +42,6 @@ POST（云函数调用）
 | data.nickName | string | 否 | 用户昵称 |
 | data.avatarUrl | string | 否 | 用户头像URL |
 | data.gender | number | 否 | 用户性别(0:未知,1:男,2:女) |
-| data.country | string | 否 | 用户所在国家 |
-| data.province | string | 否 | 用户所在省份 |
-| data.city | string | 否 | 用户所在城市 |
-| data.language | string | 否 | 用户语言 |
 
 #### 成功响应
 ```json
@@ -96,14 +88,10 @@ POST（云函数调用）
     "nickName": "张三",
     "avatarUrl": "https://thirdwx.qlogo.cn/mmopen/xxxxx",
     "gender": 1,
-    "country": "中国",
-    "province": "北京",
-    "city": "北京",
-    "language": "zh_CN",
+,
     "createTime": "2023-09-14T08:00:00.000Z",
     "updateTime": "2023-09-14T08:00:00.000Z",
     "lastLoginTime": "2023-09-14T08:00:00.000Z",
-    "userLevel": "normal",
     "isActive": true
   }
 }
@@ -247,7 +235,6 @@ const updateResult = await wx.cloud.callFunction({
         "_id": "user_60a1b2c3d4e5f6789abcdef0",
         "openid": "oABCD1234567890abcdef1234567890ab",
         "nickName": "张三",
-        "userLevel": "normal",
         "createTime": "2023-09-14T08:00:00.000Z"
       }
     ],
