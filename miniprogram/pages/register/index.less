@@ -43,8 +43,10 @@
     display: inline-block;
     margin-bottom: 20rpx;
     background: transparent;
-    border: none;
+    border: none !important;
     padding: 0;
+    outline: none !important;
+    box-shadow: none !important;
     
     .user-avatar {
       width: 160rpx;
@@ -73,29 +75,33 @@
       }
     }
     
-    .avatar-edit-icon {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 48rpx;
-      height: 48rpx;
-      background: #667eea;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 4rpx solid #ffffff;
-      
-      .edit-text {
-        color: #ffffff;
-        font-size: 24rpx;
-      }
-    }
     
     &:active {
+      border: none !important;
+      outline: none;
+      box-shadow: none;
+      
       .user-avatar {
         transform: scale(0.95);
       }
+    }
+    
+    &:focus {
+      border: none !important;
+      outline: none;
+      box-shadow: none;
+    }
+  }
+  
+  /* 覆盖微信小程序按钮的默认样式 */
+  button.avatar-wrapper {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    
+    &::after {
+      border: none !important;
     }
   }
   

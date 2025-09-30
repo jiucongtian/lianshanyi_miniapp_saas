@@ -25,9 +25,6 @@
         <view class="avatar-mask" wx:if="{{!userInfo.avatarUrl}}">
           <text class="avatar-text">点击选择头像</text>
         </view>
-        <view class="avatar-edit-icon" wx:if="{{userInfo.avatarUrl}}">
-          <text class="edit-text">✏️</text>
-        </view>
       </button>
       <text class="avatar-tip">点击上方头像区域选择头像</text>
     </view>
