@@ -13,9 +13,6 @@
       <text class="user-name">{{userInfo.nickName || '未设置昵称'}}</text>
       <text class="user-level">{{userTypeText}}</text>
     </view>
-    <view class="refresh-btn" bindtap="refreshUserInfo">
-      <text class="refresh-icon">🔄</text>
-    </view>
   </view>
 
   <!-- 操作按钮区域 -->
@@ -87,6 +84,5 @@
   <!-- 错误状态 -->
   <view class="error-container" wx:if="{{error}}">
     <text class="error-text">{{error}}</text>
-    <button class="retry-btn" bindtap="refreshUserInfo">重试</button>
   </view>
 </view>

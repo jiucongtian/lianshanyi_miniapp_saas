@@ -146,13 +146,6 @@ Page({
   },
 
 
-  /**
-   * 刷新用户信息
-   */
-  refreshUserInfo() {
-    console.log('刷新用户信息');
-    this.loadUserInfo();
-  },
 
   /**
    * 跳转到注册页面
