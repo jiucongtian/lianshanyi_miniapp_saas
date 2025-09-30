@@ -170,7 +170,7 @@ Page({
       usedProfiles,
       canCreateMore: profileQuota === -1 || usedProfiles < profileQuota,
       upgradeHint,
-      showUpgradeCard: upgradeHint !== null
+      showUpgradeCard: upgradeHint !== null && userType !== 'normal'
     });
     
     console.log('用户显示信息已更新:', {

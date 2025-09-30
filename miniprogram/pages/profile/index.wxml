@@ -19,7 +19,7 @@
   </view>
 
   <!-- 升级引导卡片 -->
-  <view class="upgrade-card" wx:if="{{showUpgradeCard && upgradeHint}}">
+  <view class="upgrade-card" wx:if="{{showUpgradeCard && upgradeHint && userType !== 'normal'}}">
     <view class="upgrade-content" bindtap="onUpgradeCardTap">
       <view class="upgrade-icon">
         <text wx:if="{{userType === 'guest'}}">🎉</text>
