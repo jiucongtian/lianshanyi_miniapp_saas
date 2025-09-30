@@ -27,18 +27,34 @@ class UserManager {
       const profileInfo = await this.getUserProfile();
       console.log('UserManager: 获取到的用户资料:', profileInfo);
       
+      // 检查是否有有效的用户信息需要更新
+      const hasValidUserData = this.hasValidUserData(profileInfo);
+      console.log('UserManager: 是否有有效用户数据:', hasValidUserData);
+      
       // 调用云函数保存/更新用户信息
-      console.log('UserManager: 准备调用云函数保存用户信息...');
-      const result = await createUser(profileInfo);
+      // 如果没有有效的用户数据，传递空对象，只更新登录时间
+      const dataToSend = hasValidUserData ? profileInfo : {};
+      console.log('UserManager: 准备调用云函数保存用户信息，传递数据:', dataToSend);
+      const result = await createUser(dataToSend);
       console.log('UserManager: 云函数调用结果:', result);
       
       if (result.success) {
-        this.userInfo = {
-          ...profileInfo,
-          userId: result.data.userId,
-          isNewUser: result.data.isNewUser,
-          lastSaveTime: new Date().getTime()
-        };
+        // 获取完整的用户信息（从数据库）
+        const fullUserInfo = await this.getFullUserInfo();
+        if (fullUserInfo.success) {
+          this.userInfo = {
+            ...fullUserInfo.data,
+            lastSaveTime: new Date().getTime()
+          };
+        } else {
+          // 如果获取完整信息失败，使用基本信息
+          this.userInfo = {
+            ...profileInfo,
+            userId: result.data.userId,
+            isNewUser: result.data.isNewUser,
+            lastSaveTime: new Date().getTime()
+          };
+        }
         
         // 设置权限管理器的用户信息
         permissionManager.setUserInfo(this.userInfo);
@@ -68,35 +84,42 @@ class UserManager {
   }
 
   /**
+   * 检查是否有有效的用户数据
+   * @param {Object} userData 用户数据
+   * @returns {boolean} 是否有有效数据
+   */
+  hasValidUserData(userData) {
+    if (!userData || typeof userData !== 'object') {
+      return false;
+    }
+    
+    return !!(
+      (userData.nickName && userData.nickName.trim() !== '' && userData.nickName !== '微信用户') ||
+      (userData.avatarUrl && userData.avatarUrl.trim() !== '') ||
+      (userData.gender !== undefined && userData.gender !== 0) ||
+      (userData.country && userData.country.trim() !== '') ||
+      (userData.province && userData.province.trim() !== '') ||
+      (userData.city && userData.city.trim() !== '') ||
+      (userData.language && userData.language.trim() !== '')
+    );
+  }
+
+  /**
    * 获取用户个人资料信息
+   * 注意：微信已废弃自动获取用户信息的API，现在只能在用户主动授权时获取
    * @returns {Promise<Object>} 用户资料
    */
   async getUserProfile() {
     try {
       console.log('UserManager: 开始获取用户资料...');
-      let userInfo = {};
       
-      // 检查用户授权状态
-      console.log('UserManager: 检查用户授权状态...');
-      const setting = await this.getSetting();
-      console.log('UserManager: 用户授权设置:', setting);
+      // 微信政策变更：不再支持自动获取用户信息
+      // wx.getUserInfo() 已废弃，只返回匿名信息
+      // wx.getUserProfile() 必须用户主动点击触发
+      // 因此，启动时不获取用户信息，返回空对象
+      console.log('UserManager: 根据微信新政策，启动时不自动获取用户信息');
       
-      // 检查是否已经通过旧版API授权过用户信息
-      if (setting.authSetting['scope.userInfo']) {
-        try {
-          // 已授权，使用旧版API获取用户信息
-          console.log('UserManager: 用户已授权，使用旧版API获取用户信息...');
-          const userProfile = await this.getUserInfo();
-          userInfo = userProfile.userInfo;
-          console.log('UserManager: 获取到用户授权信息', userInfo);
-        } catch (error) {
-          console.log('UserManager: 旧版API获取用户信息失败:', error.message);
-        }
-      } else {
-        console.log('UserManager: 用户未授权个人信息，仅使用openid识别');
-      }
-      
-      return userInfo;
+      return {};
     } catch (error) {
       console.log('UserManager: 获取用户信息失败，使用默认信息', error.message);
       return {};
@@ -346,18 +369,6 @@ class UserManager {
     });
   }
 
-  /**
-   * 获取用户信息
-   * @returns {Promise<Object>} 用户信息
-   */
-  getUserInfo() {
-    return new Promise((resolve, reject) => {
-      wx.getUserInfo({
-        success: resolve,
-        fail: reject
-      });
-    });
-  }
 
   /**
    * 获取用户资料（新版本API）

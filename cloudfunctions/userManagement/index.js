@@ -65,17 +65,34 @@ async function createUser(wxContext, userData = {}) {
     // 这种方式可以避免并发创建重复用户的问题
     console.log('尝试更新现有用户信息...')
     
+    // 构建更新数据，只更新有值的字段，避免覆盖已有数据
     const updateData = {
       lastLoginTime: now,
       updateTime: now,
-      ...(UNIONID && { unionid: UNIONID }), // 如果有unionid则更新
-      ...(userData.nickName && { nickName: userData.nickName }),
-      ...(userData.avatarUrl && { avatarUrl: userData.avatarUrl }),
-      ...(userData.gender !== undefined && { gender: userData.gender }),
-      ...(userData.country && { country: userData.country }),
-      ...(userData.province && { province: userData.province }),
-      ...(userData.city && { city: userData.city }),
-      ...(userData.language && { language: userData.language })
+      ...(UNIONID && { unionid: UNIONID }) // 如果有unionid则更新
+    }
+    
+    // 只有当传入的用户数据不为空且不是默认值时才更新对应字段
+    if (userData.nickName && userData.nickName.trim() !== '' && userData.nickName !== '微信用户') {
+      updateData.nickName = userData.nickName
+    }
+    if (userData.avatarUrl && userData.avatarUrl.trim() !== '') {
+      updateData.avatarUrl = userData.avatarUrl
+    }
+    if (userData.gender !== undefined && userData.gender !== 0) {
+      updateData.gender = userData.gender
+    }
+    if (userData.country && userData.country.trim() !== '') {
+      updateData.country = userData.country
+    }
+    if (userData.province && userData.province.trim() !== '') {
+      updateData.province = userData.province
+    }
+    if (userData.city && userData.city.trim() !== '') {
+      updateData.city = userData.city
+    }
+    if (userData.language && userData.language.trim() !== '') {
+      updateData.language = userData.language
     }
     
     const updateResult = await db.collection('users').where({
