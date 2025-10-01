@@ -49,13 +49,14 @@ Page({
   },
 
   onLoad: function(options) {
+    console.log('八字页面 onLoad 触发 - 开始完全重新初始化');
     console.log('八字页面接收到的参数:', options);
     
     this.initDeviceSize();
     this.initAnimations();
     
-    // 立即清空图片数据，避免显示之前的图片
-    this.clearImageData();
+    // 完全重新初始化所有数据和变量
+    this.completeReinitialize();
     
     // 处理传递过来的参数
     this.handleReceivedParams(options);
@@ -67,16 +68,10 @@ Page({
   },
 
   onShow: function() {
-    console.log('卡牌页面 onShow 触发');
+    console.log('卡牌页面 onShow 触发 - 开始完全重新初始化');
     
-    // 立即清空图片数据，避免显示之前的图片
-    this.clearImageData();
-    
-    // 重置加载状态
-    this.setData({
-      isLoading: true,
-      isDataLoaded: false
-    });
+    // 完全重新初始化所有数据和变量
+    this.completeReinitialize();
     
     const app = getApp();
     
@@ -114,7 +109,68 @@ Page({
     }
   },
 
-
+  // 完全重新初始化所有数据和变量
+  completeReinitialize: function() {
+    console.log('开始完全重新初始化卡牌页面数据');
+    
+    // 重置所有状态变量
+    this.setData({
+      // 设备尺寸保持，不需要重置
+      deviceSize: this.data.deviceSize,
+      
+      // 重置所有显示状态
+      showTimePopup: false,
+      isDataLoaded: false,
+      isLoading: true,
+      isLoadingImages: false,
+      currentProfileName: '生命智慧卡牌',
+      
+      // 重置图片预览相关
+      showImagePreview: false,
+      previewImagePath: '',
+      
+      // 重置所有卡牌翻转状态
+      yearCardFlipped: false,
+      monthCardFlipped: false,
+      dayCardFlipped: false,
+      timeCardFlipped: false,
+      
+      // 重置所有柱子数据为初始状态
+      yearPillar: { 
+        heavenlyStem: '',
+        earthlyBranch: '',
+        imagePath: this.data.cardBackImagePath,
+        baziImagePath: ''
+      },
+      monthPillar: {
+        heavenlyStem: '',
+        earthlyBranch: '',
+        imagePath: this.data.cardBackImagePath,
+        baziImagePath: ''
+      },
+      dayPillar: {
+        heavenlyStem: '',
+        earthlyBranch: '',
+        imagePath: this.data.cardBackImagePath,
+        baziImagePath: ''
+      },
+      timePillar: {
+        heavenlyStem: '',
+        earthlyBranch: '',
+        imagePath: this.data.cardBackImagePath,
+        baziImagePath: ''
+      },
+      
+      // 重置时间显示
+      originalTime: '',
+      lunarTime: '',
+      
+      // 保持卡牌背面图片路径
+      cardBackImagePath: this.data.cardBackImagePath
+    });
+    
+    console.log('完全重新初始化完成，所有数据已重置为初始状态');
+  },
 
   // 从档案数据加载卡牌显示
   loadProfileData: function(profileData) {
