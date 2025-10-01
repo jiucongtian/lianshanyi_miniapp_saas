@@ -44,6 +44,9 @@ Page({
     this.initDeviceSize();
     this.initAnimations();
     
+    // 立即清空图片数据，避免显示之前的图片
+    this.clearImageData();
+    
     // 处理传递过来的参数
     this.handleReceivedParams(options);
   },
@@ -55,6 +58,9 @@ Page({
 
   onShow: function() {
     console.log('卡牌页面 onShow 触发');
+    
+    // 立即清空图片数据，避免显示之前的图片
+    this.clearImageData();
     
     // 重置加载状态
     this.setData({
@@ -212,12 +218,27 @@ Page({
     });
   },
 
+  // 清空图片数据
+  clearImageData: function() {
+    console.log('清空图片数据');
+    this.setData({
+      yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
+      monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
+      dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
+      timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
+      originalTime: '',
+      lunarTime: '',
+      isLoadingImages: true
+    });
+  },
+
   // 更新八字显示
   updateBaziDisplay: async function(baziData) {
     console.log('开始更新八字显示，数据:', baziData);
     
     if (baziData && baziData.yearPillar && baziData.monthPillar && baziData.dayPillar && baziData.timePillar) {
-      this.setData({ isLoadingImages: true });
+      // 先清空图片数据，再开始加载
+      this.clearImageData();
       
       try {
         // 生成图片路径信息（包含云存储路径和文件名）

@@ -20,49 +20,77 @@
       <!-- 年柱 -->
       <view class="pillar-item" animation="{{yearAnimation}}">
         <view class="pillar-title">时空关系卡</view>
-        <image 
-          class="pillar-image" 
-          src="{{yearPillar.imagePath}}" 
-          mode="aspectFit" 
-          bindtap="onImageTap" 
-          binderror="onImageError"
-          data-pillar="year" />
+        <view class="image-container">
+          <image 
+            class="pillar-image" 
+            src="{{yearPillar.imagePath}}" 
+            mode="aspectFit" 
+            bindtap="onImageTap" 
+            binderror="onImageError"
+            data-pillar="year"
+            wx:if="{{yearPillar.imagePath}}" />
+          <view class="image-placeholder" wx:if="{{!yearPillar.imagePath && isLoadingImages}}">
+            <view class="loading-spinner"></view>
+            <view class="loading-text">加载中...</view>
+          </view>
+        </view>
       </view>
 
       <!-- 月柱 -->
       <view class="pillar-item" animation="{{monthAnimation}}">
         <view class="pillar-title">事业关系卡</view>
-        <image 
-          class="pillar-image" 
-          src="{{monthPillar.imagePath}}" 
-          mode="aspectFit" 
-          bindtap="onImageTap" 
-          binderror="onImageError"
-          data-pillar="month" />
+        <view class="image-container">
+          <image 
+            class="pillar-image" 
+            src="{{monthPillar.imagePath}}" 
+            mode="aspectFit" 
+            bindtap="onImageTap" 
+            binderror="onImageError"
+            data-pillar="month"
+            wx:if="{{monthPillar.imagePath}}" />
+          <view class="image-placeholder" wx:if="{{!monthPillar.imagePath && isLoadingImages}}">
+            <view class="loading-spinner"></view>
+            <view class="loading-text">加载中...</view>
+          </view>
+        </view>
       </view>
 
       <!-- 日柱 -->
       <view class="pillar-item" animation="{{dayAnimation}}">
         <view class="pillar-title">家庭关系卡</view>
-        <image 
-          class="pillar-image" 
-          src="{{dayPillar.imagePath}}" 
-          mode="aspectFit" 
-          bindtap="onImageTap" 
-          binderror="onImageError"
-          data-pillar="day" />
+        <view class="image-container">
+          <image 
+            class="pillar-image" 
+            src="{{dayPillar.imagePath}}" 
+            mode="aspectFit" 
+            bindtap="onImageTap" 
+            binderror="onImageError"
+            data-pillar="day"
+            wx:if="{{dayPillar.imagePath}}" />
+          <view class="image-placeholder" wx:if="{{!dayPillar.imagePath && isLoadingImages}}">
+            <view class="loading-spinner"></view>
+            <view class="loading-text">加载中...</view>
+          </view>
+        </view>
       </view>
 
       <!-- 时柱 -->
       <view class="pillar-item" animation="{{timeAnimation}}">
         <view class="pillar-title">亲子关系卡</view>
-        <image 
-          class="pillar-image" 
-          src="{{timePillar.imagePath}}" 
-          mode="aspectFit" 
-          bindtap="onImageTap" 
-          binderror="onImageError"
-          data-pillar="time" />
+        <view class="image-container">
+          <image 
+            class="pillar-image" 
+            src="{{timePillar.imagePath}}" 
+            mode="aspectFit" 
+            bindtap="onImageTap" 
+            binderror="onImageError"
+            data-pillar="time"
+            wx:if="{{timePillar.imagePath}}" />
+          <view class="image-placeholder" wx:if="{{!timePillar.imagePath && isLoadingImages}}">
+            <view class="loading-spinner"></view>
+            <view class="loading-text">加载中...</view>
+          </view>
+        </view>
       </view>
     </view>
   </view>
