@@ -20,25 +20,49 @@
       <!-- 年柱 -->
       <view class="pillar-item" animation="{{yearAnimation}}">
         <view class="pillar-title">年卡</view>
-        <image class="pillar-image" src="{{yearPillar.imagePath}}" mode="aspectFit" bindtap="onImageTap" data-pillar="year" />
+        <image 
+          class="pillar-image" 
+          src="{{yearPillar.imagePath}}" 
+          mode="aspectFit" 
+          bindtap="onImageTap" 
+          binderror="onImageError"
+          data-pillar="year" />
       </view>
 
       <!-- 月柱 -->
       <view class="pillar-item" animation="{{monthAnimation}}">
         <view class="pillar-title">月卡</view>
-        <image class="pillar-image" src="{{monthPillar.imagePath}}" mode="aspectFit" bindtap="onImageTap" data-pillar="month" />
+        <image 
+          class="pillar-image" 
+          src="{{monthPillar.imagePath}}" 
+          mode="aspectFit" 
+          bindtap="onImageTap" 
+          binderror="onImageError"
+          data-pillar="month" />
       </view>
 
       <!-- 日柱 -->
       <view class="pillar-item" animation="{{dayAnimation}}">
         <view class="pillar-title">日卡</view>
-        <image class="pillar-image" src="{{dayPillar.imagePath}}" mode="aspectFit" bindtap="onImageTap" data-pillar="day" />
+        <image 
+          class="pillar-image" 
+          src="{{dayPillar.imagePath}}" 
+          mode="aspectFit" 
+          bindtap="onImageTap" 
+          binderror="onImageError"
+          data-pillar="day" />
       </view>
 
       <!-- 时柱 -->
       <view class="pillar-item" animation="{{timeAnimation}}">
         <view class="pillar-title">时卡</view>
-        <image class="pillar-image" src="{{timePillar.imagePath}}" mode="aspectFit" bindtap="onImageTap" data-pillar="time" />
+        <image 
+          class="pillar-image" 
+          src="{{timePillar.imagePath}}" 
+          mode="aspectFit" 
+          bindtap="onImageTap" 
+          binderror="onImageError"
+          data-pillar="time" />
       </view>
     </view>
   </view>

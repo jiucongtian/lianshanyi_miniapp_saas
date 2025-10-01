@@ -3,6 +3,9 @@
  * 包含60个甲子纪年的数字编号、拼音名称和图片资源路径
  */
 
+// 导入配置
+const config = require('../config/index.js').default;
+
 // 生成八字图片映射表的函数 [[memory:7739041]]
 const generateBaziImageMap = () => {
   const baziData = [
@@ -69,13 +72,24 @@ const generateBaziImageMap = () => {
   ];
 
   // 生成完整的映射表，包含图片路径
-  return baziData.map(item => ({
-    id: item.num,
-    number: item.num.toString().padStart(2, '0'), // 补零格式，如 "01", "02"
-    pinyin: item.pinyin,
-    imagePath: `/static/new_bazi/${item.num.toString().padStart(2, '0')}_${item.pinyin}.jpeg`,
-    fileName: `${item.num.toString().padStart(2, '0')}_${item.pinyin}.jpeg`
-  }));
+  return baziData.map(item => {
+    const fileName = `${item.num.toString().padStart(2, '0')}_${item.pinyin}.jpeg`;
+    
+    // 使用云存储路径
+    // 云存储文件路径格式：cloud://环境ID.云存储桶ID/路径/文件名
+    // 注意：cloudStorageId 需要从实际的云存储 fileID 中获取
+    const cloudPath = `cloud://${config.cloud.envId}.${config.cloud.cloudStorageId}/${config.cloud.cardImagesPath}/${fileName}`;
+    
+    return {
+      id: item.num,
+      number: item.num.toString().padStart(2, '0'), // 补零格式，如 "01", "02"
+      pinyin: item.pinyin,
+      imagePath: cloudPath,
+      fileName: fileName,
+      // 保留本地路径作为备用
+      localPath: `/static/new_bazi/${fileName}`
+    };
+  });
 };
 
 // 生成映射表

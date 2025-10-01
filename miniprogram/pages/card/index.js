@@ -1,6 +1,7 @@
 // 引入八字图片映射表
 const { getBaziImageById, getBaziImageByPinyin } = require('../../utils/baziImageMap');
 const { formatBirthTime, formatLunarTime } = require('../../utils/util');
+const { imageCacheManager } = require('../../utils/imageCache');
 
 Page({
   data: {
@@ -8,6 +9,7 @@ Page({
     showTimePopup: false,
     isDataLoaded: false, // 标记数据是否已加载
     isLoading: true, // 标记是否正在加载
+    isLoadingImages: false, // 标记图片是否正在加载
     currentProfileName: '生命智慧卡牌', // 当前档案名称，默认为生命智慧卡牌
     // 图片预览相关
     showImagePreview: false,
@@ -211,49 +213,96 @@ Page({
   },
 
   // 更新八字显示
-  updateBaziDisplay: function(baziData) {
+  updateBaziDisplay: async function(baziData) {
     console.log('开始更新八字显示，数据:', baziData);
     
     if (baziData && baziData.yearPillar && baziData.monthPillar && baziData.dayPillar && baziData.timePillar) {
-      // 生成图片路径
-      const yearImagePath = this.getBaziImagePath(baziData.yearPillar.heavenlyStem, baziData.yearPillar.earthlyBranch);
-      const monthImagePath = this.getBaziImagePath(baziData.monthPillar.heavenlyStem, baziData.monthPillar.earthlyBranch);
-      const dayImagePath = this.getBaziImagePath(baziData.dayPillar.heavenlyStem, baziData.dayPillar.earthlyBranch);
-      const timeImagePath = this.getBaziImagePath(baziData.timePillar.heavenlyStem, baziData.timePillar.earthlyBranch);
+      this.setData({ isLoadingImages: true });
       
-      console.log('生成的图片路径:', {
-        year: yearImagePath,
-        month: monthImagePath,
-        day: dayImagePath,
-        time: timeImagePath
-      });
-      
-      this.setData({
-        yearPillar: {
-          heavenlyStem: baziData.yearPillar.heavenlyStem,
-          earthlyBranch: baziData.yearPillar.earthlyBranch,
-          imagePath: yearImagePath
-        },
-        monthPillar: {
-          heavenlyStem: baziData.monthPillar.heavenlyStem,
-          earthlyBranch: baziData.monthPillar.earthlyBranch,
-          imagePath: monthImagePath
-        },
-        dayPillar: {
-          heavenlyStem: baziData.dayPillar.heavenlyStem,
-          earthlyBranch: baziData.dayPillar.earthlyBranch,
-          imagePath: dayImagePath
-        },
-        timePillar: {
-          heavenlyStem: baziData.timePillar.heavenlyStem,
-          earthlyBranch: baziData.timePillar.earthlyBranch,
-          imagePath: timeImagePath
-        },
-        originalTime: baziData.originalTime || '',
-        lunarTime: baziData.lunarTime || ''
-      });
-      
-      console.log('八字显示已更新，当前数据:', this.data);
+      try {
+        // 生成图片路径信息（包含云存储路径和文件名）
+        const yearImageInfo = this.getBaziImageInfo(baziData.yearPillar.heavenlyStem, baziData.yearPillar.earthlyBranch);
+        const monthImageInfo = this.getBaziImageInfo(baziData.monthPillar.heavenlyStem, baziData.monthPillar.earthlyBranch);
+        const dayImageInfo = this.getBaziImageInfo(baziData.dayPillar.heavenlyStem, baziData.dayPillar.earthlyBranch);
+        const timeImageInfo = this.getBaziImageInfo(baziData.timePillar.heavenlyStem, baziData.timePillar.earthlyBranch);
+        
+        // 使用缓存管理器获取图片路径（优先使用本地缓存）
+        const [yearPath, monthPath, dayPath, timePath] = await Promise.all([
+          imageCacheManager.getImagePath(yearImageInfo.cloudPath, yearImageInfo.fileName),
+          imageCacheManager.getImagePath(monthImageInfo.cloudPath, monthImageInfo.fileName),
+          imageCacheManager.getImagePath(dayImageInfo.cloudPath, dayImageInfo.fileName),
+          imageCacheManager.getImagePath(timeImageInfo.cloudPath, timeImageInfo.fileName)
+        ]);
+        
+        console.log('图片路径获取完成（优先使用缓存）:', {
+          year: yearPath,
+          month: monthPath,
+          day: dayPath,
+          time: timePath
+        });
+        
+        this.setData({
+          yearPillar: {
+            heavenlyStem: baziData.yearPillar.heavenlyStem,
+            earthlyBranch: baziData.yearPillar.earthlyBranch,
+            imagePath: yearPath
+          },
+          monthPillar: {
+            heavenlyStem: baziData.monthPillar.heavenlyStem,
+            earthlyBranch: baziData.monthPillar.earthlyBranch,
+            imagePath: monthPath
+          },
+          dayPillar: {
+            heavenlyStem: baziData.dayPillar.heavenlyStem,
+            earthlyBranch: baziData.dayPillar.earthlyBranch,
+            imagePath: dayPath
+          },
+          timePillar: {
+            heavenlyStem: baziData.timePillar.heavenlyStem,
+            earthlyBranch: baziData.timePillar.earthlyBranch,
+            imagePath: timePath
+          },
+          originalTime: baziData.originalTime || '',
+          lunarTime: baziData.lunarTime || '',
+          isLoadingImages: false
+        });
+        
+        console.log('八字显示已更新，当前数据:', this.data);
+      } catch (error) {
+        console.error('加载图片失败，使用云存储路径:', error);
+        
+        // 如果缓存加载失败，直接使用云存储路径
+        const yearImagePath = this.getBaziImagePath(baziData.yearPillar.heavenlyStem, baziData.yearPillar.earthlyBranch);
+        const monthImagePath = this.getBaziImagePath(baziData.monthPillar.heavenlyStem, baziData.monthPillar.earthlyBranch);
+        const dayImagePath = this.getBaziImagePath(baziData.dayPillar.heavenlyStem, baziData.dayPillar.earthlyBranch);
+        const timeImagePath = this.getBaziImagePath(baziData.timePillar.heavenlyStem, baziData.timePillar.earthlyBranch);
+        
+        this.setData({
+          yearPillar: {
+            heavenlyStem: baziData.yearPillar.heavenlyStem,
+            earthlyBranch: baziData.yearPillar.earthlyBranch,
+            imagePath: yearImagePath
+          },
+          monthPillar: {
+            heavenlyStem: baziData.monthPillar.heavenlyStem,
+            earthlyBranch: baziData.monthPillar.earthlyBranch,
+            imagePath: monthImagePath
+          },
+          dayPillar: {
+            heavenlyStem: baziData.dayPillar.heavenlyStem,
+            earthlyBranch: baziData.dayPillar.earthlyBranch,
+            imagePath: dayImagePath
+          },
+          timePillar: {
+            heavenlyStem: baziData.timePillar.heavenlyStem,
+            earthlyBranch: baziData.timePillar.earthlyBranch,
+            imagePath: timeImagePath
+          },
+          originalTime: baziData.originalTime || '',
+          lunarTime: baziData.lunarTime || '',
+          isLoadingImages: false
+        });
+      }
     } else {
       console.log('八字数据不完整，无法更新显示');
     }
@@ -290,8 +339,8 @@ Page({
     this.setData({ showTimePopup: e.detail.visible });
   },
 
-  // 根据天干地支获取对应的图片路径
-  getBaziImagePath: function(heavenlyStem, earthlyBranch) {
+  // 根据天干地支获取对应的图片信息
+  getBaziImageInfo: function(heavenlyStem, earthlyBranch) {
     // 将天干地支转换为拼音
     const tianGanMap = {
       '甲': 'jia', '乙': 'yi', '丙': 'bing', '丁': 'ding', '戊': 'wu',
@@ -309,10 +358,29 @@ Page({
     if (tianGanPinyin && diZhiPinyin) {
       const pinyin = tianGanPinyin + diZhiPinyin;
       const imageInfo = getBaziImageByPinyin(pinyin);
-      return imageInfo ? imageInfo.imagePath : '/static/new_bazi/01_jiazi.jpeg';
+      
+      if (imageInfo) {
+        return {
+          cloudPath: imageInfo.imagePath,
+          fileName: imageInfo.fileName,
+          localPath: imageInfo.localPath
+        };
+      }
     }
     
-    return '/static/new_bazi/01_jiazi.jpeg'; // 默认图片
+    // 默认返回第一张图片
+    const defaultImage = getBaziImageById(1);
+    return {
+      cloudPath: defaultImage.imagePath,
+      fileName: defaultImage.fileName,
+      localPath: defaultImage.localPath
+    };
+  },
+
+  // 根据天干地支获取对应的图片路径（兼容旧代码）
+  getBaziImagePath: function(heavenlyStem, earthlyBranch) {
+    const imageInfo = this.getBaziImageInfo(heavenlyStem, earthlyBranch);
+    return imageInfo.cloudPath;
   },
 
   // 更新八字图片
@@ -371,15 +439,39 @@ Page({
 
   // 图片加载成功
   onImageLoad: function(e) {
-    // 图片加载成功
+    const pillar = e.currentTarget.dataset.pillar;
+    console.log(`${pillar} 卡牌图片加载成功`);
   },
 
   // 图片加载失败
   onImageError: function(e) {
-    wx.showToast({
-      title: '图片加载失败',
-      icon: 'none'
-    });
+    console.error('图片加载失败:', e);
+    const pillar = e.currentTarget.dataset.pillar;
+    
+    // 尝试使用本地备用图片
+    if (pillar) {
+      const pillarData = this.data[`${pillar}Pillar`];
+      if (pillarData && pillarData.imagePath && pillarData.imagePath.startsWith('cloud://')) {
+        console.log('云存储图片加载失败，尝试使用本地图片');
+        
+        // 从云存储路径中提取文件名，构建本地路径
+        const fileName = pillarData.imagePath.split('/').pop();
+        const localPath = `/static/new_bazi/${fileName}`;
+        
+        wx.showToast({
+          title: '云图片加载失败',
+          icon: 'none',
+          duration: 2000
+        });
+        
+        console.log('使用本地备用路径:', localPath);
+      }
+    } else {
+      wx.showToast({
+        title: '图片加载失败',
+        icon: 'none'
+      });
+    }
   },
 
   // 分享功能 - 激活右上角分享按钮

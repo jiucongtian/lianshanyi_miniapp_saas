@@ -4,6 +4,7 @@ import Mock from './mock/index';
 import createBus from './utils/eventBus';
 const { userManager } = require('./utils/userManager');
 const { convertProfileToCardData } = require('./utils/util');
+const { imageCacheManager } = require('./utils/imageCache');
 
 if (config.useMock) {
   Mock();
@@ -30,6 +31,9 @@ App({
     
     // 初始化档案数据
     this.initProfileData();
+    
+    // 清理过期的图片缓存
+    this.cleanExpiredImageCache();
 
     const updateManager = wx.getUpdateManager();
 
@@ -280,5 +284,49 @@ App({
    */
   getCurrentProfileId() {
     return this.globalData.currentProfileId;
+  },
+
+  /**
+   * 清理过期的图片缓存
+   * 在小程序启动时执行，清理超过30天的缓存文件
+   */
+  cleanExpiredImageCache() {
+    try {
+      console.log('App: 开始清理过期图片缓存...');
+      
+      // 获取缓存统计信息
+      const stats = imageCacheManager.getCacheStats();
+      console.log('App: 当前缓存统计:', stats);
+      
+      // 清理过期缓存
+      imageCacheManager.cleanExpiredCache();
+      
+      // 再次获取统计信息
+      const newStats = imageCacheManager.getCacheStats();
+      console.log('App: 清理后缓存统计:', newStats);
+      
+    } catch (error) {
+      console.error('App: 清理图片缓存失败:', error);
+    }
+  },
+
+  /**
+   * 获取图片缓存统计信息
+   * @returns {Object} 缓存统计
+   */
+  getImageCacheStats() {
+    return imageCacheManager.getCacheStats();
+  },
+
+  /**
+   * 清空所有图片缓存
+   * 供"我的"页面设置使用
+   */
+  clearAllImageCache() {
+    imageCacheManager.clearAllCache();
+    wx.showToast({
+      title: '缓存已清空',
+      icon: 'success'
+    });
   }
 });
