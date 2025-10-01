@@ -181,7 +181,7 @@ class PermissionManager {
           targetName: USER_TYPE_NAMES[USER_TYPES.PREMIUM],
           benefits: [
             '无限档案创建',
-            '高级八字分析',
+            '高级智慧分析',
             '专属客服支持'
           ],
           action: '了解详情'

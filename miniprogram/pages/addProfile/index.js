@@ -206,7 +206,7 @@ Page({
       // 普通用户显示高级版介绍
       wx.showModal({
         title: '升级高级版',
-        content: '高级版功能：\n• 无限档案创建\n• 高级八字分析\n• 专属客服支持\n• 数据云端备份',
+        content: '高级版功能：\n• 无限档案创建\n• 高级智慧分析\n• 专属客服支持\n• 数据云端备份',
         confirmText: '了解详情',
         cancelText: '暂不升级',
         success: (res) => {
@@ -803,7 +803,7 @@ Page({
 
     // 显示加载状态
     wx.showLoading({
-      title: isDebugMode ? '调试模式：重新计算...' : '正在计算八字，请稍候...',
+      title: isDebugMode ? '调试模式：重新计算...' : '抽取智慧卡牌，请稍候...',
       mask: true
     });
 

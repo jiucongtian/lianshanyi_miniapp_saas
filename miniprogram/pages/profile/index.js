@@ -100,7 +100,7 @@ Page({
    */
   onShareAppMessage() {
     return {
-      title: '我的生辰八字档案',
+      title: '我的牌库',
       path: '/pages/profile/index'
     };
   },
@@ -214,7 +214,7 @@ Page({
       } else {
         console.error('获取档案列表失败:', result.result.error);
         wx.showToast({
-          title: '获取档案失败',
+          title: '获取牌库失败',
           icon: 'error',
           duration: 2000
         });
@@ -401,7 +401,7 @@ Page({
     if (!selectedProfile) {
       console.error('未找到档案数据:', profileId);
       wx.showToast({
-        title: '档案数据异常',
+        title: '牌库数据异常',
         icon: 'error'
       });
       return;
@@ -453,7 +453,7 @@ Page({
   showQuotaExceededDialog() {
     const { userType, profileQuota, upgradeHint } = this.data;
     
-    let content = `档案数量已达上限（${profileQuota}个）`;
+    let content = `牌库数量已达上限（${profileQuota}个）`;
     let confirmText = '我知道了';
     
     if (upgradeHint) {
@@ -462,7 +462,7 @@ Page({
     }
     
     wx.showModal({
-      title: '档案数量限制',
+      title: '牌库数量限制',
       content,
       confirmText,
       cancelText: '取消',
@@ -497,7 +497,7 @@ Page({
   showPremiumInfo() {
     wx.showModal({
       title: '升级高级版',
-      content: '高级版功能：\n• 无限档案创建\n• 高级八字分析\n• 专属客服支持\n• 数据云端备份',
+      content: '高级版功能：\n• 无限牌库创建\n• 高级智慧分析\n• 专属客服支持\n• 数据云端备份',
       confirmText: '了解详情',
       cancelText: '暂不升级',
       success: (res) => {
@@ -538,7 +538,7 @@ Page({
     if (!profileToEdit) {
       console.error('未找到要编辑的档案数据:', profileId);
       wx.showToast({
-        title: '档案数据异常',
+        title: '牌库数据异常',
         icon: 'error'
       });
       return;
@@ -576,14 +576,14 @@ Page({
    */
   onDeleteProfile(e) {
     const profileId = e.currentTarget.dataset.id;
-    const profileName = this.data.profileList.find(profile => profile._id === profileId)?.profileName || '未知档案';
+    const profileName = this.data.profileList.find(profile => profile._id === profileId)?.profileName || '未知牌库';
     
     console.log('删除档案:', profileId, profileName);
     
     // 显示确认对话框
     wx.showModal({
       title: '确认删除',
-      content: `确定要删除档案"${profileName}"吗？删除后无法恢复。`,
+      content: `确定要删除牌库"${profileName}"吗？删除后无法恢复。`,
       confirmText: '删除',
       confirmColor: '#d32f2f',
       cancelText: '取消',

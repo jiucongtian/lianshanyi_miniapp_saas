@@ -4,7 +4,7 @@
   <view class="header">
     <view class="header-content">
       <view class="title-section">
-        <text class="page-title">我的档案</text>
+        <text class="page-title">我的牌库</text>
         <text class="page-subtitle" wx:if="{{profileQuota === -1}}">共{{profileList.length}}个</text>
         <text class="page-subtitle" wx:else>{{profileList.length}}/{{profileQuota}}</text>
         <view class="user-type-badge user-type-{{userType}}">
@@ -40,7 +40,7 @@
     </view>
   </view>
 
-  <!-- 档案列表 -->
+  <!-- 牌库列表 -->
   <view class="profile-list">
     <!-- 加载状态 -->
     <view class="loading-container" wx:if="{{loading}}">
@@ -48,7 +48,7 @@
       <text class="loading-text">加载中...</text>
     </view>
 
-    <!-- 档案项列表 -->
+    <!-- 牌库项列表 -->
     <view class="profile-items" wx:elif="{{profileList.length > 0}}">
       <view 
         class="profile-item {{item._id === currentProfileId ? 'selected' : ''}}" 
@@ -56,7 +56,7 @@
         wx:key="_id"
       >
         <view class="profile-card">
-          <!-- 档案基本信息 -->
+          <!-- 牌库基本信息 -->
           <view class="profile-info" bindtap="onProfileTap" data-id="{{item._id}}">
             <view class="profile-header">
               <text class="profile-name">{{item.profileName}}</text>
@@ -110,8 +110,8 @@
     <view class="empty-container" wx:else>
       <view class="empty-content">
         <view class="empty-icon">📋</view>
-        <text class="empty-title">还没有档案</text>
-        <text class="empty-desc">创建您的第一个生辰八字档案</text>
+        <text class="empty-title">还没有牌库</text>
+        <text class="empty-desc">创建您的第一个生命智慧牌库</text>
         <view class="empty-button" bindtap="onAddProfile">
           <text class="button-text">立即创建</text>
         </view>

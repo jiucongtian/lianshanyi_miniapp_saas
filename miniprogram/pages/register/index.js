@@ -450,7 +450,7 @@ Page({
    */
   onShareAppMessage() {
     return {
-      title: '连山易 - 生辰八字智能分析',
+      title: '生命智慧卡牌 - 智慧分析',
       path: '/pages/profile/index'
     };
   }
