@@ -1,6 +1,6 @@
 // pages/mine/index.js
 const { userManager } = require('../../utils/userManager');
-const { getAvatarPath } = require('../../utils/avatarCache');
+const { imageCacheManager } = require('../../utils/imageCacheManager');
 
 Page({
 
@@ -169,10 +169,13 @@ Page({
       if (userInfo.avatarUrl.startsWith('cloud://')) {
         console.log('检测到云存储头像，开始缓存处理:', userInfo.avatarUrl);
         
+        // 使用云端的文件名
+        const fileName = userInfo.avatarUrl.split('/').pop() || 'avatar.jpg';
+        
         // 获取缓存后的头像路径
-        const cachedAvatarPath = await getAvatarPath(
+        const cachedAvatarPath = await imageCacheManager.getImagePath(
           userInfo.avatarUrl, 
-          userInfo.openid || 'unknown'
+          fileName
         );
         
         console.log('头像缓存处理完成:', cachedAvatarPath);

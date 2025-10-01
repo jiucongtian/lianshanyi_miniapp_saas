@@ -4,7 +4,7 @@ import Mock from './mock/index';
 import createBus from './utils/eventBus';
 const { userManager } = require('./utils/userManager');
 const { convertProfileToCardData } = require('./utils/util');
-const { imageCacheManager } = require('./utils/imageCache');
+const { imageCacheManager } = require('./utils/imageCacheManager');
 
 if (config.useMock) {
   Mock();

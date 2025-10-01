@@ -1,7 +1,7 @@
 // 引入八字图片映射表
 const { getBaziImageById, getBaziImageByPinyin } = require('../../utils/baziImageMap');
 const { formatBirthTime, formatLunarTime } = require('../../utils/util');
-const { imageCacheManager } = require('../../utils/imageCache');
+const { imageCacheManager } = require('../../utils/imageCacheManager');
 
 Page({
   data: {

@@ -353,27 +353,16 @@ class ImageCacheManager {
   }
 }
 
-// 创建预配置的缓存实例
-
-// 卡牌图片缓存实例
-const cardImageCache = new ImageCacheManager({
-  cacheDir: 'cardImages',
+// 创建通用图片缓存实例
+const imageCacheManager = new ImageCacheManager({
+  cacheDir: 'images',
   expireTime: 30 * 24 * 60 * 60 * 1000, // 30天
-  maxCacheCount: 100,
-  cacheMapKey: 'cardImageCacheMap'
-});
-
-// 头像图片缓存实例
-const avatarImageCache = new ImageCacheManager({
-  cacheDir: 'avatars',
-  expireTime: 7 * 24 * 60 * 60 * 1000, // 7天
-  maxCacheCount: 20,
-  cacheMapKey: 'avatarCacheMap'
+  maxCacheCount: 200,
+  cacheMapKey: 'imageCacheMap'
 });
 
 module.exports = {
   ImageCacheManager,
-  cardImageCache,
-  avatarImageCache
+  imageCacheManager
 };
 
