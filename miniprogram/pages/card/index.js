@@ -362,8 +362,7 @@ Page({
       if (imageInfo) {
         return {
           cloudPath: imageInfo.imagePath,
-          fileName: imageInfo.fileName,
-          localPath: imageInfo.localPath
+          fileName: imageInfo.fileName
         };
       }
     }
@@ -372,8 +371,7 @@ Page({
     const defaultImage = getBaziImageById(1);
     return {
       cloudPath: defaultImage.imagePath,
-      fileName: defaultImage.fileName,
-      localPath: defaultImage.localPath
+      fileName: defaultImage.fileName
     };
   },
 
@@ -448,24 +446,15 @@ Page({
     console.error('图片加载失败:', e);
     const pillar = e.currentTarget.dataset.pillar;
     
-    // 尝试使用本地备用图片
     if (pillar) {
       const pillarData = this.data[`${pillar}Pillar`];
-      if (pillarData && pillarData.imagePath && pillarData.imagePath.startsWith('cloud://')) {
-        console.log('云存储图片加载失败，尝试使用本地图片');
-        
-        // 从云存储路径中提取文件名，构建本地路径
-        const fileName = pillarData.imagePath.split('/').pop();
-        const localPath = `/static/new_bazi/${fileName}`;
-        
-        wx.showToast({
-          title: '云图片加载失败',
-          icon: 'none',
-          duration: 2000
-        });
-        
-        console.log('使用本地备用路径:', localPath);
-      }
+      console.log(`${pillar} 卡牌图片加载失败:`, pillarData.imagePath);
+      
+      wx.showToast({
+        title: '图片加载失败',
+        icon: 'none',
+        duration: 2000
+      });
     } else {
       wx.showToast({
         title: '图片加载失败',

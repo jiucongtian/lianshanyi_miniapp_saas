@@ -85,9 +85,7 @@ const generateBaziImageMap = () => {
       number: item.num.toString().padStart(2, '0'), // 补零格式，如 "01", "02"
       pinyin: item.pinyin,
       imagePath: cloudPath,
-      fileName: fileName,
-      // 保留本地路径作为备用
-      localPath: `/static/new_bazi/${fileName}`
+      fileName: fileName
     };
   });
 };
