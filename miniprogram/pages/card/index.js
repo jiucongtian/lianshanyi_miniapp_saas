@@ -129,10 +129,10 @@ Page({
       showImagePreview: false,
       previewImagePath: '',
       
-      // 重置所有卡牌翻转状态
+      // 重置所有卡牌翻转状态（日柱卡牌将在数据加载后设置为正面）
       yearCardFlipped: false,
       monthCardFlipped: false,
-      dayCardFlipped: false,
+      dayCardFlipped: false, // 将在数据加载后设置为 true
       timeCardFlipped: false,
       
       // 重置所有柱子数据为初始状态
@@ -295,10 +295,10 @@ Page({
       originalTime: '',
       lunarTime: '',
       isLoadingImages: true,
-      // 重置卡牌翻转状态
+      // 重置卡牌翻转状态（日柱卡牌将在数据加载后设置为正面）
       yearCardFlipped: false,
       monthCardFlipped: false,
-      dayCardFlipped: false,
+      dayCardFlipped: false, // 将在数据加载后设置为 true
       timeCardFlipped: false
     });
   },
@@ -349,7 +349,7 @@ Page({
           dayPillar: {
             heavenlyStem: baziData.dayPillar.heavenlyStem,
             earthlyBranch: baziData.dayPillar.earthlyBranch,
-            imagePath: this.data.cardBackImagePath, // 默认显示背面
+            imagePath: dayPath, // 日柱卡牌默认显示正面
             baziImagePath: dayPath // 保存八字图片路径
           },
           timePillar: {
@@ -361,10 +361,10 @@ Page({
           originalTime: baziData.originalTime || '',
           lunarTime: baziData.lunarTime || '',
           isLoadingImages: false,
-          // 重置卡牌翻转状态
+          // 重置卡牌翻转状态（日柱卡牌默认显示正面）
           yearCardFlipped: false,
           monthCardFlipped: false,
-          dayCardFlipped: false,
+          dayCardFlipped: true, // 日柱卡牌默认显示正面
           timeCardFlipped: false
         });
         
@@ -394,7 +394,7 @@ Page({
           dayPillar: {
             heavenlyStem: baziData.dayPillar.heavenlyStem,
             earthlyBranch: baziData.dayPillar.earthlyBranch,
-            imagePath: this.data.cardBackImagePath, // 默认显示背面
+            imagePath: dayImagePath, // 日柱卡牌默认显示正面
             baziImagePath: dayImagePath // 保存八字图片路径
           },
           timePillar: {
@@ -406,10 +406,10 @@ Page({
           originalTime: baziData.originalTime || '',
           lunarTime: baziData.lunarTime || '',
           isLoadingImages: false,
-          // 重置卡牌翻转状态
+          // 重置卡牌翻转状态（日柱卡牌默认显示正面）
           yearCardFlipped: false,
           monthCardFlipped: false,
-          dayCardFlipped: false,
+          dayCardFlipped: true, // 日柱卡牌默认显示正面
           timeCardFlipped: false
         });
       }
