@@ -5,7 +5,7 @@
     <view class="user-avatar">
       <image 
         class="avatar-img" 
-        src="{{userInfo.avatarUrl || '/static/icons/default-avatar.png'}}" 
+        src="{{avatarUrl || '/static/icons/default-avatar.png'}}" 
         mode="aspectFill"
       />
     </view>
@@ -85,4 +85,5 @@
   <view class="error-container" wx:if="{{error}}">
     <text class="error-text">{{error}}</text>
   </view>
+
 </view>

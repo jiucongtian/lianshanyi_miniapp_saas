@@ -1,5 +1,6 @@
 // pages/mine/index.js
 const { userManager } = require('../../utils/userManager');
+const { avatarCacheManager } = require('../../utils/avatarCache');
 
 Page({
 
@@ -12,7 +13,8 @@ Page({
     error: '',
     userTypeText: '',
     genderText: '',
-    phoneNumberText: ''
+    phoneNumberText: '',
+    avatarUrl: '' // 缓存后的头像路径
   },
 
   /**
@@ -93,6 +95,9 @@ Page({
         // 处理用户信息显示
         this.processUserInfo(userInfo);
         
+        // 处理头像缓存
+        await this.processAvatarCache(userInfo);
+        
         this.setData({
           userInfo: userInfo,
           loading: false
@@ -145,7 +150,56 @@ Page({
     });
   },
 
+  /**
+   * 处理头像缓存
+   * @param {Object} userInfo 用户信息
+   */
+  async processAvatarCache(userInfo) {
+    try {
+      // 检查是否有头像URL
+      if (!userInfo.avatarUrl || userInfo.avatarUrl.trim() === '') {
+        console.log('用户未设置头像，使用默认头像');
+        this.setData({
+          avatarUrl: '/static/icons/default-avatar.png'
+        });
+        return;
+      }
 
+      // 检查是否是云存储路径
+      if (userInfo.avatarUrl.startsWith('cloud://')) {
+        console.log('检测到云存储头像，开始缓存处理:', userInfo.avatarUrl);
+        
+        // 生成缓存文件名
+        const fileName = avatarCacheManager.generateAvatarFileName(
+          userInfo.openid || 'unknown', 
+          userInfo.avatarUrl.split('/').pop() || 'avatar.jpg'
+        );
+        
+        // 获取缓存后的头像路径
+        const cachedAvatarPath = await avatarCacheManager.getAvatarPath(
+          userInfo.avatarUrl, 
+          fileName
+        );
+        
+        console.log('头像缓存处理完成:', cachedAvatarPath);
+        this.setData({
+          avatarUrl: cachedAvatarPath
+        });
+      } else {
+        // 非云存储路径，直接使用
+        console.log('使用非云存储头像:', userInfo.avatarUrl);
+        this.setData({
+          avatarUrl: userInfo.avatarUrl
+        });
+      }
+    } catch (error) {
+      console.error('头像缓存处理失败:', error);
+      // 缓存失败时使用原始路径
+      this.setData({
+        avatarUrl: userInfo.avatarUrl || '/static/icons/default-avatar.png'
+      });
+    }
+  },
 
   /**
    * 跳转到注册页面
