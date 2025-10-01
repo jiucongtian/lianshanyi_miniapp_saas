@@ -451,10 +451,6 @@ Page({
     });
   },
 
-  // 防止点击预览容器时关闭预览
-  preventClose: function() {
-    // 空函数，阻止事件冒泡
-  },
 
   // 图片加载成功
   onImageLoad: function(e) {

@@ -101,7 +101,6 @@
       class="preview-image" 
       src="{{previewImagePath}}" 
       mode="aspectFit" 
-      catchtap="preventClose" 
       bindload="onImageLoad" 
       binderror="onImageError"
       lazy-load="{{false}}"
