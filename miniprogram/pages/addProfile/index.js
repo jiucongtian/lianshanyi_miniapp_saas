@@ -770,14 +770,14 @@ Page({
       console.log('卡牌数据已设置到全局变量:', cardData);
       
       wx.switchTab({
-        url: '/pages/profile/index',
+        url: '/pages/card/index',
         success: () => {
-          console.log('找到云端档案，跳转到档案页面');
+          console.log('找到云端档案，跳转到卡牌页面');
           Message.success({
             context: this,
             offset: [120, 32],
             duration: 1500,
-            content: '已找到云端档案，请选择查看',
+            content: '已找到云端档案，正在显示卡牌',
           });
         },
         fail: (error) => {
@@ -855,19 +855,27 @@ Page({
           }
         }
         
-        // API调用成功，跳转到档案页面
+        // API调用成功，跳转到卡牌页面
         wx.hideLoading();
         
-        // 档案创建成功后，跳转到档案页面让用户管理档案
+        // 构建卡牌数据并设置到全局变量
+        const cardData = this.buildCardDataFromBaziResult(baziResult, birthDate);
+        if (cardData) {
+          const app = getApp();
+          app.globalData.cardData = cardData;
+          console.log('卡牌数据已设置到全局变量:', cardData);
+        }
+        
+        // 档案创建成功后，直接跳转到卡牌页面
         wx.switchTab({
-          url: '/pages/profile/index',
+          url: '/pages/card/index',
           success: () => {
-            console.log('档案创建成功，跳转到档案页面');
+            console.log('档案创建成功，跳转到卡牌页面');
             Message.success({
               context: this,
               offset: [120, 32],
               duration: 2000,
-              content: '档案创建成功！请选择档案查看卡牌',
+              content: '档案创建成功！正在显示卡牌',
             });
           },
           fail: (error) => {
@@ -1084,6 +1092,7 @@ Page({
       baziData,
       timestamp: baziResult.timestamp,
       profileId: baziResult.profileId,
+      profileName: this.data.formData.name.trim() || '生命智慧卡牌', // 添加档案名称
       calculatedAt: baziResult.calculatedAt
     };
   },
