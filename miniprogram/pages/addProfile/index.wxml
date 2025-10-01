@@ -19,12 +19,12 @@
       
       <view class="input-group">
         <view class="input-label">
-          姓名
+          名称
           <text class="required">*</text>
         </view>
         <t-input
           value="{{formData.name}}"
-          placeholder="请输入您的姓名"
+          placeholder="请输入您的名称"
           bind:change="onNameChange"
           bind:blur="onNameBlur"
           error="{{nameError}}"
@@ -57,15 +57,14 @@
       </view>
     </view>
 
-    <!-- 出生时间选择 -->
+    <!-- 生日信息选择 -->
     <view class="form-section">
       <view class="section-header">
         <t-icon name="time" size="20" color="#0052d9" />
-        <text class="section-title">出生时间</text>
+        <text class="section-title">生日信息</text>
       </view>
       
       <view class="input-group">
-        <view class="input-label">出生日期</view>
         <view class="input-wrapper" bindtap="onInputTap">
           <view class="time-display {{formatedDateTime ? 'has-value' : ''}}">
             {{formatedDateTime || '请选择年月日时'}}

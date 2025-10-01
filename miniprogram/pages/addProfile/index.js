@@ -15,11 +15,11 @@ Page({
     editingProfileId: null,
     // 表单数据
     formData: {
-      name: '', // 姓名
+      name: '', // 名称
       gender: 1, // 性别，1=男，0=女，默认男
     },
     // 表单验证
-    nameError: '', // 姓名错误信息
+    nameError: '', // 名称错误信息
     isFormValid: false, // 表单是否有效
     
     // 时间选择相关
@@ -53,19 +53,19 @@ Page({
     let isValid = true;
     let nameError = '';
 
-    // 验证姓名
+    // 验证名称
     if (!formData.name || formData.name.trim() === '') {
-      nameError = '请输入姓名';
+      nameError = '请输入名称';
       isValid = false;
-    } else if (formData.name.trim().length < 2) {
-      nameError = '姓名至少需要2个字符';
+    } else if (formData.name.trim().length < 1) {
+      nameError = '名称至少需要1个字符';
       isValid = false;
     } else if (formData.name.trim().length > 20) {
-      nameError = '姓名不能超过20个字符';
+      nameError = '名称不能超过20个字符';
       isValid = false;
     }
 
-    // 验证出生时间
+    // 验证生日信息
     if (!formatedDateTime) {
       isValid = false;
     }
@@ -78,7 +78,7 @@ Page({
     return isValid;
   },
 
-  // 姓名输入变化
+  // 名称输入变化
   onNameChange(e) {
     const name = e.detail.value;
     this.setData({
@@ -88,7 +88,7 @@ Page({
     this.validateForm();
   },
 
-  // 姓名输入失焦
+  // 名称输入失焦
   onNameBlur(e) {
     const name = e.detail.value;
     this.setData({
@@ -433,7 +433,7 @@ Page({
             editingProfileId: editingProfile._id
           });
           
-          // 设置出生时间
+          // 设置生日信息
           const birthDate = editingProfile.birthDate;
           if (birthDate) {
             const timeIndex = this.calculateTimeIndex(birthDate.hour);
@@ -956,13 +956,13 @@ Page({
       }
     }
     
-    // 生成档案名称（使用用户填写的姓名，已通过表单验证）
+    // 生成档案名称（使用用户填写的名称，已通过表单验证）
     const { formData } = this.data;
     const profileName = formData.name.trim();
     
     return {
       profileName,
-      name: formData.name || '', // 用户填写的姓名
+      name: formData.name || '', // 用户填写的名称
       birthDate: {
         year: birthDate.year,
         month: birthDate.month,
