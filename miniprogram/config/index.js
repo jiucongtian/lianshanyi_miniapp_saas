@@ -11,7 +11,7 @@ export const config = {
     // fileID格式：cloud://环境ID.存储桶ID/路径/文件名
     cloudStorageId: '636c-cloudbase-8g06skyf81a65a87-1378890368', // 临时使用环境ID，需要根据实际情况调整
     // 卡牌图片云存储路径
-    cardImagesPath: 'test2', // 云存储中卡牌图片的文件夹路径
+    cardImagesPath: 'cards', // 云存储中卡牌图片的文件夹路径
   },
 };
 

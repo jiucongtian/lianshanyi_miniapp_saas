@@ -73,7 +73,7 @@ const generateBaziImageMap = () => {
 
   // 生成完整的映射表，包含图片路径
   return baziData.map(item => {
-    const fileName = `${item.num.toString().padStart(2, '0')}_${item.pinyin}.jpeg`;
+    const fileName = `${item.num.toString().padStart(2, '0')}_${item.pinyin}.png`;
     
     // 使用云存储路径
     // 云存储文件路径格式：cloud://环境ID.云存储桶ID/路径/文件名

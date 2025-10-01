@@ -142,7 +142,7 @@ const validateCloudStorageConfig = async () => {
   console.log('\n2. 示例图片路径:');
   const sampleImage = getBaziImageById(1);
   console.log('第一张卡牌:', sampleImage.imagePath);
-  console.log('预期格式:', `cloud://${config.cloud.envId}.xxxxxxx/${config.cloud.cardImagesPath}/01_jiazi.jpeg`);
+  console.log('预期格式:', `cloud://${config.cloud.envId}.xxxxxxx/${config.cloud.cardImagesPath}/01_jiazi.png`);
   console.log('其中 xxxxxxx 需要替换为实际的云存储桶ID');
   
   // 4. 测试文件访问
@@ -193,10 +193,10 @@ const getFileIDFormat = async () => {
   console.log('3. 打开 "cards" 文件夹');
   console.log('4. 选择任意一个图片文件');
   console.log('5. 点击文件详情，复制 fileID');
-  console.log('6. fileID 格式类似: cloud://环境ID.存储桶ID/cards/文件名.jpeg');
+  console.log('6. fileID 格式类似: cloud://环境ID.存储桶ID/cards/文件名.png');
   console.log('7. 将存储桶ID部分更新到 config/index.js 中的 cloudStorageId');
   console.log('\n示例 fileID:');
-  console.log('cloud://cloudbase-8g06skyf81a65a87.cloudbase-8g06skyf81a65a87/cards/01_jiazi.jpeg');
+  console.log('cloud://cloudbase-8g06skyf81a65a87.cloudbase-8g06skyf81a65a87/cards/01_jiazi.png');
   console.log('                                    ^^^^^^^^^^^^^^^^^^^^^^^^');
   console.log('                                    这部分是云存储桶ID');
 };
