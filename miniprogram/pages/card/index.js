@@ -468,7 +468,7 @@ Page({
     });
   },
 
-  // 卡牌点击事件 - 切换显示背面/正面
+  // 卡牌点击事件 - 只能从背面翻到正面，禁止从正面翻回背面
   onCardTap: function(e) {
     const pillar = e.currentTarget.dataset.pillar;
     const flippedKey = `${pillar}CardFlipped`;
@@ -482,18 +482,19 @@ Page({
       return;
     }
     
-    // 切换卡牌状态
-    const newFlippedState = !this.data[flippedKey];
+    // 如果卡牌已经是正面（已翻转），则不允许再次点击
+    if (this.data[flippedKey]) {
+      console.log(`${pillar}卡牌已经是正面，不允许翻回背面`);
+      return;
+    }
     
-    // 根据翻转状态决定显示哪张图片
-    const newImagePath = newFlippedState ? pillarData.baziImagePath : this.data.cardBackImagePath;
-    
+    // 只能从背面翻到正面
     this.setData({
-      [flippedKey]: newFlippedState,
-      [`${pillar}Pillar.imagePath`]: newImagePath
+      [flippedKey]: true,
+      [`${pillar}Pillar.imagePath`]: pillarData.baziImagePath
     });
     
-    console.log(`${pillar}卡牌切换为:`, newFlippedState ? '正面' : '背面');
+    console.log(`${pillar}卡牌翻转为正面`);
   },
 
   // 图片点击事件 - 放大预览（仅当显示正面时）
