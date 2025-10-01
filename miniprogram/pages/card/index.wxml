@@ -20,7 +20,7 @@
       <!-- 年柱 -->
       <view class="pillar-item" animation="{{yearAnimation}}">
         <view class="pillar-title">时空关系卡</view>
-        <view class="image-container">
+        <view class="image-container" bindtap="onCardTap" data-pillar="year">
           <image 
             class="pillar-image" 
             src="{{yearPillar.imagePath}}" 
@@ -39,7 +39,7 @@
       <!-- 月柱 -->
       <view class="pillar-item" animation="{{monthAnimation}}">
         <view class="pillar-title">事业关系卡</view>
-        <view class="image-container">
+        <view class="image-container" bindtap="onCardTap" data-pillar="month">
           <image 
             class="pillar-image" 
             src="{{monthPillar.imagePath}}" 
@@ -58,7 +58,7 @@
       <!-- 日柱 -->
       <view class="pillar-item" animation="{{dayAnimation}}">
         <view class="pillar-title">家庭关系卡</view>
-        <view class="image-container">
+        <view class="image-container" bindtap="onCardTap" data-pillar="day">
           <image 
             class="pillar-image" 
             src="{{dayPillar.imagePath}}" 
@@ -77,7 +77,7 @@
       <!-- 时柱 -->
       <view class="pillar-item" animation="{{timeAnimation}}">
         <view class="pillar-title">亲子关系卡</view>
-        <view class="image-container">
+        <view class="image-container" bindtap="onCardTap" data-pillar="time">
           <image 
             class="pillar-image" 
             src="{{timePillar.imagePath}}" 

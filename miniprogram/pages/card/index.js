@@ -14,28 +14,38 @@ Page({
     // 图片预览相关
     showImagePreview: false,
     previewImagePath: '',
+    // 卡牌状态：true表示显示正面（八字图片），false表示显示背面（card-back.jpg）
+    yearCardFlipped: false,
+    monthCardFlipped: false,
+    dayCardFlipped: false,
+    timeCardFlipped: false,
     yearPillar: { 
       heavenlyStem: '',
       earthlyBranch: '',
-      imagePath: ''
+      imagePath: '',
+      baziImagePath: '' // 存储八字图片路径
     },
     monthPillar: {
       heavenlyStem: '',
       earthlyBranch: '',
-      imagePath: ''
+      imagePath: '',
+      baziImagePath: '' // 存储八字图片路径
     },
     dayPillar: {
       heavenlyStem: '',
       earthlyBranch: '',
-      imagePath: ''
+      imagePath: '',
+      baziImagePath: '' // 存储八字图片路径
     },
     timePillar: {
       heavenlyStem: '',
       earthlyBranch: '',
-      imagePath: ''
+      imagePath: '',
+      baziImagePath: '' // 存储八字图片路径
     },
     originalTime: '',
     lunarTime: '',
+    cardBackImagePath: '/static/card-back.jpg', // 卡牌背面图片路径
   },
 
   onLoad: function(options) {
@@ -222,13 +232,18 @@ Page({
   clearImageData: function() {
     console.log('清空图片数据');
     this.setData({
-      yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
-      monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
-      dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
-      timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
+      yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
+      monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
+      dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
+      timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
       originalTime: '',
       lunarTime: '',
-      isLoadingImages: true
+      isLoadingImages: true,
+      // 重置卡牌翻转状态
+      yearCardFlipped: false,
+      monthCardFlipped: false,
+      dayCardFlipped: false,
+      timeCardFlipped: false
     });
   },
 
@@ -266,26 +281,35 @@ Page({
           yearPillar: {
             heavenlyStem: baziData.yearPillar.heavenlyStem,
             earthlyBranch: baziData.yearPillar.earthlyBranch,
-            imagePath: yearPath
+            imagePath: this.data.cardBackImagePath, // 默认显示背面
+            baziImagePath: yearPath // 保存八字图片路径
           },
           monthPillar: {
             heavenlyStem: baziData.monthPillar.heavenlyStem,
             earthlyBranch: baziData.monthPillar.earthlyBranch,
-            imagePath: monthPath
+            imagePath: this.data.cardBackImagePath, // 默认显示背面
+            baziImagePath: monthPath // 保存八字图片路径
           },
           dayPillar: {
             heavenlyStem: baziData.dayPillar.heavenlyStem,
             earthlyBranch: baziData.dayPillar.earthlyBranch,
-            imagePath: dayPath
+            imagePath: this.data.cardBackImagePath, // 默认显示背面
+            baziImagePath: dayPath // 保存八字图片路径
           },
           timePillar: {
             heavenlyStem: baziData.timePillar.heavenlyStem,
             earthlyBranch: baziData.timePillar.earthlyBranch,
-            imagePath: timePath
+            imagePath: this.data.cardBackImagePath, // 默认显示背面
+            baziImagePath: timePath // 保存八字图片路径
           },
           originalTime: baziData.originalTime || '',
           lunarTime: baziData.lunarTime || '',
-          isLoadingImages: false
+          isLoadingImages: false,
+          // 重置卡牌翻转状态
+          yearCardFlipped: false,
+          monthCardFlipped: false,
+          dayCardFlipped: false,
+          timeCardFlipped: false
         });
         
         console.log('八字显示已更新，当前数据:', this.data);
@@ -302,26 +326,35 @@ Page({
           yearPillar: {
             heavenlyStem: baziData.yearPillar.heavenlyStem,
             earthlyBranch: baziData.yearPillar.earthlyBranch,
-            imagePath: yearImagePath
+            imagePath: this.data.cardBackImagePath, // 默认显示背面
+            baziImagePath: yearImagePath // 保存八字图片路径
           },
           monthPillar: {
             heavenlyStem: baziData.monthPillar.heavenlyStem,
             earthlyBranch: baziData.monthPillar.earthlyBranch,
-            imagePath: monthImagePath
+            imagePath: this.data.cardBackImagePath, // 默认显示背面
+            baziImagePath: monthImagePath // 保存八字图片路径
           },
           dayPillar: {
             heavenlyStem: baziData.dayPillar.heavenlyStem,
             earthlyBranch: baziData.dayPillar.earthlyBranch,
-            imagePath: dayImagePath
+            imagePath: this.data.cardBackImagePath, // 默认显示背面
+            baziImagePath: dayImagePath // 保存八字图片路径
           },
           timePillar: {
             heavenlyStem: baziData.timePillar.heavenlyStem,
             earthlyBranch: baziData.timePillar.earthlyBranch,
-            imagePath: timeImagePath
+            imagePath: this.data.cardBackImagePath, // 默认显示背面
+            baziImagePath: timeImagePath // 保存八字图片路径
           },
           originalTime: baziData.originalTime || '',
           lunarTime: baziData.lunarTime || '',
-          isLoadingImages: false
+          isLoadingImages: false,
+          // 重置卡牌翻转状态
+          yearCardFlipped: false,
+          monthCardFlipped: false,
+          dayCardFlipped: false,
+          timeCardFlipped: false
         });
       }
     } else {
@@ -336,12 +369,17 @@ Page({
       isLoading: false,
       isDataLoaded: false,
       currentProfileName: '生命智慧卡牌', // 保持默认档案名称
-      yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
-      monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
-      dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
-      timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '' },
+      yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
+      monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
+      dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
+      timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
       originalTime: '',
-      lunarTime: ''
+      lunarTime: '',
+      // 重置卡牌翻转状态
+      yearCardFlipped: false,
+      monthCardFlipped: false,
+      dayCardFlipped: false,
+      timeCardFlipped: false
     });
   },
 
@@ -430,15 +468,45 @@ Page({
     });
   },
 
-  // 图片点击事件
+  // 卡牌点击事件 - 切换显示背面/正面
+  onCardTap: function(e) {
+    const pillar = e.currentTarget.dataset.pillar;
+    const flippedKey = `${pillar}CardFlipped`;
+    const pillarData = this.data[`${pillar}Pillar`];
+    
+    console.log(`点击${pillar}卡牌，当前状态:`, this.data[flippedKey]);
+    
+    // 如果没有八字数据，不进行切换
+    if (!pillarData.baziImagePath) {
+      console.log(`${pillar}卡牌没有八字数据，不进行切换`);
+      return;
+    }
+    
+    // 切换卡牌状态
+    const newFlippedState = !this.data[flippedKey];
+    
+    // 根据翻转状态决定显示哪张图片
+    const newImagePath = newFlippedState ? pillarData.baziImagePath : this.data.cardBackImagePath;
+    
+    this.setData({
+      [flippedKey]: newFlippedState,
+      [`${pillar}Pillar.imagePath`]: newImagePath
+    });
+    
+    console.log(`${pillar}卡牌切换为:`, newFlippedState ? '正面' : '背面');
+  },
+
+  // 图片点击事件 - 放大预览（仅当显示正面时）
   onImageTap: function(e) {
     const pillar = e.currentTarget.dataset.pillar;
     const pillarData = this.data[`${pillar}Pillar`];
+    const flippedKey = `${pillar}CardFlipped`;
     
-    if (pillarData && pillarData.imagePath) {
+    // 只有显示正面（八字图片）时才允许放大预览
+    if (this.data[flippedKey] && pillarData && pillarData.baziImagePath) {
       this.setData({
         showImagePreview: true,
-        previewImagePath: pillarData.imagePath
+        previewImagePath: pillarData.baziImagePath
       });
     }
   },
