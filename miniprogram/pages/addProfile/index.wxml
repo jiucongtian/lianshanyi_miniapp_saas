@@ -92,6 +92,18 @@
 <!-- 自定义时间选择器弹出层 -->
 <t-popup visible="{{showPicker}}" placement="bottom" bind:visible-change="onPickerClose">
   <view class="custom-picker">
+    <!-- 不确定时辰信息勾选框 -->
+    <view class="picker-checkbox-section">
+      <view class="checkbox-wrapper">
+        <checkbox 
+          checked="{{isUncertainTime}}" 
+          bindchange="onUncertainTimeChange"
+          class="uncertain-time-checkbox"
+        />
+        <text class="checkbox-label">不确定具体几点</text>
+      </view>
+    </view>
+    
     <view class="picker-header">
       <view class="picker-btn" bindtap="onPickerCancel">取消</view>
       <view class="picker-title">选择时辰</view>

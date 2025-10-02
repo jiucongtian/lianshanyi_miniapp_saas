@@ -30,6 +30,7 @@ Page({
     yearRange: [], // 年份范围
     monthRange: Array.from({length: 12}, (_, i) => i + 1), // 月份范围 1-12
     dayRange: Array.from({length: 31}, (_, i) => i + 1), // 日期范围 1-31
+    isUncertainTime: false, // 是否不确定时辰信息
     // 时辰对照表
     timeMap: [
       { name: '子时(23-01)', range: '23:00-01:00（次日）', start: 23, end: 1 },
@@ -692,6 +693,22 @@ Page({
       this.setData({
         showPicker: false
       });
+    }
+  },
+
+  // 不确定时辰信息勾选框变化
+  onUncertainTimeChange(e) {
+    const isUncertain = e.detail.value;
+    console.log('不确定时辰信息状态变化:', isUncertain);
+    
+    this.setData({
+      isUncertainTime: isUncertain
+    });
+    
+    if (isUncertain) {
+      // 如果选择不确定时辰，可以设置默认时辰或清空时辰选择
+      console.log('用户选择不确定时辰信息');
+      // 这里可以根据业务需求处理，比如设置默认时辰或显示提示
     }
   },
 
