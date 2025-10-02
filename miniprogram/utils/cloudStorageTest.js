@@ -100,21 +100,14 @@ const testCardImages = async (count = 5) => {
  * 用于验证文件是否已上传
  * @param {string} prefix 文件路径前缀，默认为 'cards'
  * @returns {Promise<Object>} 文件列表
+ * @deprecated 此功能需要专门的云函数支持，当前已移除 testFunction
  */
 const listCloudFiles = (prefix = 'cards') => {
   return new Promise((resolve, reject) => {
-    wx.cloud.callFunction({
-      name: 'testFunction', // 需要创建一个云函数来获取文件列表
-      data: {
-        action: 'listFiles',
-        prefix: prefix
-      },
-      success: res => {
-        resolve(res.result);
-      },
-      fail: err => {
-        reject(err);
-      }
+    reject({
+      success: false,
+      message: 'listCloudFiles 功能已废弃，testFunction 云函数已被移除',
+      error: 'FUNCTION_NOT_FOUND'
     });
   });
 };
