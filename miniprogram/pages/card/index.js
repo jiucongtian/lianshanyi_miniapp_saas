@@ -269,6 +269,11 @@ Page({
     console.log('loadCardDataFromGlobal 开始执行，cardData:', cardData);
     
     try {
+      // 先设置isUncertainTime，确保updateBaziDisplay能获取到正确的值
+      this.setData({
+        isUncertainTime: Boolean(cardData.isUncertainTime)
+      });
+      
       // 更新八字显示
       this.updateBaziDisplay(cardData.baziData);
       
@@ -277,7 +282,6 @@ Page({
         isLoading: false,
         isDataLoaded: true,
         currentProfileName: cardData.profileName || '生命智慧卡牌', // 更新档案名称
-        isUncertainTime: cardData.isUncertainTime || false, // 更新不确定时辰状态
         // 重置预览状态
         showImagePreview: false,
         previewImagePath: '',
@@ -432,6 +436,8 @@ Page({
           originalTime: baziData.originalTime || '',
           lunarTime: baziData.lunarTime || '',
           isLoadingImages: false,
+          // 保持isUncertainTime的值不变
+          isUncertainTime: this.data.isUncertainTime,
           // 重置卡牌翻转状态（日柱卡牌默认显示正面）
           yearCardFlipped: false,
           monthCardFlipped: false,
@@ -477,6 +483,8 @@ Page({
           originalTime: baziData.originalTime || '',
           lunarTime: baziData.lunarTime || '',
           isLoadingImages: false,
+          // 保持isUncertainTime的值不变
+          isUncertainTime: this.data.isUncertainTime,
           // 重置卡牌翻转状态（日柱卡牌默认显示正面）
           yearCardFlipped: false,
           monthCardFlipped: false,
