@@ -133,6 +133,7 @@ async function createProfile(wxContext, profileData) {
         ...(profileData.baziData.lunarDate && { lunarDate: profileData.baziData.lunarDate })
       },
       gender: profileData.gender || 0,
+      isUncertainTime: profileData.isUncertainTime || false,
       description: profileData.description || '',
       createTime: now,
       updateTime: now,
@@ -258,6 +259,7 @@ async function updateProfile(wxContext, updateData) {
       ...(profileData.birthDate && { birthDate: profileData.birthDate }),
       ...(profileData.baziData && { baziData: profileData.baziData }),
       ...(profileData.gender !== undefined && { gender: profileData.gender }),
+      ...(profileData.isUncertainTime !== undefined && { isUncertainTime: profileData.isUncertainTime }),
       ...(profileData.description !== undefined && { description: profileData.description })
     }
     

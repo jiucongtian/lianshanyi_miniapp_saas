@@ -324,7 +324,8 @@ Page({
             profileId: this.data.editingProfileId,
             profileName: this.data.formData.name.trim(),
             birthDate: birthDate,
-            gender: this.data.formData.gender
+            gender: this.data.formData.gender,
+            isUncertainTime: this.data.isUncertainTime
           }
         }
       });
@@ -428,6 +429,11 @@ Page({
             name: editingProfile.profileName || editingProfile.name || '',
             gender: editingProfile.gender !== undefined ? editingProfile.gender : 1
           };
+          
+          // 恢复不确定时辰状态
+          if (editingProfile.isUncertainTime !== undefined) {
+            this.data.isUncertainTime = editingProfile.isUncertainTime;
+          }
           
           // 设置档案ID
           this.setData({
@@ -1033,6 +1039,7 @@ Page({
         }
       },
       gender: formData.gender, // 使用用户选择的性别
+      isUncertainTime: this.data.isUncertainTime, // 是否不确定时辰信息
       description: '用户创建的八字档案'
     };
   },

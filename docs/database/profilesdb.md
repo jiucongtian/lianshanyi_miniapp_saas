@@ -44,6 +44,7 @@
 | baziData.lunarDate.day | number | 否 | - | 农历日 |
 | baziData.lunarDate.isLeap | boolean | 否 | - | 是否闰月 |
 | gender | number | 否 | - | 性别(0:未知,1:男,2:女) |
+| isUncertainTime | boolean | 否 | - | 是否不确定时辰信息，默认false |
 | description | string | 否 | - | 档案描述备注 |
 | createTime | date | 是 | - | 档案创建时间 |
 | updateTime | date | 是 | - | 档案最后更新时间 |
@@ -94,6 +95,7 @@
     }
   },
   "gender": 1,
+  "isUncertainTime": false,
   "description": "本人生辰八字档案",
   "createTime": "2023-09-14T08:00:00.000Z",
   "updateTime": "2023-09-14T08:00:00.000Z",
