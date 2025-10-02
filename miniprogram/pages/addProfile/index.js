@@ -803,7 +803,7 @@ Page({
 
     // 显示加载状态
     wx.showLoading({
-      title: isDebugMode ? '调试模式：重新计算...' : '抽取智慧卡牌，请稍候...',
+      title: isDebugMode ? '调试模式：重新计算...' : '抽取智慧卡牌中...',
       mask: true
     });
 
