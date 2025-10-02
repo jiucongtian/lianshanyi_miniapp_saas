@@ -194,6 +194,7 @@ Page({
       // 重置图片预览相关
       showImagePreview: false,
       previewImagePath: '',
+      previewCardDescription: null,
       
       // 重置所有卡牌翻转状态（日柱卡牌将在数据加载后设置为正面）
       yearCardFlipped: false,
@@ -276,7 +277,8 @@ Page({
         currentProfileName: cardData.profileName || '生命智慧卡牌', // 更新档案名称
         // 重置预览状态
         showImagePreview: false,
-        previewImagePath: ''
+        previewImagePath: '',
+        previewCardDescription: null
       });
       
       console.log('从全局数据加载卡牌数据成功');
@@ -490,6 +492,7 @@ Page({
     this.setData({
       isLoading: false,
       isDataLoaded: false,
+      isLoadingImages: false,
       currentProfileName: '生命智慧卡牌', // 保持默认档案名称
       yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
       monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
@@ -497,6 +500,10 @@ Page({
       timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
       originalTime: '',
       lunarTime: '',
+      // 重置图片预览相关
+      showImagePreview: false,
+      previewImagePath: '',
+      previewCardDescription: null,
       // 重置卡牌翻转状态
       yearCardFlipped: false,
       monthCardFlipped: false,
