@@ -19,6 +19,7 @@ app.globalData.cardData = {
   profileName: "档案名称",
   originalTime: "格式化的生日时间",
   lunarTime: "格式化的农历时间",
+  isUncertainTime: false, // 是否不确定时辰信息
   
   // 八字数据（卡牌显示核心数据）
   baziData: {

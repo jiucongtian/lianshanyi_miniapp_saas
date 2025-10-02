@@ -87,6 +87,7 @@ const convertProfileToCardData = (profileData) => {
     profileName: profileData.profileName,
     originalTime: formatBirthTime(profileData.birthDate),
     lunarTime: profileData.baziData.lunarDate ? formatLunarTime(profileData.baziData.lunarDate) : '',
+    isUncertainTime: profileData.isUncertainTime || false,
     baziData: {
       yearPillar: {
         heavenlyStem: profileData.baziData.year.gan,

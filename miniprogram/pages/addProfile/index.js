@@ -1090,6 +1090,7 @@ Page({
       baziData,
       timestamp: baziResult.timestamp,
       profileId: profile._id,
+      isUncertainTime: profile.isUncertainTime || false,
       calculatedAt: baziResult.calculatedAt
     };
   },
@@ -1131,6 +1132,7 @@ Page({
       timestamp: baziResult.timestamp,
       profileId: baziResult.profileId,
       profileName: this.data.formData.name.trim() || '生命智慧卡牌', // 添加档案名称
+      isUncertainTime: this.data.isUncertainTime || false,
       calculatedAt: baziResult.calculatedAt
     };
   },
