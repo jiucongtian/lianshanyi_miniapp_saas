@@ -209,6 +209,29 @@
   margin: 0 auto !important;
 }
 
+/* 卡牌描述信息样式 */
+.card-description {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 80vw;
+  max-width: 80vw;
+  padding: 32rpx;
+  background: rgba(248, 249, 250, 0.95);
+  backdrop-filter: blur(10rpx);
+  border-radius: 0 0 8rpx 8rpx;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.1);
+  z-index: 100001;
+}
+
+.card-desc-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+  text-align: center;
+}
+
 /* 动画效果 */
 @keyframes fadeIn {
   from {

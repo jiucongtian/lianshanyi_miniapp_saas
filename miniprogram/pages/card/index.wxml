@@ -105,5 +105,9 @@
       binderror="onImageError"
       lazy-load="{{false}}"
     />
+    <!-- 卡牌描述信息 -->
+    <view class="card-description" wx:if="{{previewCardDescription}}" catchtap="">
+      <view class="card-desc-text">{{previewCardDescription.description}}</view>
+    </view>
   </view>
 </view>
