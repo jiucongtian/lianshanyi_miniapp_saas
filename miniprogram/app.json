@@ -28,7 +28,7 @@
       },
       {
         "pagePath": "pages/profile/index",
-        "text": "档案",
+        "text": "牌库",
         "iconPath": "static/icons/profile.png",
         "selectedIconPath": "static/icons/profile-active.png"
       },
