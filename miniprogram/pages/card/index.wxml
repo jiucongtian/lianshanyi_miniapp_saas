@@ -90,6 +90,10 @@
             <view class="loading-spinner"></view>
             <view class="loading-text">加载中...</view>
           </view>
+          <!-- 不确定时辰问号标识 -->
+          <view class="uncertain-time-indicator" wx:if="{{isUncertainTime}}">
+            <text class="question-mark">?</text>
+          </view>
         </view>
       </view>
     </view>

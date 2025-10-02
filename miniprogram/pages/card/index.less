@@ -170,6 +170,48 @@
     color: #6c757d;
   }
 
+  /* 不确定时辰问号标识样式 */
+  .uncertain-time-indicator {
+    position: absolute;
+    top: 16rpx;
+    right: 16rpx;
+    width: 60rpx;
+    height: 60rpx;
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.4);
+    z-index: 10;
+    animation: pulse-glow 2s ease-in-out infinite;
+    border: 3rpx solid #fff;
+  }
+
+  .question-mark {
+    font-size: 36rpx;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
+    line-height: 1;
+  }
+
+  /* 问号标识发光动画 */
+  @keyframes pulse-glow {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.4);
+    }
+    50% {
+      transform: scale(1.1);
+      box-shadow: 0 6rpx 20rpx rgba(255, 107, 107, 0.6);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.4);
+    }
+  }
+
 /* 图片预览悬浮窗样式 */
 .image-preview-overlay {
   position: fixed !important;

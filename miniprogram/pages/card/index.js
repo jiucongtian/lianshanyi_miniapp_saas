@@ -75,6 +75,7 @@ Page({
     isLoading: true, // 标记是否正在加载
     isLoadingImages: false, // 标记图片是否正在加载
     currentProfileName: '生命智慧卡牌', // 当前档案名称，默认为生命智慧卡牌
+    isUncertainTime: false, // 是否不确定时辰信息
     // 图片预览相关
     showImagePreview: false,
     previewImagePath: '',
@@ -190,6 +191,7 @@ Page({
       isLoading: true,
       isLoadingImages: false,
       currentProfileName: '生命智慧卡牌',
+      isUncertainTime: false,
       
       // 重置图片预览相关
       showImagePreview: false,
@@ -275,6 +277,7 @@ Page({
         isLoading: false,
         isDataLoaded: true,
         currentProfileName: cardData.profileName || '生命智慧卡牌', // 更新档案名称
+        isUncertainTime: cardData.isUncertainTime || false, // 更新不确定时辰状态
         // 重置预览状态
         showImagePreview: false,
         previewImagePath: '',
@@ -494,6 +497,7 @@ Page({
       isDataLoaded: false,
       isLoadingImages: false,
       currentProfileName: '生命智慧卡牌', // 保持默认档案名称
+      isUncertainTime: false, // 重置不确定时辰状态
       yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
       monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
       dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: this.data.cardBackImagePath, baziImagePath: '' },
