@@ -64,6 +64,12 @@
         <text class="section-title">出生信息</text>
       </view>
       
+      <!-- 时辰提示信息 -->
+      <view class="time-tip" wx:if="{{isUncertainTime}}">
+        <text class="tip-text">不记得具体的时辰信息了</text>
+      </view>
+      
+      
       <view class="input-group">
         <view class="input-wrapper" bindtap="onInputTap">
           <view class="time-display {{formatedDateTime ? 'has-value' : ''}}">
@@ -96,8 +102,9 @@
     <view class="picker-checkbox-section">
       <view class="checkbox-wrapper">
         <checkbox 
+          value="uncertainTime"
           checked="{{isUncertainTime}}" 
-          bindchange="onUncertainTimeChange"
+          bindtap="onCheckboxTap"
           class="uncertain-time-checkbox"
         />
         <text class="checkbox-label">不确定具体几点</text>

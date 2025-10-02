@@ -495,6 +495,12 @@ Page({
         dateTimeValue = savedDateTime.dateTimeValue;
         formatedDateTime = savedDateTime.formatedDateTime;
         
+        // 恢复不确定时辰状态
+        if (savedDateTime.isUncertainTime !== undefined) {
+          // 先设置到 this.data 中，稍后在 setData 中统一更新
+          this.data.isUncertainTime = savedDateTime.isUncertainTime;
+        }
+        
         // 使用保存的选择器值，或者重新计算
         if (savedDateTime.year && savedDateTime.month && savedDateTime.day && savedDateTime.timeIndex !== undefined) {
           initialPickerValue = this.calculatePickerValue(
@@ -512,8 +518,10 @@ Page({
         console.log('已恢复用户时间选择:', {
           formatedDateTime,
           dateTimeValue,
-          pickerValue: initialPickerValue
+          pickerValue: initialPickerValue,
+          isUncertainTime: savedDateTime.isUncertainTime
         });
+        console.log('恢复的不确定时辰状态:', savedDateTime.isUncertainTime);
       } else {
         console.log('未找到保存的时间，使用当前时间作为默认值');
         // 获取当前时间的选择器值
@@ -527,10 +535,13 @@ Page({
       pickerValue: initialPickerValue,
       dateTimeValue,
       formatedDateTime,
-      formData
+      formData,
+      isUncertainTime: this.data.isUncertainTime || false
     });
 
     console.log('页面初始化完成，模式:', isEditMode ? '编辑' : '创建');
+    console.log('最终设置的 isUncertainTime:', this.data.isUncertainTime);
+    console.log('最终设置的 formatedDateTime:', this.data.formatedDateTime);
     
     // 编辑模式下需要验证表单
     if (isEditMode) {
@@ -646,6 +657,7 @@ Page({
       month,
       day,
       timeIndex,
+      isUncertainTime: this.data.isUncertainTime, // 保存不确定时辰状态
       savedAt: Date.now()
     };
     
@@ -660,10 +672,12 @@ Page({
     this.setData({
       dateTimeValue,
       formatedDateTime: formatedTime,
-      showPicker: false
+      showPicker: false,
+      isUncertainTime: this.data.isUncertainTime
     });
 
     console.log('确认选择时间:', formatedTime);
+    console.log('确认选择时的 isUncertainTime:', this.data.isUncertainTime);
     
     // 时间选择后重新验证表单
     this.validateForm();
@@ -696,19 +710,19 @@ Page({
     }
   },
 
-  // 不确定时辰信息勾选框变化
-  onUncertainTimeChange(e) {
-    const isUncertain = e.detail.value;
-    console.log('不确定时辰信息状态变化:', isUncertain);
+  // 不确定时辰信息勾选框点击
+  onCheckboxTap() {
+    const newState = !this.data.isUncertainTime;
+    console.log('切换不确定时辰状态:', this.data.isUncertainTime, '→', newState);
     
     this.setData({
-      isUncertainTime: isUncertain
+      isUncertainTime: newState
     });
     
-    if (isUncertain) {
-      // 如果选择不确定时辰，可以设置默认时辰或清空时辰选择
+    if (newState) {
       console.log('用户选择不确定时辰信息');
-      // 这里可以根据业务需求处理，比如设置默认时辰或显示提示
+    } else {
+      console.log('用户取消不确定时辰信息');
     }
   },
 
