@@ -339,7 +339,6 @@ Page({
         const app = getApp();
         if (app.globalData?.currentProfileId === this.data.editingProfileId && result.result.data?.profile) {
           app.setCurrentProfile(result.result.data.profile);
-          console.log('已更新全局当前档案数据');
         }
         
         // 清除本地存储的编辑数据
@@ -527,7 +526,6 @@ Page({
           pickerValue: initialPickerValue,
           isUncertainTime: savedDateTime.isUncertainTime
         });
-        console.log('恢复的不确定时辰状态:', savedDateTime.isUncertainTime);
       } else {
         console.log('未找到保存的时间，使用当前时间作为默认值');
         // 获取当前时间的选择器值
@@ -546,8 +544,6 @@ Page({
     });
 
     console.log('页面初始化完成，模式:', isEditMode ? '编辑' : '创建');
-    console.log('最终设置的 isUncertainTime:', this.data.isUncertainTime);
-    console.log('最终设置的 formatedDateTime:', this.data.formatedDateTime);
     
     // 编辑模式下需要验证表单
     if (isEditMode) {
@@ -683,7 +679,6 @@ Page({
     });
 
     console.log('确认选择时间:', formatedTime);
-    console.log('确认选择时的 isUncertainTime:', this.data.isUncertainTime);
     
     // 时间选择后重新验证表单
     this.validateForm();

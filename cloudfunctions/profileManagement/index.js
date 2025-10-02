@@ -253,6 +253,7 @@ async function updateProfile(wxContext, updateData) {
   
   try {
     const now = new Date()
+    
     const updateDoc = {
       updateTime: now,
       ...(profileData.profileName && { profileName: profileData.profileName }),
@@ -261,6 +262,11 @@ async function updateProfile(wxContext, updateData) {
       ...(profileData.gender !== undefined && { gender: profileData.gender }),
       ...(profileData.isUncertainTime !== undefined && { isUncertainTime: profileData.isUncertainTime }),
       ...(profileData.description !== undefined && { description: profileData.description })
+    }
+    
+    // 强制包含 isUncertainTime 字段（如果存在）
+    if (profileData.isUncertainTime !== undefined) {
+      updateDoc.isUncertainTime = profileData.isUncertainTime;
     }
     
     const result = await db.collection('profiles')
