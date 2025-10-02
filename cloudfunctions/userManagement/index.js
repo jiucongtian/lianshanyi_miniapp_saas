@@ -154,7 +154,7 @@ async function createUser(wxContext, userData = {}) {
         userType: 'guest', // 新用户默认为临时用户
         registrationTime: null,
         upgradeTime: null,
-        profileQuota: 1, // 临时用户默认配额为1
+        profileQuota: 3, // 临时用户默认配额为3
         usedProfiles: 0,
         permissions: ['view', 'create_limited'], // 临时用户权限
         isActive: true
@@ -330,7 +330,7 @@ async function upgradeUserType(wxContext, data) {
     // 设置权限和配额
     switch (targetUserType) {
       case 'guest':
-        updateData.profileQuota = 1
+        updateData.profileQuota = 3
         updateData.permissions = ['view', 'create_limited']
         break
       case 'normal':
@@ -397,7 +397,7 @@ async function checkUserQuota(wxContext) {
     
     const user = userResult.data[0]
     const userType = user.userType || 'guest'
-    const profileQuota = user.profileQuota || 1
+    const profileQuota = user.profileQuota || 3
     const usedProfiles = user.usedProfiles || 0
     
     // 获取实际档案数量

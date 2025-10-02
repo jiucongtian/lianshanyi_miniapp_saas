@@ -1,11 +1,11 @@
-<t-navbar title="{{pageMode === 'edit' ? '编辑个人档案' : '创建个人档案'}}" left-arrow bind:go-back="goBack" />
+<t-navbar title="{{pageMode === 'edit' ? '编辑个人信息' : '创建个人信息'}}" left-arrow bind:go-back="goBack" />
 
 <!-- 页面内容 -->
 <view class="page-container">
   <!-- 页面标题区域 -->
   <view class="page-header">
-    <view class="header-title">{{pageMode === 'edit' ? '编辑个人档案' : '创建个人档案'}}</view>
-    <view class="header-subtitle">{{pageMode === 'edit' ? '修改档案信息' : '请填写基本信息'}}</view>
+    <view class="header-title">{{pageMode === 'edit' ? '编辑个人信息' : '创建个人信息'}}</view>
+    <view class="header-subtitle">{{pageMode === 'edit' ? '修改个人信息' : '请填写基本信息'}}</view>
   </view>
 
   <!-- 个人信息填写区域 -->
@@ -84,7 +84,7 @@
       bindtap="onSubmit"
       disabled="{{!isFormValid}}"
     >
-      {{pageMode === 'edit' ? '更新档案' : '创建档案'}}
+      {{pageMode === 'edit' ? '更新信息' : '创建信息'}}
     </t-button>
   </view>
 </view>

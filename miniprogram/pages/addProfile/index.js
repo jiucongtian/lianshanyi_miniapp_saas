@@ -146,7 +146,7 @@ Page({
         
         if (!canCreateMore) {
           // 显示配额超限提示
-          let content = `档案数量已达上限（${quota}个）`;
+          let content = `信息数量已达上限（${quota}个）`;
           let confirmText = '我知道了';
           
           const upgradeHint = permissionManager.getUpgradeHint();
@@ -156,7 +156,7 @@ Page({
           }
           
           wx.showModal({
-            title: '档案数量限制',
+            title: '信息数量限制',
             content,
             confirmText,
             cancelText: '取消',
@@ -206,7 +206,7 @@ Page({
       // 普通用户显示高级版介绍
       wx.showModal({
         title: '升级高级版',
-        content: '高级版功能：\n• 无限档案创建\n• 高级智慧分析\n• 专属客服支持\n• 数据云端备份',
+        content: '高级版功能：\n• 无限信息创建\n• 高级智慧分析\n• 专属客服支持\n• 数据云端备份',
         confirmText: '了解详情',
         cancelText: '暂不升级',
         success: (res) => {
@@ -292,7 +292,7 @@ Page({
         context: this,
         offset: [120, 32],
         duration: 3000,
-        content: '档案ID异常，无法更新',
+        content: '信息ID异常，无法更新',
       });
       return;
     }
@@ -309,7 +309,7 @@ Page({
 
     // 显示加载状态
     wx.showLoading({
-      title: '更新档案中...',
+      title: '更新信息中...',
       mask: true
     });
 
@@ -351,7 +351,7 @@ Page({
           context: this,
           offset: [120, 32],
           duration: 2000,
-          content: '档案更新成功',
+          content: '信息更新成功',
         });
         
         // 延迟返回上一页，让用户看到成功提示
@@ -359,7 +359,7 @@ Page({
           wx.navigateBack();
         }, 1500);
       } else {
-        console.error('更新档案失败:', result.result.error);
+        console.error('更新信息失败:', result.result.error);
         Message.error({
           context: this,
           offset: [120, 32],
@@ -458,7 +458,7 @@ Page({
         } else {
           console.error('编辑模式：未找到要编辑的档案数据');
           wx.showToast({
-            title: '档案数据异常',
+            title: '信息数据异常',
             icon: 'error'
           });
           setTimeout(() => {
@@ -777,7 +777,7 @@ Page({
             context: this,
             offset: [120, 32],
             duration: 1500,
-            content: '已找到云端档案，正在显示卡牌',
+            content: '已找到云端信息，正在显示卡牌',
           });
         },
         fail: (error) => {
@@ -870,12 +870,12 @@ Page({
         wx.switchTab({
           url: '/pages/card/index',
           success: () => {
-            console.log('档案创建成功，跳转到卡牌页面');
+            console.log('信息创建成功，跳转到卡牌页面');
             Message.success({
               context: this,
               offset: [120, 32],
               duration: 2000,
-              content: '档案创建成功！正在显示卡牌',
+              content: '信息创建成功！正在显示卡牌',
             });
           },
           fail: (error) => {

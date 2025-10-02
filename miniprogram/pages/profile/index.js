@@ -19,7 +19,7 @@ Page({
     userInfo: null,
     userType: 'guest',
     userTypeName: '临时用户',
-    profileQuota: 1,
+    profileQuota: 3,
     usedProfiles: 0,
     canCreateMore: true,
     upgradeHint: null,
@@ -158,7 +158,7 @@ Page({
     
     const userType = userInfo.userType || 'guest';
     const userTypeName = permissionManager.getUserTypeName(userType);
-    const profileQuota = userInfo.profileQuota || 1;
+    const profileQuota = userInfo.profileQuota || 3;
     const usedProfiles = userInfo.usedProfiles || 0;
     const upgradeHint = permissionManager.getUpgradeHint();
     

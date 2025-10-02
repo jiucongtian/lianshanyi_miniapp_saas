@@ -37,7 +37,7 @@ const USER_TYPE_PERMISSIONS = {
  * 用户类型配额配置
  */
 const USER_TYPE_QUOTAS = {
-  [USER_TYPES.GUEST]: 1,
+  [USER_TYPES.GUEST]: 3,
   [USER_TYPES.NORMAL]: 20,
   [USER_TYPES.PREMIUM]: -1 // -1表示无限制
 }
@@ -210,7 +210,7 @@ class PermissionManager {
       [PERMISSIONS.CREATE]: {
         guest: {
           restricted: false, // 临时用户可以创建，但有数量限制
-          message: '临时用户最多创建1个档案',
+          message: '临时用户最多创建3个档案',
           upgradeHint: '注册后可创建20个档案'
         }
       },

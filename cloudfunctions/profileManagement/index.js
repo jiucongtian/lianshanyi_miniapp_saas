@@ -67,7 +67,7 @@ async function createProfile(wxContext, profileData) {
     const user = userResult.data[0]
     const userId = user._id
     const userType = user.userType || 'guest'
-    const profileQuota = user.profileQuota || 1
+    const profileQuota = user.profileQuota || 3
     
     // 检查档案数量限制（高级用户无限制）
     if (profileQuota !== -1) {
