@@ -47,7 +47,7 @@ const USER_TYPE_QUOTAS = {
  */
 const USER_TYPE_NAMES = {
   [USER_TYPES.GUEST]: '临时用户',
-  [USER_TYPES.NORMAL]: '普通用户',
+  [USER_TYPES.NORMAL]: '探索者',
   [USER_TYPES.PREMIUM]: '高级用户'
 }
 

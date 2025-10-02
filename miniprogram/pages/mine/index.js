@@ -125,7 +125,7 @@ Page({
     // 处理用户类型（使用userType字段，与profile页面保持一致）
     const typeMap = {
       'guest': '临时用户',
-      'normal': '普通用户',
+      'normal': '探索者',
       'premium': '高级用户'
     };
     const userTypeText = typeMap[userInfo.userType] || '临时用户';
