@@ -65,7 +65,7 @@ Page({
       isValid = false;
     }
 
-    // 验证生日信息
+    // 验证出生信息
     if (!formatedDateTime) {
       isValid = false;
     }
@@ -433,7 +433,7 @@ Page({
             editingProfileId: editingProfile._id
           });
           
-          // 设置生日信息
+          // 设置出生信息
           const birthDate = editingProfile.birthDate;
           if (birthDate) {
             const timeIndex = this.calculateTimeIndex(birthDate.hour);

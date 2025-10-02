@@ -57,11 +57,11 @@
       </view>
     </view>
 
-    <!-- 生日信息选择 -->
+    <!-- 出生信息选择 -->
     <view class="form-section">
       <view class="section-header">
         <t-icon name="time" size="20" color="#0052d9" />
-        <text class="section-title">生日信息</text>
+        <text class="section-title">出生信息</text>
       </view>
       
       <view class="input-group">
