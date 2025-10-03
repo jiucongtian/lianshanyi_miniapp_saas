@@ -484,54 +484,46 @@ Page({
         return;
       }
     } else {
-      // 创建模式：尝试从本地存储恢复用户上次选择的时间
-      let savedDateTime = null;
+      // 创建模式：使用当前系统时间，不恢复任何保存的数据
+      console.log('创建模式：使用当前系统时间作为默认值');
+      
+      // 清理本地存储的时间数据，确保创建新档案时不受之前数据影响
       try {
-        savedDateTime = wx.getStorageSync('userDateTime');
-        console.log('从本地存储读取到的时间数据:', savedDateTime);
+        wx.removeStorageSync('userDateTime');
+        console.log('已清理本地存储的时间数据');
       } catch (error) {
-        console.error('读取本地存储失败:', error);
+        console.error('清理本地存储失败:', error);
       }
       
-      // 如果有保存的时间数据，则恢复
-      if (savedDateTime && savedDateTime.dateTimeValue) {
-        console.log('恢复用户上次选择的时间:', savedDateTime.formatedDateTime);
-        
-        dateTimeValue = savedDateTime.dateTimeValue;
-        formatedDateTime = savedDateTime.formatedDateTime;
-        
-        // 恢复不确定时辰状态
-        if (savedDateTime.isUncertainTime !== undefined) {
-          // 先设置到 this.data 中，稍后在 setData 中统一更新
-          this.data.isUncertainTime = savedDateTime.isUncertainTime;
-        }
-        
-        // 使用保存的选择器值，或者重新计算
-        if (savedDateTime.year && savedDateTime.month && savedDateTime.day && savedDateTime.timeIndex !== undefined) {
-          initialPickerValue = this.calculatePickerValue(
-            savedDateTime.year, 
-            savedDateTime.month, 
-            savedDateTime.day, 
-            savedDateTime.timeIndex
-          );
-        } else {
-          // 从时间戳重新计算选择器值
-          const savedDate = new Date(savedDateTime.dateTimeValue);
-          initialPickerValue = this.getPickerValueFromDate(savedDate);
-        }
-        
-        console.log('已恢复用户时间选择:', {
-          formatedDateTime,
-          dateTimeValue,
-          pickerValue: initialPickerValue,
-          isUncertainTime: savedDateTime.isUncertainTime
-        });
-      } else {
-        console.log('未找到保存的时间，使用当前时间作为默认值');
-        // 获取当前时间的选择器值
-        const now = new Date();
-        initialPickerValue = this.getPickerValueFromDate(now);
-      }
+      // 确保 isUncertainTime 默认为 false
+      this.data.isUncertainTime = false;
+      
+      // 获取当前时间的选择器值
+      const now = new Date();
+      initialPickerValue = this.getPickerValueFromDate(now);
+      
+      // 构建当前时间的显示格式
+      const timeIndex = this.calculateTimeIndex(now.getHours());
+      const timeInfo = this.data.timeMap[timeIndex];
+      formatedDateTime = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${timeInfo.name}`;
+      
+      // 构建时间戳
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      const hour = timeInfo.start; // 使用时辰的开始时间
+      const formattedMonth = month.toString().padStart(2, '0');
+      const formattedDay = day.toString().padStart(2, '0');
+      const formattedHour = hour.toString().padStart(2, '0');
+      const dateStr = `${year}-${formattedMonth}-${formattedDay}T${formattedHour}:00:00`;
+      dateTimeValue = new Date(dateStr).getTime();
+      
+      console.log('创建模式初始化完成:', {
+        formatedDateTime,
+        dateTimeValue,
+        pickerValue: initialPickerValue,
+        isUncertainTime: false
+      });
     }
     
     this.setData({
