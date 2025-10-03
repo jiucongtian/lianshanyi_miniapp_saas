@@ -332,14 +332,60 @@ Page({
     const minute = date.getMinutes();
     
     const birthDate = { year, month, day, hour, minute };
+    const timestamp = this.data.dateTimeValue;
 
     // 显示加载状态
     wx.showLoading({
-      title: '更新信息中...',
+      title: '重新计算八字中...',
       mask: true
     });
 
     try {
+      // 重新计算八字数据
+      const baziResult = await calculateBazi(timestamp);
+      
+      if (!baziResult.success || !baziResult.baziData) {
+        console.error('八字计算失败:', baziResult.error);
+        wx.hideLoading();
+        Message.error({
+          context: this,
+          offset: [120, 32],
+          duration: 3000,
+          content: '八字计算失败，请重试',
+        });
+        return;
+      }
+
+      // 转换八字数据为档案格式
+      const baziData = {
+        year: {
+          gan: baziResult.baziData.yearPillar.heavenlyStem,
+          zhi: baziResult.baziData.yearPillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziResult.baziData.yearPillar.heavenlyStem, baziResult.baziData.yearPillar.earthlyBranch)
+        },
+        month: {
+          gan: baziResult.baziData.monthPillar.heavenlyStem,
+          zhi: baziResult.baziData.monthPillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziResult.baziData.monthPillar.heavenlyStem, baziResult.baziData.monthPillar.earthlyBranch)
+        },
+        day: {
+          gan: baziResult.baziData.dayPillar.heavenlyStem,
+          zhi: baziResult.baziData.dayPillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziResult.baziData.dayPillar.heavenlyStem, baziResult.baziData.dayPillar.earthlyBranch)
+        },
+        hour: {
+          gan: baziResult.baziData.timePillar.heavenlyStem,
+          zhi: baziResult.baziData.timePillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziResult.baziData.timePillar.heavenlyStem, baziResult.baziData.timePillar.earthlyBranch)
+        }
+      };
+
+      // 更新加载状态
+      wx.showLoading({
+        title: '更新信息中...',
+        mask: true
+      });
+
       // 调用云函数更新档案
       const result = await wx.cloud.callFunction({
         name: 'profileManagement',
@@ -349,6 +395,7 @@ Page({
             profileId: this.data.editingProfileId,
             profileName: this.data.formData.name.trim(),
             birthDate: birthDate,
+            baziData: baziData,
             gender: this.data.formData.gender,
             isUncertainTime: this.data.isUncertainTime
           }
@@ -362,8 +409,18 @@ Page({
         
         // 更新全局当前档案数据（如果更新的是当前选中的档案）
         const app = getApp();
-        if (app.globalData?.currentProfileId === this.data.editingProfileId && result.result.data?.profile) {
-          app.setCurrentProfile(result.result.data.profile);
+        if (app.globalData?.currentProfileId === this.data.editingProfileId) {
+          // 构建更新后的档案数据
+          const updatedProfile = {
+            _id: this.data.editingProfileId,
+            profileName: this.data.formData.name.trim(),
+            birthDate: birthDate,
+            baziData: baziData,
+            gender: this.data.formData.gender,
+            isUncertainTime: this.data.isUncertainTime,
+            updateTime: new Date()
+          };
+          app.setCurrentProfile(updatedProfile);
         }
         
         // 清除本地存储的编辑数据
