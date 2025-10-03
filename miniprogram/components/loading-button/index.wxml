@@ -1,0 +1,11 @@
+<t-button
+  theme="{{theme}}"
+  size="{{size}}"
+  block="{{block}}"
+  disabled="{{disabled || loading}}"
+  loading="{{loading}}"
+  bindtap="onButtonTap"
+  class="{{customClass}}"
+>
+  {{loading ? loadingText : buttonText}}
+</t-button>

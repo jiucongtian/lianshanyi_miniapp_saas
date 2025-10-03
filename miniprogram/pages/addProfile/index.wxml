@@ -83,15 +83,16 @@
 
   <!-- 操作按钮区域 -->
   <view class="action-section">
-    <t-button 
-      theme="primary" 
-      size="large" 
-      block
-      bindtap="onSubmit"
+    <loading-button
+      theme="primary"
+      size="large"
+      block="{{true}}"
       disabled="{{!isFormValid}}"
-    >
-      {{pageMode === 'edit' ? '更新信息' : '创建信息'}}
-    </t-button>
+      button-text="{{pageMode === 'edit' ? '更新信息' : '创建信息'}}"
+      loading-text="{{pageMode === 'edit' ? '更新中...' : '创建中...'}}"
+      prevent-duplicate="{{true}}"
+      bind:tap="onSubmit"
+    />
   </view>
 </view>
 

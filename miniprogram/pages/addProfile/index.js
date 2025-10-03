@@ -108,7 +108,10 @@ Page({
   },
 
   // 表单提交
-  async onSubmit() {
+  async onSubmit(e) {
+    // 获取按钮组件的引用
+    const buttonComponent = this.selectComponent('loading-button');
+    
     if (!this.validateForm()) {
       Message.warning({
         context: this,
@@ -116,22 +119,44 @@ Page({
         duration: 3000,
         content: '请完善必填信息',
       });
+      // 重置按钮状态
+      if (buttonComponent) {
+        buttonComponent.reset();
+      }
       return;
     }
 
-    // 如果是创建模式，检查用户配额
-    if (this.data.pageMode === 'create') {
-      const quotaCheck = await this.checkUserQuota();
-      if (!quotaCheck.canCreate) {
-        return; // 配额检查失败，已在方法内处理错误提示
+    try {
+      // 如果是创建模式，检查用户配额
+      if (this.data.pageMode === 'create') {
+        const quotaCheck = await this.checkUserQuota();
+        if (!quotaCheck.canCreate) {
+          // 重置按钮状态
+          if (buttonComponent) {
+            buttonComponent.reset();
+          }
+          return; // 配额检查失败，已在方法内处理错误提示
+        }
       }
-    }
 
-    // 根据页面模式调用不同的处理方法
-    if (this.data.pageMode === 'edit') {
-      await this.onUpdateProfile();
-    } else {
-      await this.onQueryData();
+      // 根据页面模式调用不同的处理方法
+      if (this.data.pageMode === 'edit') {
+        await this.onUpdateProfile();
+      } else {
+        await this.onQueryData();
+      }
+    } catch (error) {
+      console.error('提交过程中出现错误:', error);
+      Message.error({
+        context: this,
+        offset: [120, 32],
+        duration: 3000,
+        content: '提交过程中出现错误，请重试',
+      });
+      // 重置按钮状态
+      if (buttonComponent) {
+        buttonComponent.reset();
+      }
     }
   },
 
