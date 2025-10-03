@@ -4,7 +4,8 @@
     "pages/profile/index", 
     "pages/mine/index",
     "pages/addProfile/index",
-    "pages/register/index"
+    "pages/register/index",
+    "pages/agreement/index"
   ],
   "usingComponents": {},
   "subpackages": [],

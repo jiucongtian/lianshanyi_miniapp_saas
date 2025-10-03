@@ -171,11 +171,9 @@ Page({
    * 查看用户协议
    */
   onViewTerms() {
-    wx.showModal({
-      title: '用户协议',
-      content: '这里是用户协议内容，包含用户权利义务、隐私保护等条款...',
-      showCancel: false,
-      confirmText: '我知道了'
+    // 跳转到用户协议页面
+    wx.navigateTo({
+      url: '/pages/agreement/index'
     });
   },
 
