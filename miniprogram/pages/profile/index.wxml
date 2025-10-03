@@ -64,33 +64,6 @@
                 <text class="gender-text">{{item.gender === 1 ? '男' : item.gender === 0 ? '女' : '未知'}}</text>
               </view>
             </view>
-            
-            <view class="birth-info">
-              <text class="birth-date">{{item.birthDate.year}}年{{item.birthDate.month}}月{{item.birthDate.day}}日</text>
-              <text class="calendar-type" wx:if="{{item.birthDate.isLunar}}">(农历)</text>
-            </view>
-            
-            <!-- 八字信息 -->
-            <view class="bazi-info">
-              <view class="bazi-pillars">
-                <view class="pillar">
-                  <text class="pillar-label">年</text>
-                  <text class="pillar-value">{{item.baziData.year.gan}}{{item.baziData.year.zhi}}</text>
-                </view>
-                <view class="pillar">
-                  <text class="pillar-label">月</text>
-                  <text class="pillar-value">{{item.baziData.month.gan}}{{item.baziData.month.zhi}}</text>
-                </view>
-                <view class="pillar">
-                  <text class="pillar-label">日</text>
-                  <text class="pillar-value">{{item.baziData.day.gan}}{{item.baziData.day.zhi}}</text>
-                </view>
-                <view class="pillar">
-                  <text class="pillar-label">时</text>
-                  <text class="pillar-value">{{item.baziData.hour.gan}}{{item.baziData.hour.zhi}}</text>
-                </view>
-              </view>
-            </view>
           </view>
           
           <!-- 操作按钮区域 -->

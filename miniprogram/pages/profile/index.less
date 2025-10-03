@@ -215,7 +215,7 @@
     .profile-card {
       background: white;
       border-radius: 16rpx;
-      padding: 32rpx;
+      padding: 24rpx 32rpx;
       box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
       display: flex;
       align-items: center;
@@ -268,71 +268,24 @@
           }
         }
         
-        .birth-info {
-          display: flex;
-          align-items: center;
-          margin-bottom: 16rpx;
-          
-          .birth-date {
-            font-size: 28rpx;
-            color: #666;
-            margin-right: 8rpx;
-          }
-          
-          .calendar-type {
-            font-size: 24rpx;
-            color: #999;
-          }
-        }
-        
-        .bazi-info {
-          margin-bottom: 16rpx;
-          
-          .bazi-pillars {
-            display: flex;
-            gap: 16rpx;
-            
-            .pillar {
-              background: #f8f9fa;
-              border-radius: 8rpx;
-              padding: 12rpx;
-              text-align: center;
-              min-width: 80rpx;
-              
-              .pillar-label {
-                display: block;
-                font-size: 22rpx;
-                color: #999;
-                margin-bottom: 4rpx;
-              }
-              
-              .pillar-value {
-                display: block;
-                font-size: 28rpx;
-                font-weight: bold;
-                color: #333;
-              }
-            }
-          }
-        }
       }
       
       .profile-actions {
         display: flex;
-        flex-direction: column;
-        gap: 16rpx;
-        margin-left: 20rpx;
-        padding: 8rpx 0;
+        flex-direction: row;
+        gap: 12rpx;
+        margin-left: 16rpx;
+        padding: 4rpx 0;
         
         .action-button {
-          width: 64rpx;
-          height: 64rpx;
+          width: 48rpx;
+          height: 48rpx;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           transition: all 0.3s ease;
-          box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.08);
           
           &.edit-button {
             background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
@@ -357,7 +310,7 @@
           }
           
           .action-icon {
-            font-size: 30rpx;
+            font-size: 20rpx;
             filter: drop-shadow(0 1rpx 2rpx rgba(0, 0, 0, 0.1));
           }
         }
