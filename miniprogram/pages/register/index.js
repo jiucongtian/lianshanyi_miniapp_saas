@@ -137,8 +137,10 @@ Page({
    * 用户协议同意状态切换
    */
   onAgreeTermsChange(e) {
+    // e.detail.value 是一个数组，需要检查是否包含 'agree'
+    const isAgreed = e.detail.value.includes('agree');
     this.setData({
-      agreeTerms: e.detail.value
+      agreeTerms: isAgreed
     });
     this.validateForm();
   },
