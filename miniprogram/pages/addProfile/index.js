@@ -439,7 +439,27 @@ Page({
         
         // 延迟返回上一页，让用户看到成功提示
         setTimeout(() => {
-          wx.navigateBack();
+          // 如果是从档案页面跳转过来的，返回时传递档案ID
+          const pages = getCurrentPages();
+          if (pages.length > 1) {
+            const prevPage = pages[pages.length - 2];
+            if (prevPage.route === 'pages/profile/index') {
+              // 返回档案页面时传递档案ID
+              wx.navigateBack({
+                success: () => {
+                  // 通过事件总线通知档案页面选中指定档案
+                  const eventBus = require('../../utils/eventBus');
+                  eventBus.emit('selectProfile', {
+                    profileId: this.data.editingProfileId
+                  });
+                }
+              });
+            } else {
+              wx.navigateBack();
+            }
+          } else {
+            wx.navigateBack();
+          }
         }, 1500);
       } else {
         console.error('更新信息失败:', result.result.error);
@@ -983,6 +1003,14 @@ Page({
               duration: 2000,
               content: '信息创建成功！正在显示卡牌',
             });
+            
+            // 通过事件总线通知档案页面选中新创建的档案
+            if (baziResult.profileId) {
+              const eventBus = require('../../utils/eventBus');
+              eventBus.emit('selectProfile', {
+                profileId: baziResult.profileId
+              });
+            }
           },
           fail: (error) => {
             console.error('跳转失败:', error);

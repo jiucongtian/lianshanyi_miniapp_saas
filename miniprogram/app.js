@@ -1,7 +1,7 @@
 // app.js
 import config from './config/index';
 import Mock from './mock/index';
-import createBus from './utils/eventBus';
+const eventBus = require('./utils/eventBus');
 const { userManager } = require('./utils/userManager');
 const { convertProfileToCardData } = require('./utils/util');
 const { imageCacheManager } = require('./utils/imageCacheManager');
@@ -67,7 +67,7 @@ App({
   },
 
   /** 全局事件总线 */
-  eventBus: createBus(),
+  eventBus: eventBus,
 
   /**
    * 自动保存用户信息到数据库

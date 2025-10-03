@@ -2,6 +2,7 @@
 const { formatBirthTime, formatLunarTime, convertProfileToCardData } = require('../../utils/util');
 const { userManager } = require('../../utils/userManager');
 const { permissionManager, USER_TYPES } = require('../../utils/permissionManager');
+const eventBus = require('../../utils/eventBus');
 
 Page({
 
@@ -14,6 +15,7 @@ Page({
     page: 1,
     hasMore: true,
     currentProfileId: null, // 当前选中的档案ID
+    pendingSelectProfileId: null, // 待选中的档案ID
     
     // 用户信息和权限
     userInfo: null,
@@ -34,6 +36,9 @@ Page({
   onLoad(options) {
     console.log('档案页面加载');
     this.initializeUserInfo();
+    
+    // 监听档案选中事件
+    eventBus.on('selectProfile', this.handleSelectProfile.bind(this));
   },
 
   /**
@@ -73,10 +78,28 @@ Page({
   },
 
   /**
+   * 处理档案选中事件
+   */
+  handleSelectProfile(data) {
+    console.log('收到档案选中事件:', data);
+    if (data && data.profileId) {
+      // 设置要选中的档案ID
+      this.setData({ 
+        currentProfileId: data.profileId,
+        pendingSelectProfileId: data.profileId 
+      });
+      
+      // 刷新档案列表，刷新完成后会自动选中指定档案
+      this.refreshUserInfoAndProfiles();
+    }
+  },
+
+  /**
    * 生命周期函数--监听页面卸载
    */
   onUnload() {
-
+    // 清理事件监听
+    eventBus.off('selectProfile', this.handleSelectProfile);
   },
 
   /**
@@ -349,8 +372,26 @@ Page({
     const app = getApp();
     const currentProfileId = this.data.currentProfileId;
     const newlyAddedProfileId = app.globalData?.newlyAddedProfileId;
+    const pendingSelectProfileId = this.data.pendingSelectProfileId;
     
-    // 优先处理新添加的档案
+    // 优先处理待选中的档案（从其他页面传递过来的）
+    if (pendingSelectProfileId) {
+      const pendingProfile = profiles.find(profile => profile._id === pendingSelectProfileId);
+      if (pendingProfile) {
+        console.log('选中待选中的档案:', pendingProfile.profileName);
+        app.setCurrentProfile(pendingProfile);
+        this.setData({ 
+          currentProfileId: pendingProfile._id,
+          pendingSelectProfileId: null // 清除待选中标记
+        });
+        return;
+      } else {
+        // 如果待选中的档案不存在，清除标记
+        this.setData({ pendingSelectProfileId: null });
+      }
+    }
+    
+    // 处理新添加的档案
     if (newlyAddedProfileId) {
       const newProfile = profiles.find(profile => profile._id === newlyAddedProfileId);
       if (newProfile) {
