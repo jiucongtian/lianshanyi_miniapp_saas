@@ -336,7 +336,7 @@ async function upgradeUserType(wxContext, data) {
         updateData.permissions = ['view', 'create_limited']
         break
       case 'normal':
-        updateData.profileQuota = 20
+        updateData.profileQuota = 50
         updateData.permissions = ['view', 'create']
         if (currentUserType === 'guest') {
           updateData.registrationTime = now

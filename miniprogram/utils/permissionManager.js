@@ -36,7 +36,7 @@ const USER_TYPE_PERMISSIONS = {
  */
 const USER_TYPE_QUOTAS = {
   [USER_TYPES.GUEST]: 3, // 临时用户可创建3个档案
-  [USER_TYPES.NORMAL]: 20,
+  [USER_TYPES.NORMAL]: 50,
   [USER_TYPES.PREMIUM]: -1 // -1表示无限制
 }
 
@@ -152,7 +152,7 @@ class PermissionManager {
           targetType: USER_TYPES.NORMAL,
           targetName: USER_TYPE_NAMES[USER_TYPES.NORMAL],
           benefits: [
-            '创建20个档案（当前可创建3个）'
+            '创建50个档案（当前可创建3个）'
           ],
           action: '立即注册'
         }
@@ -192,7 +192,7 @@ class PermissionManager {
         guest: {
           restricted: false, // 临时用户可以创建，但有数量限制
           message: '临时用户最多创建3个档案',
-          upgradeHint: '注册后可创建20个档案'
+          upgradeHint: '注册后可创建50个档案'
         }
       }
     }
