@@ -336,7 +336,7 @@ Page({
 
     // 显示加载状态
     wx.showLoading({
-      title: '重新计算八字中...',
+      title: '更新信息中...',
       mask: true
     });
 
@@ -379,12 +379,6 @@ Page({
           ganzhiIndex: this.getGanZhiIndex(baziResult.baziData.timePillar.heavenlyStem, baziResult.baziData.timePillar.earthlyBranch)
         }
       };
-
-      // 更新加载状态
-      wx.showLoading({
-        title: '更新信息中...',
-        mask: true
-      });
 
       // 调用云函数更新档案
       const result = await wx.cloud.callFunction({
