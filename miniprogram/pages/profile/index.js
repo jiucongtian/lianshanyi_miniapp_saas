@@ -186,9 +186,10 @@ Page({
     // 设置权限管理器的用户信息
     permissionManager.setUserInfo(userInfo);
     
+    // 直接使用云函数返回的数据，不再使用默认值
     const userType = userInfo.userType || 'guest';
-    const userTypeName = permissionManager.getUserTypeName(userType);
-    const profileQuota = userInfo.profileQuota || 3;
+    const userTypeName = userInfo.typeName || userInfo.displayName || permissionManager.getUserTypeName(userType);
+    const profileQuota = userInfo.profileQuota || 3; // 云函数已经返回了正确的配额
     const usedProfiles = userInfo.usedProfiles || 0;
     const upgradeHint = permissionManager.getUpgradeHint();
     
@@ -208,7 +209,8 @@ Page({
       userTypeName,
       profileQuota,
       usedProfiles,
-      upgradeHint
+      upgradeHint,
+      canCreateMore: profileQuota === -1 || usedProfiles < profileQuota
     });
   },
 

@@ -5,8 +5,8 @@
     <view class="header-content">
       <view class="title-section">
         <text class="page-title">我的牌库</text>
-        <text class="page-subtitle" wx:if="{{profileQuota === -1}}">共{{profileList.length}}个</text>
-        <text class="page-subtitle" wx:else>{{profileList.length}}/{{profileQuota}}</text>
+        <text class="page-subtitle" wx:if="{{profileQuota === -1}}">共{{usedProfiles}}个</text>
+        <text class="page-subtitle" wx:else>{{usedProfiles}}/{{profileQuota}}</text>
         <view class="user-type-badge user-type-{{userType}}">
           <text class="user-type-text">{{userTypeName}}</text>
         </view>

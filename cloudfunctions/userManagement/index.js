@@ -12,14 +12,18 @@ const db = cloud.database()
  * 优先从static_user_types表获取，如果不存在则使用默认配置
  */
 async function getUserTypeConfig(typeCode) {
+  console.log('获取用户类型配置:', typeCode)
   try {
     // 尝试从static_user_types表获取配置
     const configResult = await db.collection('static_user_types').where({
       typeCode: typeCode
     }).get()
     
+    console.log('static_user_types查询结果:', configResult)
+    
     if (configResult.data.length > 0) {
       const config = configResult.data[0]
+      console.log('找到配置数据:', config)
       return {
         typeCode: config.typeCode,
         typeName: config.typeName,
@@ -28,6 +32,8 @@ async function getUserTypeConfig(typeCode) {
         profileQuota: config.profileQuota,
         permissions: config.permissions
       }
+    } else {
+      console.log('static_user_types表中未找到配置，使用默认配置')
     }
   } catch (error) {
     console.warn('从static_user_types表获取配置失败，使用默认配置:', error.message)
@@ -70,9 +76,11 @@ async function getUserTypeConfig(typeCode) {
  */
 async function getUserPermissionsAndQuota(user) {
   const userType = user.userType || user.userTypeCode || 'guest'
+  console.log('获取用户权限和配额，用户类型:', userType)
   
   // 优先使用static_user_types表的配置
   const typeConfig = await getUserTypeConfig(userType)
+  console.log('获取到的类型配置:', typeConfig)
   
   // 直接使用配置表的权限和配额，不再使用users表中的旧字段
   return {
@@ -309,9 +317,36 @@ async function getUserInfo(wxContext) {
       }
     }
     
+    const user = result.data[0]
+    
+    // 获取用户权限和配额信息
+    const userPermissions = await getUserPermissionsAndQuota(user)
+    
+    // 获取实际档案数量
+    const profileCount = await db.collection('profiles').where({
+      openid: OPENID,
+      isActive: true
+    }).count()
+    
+    // 更新用户的已使用档案数
+    if (profileCount.total !== (user.usedProfiles || 0)) {
+      await db.collection('users').doc(user._id).update({
+        data: {
+          usedProfiles: profileCount.total,
+          updateTime: new Date()
+        }
+      })
+    }
+    
     return {
       success: true,
-      data: result.data[0]
+      data: {
+        ...user,
+        ...userPermissions,
+        usedProfiles: profileCount.total,
+        canCreateMore: userPermissions.profileQuota === -1 || profileCount.total < userPermissions.profileQuota,
+        remainingQuota: userPermissions.profileQuota === -1 ? -1 : Math.max(0, userPermissions.profileQuota - profileCount.total)
+      }
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
