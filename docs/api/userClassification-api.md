@@ -6,13 +6,13 @@
 ## 用户类型说明
 
 ### 临时用户 (guest)
-- **档案配额**: 1个
+- **档案配额**: 3个
 - **权限范围**: 查看、创建（限制数量）
 - **升级方式**: 完成注册流程
 
 ### 普通用户 (normal)  
 - **档案配额**: 20个
-- **权限范围**: 查看、创建、导出、分享
+- **权限范围**: 查看、创建
 - **升级方式**: 付费购买高级版
 
 ### 高级用户 (premium)
@@ -78,7 +78,7 @@ graph TD
     "newUserType": "normal", 
     "updateTime": "2024-01-01T12:00:00.000Z",
     "profileQuota": 20,
-    "permissions": ["view", "create", "export", "share"]
+    "permissions": ["view", "create"]
   }
 }
 ```
@@ -198,12 +198,12 @@ POST
 ```json
 {
   "success": false,
-  "error": "档案数量已达上限（1个），注册后可创建更多档案",
+  "error": "档案数量已达上限（3个），注册后可创建更多档案",
   "code": "QUOTA_EXCEEDED",
   "data": {
     "userType": "guest",
-    "currentCount": 1,
-    "quota": 1
+    "currentCount": 3,
+    "quota": 3
   }
 }
 ```
@@ -227,10 +227,6 @@ if (!permissionManager.canCreateProfile()) {
   // 显示权限不足提示
 }
 
-// 检查是否可以导出档案  
-if (!permissionManager.canExportProfile()) {
-  // 引导用户升级
-}
 
 // 检查档案配额
 const quotaInfo = permissionManager.canCreateMoreProfiles(currentCount);

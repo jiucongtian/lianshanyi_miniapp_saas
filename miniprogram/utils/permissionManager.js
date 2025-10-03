@@ -19,8 +19,6 @@ const PERMISSIONS = {
   VIEW: 'view',
   CREATE_LIMITED: 'create_limited',
   CREATE: 'create',
-  EXPORT: 'export',
-  SHARE: 'share',
   ALL: 'all'
 }
 
@@ -29,7 +27,7 @@ const PERMISSIONS = {
  */
 const USER_TYPE_PERMISSIONS = {
   [USER_TYPES.GUEST]: [PERMISSIONS.VIEW, PERMISSIONS.CREATE_LIMITED],
-  [USER_TYPES.NORMAL]: [PERMISSIONS.VIEW, PERMISSIONS.CREATE, PERMISSIONS.EXPORT, PERMISSIONS.SHARE],
+  [USER_TYPES.NORMAL]: [PERMISSIONS.VIEW, PERMISSIONS.CREATE],
   [USER_TYPES.PREMIUM]: [PERMISSIONS.ALL]
 }
 
@@ -37,7 +35,7 @@ const USER_TYPE_PERMISSIONS = {
  * 用户类型配额配置
  */
 const USER_TYPE_QUOTAS = {
-  [USER_TYPES.GUEST]: 3,
+  [USER_TYPES.GUEST]: 3, // 临时用户可创建3个档案
   [USER_TYPES.NORMAL]: 20,
   [USER_TYPES.PREMIUM]: -1 // -1表示无限制
 }
@@ -111,21 +109,6 @@ class PermissionManager {
     return this.hasPermission(PERMISSIONS.CREATE_LIMITED) || this.hasPermission(PERMISSIONS.CREATE)
   }
 
-  /**
-   * 检查用户是否可以导出档案
-   * @returns {boolean} 是否可以导出
-   */
-  canExportProfile() {
-    return this.hasPermission(PERMISSIONS.EXPORT)
-  }
-
-  /**
-   * 检查用户是否可以分享档案
-   * @returns {boolean} 是否可以分享
-   */
-  canShareProfile() {
-    return this.hasPermission(PERMISSIONS.SHARE)
-  }
 
   /**
    * 获取用户档案配额
@@ -169,9 +152,7 @@ class PermissionManager {
           targetType: USER_TYPES.NORMAL,
           targetName: USER_TYPE_NAMES[USER_TYPES.NORMAL],
           benefits: [
-            '创建20个档案',
-            '导出档案数据',
-            '分享给好友'
+            '创建20个档案（当前可创建3个）'
           ],
           action: '立即注册'
         }
@@ -212,20 +193,6 @@ class PermissionManager {
           restricted: false, // 临时用户可以创建，但有数量限制
           message: '临时用户最多创建3个档案',
           upgradeHint: '注册后可创建20个档案'
-        }
-      },
-      [PERMISSIONS.EXPORT]: {
-        guest: {
-          restricted: true,
-          message: '导出功能需要注册后使用',
-          upgradeHint: '注册即可使用导出功能'
-        }
-      },
-      [PERMISSIONS.SHARE]: {
-        guest: {
-          restricted: true,
-          message: '分享功能需要注册后使用',
-          upgradeHint: '注册即可使用分享功能'
         }
       }
     }

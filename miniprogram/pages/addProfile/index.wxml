@@ -107,7 +107,7 @@
           bindtap="onCheckboxTap"
           class="uncertain-time-checkbox"
         />
-        <text class="checkbox-label">不确定具体几点</text>
+        <text class="checkbox-label">时辰未知</text>
       </view>
     </view>
     

@@ -34,14 +34,6 @@
           <text class="benefit-icon">📋</text>
           <text class="benefit-text">创建20个档案</text>
         </view>
-        <view class="benefit-item">
-          <text class="benefit-icon">📤</text>
-          <text class="benefit-text">导出档案数据</text>
-        </view>
-        <view class="benefit-item">
-          <text class="benefit-icon">📱</text>
-          <text class="benefit-text">分享给好友</text>
-        </view>
       </view>
     </view>
 

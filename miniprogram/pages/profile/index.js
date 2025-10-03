@@ -140,10 +140,40 @@ Page({
     try {
       const result = await userManager.getFullUserInfo();
       if (result.success) {
+        // 检查并更新临时用户的配额
+        await this.checkAndUpdateGuestQuota(result.data);
         this.updateUserDisplayInfo(result.data);
       }
     } catch (error) {
       console.error('更新用户信息失败:', error);
+    }
+  },
+
+  /**
+   * 检查并更新临时用户的配额
+   */
+  async checkAndUpdateGuestQuota(userInfo) {
+    if (userInfo.userType === 'guest' && userInfo.profileQuota === 1) {
+      try {
+        console.log('检测到临时用户配额为1，正在更新为3...');
+        const result = await wx.cloud.callFunction({
+          name: 'userManagement',
+          data: {
+            action: 'updateGuestUserQuota'
+          }
+        });
+        
+        if (result.result.success) {
+          console.log('临时用户配额更新成功:', result.result.data);
+          // 更新本地用户信息
+          userInfo.profileQuota = 3;
+          userInfo.permissions = ['view', 'create_limited'];
+        } else {
+          console.error('更新临时用户配额失败:', result.result.error);
+        }
+      } catch (error) {
+        console.error('调用更新配额云函数失败:', error);
+      }
     }
   },
 

@@ -30,6 +30,8 @@ exports.main = async (event, context) => {
         return await deleteUsers(wxContext, data)
       case 'deleteInactiveUsers':
         return await deleteInactiveUsers(wxContext, data)
+      case 'updateGuestUserQuota':
+        return await updateGuestUserQuota(wxContext)
       default:
         return {
           success: false,
@@ -335,7 +337,7 @@ async function upgradeUserType(wxContext, data) {
         break
       case 'normal':
         updateData.profileQuota = 20
-        updateData.permissions = ['view', 'create', 'export', 'share']
+        updateData.permissions = ['view', 'create']
         if (currentUserType === 'guest') {
           updateData.registrationTime = now
           // 如果有注册数据，更新用户信息
@@ -590,5 +592,65 @@ async function deleteInactiveUsers(wxContext, data) {
   } catch (error) {
     console.error('软删除非活跃用户失败:', error)
     throw new Error('软删除非活跃用户失败: ' + error.message)
+  }
+}
+
+/**
+ * 更新临时用户的档案配额为3
+ */
+async function updateGuestUserQuota(wxContext) {
+  const { OPENID } = wxContext
+  
+  try {
+    console.log('开始更新临时用户档案配额...')
+    
+    // 查找当前用户
+    const userResult = await db.collection('users').where({
+      openid: OPENID,
+      isActive: true
+    }).get()
+    
+    if (userResult.data.length === 0) {
+      return {
+        success: false,
+        error: '用户不存在'
+      }
+    }
+    
+    const user = userResult.data[0]
+    const userType = user.userType || 'guest'
+    
+    // 只更新临时用户的配额
+    if (userType !== 'guest') {
+      return {
+        success: false,
+        error: '只有临时用户需要更新配额'
+      }
+    }
+    
+    // 更新临时用户的配额为3
+    const updateResult = await db.collection('users').doc(user._id).update({
+      data: {
+        profileQuota: 3,
+        permissions: ['view', 'create_limited'],
+        updateTime: new Date()
+      }
+    })
+    
+    console.log('更新临时用户配额结果:', updateResult)
+    
+    return {
+      success: true,
+      message: '临时用户档案配额已更新为3个',
+      data: {
+        userId: user._id,
+        oldQuota: user.profileQuota || 1,
+        newQuota: 3,
+        userType: userType
+      }
+    }
+  } catch (error) {
+    console.error('更新临时用户配额失败:', error)
+    throw new Error('更新临时用户配额失败: ' + error.message)
   }
 }
