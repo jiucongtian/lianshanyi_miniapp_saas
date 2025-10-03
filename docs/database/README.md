@@ -11,22 +11,24 @@
 | 数据表名 | 中文名称 | 主要功能 | 文档链接 |
 |----------|----------|----------|----------|
 | users | 用户表 | 存储用户基本信息和身份识别 | [usersdb.md](./usersdb.md) |
+| user_types | 用户类型配置表 | 存储用户类型的权限和配额配置 | [user_typesdb.md](./user_typesdb.md) |
 | profiles | 档案表 | 存储用户创建的生辰八字档案 | [profilesdb.md](./profilesdb.md) |
 
 ### 数据表关系图
 
 ```
-┌─────────────┐         ┌─────────────────┐
-│    users    │         │    profiles     │
-├─────────────┤         ├─────────────────┤
-│ _id (PK)    │◄────────┤ userId (FK)     │
-│ openid      │         │ openid          │
-│ unionid     │         │ profileName     │
-│ nickName    │         │ birthDate       │
-│ avatarUrl   │         │ baziData        │
-│ ...         │         │ ...             │
-└─────────────┘         └─────────────────┘
-     1                           N
+┌─────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ user_types  │    │     users       │    │    profiles     │
+├─────────────┤    ├─────────────────┤    ├─────────────────┤
+│ _id (PK)    │    │ _id (PK)        │    │ _id (PK)        │
+│ typeCode    │◄───┤ userTypeCode(FK)│    │ userId (FK)     │
+│ typeName    │    │ openid          │◄───┤ openid          │
+│ profileQuota│    │ unionid         │    │ profileName     │
+│ permissions │    │ nickName        │    │ birthDate       │
+│ ...         │    │ ...             │    │ baziData        │
+└─────────────┘    └─────────────────┘    │ ...             │
+     1                      1              └─────────────────┘
+                                           N
 ```
 
 ## 设计原则
@@ -61,6 +63,8 @@
 
 1. **索引设计**:
    - users.openid: 唯一索引
+   - users.userTypeCode: 普通索引
+   - user_types.typeCode: 唯一索引
    - profiles.openid: 普通索引
    - profiles.userId: 普通索引
 

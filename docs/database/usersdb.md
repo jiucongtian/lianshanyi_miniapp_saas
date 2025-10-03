@@ -20,12 +20,10 @@
 | createTime | date | 是 | - | 用户首次使用时间 |
 | updateTime | date | 是 | - | 用户信息最后更新时间 |
 | lastLoginTime | date | 否 | - | 用户最后登录时间 |
-| userType | string | 否 | 索引 | 用户类型(guest:临时用户,normal:普通用户,premium:高级用户)，默认guest |
+| userTypeCode | string | 否 | 索引 | 用户类型代码，关联user_types表的typeCode字段，默认guest |
 | registrationTime | date | 否 | - | 用户注册时间（从临时用户升级为普通用户的时间） |
 | upgradeTime | date | 否 | - | 用户升级时间（升级为高级用户的时间） |
-| profileQuota | number | 否 | - | 档案配额（临时用户:3, 普通用户:50, 高级用户:无限制） |
 | usedProfiles | number | 否 | - | 已使用档案数量，默认0 |
-| permissions | array | 否 | - | 用户权限列表 |
 | isActive | boolean | 否 | - | 用户是否活跃状态，默认true |
 
 ## 数据示例
@@ -42,12 +40,10 @@
   "createTime": "2023-09-14T08:00:00.000Z",
   "updateTime": "2023-09-14T08:00:00.000Z",
   "lastLoginTime": "2023-09-14T08:00:00.000Z",
-  "userType": "guest",
+  "userTypeCode": "guest",
   "registrationTime": null,
   "upgradeTime": null,
-  "profileQuota": 1,
   "usedProfiles": 0,
-  "permissions": ["view", "create_limited"],
   "isActive": true
 }
 ```
@@ -57,12 +53,12 @@
 ### 主要索引
 - `openid`: **唯一索引**，用于快速查找用户，**必须设置以防止重复用户记录**
 - `unionid`: 普通索引，用于跨应用用户识别
-- `userType`: 普通索引，用于按用户类型查询和统计
+- `userTypeCode`: 普通索引，用于按用户类型查询和统计
 
 ### 查询优化
 - 通过openid查询用户是最常用的查询方式，设置为唯一索引
 - unionid用于跨应用场景，设置为普通索引
-- userType用于用户分类管理和权限控制，设置为普通索引
+- userTypeCode用于用户分类管理和权限控制，设置为普通索引
 - createTime可用于用户增长分析
 
 ### 重要提醒
@@ -78,6 +74,9 @@
 - **profiles表**: 一对多关系
   - 外键: `profiles.userId` 关联 `users._id`
   - 关系描述: 一个用户可以创建多个生辰八字档案
+- **user_types表**: 多对一关系
+  - 外键: `users.userTypeCode` 关联 `user_types.typeCode`
+  - 关系描述: 多个用户属于同一种用户类型
 
 ## 业务规则
 
@@ -87,51 +86,19 @@
 4. **软删除**: 使用isActive字段进行软删除，不直接删除用户数据
 5. **用户分类管理**: 
    - 新用户默认类型为"guest"（临时用户）
-   - 类型可选值：guest（临时用户）、normal（普通用户）、premium（高级用户）
+   - 用户类型通过userTypeCode字段关联user_types表
    - 用户类型变更通过注册流程或付费升级触发
 6. **档案配额管理**:
-   - 临时用户：最多创建3个档案
-   - 普通用户：最多创建50个档案
-   - 高级用户：无限制创建档案
-8. **权限管理**:
-   - 临时用户权限：["view", "create_limited"]
-   - 普通用户权限：["view", "create"]
-   - 高级用户权限：["all"]
+   - 配额信息存储在user_types表中，通过关联查询获取
+   - 具体配额规则请参考user_types表文档
 
-## 用户类型权限详细说明
+## 用户类型权限说明
 
-### 临时用户 (guest)
-- 档案配额：3个
-- 权限范围：
-  - ✅ 查看小程序基础功能
-  - ✅ 进行生辰八字计算
-  - ✅ 创建档案（数量限制）
-  - ✅ 查看已创建的档案
-  - ❌ 无法享受高级分析功能
-
-### 普通用户 (normal)
-- 档案配额：50个
-- 权限范围：
-  - ✅ 临时用户的所有权限
-  - ✅ 参与社区互动（如有）
-  - ✅ 收藏和管理档案
-  - ❌ 无法使用高级分析算法
-  - ❌ 无法享受专属客服支持
-
-### 高级用户 (premium)
-- 档案配额：无限制
-- 权限范围：
-  - ✅ 普通用户的所有权限
-  - ✅ 高级八字分析算法
-  - ✅ 专属分析报告模板
-  - ✅ 无限档案创建
-  - ✅ 专属客服支持
-  - ✅ 优先体验新功能
-  - ✅ 数据云端备份
+用户类型的详细权限和配额信息请参考 `user_types` 表文档。用户表只存储用户类型代码，具体的权限配置通过关联查询获取。
 
 ## 扩展性考虑
 
-1. **用户权限系统**: 基于userType可以扩展更细粒度的权限控制
+1. **用户权限系统**: 基于userTypeCode关联user_types表实现权限控制
 2. **用户偏好设置**: 可添加preferences对象字段存储用户个性化设置
 3. **统计数据**: 可添加profileCount、lastActiveTime等统计字段
 4. **第三方集成**: unionid字段为后续跨平台集成预留
