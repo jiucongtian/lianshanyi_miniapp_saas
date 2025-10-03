@@ -17,10 +17,6 @@
 | description | string | 否 | - | 用户类型描述 |
 | profileQuota | number | 是 | - | 档案配额(-1表示无限制) |
 | permissions | array | 是 | - | 权限列表 |
-| isActive | boolean | 否 | - | 是否启用，默认true |
-| sortOrder | number | 否 | - | 排序顺序，用于显示排序 |
-| createTime | date | 是 | - | 创建时间 |
-| updateTime | date | 是 | - | 最后更新时间 |
 
 ## 数据示例
 
@@ -32,11 +28,7 @@
   "displayName": "临时用户",
   "description": "未注册的临时用户，功能受限",
   "profileQuota": 3,
-  "permissions": ["view", "create_limited"],
-  "isActive": true,
-  "sortOrder": 1,
-  "createTime": "2023-09-14T08:00:00.000Z",
-  "updateTime": "2023-09-14T08:00:00.000Z"
+  "permissions": ["view", "create_limited"]
 }
 ```
 
@@ -48,11 +40,7 @@
   "displayName": "探索者",
   "description": "已注册的普通用户，享受基础功能",
   "profileQuota": 50,
-  "permissions": ["view", "create"],
-  "isActive": true,
-  "sortOrder": 2,
-  "createTime": "2023-09-14T08:00:00.000Z",
-  "updateTime": "2023-09-14T08:00:00.000Z"
+  "permissions": ["view", "create"]
 }
 ```
 
@@ -64,11 +52,7 @@
   "displayName": "高级用户",
   "description": "付费高级用户，享受全部功能",
   "profileQuota": -1,
-  "permissions": ["all"],
-  "isActive": true,
-  "sortOrder": 3,
-  "createTime": "2023-09-14T08:00:00.000Z",
-  "updateTime": "2023-09-14T08:00:00.000Z"
+  "permissions": ["all"]
 }
 ```
 
@@ -79,8 +63,6 @@
 
 ### 查询优化
 - 通过typeCode查询用户类型是最常用的查询方式，设置为唯一索引
-- isActive字段用于过滤启用的用户类型
-- sortOrder字段用于按优先级排序显示
 
 ### 重要提醒
 ⚠️ **数据库约束要求**：
@@ -99,16 +81,13 @@
 
 1. **类型代码唯一性**: 通过typeCode保证用户类型唯一性
 2. **数据完整性**: typeCode、typeName、displayName为必填字段
-3. **时间戳管理**: createTime在创建时设置，updateTime在每次更新时自动更新
-4. **软删除**: 使用isActive字段进行软删除，不直接删除配置数据
-5. **权限管理**: 
+3. **权限管理**: 
    - permissions数组存储该用户类型拥有的权限
    - 权限代码：view(查看)、create(创建)、create_limited(受限创建)、all(全部权限)
-6. **配额管理**:
+4. **配额管理**:
    - profileQuota表示档案创建配额
    - -1表示无限制
    - 其他数值表示具体配额数量
-7. **显示排序**: sortOrder字段用于控制用户类型在界面上的显示顺序
 
 ## 用户类型权限详细说明
 
@@ -146,9 +125,7 @@
 1. **新增用户类型**: 只需在配置表中添加新记录，无需修改代码
 2. **权限扩展**: 可在permissions数组中添加新的权限代码
 3. **配额调整**: 修改profileQuota字段即可调整配额，无需更新用户数据
-4. **功能开关**: 通过isActive字段控制用户类型的启用/禁用
-5. **多语言支持**: 可扩展displayName字段支持多语言显示
-6. **分级管理**: 通过sortOrder字段实现用户类型的分级显示
+4. **多语言支持**: 可扩展displayName字段支持多语言显示
 
 ## 数据迁移说明
 
@@ -168,11 +145,7 @@ db.collection('user_types').add({
     typeName: '临时用户',
     displayName: '临时用户',
     profileQuota: 3,
-    permissions: ['view', 'create_limited'],
-    isActive: true,
-    sortOrder: 1,
-    createTime: new Date(),
-    updateTime: new Date()
+    permissions: ['view', 'create_limited']
   }
 })
 

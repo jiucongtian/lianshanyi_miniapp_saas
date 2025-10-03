@@ -7,6 +7,84 @@ cloud.init({
 
 const db = cloud.database()
 
+/**
+ * 获取用户类型配置
+ * 优先从static_user_types表获取，如果不存在则使用默认配置
+ */
+async function getUserTypeConfig(typeCode) {
+  try {
+    // 尝试从static_user_types表获取配置
+    const configResult = await db.collection('static_user_types').where({
+      typeCode: typeCode
+    }).get()
+    
+    if (configResult.data.length > 0) {
+      const config = configResult.data[0]
+      return {
+        typeCode: config.typeCode,
+        typeName: config.typeName,
+        displayName: config.displayName,
+        description: config.description,
+        profileQuota: config.profileQuota,
+        permissions: config.permissions
+      }
+    }
+  } catch (error) {
+    console.warn('从static_user_types表获取配置失败，使用默认配置:', error.message)
+  }
+  
+  // 如果获取失败或不存在，使用默认配置
+  const defaultConfigs = {
+    'guest': {
+      typeCode: 'guest',
+      typeName: '临时用户',
+      displayName: '临时用户',
+      description: '未注册的临时用户，功能受限',
+      profileQuota: 3,
+      permissions: ['view', 'create_limited']
+    },
+    'normal': {
+      typeCode: 'normal',
+      typeName: '探索者',
+      displayName: '探索者',
+      description: '已注册的普通用户，享受基础功能',
+      profileQuota: 50,
+      permissions: ['view', 'create']
+    },
+    'premium': {
+      typeCode: 'premium',
+      typeName: '高级用户',
+      displayName: '高级用户',
+      description: '付费高级用户，享受全部功能',
+      profileQuota: -1,
+      permissions: ['all']
+    }
+  }
+  
+  return defaultConfigs[typeCode] || defaultConfigs['guest']
+}
+
+/**
+ * 获取用户权限和配额信息
+ * 优先使用static_user_types表的配置，不再使用users表中的旧字段
+ */
+async function getUserPermissionsAndQuota(user) {
+  const userType = user.userType || user.userTypeCode || 'guest'
+  
+  // 优先使用static_user_types表的配置
+  const typeConfig = await getUserTypeConfig(userType)
+  
+  // 直接使用配置表的权限和配额，不再使用users表中的旧字段
+  return {
+    userType,
+    typeName: typeConfig.typeName,
+    displayName: typeConfig.displayName,
+    description: typeConfig.description,
+    profileQuota: typeConfig.profileQuota,
+    permissions: typeConfig.permissions
+  }
+}
+
 // 云函数入口函数
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
@@ -66,8 +144,10 @@ async function createProfile(wxContext, profileData) {
     
     const user = userResult.data[0]
     const userId = user._id
-    const userType = user.userType || 'guest'
-    const profileQuota = user.profileQuota || 3
+    
+    // 使用新的权限和配额获取方法
+    const userPermissions = await getUserPermissionsAndQuota(user)
+    const { userType, profileQuota, typeName } = userPermissions
     
     // 检查档案数量限制（高级用户无限制）
     if (profileQuota !== -1) {
@@ -89,6 +169,7 @@ async function createProfile(wxContext, profileData) {
           code: 'QUOTA_EXCEEDED',
           data: {
             userType,
+            typeName,
             currentCount: existingProfileCount.total,
             quota: profileQuota
           }

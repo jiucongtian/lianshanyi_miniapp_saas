@@ -7,6 +7,84 @@ cloud.init({
 
 const db = cloud.database()
 
+/**
+ * 获取用户类型配置
+ * 优先从static_user_types表获取，如果不存在则使用默认配置
+ */
+async function getUserTypeConfig(typeCode) {
+  try {
+    // 尝试从static_user_types表获取配置
+    const configResult = await db.collection('static_user_types').where({
+      typeCode: typeCode
+    }).get()
+    
+    if (configResult.data.length > 0) {
+      const config = configResult.data[0]
+      return {
+        typeCode: config.typeCode,
+        typeName: config.typeName,
+        displayName: config.displayName,
+        description: config.description,
+        profileQuota: config.profileQuota,
+        permissions: config.permissions
+      }
+    }
+  } catch (error) {
+    console.warn('从static_user_types表获取配置失败，使用默认配置:', error.message)
+  }
+  
+  // 如果获取失败或不存在，使用默认配置
+  const defaultConfigs = {
+    'guest': {
+      typeCode: 'guest',
+      typeName: '临时用户',
+      displayName: '临时用户',
+      description: '未注册的临时用户，功能受限',
+      profileQuota: 3,
+      permissions: ['view', 'create_limited']
+    },
+    'normal': {
+      typeCode: 'normal',
+      typeName: '探索者',
+      displayName: '探索者',
+      description: '已注册的普通用户，享受基础功能',
+      profileQuota: 50,
+      permissions: ['view', 'create']
+    },
+    'premium': {
+      typeCode: 'premium',
+      typeName: '高级用户',
+      displayName: '高级用户',
+      description: '付费高级用户，享受全部功能',
+      profileQuota: -1,
+      permissions: ['all']
+    }
+  }
+  
+  return defaultConfigs[typeCode] || defaultConfigs['guest']
+}
+
+/**
+ * 获取用户权限和配额信息
+ * 优先使用static_user_types表的配置，不再使用users表中的旧字段
+ */
+async function getUserPermissionsAndQuota(user) {
+  const userType = user.userType || user.userTypeCode || 'guest'
+  
+  // 优先使用static_user_types表的配置
+  const typeConfig = await getUserTypeConfig(userType)
+  
+  // 直接使用配置表的权限和配额，不再使用users表中的旧字段
+  return {
+    userType,
+    typeName: typeConfig.typeName,
+    displayName: typeConfig.displayName,
+    description: typeConfig.description,
+    profileQuota: typeConfig.profileQuota,
+    permissions: typeConfig.permissions
+  }
+}
+
 // 云函数入口函数
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
@@ -32,6 +110,10 @@ exports.main = async (event, context) => {
         return await deleteInactiveUsers(wxContext, data)
       case 'updateGuestUserQuota':
         return await updateGuestUserQuota(wxContext)
+      case 'getUserTypeConfig':
+        return await getUserTypeConfigAction(data)
+      case 'getUserPermissionsAndQuota':
+        return await getUserPermissionsAndQuotaAction(wxContext)
       default:
         return {
           success: false,
@@ -156,10 +238,9 @@ async function createUser(wxContext, userData = {}) {
         userType: 'guest', // 新用户默认为临时用户
         registrationTime: null,
         upgradeTime: null,
-        profileQuota: 3, // 临时用户默认配额为3
         usedProfiles: 0,
-        permissions: ['view', 'create_limited'], // 临时用户权限
         isActive: true
+        // 不再存储 profileQuota 和 permissions，统一从 static_user_types 表获取
       }
       
       console.log('准备插入的用户文档:', userDoc)
@@ -327,32 +408,18 @@ async function upgradeUserType(wxContext, data) {
     let updateData = {
       userType: targetUserType,
       updateTime: now
+      // 不再更新 profileQuota 和 permissions，统一从 static_user_types 表获取
     }
     
-    // 设置权限和配额
-    switch (targetUserType) {
-      case 'guest':
-        updateData.profileQuota = 3
-        updateData.permissions = ['view', 'create_limited']
-        break
-      case 'normal':
-        updateData.profileQuota = 50
-        updateData.permissions = ['view', 'create']
-        if (currentUserType === 'guest') {
-          updateData.registrationTime = now
-          // 如果有注册数据，更新用户信息
-          if (registrationData) {
-            updateData = { ...updateData, ...registrationData }
-          }
-        }
-        break
-      case 'premium':
-        updateData.profileQuota = -1 // -1表示无限制
-        updateData.permissions = ['all']
-        if (currentUserType !== 'premium') {
-          updateData.upgradeTime = now
-        }
-        break
+    // 处理特殊逻辑
+    if (targetUserType === 'normal' && currentUserType === 'guest') {
+      updateData.registrationTime = now
+      // 如果有注册数据，更新用户信息
+      if (registrationData) {
+        updateData = { ...updateData, ...registrationData }
+      }
+    } else if (targetUserType === 'premium' && currentUserType !== 'premium') {
+      updateData.upgradeTime = now
     }
     
     // 执行更新
@@ -360,15 +427,20 @@ async function upgradeUserType(wxContext, data) {
       data: updateData
     })
     
+    // 获取目标用户类型的配置信息用于返回
+    const targetConfig = await getUserTypeConfig(targetUserType)
+    
     return {
       success: true,
-      message: `用户类型已升级为 ${targetUserType}`,
+      message: `用户类型已升级为 ${targetConfig.displayName}`,
       data: {
         oldUserType: currentUserType,
         newUserType: targetUserType,
+        typeName: targetConfig.typeName,
+        displayName: targetConfig.displayName,
         updateTime: now,
-        profileQuota: updateData.profileQuota,
-        permissions: updateData.permissions
+        profileQuota: targetConfig.profileQuota,
+        permissions: targetConfig.permissions
       }
     }
   } catch (error) {
@@ -398,8 +470,10 @@ async function checkUserQuota(wxContext) {
     }
     
     const user = userResult.data[0]
-    const userType = user.userType || 'guest'
-    const profileQuota = user.profileQuota || 3
+    
+    // 使用新的权限和配额获取方法
+    const userPermissions = await getUserPermissionsAndQuota(user)
+    const { userType, profileQuota } = userPermissions
     const usedProfiles = user.usedProfiles || 0
     
     // 获取实际档案数量
@@ -618,7 +692,7 @@ async function updateGuestUserQuota(wxContext) {
     }
     
     const user = userResult.data[0]
-    const userType = user.userType || 'guest'
+    const userType = user.userType || user.userTypeCode || 'guest'
     
     // 只更新临时用户的配额
     if (userType !== 'guest') {
@@ -628,29 +702,97 @@ async function updateGuestUserQuota(wxContext) {
       }
     }
     
-    // 更新临时用户的配额为3
+    // 更新临时用户的最后更新时间
     const updateResult = await db.collection('users').doc(user._id).update({
       data: {
-        profileQuota: 3,
-        permissions: ['view', 'create_limited'],
         updateTime: new Date()
+        // 不再更新 profileQuota 和 permissions，统一从 static_user_types 表获取
       }
     })
     
     console.log('更新临时用户配额结果:', updateResult)
     
+    // 获取guest用户类型的配置信息
+    const guestConfig = await getUserTypeConfig('guest')
+    
     return {
       success: true,
-      message: '临时用户档案配额已更新为3个',
+      message: `临时用户档案配额已更新为${guestConfig.profileQuota}个`,
       data: {
         userId: user._id,
-        oldQuota: user.profileQuota || 1,
-        newQuota: 3,
-        userType: userType
+        userType: userType,
+        typeName: guestConfig.typeName,
+        displayName: guestConfig.displayName,
+        profileQuota: guestConfig.profileQuota,
+        permissions: guestConfig.permissions
       }
     }
   } catch (error) {
     console.error('更新临时用户配额失败:', error)
     throw new Error('更新临时用户配额失败: ' + error.message)
+  }
+}
+
+/**
+ * 获取用户类型配置
+ */
+async function getUserTypeConfigAction(data) {
+  const { typeCode } = data
+  
+  if (!typeCode) {
+    return {
+      success: false,
+      error: '缺少typeCode参数'
+    }
+  }
+  
+  try {
+    const config = await getUserTypeConfig(typeCode)
+    return {
+      success: true,
+      data: config
+    }
+  } catch (error) {
+    console.error('获取用户类型配置失败:', error)
+    return {
+      success: false,
+      error: '获取用户类型配置失败'
+    }
+  }
+}
+
+/**
+ * 获取当前用户的权限和配额信息
+ */
+async function getUserPermissionsAndQuotaAction(wxContext) {
+  const { OPENID } = wxContext
+  
+  try {
+    // 获取用户信息
+    const userResult = await db.collection('users').where({
+      openid: OPENID,
+      isActive: true
+    }).get()
+    
+    if (userResult.data.length === 0) {
+      return {
+        success: false,
+        error: '用户不存在'
+      }
+    }
+    
+    const user = userResult.data[0]
+    const userPermissions = await getUserPermissionsAndQuota(user)
+    
+    return {
+      success: true,
+      data: userPermissions
+    }
+  } catch (error) {
+    console.error('获取用户权限和配额失败:', error)
+    return {
+      success: false,
+      error: '获取用户权限和配额失败'
+    }
   }
 }
