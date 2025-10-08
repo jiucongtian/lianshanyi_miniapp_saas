@@ -367,29 +367,8 @@ Page({
         return;
       }
 
-      // 转换八字数据为档案格式
-      const baziData = {
-        year: {
-          gan: baziResult.data.baziData.yearPillar.heavenlyStem,
-          zhi: baziResult.data.baziData.yearPillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziResult.data.baziData.yearPillar.heavenlyStem, baziResult.data.baziData.yearPillar.earthlyBranch)
-        },
-        month: {
-          gan: baziResult.data.baziData.monthPillar.heavenlyStem,
-          zhi: baziResult.data.baziData.monthPillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziResult.data.baziData.monthPillar.heavenlyStem, baziResult.data.baziData.monthPillar.earthlyBranch)
-        },
-        day: {
-          gan: baziResult.data.baziData.dayPillar.heavenlyStem,
-          zhi: baziResult.data.baziData.dayPillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziResult.data.baziData.dayPillar.heavenlyStem, baziResult.data.baziData.dayPillar.earthlyBranch)
-        },
-        hour: {
-          gan: baziResult.data.baziData.timePillar.heavenlyStem,
-          zhi: baziResult.data.baziData.timePillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziResult.data.baziData.timePillar.heavenlyStem, baziResult.data.baziData.timePillar.earthlyBranch)
-        }
-      };
+      // 直接使用云函数返回的档案格式八字数据
+      const baziData = baziResult.data.baziData;
 
       // 调用云函数更新档案
       const result = await wx.cloud.callFunction({
@@ -918,7 +897,7 @@ Page({
         
         // 保存到云端档案（非调试模式）
         if (!isDebugMode) {
-          const profileData = this.convertBaziResultToProfile(baziResult, birthDate);
+          const profileData = this.buildProfileFromBaziResult(baziResult, birthDate);
           const savedProfile = await this.saveBaziProfile(profileData);
           if (savedProfile) {
             baziResult.profileId = savedProfile.profileId;
@@ -1003,32 +982,9 @@ Page({
     }
   },
 
-  // 数据转换辅助函数
-  convertProfileToBaziResult(profile) {
-    // 将云端档案数据转换为标准化的八字数据格式
-    return {
-      profileName: profile.profileName, // 添加档案名称
-      yearPillar: {
-        heavenlyStem: profile.baziData.year.gan,
-        earthlyBranch: profile.baziData.year.zhi
-      },
-      monthPillar: {
-        heavenlyStem: profile.baziData.month.gan,
-        earthlyBranch: profile.baziData.month.zhi
-      },
-      dayPillar: {
-        heavenlyStem: profile.baziData.day.gan,
-        earthlyBranch: profile.baziData.day.zhi
-      },
-      timePillar: {
-        heavenlyStem: profile.baziData.hour.gan,
-        earthlyBranch: profile.baziData.hour.zhi
-      }
-    };
-  },
-
-  convertBaziResultToProfile(baziResult, birthDate) {
-    // 使用标准化的八字数据
+  // 从八字结果构建档案数据（直接使用统一的档案格式）
+  buildProfileFromBaziResult(baziResult, birthDate) {
+    // 使用统一的档案格式八字数据
     if (!baziResult.baziData) {
       console.error('八字数据格式不正确，缺少baziData字段');
       console.error('baziResult完整数据:', baziResult);
@@ -1037,15 +993,15 @@ Page({
 
     const baziData = baziResult.baziData;
     
-    // 验证八字数据结构
-    const requiredPillars = ['yearPillar', 'monthPillar', 'dayPillar', 'timePillar'];
+    // 验证八字数据结构（档案格式）
+    const requiredPillars = ['year', 'month', 'day', 'hour'];
     for (const pillar of requiredPillars) {
       if (!baziData[pillar]) {
         console.error(`八字数据缺少${pillar}字段:`, baziData);
         return null;
       }
       
-      if (!baziData[pillar].heavenlyStem || !baziData[pillar].earthlyBranch) {
+      if (!baziData[pillar].gan || !baziData[pillar].zhi) {
         console.error(`${pillar}字段格式不正确:`, baziData[pillar]);
         return null;
       }
@@ -1066,70 +1022,21 @@ Page({
         minute: birthDate.minute || 0,
         isLunar: false
       },
-      baziData: {
-        year: {
-          gan: baziData.yearPillar.heavenlyStem,
-          zhi: baziData.yearPillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziData.yearPillar.heavenlyStem, baziData.yearPillar.earthlyBranch)
-        },
-        month: {
-          gan: baziData.monthPillar.heavenlyStem,
-          zhi: baziData.monthPillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziData.monthPillar.heavenlyStem, baziData.monthPillar.earthlyBranch)
-        },
-        day: {
-          gan: baziData.dayPillar.heavenlyStem,
-          zhi: baziData.dayPillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziData.dayPillar.heavenlyStem, baziData.dayPillar.earthlyBranch)
-        },
-        hour: {
-          gan: baziData.timePillar.heavenlyStem,
-          zhi: baziData.timePillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziData.timePillar.heavenlyStem, baziData.timePillar.earthlyBranch)
-        }
-      },
+      baziData: baziData, // 直接使用云函数返回的档案格式数据
       gender: formData.gender, // 使用用户选择的性别
       isUncertainTime: this.data.isUncertainTime, // 是否不确定时辰信息
       description: '用户创建的八字档案'
     };
   },
 
-  // 计算干支索引（简化版，实际应该使用完整的干支对照表）
-  getGanZhiIndex(gan, zhi) {
-    const ganMap = { '甲': 1, '乙': 2, '丙': 3, '丁': 4, '戊': 5, '己': 6, '庚': 7, '辛': 8, '壬': 9, '癸': 10 };
-    const zhiMap = { '子': 1, '丑': 2, '寅': 3, '卯': 4, '辰': 5, '巳': 6, '午': 7, '未': 8, '申': 9, '酉': 10, '戌': 11, '亥': 12 };
-    
-    const ganIndex = ganMap[gan] || 1;
-    const zhiIndex = zhiMap[zhi] || 1;
-    
-    // 简化的干支组合索引计算，实际应该使用六十甲子的准确对照
-    return ((ganIndex - 1) * 6 + zhiIndex) % 60 || 60;
-  },
 
 
   // 从档案数据构建卡牌数据
   buildCardDataFromProfile(profile, baziResult) {
     console.log('从档案数据构建卡牌数据:', profile);
     
-    // 构建八字数据格式
-    const baziData = {
-      yearPillar: {
-        heavenlyStem: profile.baziData.year.gan,
-        earthlyBranch: profile.baziData.year.zhi
-      },
-      monthPillar: {
-        heavenlyStem: profile.baziData.month.gan,
-        earthlyBranch: profile.baziData.month.zhi
-      },
-      dayPillar: {
-        heavenlyStem: profile.baziData.day.gan,
-        earthlyBranch: profile.baziData.day.zhi
-      },
-      timePillar: {
-        heavenlyStem: profile.baziData.hour.gan,
-        earthlyBranch: profile.baziData.hour.zhi
-      }
-    };
+    // 直接使用档案格式的八字数据
+    const baziData = profile.baziData;
 
     // 格式化时间显示
     const { formatBirthTime, formatLunarTime } = require('../../utils/util');
@@ -1149,7 +1056,7 @@ Page({
   buildCardDataFromBaziResult(baziResult, birthDate) {
     console.log('从八字结果构建卡牌数据:', baziResult);
     
-    // 使用标准化的八字数据
+    // 使用统一的档案格式八字数据
     if (!baziResult.baziData) {
       console.error('八字数据格式不正确，缺少baziData字段');
       console.error('baziResult完整数据:', baziResult);
@@ -1158,15 +1065,15 @@ Page({
 
     const baziData = baziResult.baziData;
     
-    // 验证八字数据结构
-    const requiredPillars = ['yearPillar', 'monthPillar', 'dayPillar', 'timePillar'];
+    // 验证八字数据结构（档案格式）
+    const requiredPillars = ['year', 'month', 'day', 'hour'];
     for (const pillar of requiredPillars) {
       if (!baziData[pillar]) {
         console.error(`八字数据缺少${pillar}字段:`, baziData);
         return null;
       }
       
-      if (!baziData[pillar].heavenlyStem || !baziData[pillar].earthlyBranch) {
+      if (!baziData[pillar].gan || !baziData[pillar].zhi) {
         console.error(`${pillar}字段格式不正确:`, baziData[pillar]);
         return null;
       }

@@ -7,6 +7,23 @@ cloud.init({
 })
 
 /**
+ * 计算干支索引（简化版，实际应该使用完整的干支对照表）
+ * @param {string} gan - 天干
+ * @param {string} zhi - 地支
+ * @returns {number} 干支索引
+ */
+function getGanZhiIndex(gan, zhi) {
+  const ganMap = { '甲': 1, '乙': 2, '丙': 3, '丁': 4, '戊': 5, '己': 6, '庚': 7, '辛': 8, '壬': 9, '癸': 10 };
+  const zhiMap = { '子': 1, '丑': 2, '寅': 3, '卯': 4, '辰': 5, '巳': 6, '午': 7, '未': 8, '申': 9, '酉': 10, '戌': 11, '亥': 12 };
+  
+  const ganIndex = ganMap[gan] || 1;
+  const zhiIndex = zhiMap[zhi] || 1;
+  
+  // 简化的干支组合索引计算，实际应该使用六十甲子的准确对照
+  return ((ganIndex - 1) * 6 + zhiIndex) % 60 || 60;
+}
+
+/**
  * 从日期时间戳提取参数
  * @param {number} timestamp - 时间戳 (北京时间)
  * @returns {Object} 参数对象 (UTC时间，供Coze API使用)
@@ -89,23 +106,27 @@ function parseBaziData(cozeResponse) {
       }
     }
     
-    // 构建标准化的八字数据结构
+    // 构建档案格式的八字数据结构
     const baziData = {
-      yearPillar: {
-        heavenlyStem: output.year[0],
-        earthlyBranch: output.year[1]
+      year: {
+        gan: output.year[0],
+        zhi: output.year[1],
+        ganzhiIndex: getGanZhiIndex(output.year[0], output.year[1])
       },
-      monthPillar: {
-        heavenlyStem: output.month[0],
-        earthlyBranch: output.month[1]
+      month: {
+        gan: output.month[0],
+        zhi: output.month[1],
+        ganzhiIndex: getGanZhiIndex(output.month[0], output.month[1])
       },
-      dayPillar: {
-        heavenlyStem: output.day[0],
-        earthlyBranch: output.day[1]
+      day: {
+        gan: output.day[0],
+        zhi: output.day[1],
+        ganzhiIndex: getGanZhiIndex(output.day[0], output.day[1])
       },
-      timePillar: {
-        heavenlyStem: output.hour[0],
-        earthlyBranch: output.hour[1]
+      hour: {
+        gan: output.hour[0],
+        zhi: output.hour[1],
+        ganzhiIndex: getGanZhiIndex(output.hour[0], output.hour[1])
       }
     };
     

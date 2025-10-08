@@ -88,26 +88,35 @@ const convertProfileToCardData = (profileData) => {
     originalTime: formatBirthTime(profileData.birthDate),
     lunarTime: profileData.baziData.lunarDate ? formatLunarTime(profileData.baziData.lunarDate) : '',
     isUncertainTime: profileData.isUncertainTime || false,
-    baziData: {
-      yearPillar: {
-        heavenlyStem: profileData.baziData.year.gan,
-        earthlyBranch: profileData.baziData.year.zhi
-      },
-      monthPillar: {
-        heavenlyStem: profileData.baziData.month.gan,
-        earthlyBranch: profileData.baziData.month.zhi
-      },
-      dayPillar: {
-        heavenlyStem: profileData.baziData.day.gan,
-        earthlyBranch: profileData.baziData.day.zhi
-      },
-      timePillar: {
-        heavenlyStem: profileData.baziData.hour.gan,
-        earthlyBranch: profileData.baziData.hour.zhi
-      }
-    }
+    baziData: convertProfileBaziToCardFormat(profileData.baziData) // 转换为卡牌显示格式
   };
 };
+
+/**
+ * 将档案格式的八字数据转换为卡牌显示格式
+ * @param {Object} profileBaziData - 档案格式的八字数据 {year: {gan, zhi, ganzhiIndex}, ...}
+ * @returns {Object} 卡牌显示格式的八字数据 {yearPillar: {heavenlyStem, earthlyBranch}, ...}
+ */
+function convertProfileBaziToCardFormat(profileBaziData) {
+  return {
+    yearPillar: {
+      heavenlyStem: profileBaziData.year.gan,
+      earthlyBranch: profileBaziData.year.zhi
+    },
+    monthPillar: {
+      heavenlyStem: profileBaziData.month.gan,
+      earthlyBranch: profileBaziData.month.zhi
+    },
+    dayPillar: {
+      heavenlyStem: profileBaziData.day.gan,
+      earthlyBranch: profileBaziData.day.zhi
+    },
+    timePillar: {
+      heavenlyStem: profileBaziData.hour.gan,
+      earthlyBranch: profileBaziData.hour.zhi
+    }
+  };
+}
 
 module.exports = {
   formatTime,
@@ -115,6 +124,7 @@ module.exports = {
   formatBirthTime,
   formatLunarTime,
   convertProfileToCardData,
+  convertProfileBaziToCardFormat,
   extractTimeParams,
   getLocalUrl,
 };
