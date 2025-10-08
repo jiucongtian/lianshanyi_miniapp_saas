@@ -877,70 +877,8 @@ Page({
     const isDebugMode = config.debugMode;
     console.log('当前调试模式状态:', isDebugMode);
     
-    // 在非调试模式下检查云端是否有该时间的八字档案
-    let existingProfiles = [];
-    if (!isDebugMode) {
-      existingProfiles = await this.searchBaziProfile(birthDate);
-      console.log('云端搜索结果:', existingProfiles);
-    }
-    
-    if (existingProfiles.length > 0 && !isDebugMode) {
-      console.log('找到云端八字档案，直接使用:', existingProfiles[0]);
-      
-      // 使用云端档案数据直接跳转
-      const profile = existingProfiles[0];
-      const baziResult = {
-        timestamp: timestamp,
-        baziData: this.convertProfileToBaziResult(profile),  // 使用标准化的八字数据
-        parameters: { year, month, day, hour, min: minute },
-        calculatedAt: new Date(profile.createTime).getTime(),
-        profileId: profile._id
-      };
-      
-      const app = getApp();
-      app.globalData = app.globalData || {};
-      app.globalData.baziResult = baziResult;
-      
-      // 设置云端档案为当前档案
-      app.setCurrentProfile(profile);
-      console.log('云端档案已设置为当前档案:', profile._id);
-      
-      // 构建卡牌数据并设置到全局变量
-      const cardData = this.buildCardDataFromProfile(profile, baziResult);
-      app.globalData.cardData = cardData;
-      console.log('卡牌数据已设置到全局变量:', cardData);
-      
-      wx.switchTab({
-        url: '/pages/card/index',
-        success: () => {
-          console.log('找到云端档案，跳转到卡牌页面');
-          Message.success({
-            context: this,
-            offset: [120, 32],
-            duration: 1500,
-            content: '已找到云端信息，正在显示卡牌',
-          });
-        },
-        fail: (error) => {
-          console.error('跳转失败:', error);
-          Message.error({
-            context: this,
-            offset: [120, 32],
-            duration: 3000,
-            content: '页面跳转失败，请重试',
-          });
-        }
-      });
-      
-      return;
-    }
-
-    // 没有云端档案或调试模式，需要调用API计算
-    if (isDebugMode) {
-      console.log('调试模式开启，跳过云端档案直接调用API计算');
-    } else {
-      console.log('未找到云端档案，开始调用API计算');
-    }
+    // 直接调用API计算八字（新增档案不需要检查现有档案）
+    console.log('开始调用API计算八字');
 
     // 显示加载状态
     wx.showLoading({
