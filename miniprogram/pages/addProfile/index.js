@@ -355,7 +355,7 @@ Page({
       // 重新计算八字数据
       const baziResult = await baziService.calculateBazi(timestamp);
       
-      if (!baziResult.success || !baziResult.baziData) {
+      if (!baziResult.success || !baziResult.data || !baziResult.data.baziData) {
         console.error('八字计算失败:', baziResult.error);
         wx.hideLoading();
         Message.error({
@@ -370,24 +370,24 @@ Page({
       // 转换八字数据为档案格式
       const baziData = {
         year: {
-          gan: baziResult.baziData.yearPillar.heavenlyStem,
-          zhi: baziResult.baziData.yearPillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziResult.baziData.yearPillar.heavenlyStem, baziResult.baziData.yearPillar.earthlyBranch)
+          gan: baziResult.data.baziData.yearPillar.heavenlyStem,
+          zhi: baziResult.data.baziData.yearPillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziResult.data.baziData.yearPillar.heavenlyStem, baziResult.data.baziData.yearPillar.earthlyBranch)
         },
         month: {
-          gan: baziResult.baziData.monthPillar.heavenlyStem,
-          zhi: baziResult.baziData.monthPillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziResult.baziData.monthPillar.heavenlyStem, baziResult.baziData.monthPillar.earthlyBranch)
+          gan: baziResult.data.baziData.monthPillar.heavenlyStem,
+          zhi: baziResult.data.baziData.monthPillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziResult.data.baziData.monthPillar.heavenlyStem, baziResult.data.baziData.monthPillar.earthlyBranch)
         },
         day: {
-          gan: baziResult.baziData.dayPillar.heavenlyStem,
-          zhi: baziResult.baziData.dayPillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziResult.baziData.dayPillar.heavenlyStem, baziResult.baziData.dayPillar.earthlyBranch)
+          gan: baziResult.data.baziData.dayPillar.heavenlyStem,
+          zhi: baziResult.data.baziData.dayPillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziResult.data.baziData.dayPillar.heavenlyStem, baziResult.data.baziData.dayPillar.earthlyBranch)
         },
         hour: {
-          gan: baziResult.baziData.timePillar.heavenlyStem,
-          zhi: baziResult.baziData.timePillar.earthlyBranch,
-          ganzhiIndex: this.getGanZhiIndex(baziResult.baziData.timePillar.heavenlyStem, baziResult.baziData.timePillar.earthlyBranch)
+          gan: baziResult.data.baziData.timePillar.heavenlyStem,
+          zhi: baziResult.data.baziData.timePillar.earthlyBranch,
+          ganzhiIndex: this.getGanZhiIndex(baziResult.data.baziData.timePillar.heavenlyStem, baziResult.data.baziData.timePillar.earthlyBranch)
         }
       };
 
@@ -1029,13 +1029,13 @@ Page({
 
   convertBaziResultToProfile(baziResult, birthDate) {
     // 使用标准化的八字数据
-    if (!baziResult.baziData) {
+    if (!baziResult.data || !baziResult.data.baziData) {
       console.error('八字数据格式不正确，缺少baziData字段');
       console.error('baziResult完整数据:', baziResult);
       return null;
     }
 
-    const baziData = baziResult.baziData;
+    const baziData = baziResult.data.baziData;
     
     // 验证八字数据结构
     const requiredPillars = ['yearPillar', 'monthPillar', 'dayPillar', 'timePillar'];
@@ -1150,13 +1150,13 @@ Page({
     console.log('从八字结果构建卡牌数据:', baziResult);
     
     // 使用标准化的八字数据
-    if (!baziResult.baziData) {
+    if (!baziResult.data || !baziResult.data.baziData) {
       console.error('八字数据格式不正确，缺少baziData字段');
       console.error('baziResult完整数据:', baziResult);
       return null;
     }
 
-    const baziData = baziResult.baziData;
+    const baziData = baziResult.data.baziData;
     
     // 验证八字数据结构
     const requiredPillars = ['yearPillar', 'monthPillar', 'dayPillar', 'timePillar'];
