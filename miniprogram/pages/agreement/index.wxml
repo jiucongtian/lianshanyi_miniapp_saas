@@ -9,11 +9,11 @@
   </view>
 
   <!-- 协议内容 -->
-  <scroll-view class="content-scroll" scroll-y="true" enhanced="true" show-scrollbar="false">
+  <view class="content-wrapper">
     <view class="content">
       <rich-text class="rich-content" nodes="{{agreementContent}}"></rich-text>
     </view>
-  </scroll-view>
+  </view>
 
   <!-- 底部操作按钮 -->
   <view class="footer-actions">
