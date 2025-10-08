@@ -26,9 +26,13 @@ class BaseService {
       });
       
       console.log(`[${this.serviceName}] 云函数 ${name} 返回:`, result);
-      return ResponseBean.fromCloudResult(result);
+      console.log(`[${this.serviceName}] 准备创建 ResponseBean，传入参数:`, result);
+      const responseBean = ResponseBean.fromCloudResult(result);
+      console.log(`[${this.serviceName}] ResponseBean 创建完成:`, responseBean);
+      return responseBean;
     } catch (error) {
       console.error(`[${this.serviceName}] 云函数 ${name} 调用失败:`, error);
+      console.log(`[${this.serviceName}] 创建错误 ResponseBean，传入参数:`, error.message || '网络错误', -1);
       return ResponseBean.error(error.message || '网络错误', -1);
     }
   }

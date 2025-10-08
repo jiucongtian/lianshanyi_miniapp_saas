@@ -4,6 +4,11 @@
  */
 class ResponseBean {
   constructor(cloudResult) {
+    console.log('[ResponseBean] 构造函数被调用，传入参数:', cloudResult);
+    console.log('[ResponseBean] 参数类型:', typeof cloudResult);
+    console.log('[ResponseBean] 参数是否为null:', cloudResult === null);
+    console.log('[ResponseBean] 参数是否为undefined:', cloudResult === undefined);
+    
     this.success = false;
     this.data = null;
     this.error = null;
@@ -11,7 +16,10 @@ class ResponseBean {
     this.message = '';
     this.timestamp = new Date().getTime();
     
-    this._parse(cloudResult);
+    // 只有当传入了有效的cloudResult时才进行解析
+    if (cloudResult !== undefined) {
+      this._parse(cloudResult);
+    }
   }
   
   /**
@@ -19,9 +27,12 @@ class ResponseBean {
    * @param {Object} cloudResult - 云函数返回的原始结果
    */
   _parse(cloudResult) {
+    console.log('[ResponseBean] _parse 方法开始执行，参数:', cloudResult);
+    
     // 1. 检查云函数调用是否成功
     if (!cloudResult || !cloudResult.result) {
-      console.error('[ResponseBean] 云函数调用失败:', cloudResult);
+      console.error('[ResponseBean] 云函数调用失败，cloudResult:', cloudResult);
+      console.error('[ResponseBean] cloudResult.result:', cloudResult ? cloudResult.result : 'undefined');
       this.error = '云函数调用失败';
       this.code = -1;
       return;
@@ -77,7 +88,7 @@ class ResponseBean {
    * @returns {ResponseBean} 错误响应Bean
    */
   static error(errorMessage, code = -1, data = null) {
-    const bean = new ResponseBean(null);
+    const bean = new ResponseBean();
     bean.success = false;
     bean.error = errorMessage;
     bean.code = code;
@@ -94,7 +105,7 @@ class ResponseBean {
    * @returns {ResponseBean} 成功响应Bean
    */
   static success(data, message = '操作成功', code = 0) {
-    const bean = new ResponseBean(null);
+    const bean = new ResponseBean();
     bean.success = true;
     bean.data = data;
     bean.message = message;

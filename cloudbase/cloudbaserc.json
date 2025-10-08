@@ -15,6 +15,17 @@
       "memorySize": 512
     },
     {
+      "name": "calculateBazi_v1_1",
+      "timeout": 30,
+      "envVariables": {
+        "COZE_TOKEN": "sat_JBr8tgHf8a8IkpwoFMpNWiioLFdqdAWj9O8HVRZ7DFmYqQf2wKzf92vRqKjQQMdv",
+        "COZE_BASE_URL": "https://api.coze.cn",
+        "COZE_WORKFLOW_ID": "7544388114807095337"
+      },
+      "runtime": "Nodejs16.13",
+      "memorySize": 512
+    },
+    {
       "name": "userManagement",
       "timeout": 10,
       "runtime": "Nodejs16.13",

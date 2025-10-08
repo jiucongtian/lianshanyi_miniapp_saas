@@ -1,13 +1,11 @@
 import Message from 'tdesign-miniprogram/message/index';
-// 使用云开发API替代直接调用Coze API
-const { calculateBazi, createUser, searchProfile, createProfile } = require('../../api/cloud');
+// 使用Service层替代废弃的cloud.js接口
+const { baziService, userService, profileService } = require('../../services/index');
 // 引入配置
 const { config } = require('../../config/index');
 // 引入用户管理器和权限管理器
 const { userManager } = require('../../utils/userManager');
 const { permissionManager, USER_TYPES } = require('../../utils/permissionManager');
-// 引入Service层
-const { userService, profileService } = require('../../services/index');
 
 Page({
   data: {
@@ -111,10 +109,13 @@ Page({
 
   // 表单提交
   async onSubmit(e) {
+    console.log('[addProfile] onSubmit 开始执行');
+    
     // 获取按钮组件的引用
     const buttonComponent = this.selectComponent('loading-button');
     
     if (!this.validateForm()) {
+      console.log('[addProfile] 表单验证失败');
       Message.warning({
         context: this,
         offset: [120, 32],
@@ -131,14 +132,18 @@ Page({
     try {
       // 如果是创建模式，检查用户配额
       if (this.data.pageMode === 'create') {
+        console.log('[addProfile] 创建模式，开始检查用户配额');
         const quotaCheck = await this.checkUserQuota();
+        console.log('[addProfile] 配额检查结果:', quotaCheck);
         if (!quotaCheck.canCreate) {
+          console.log('[addProfile] 配额检查失败，无法创建');
           // 重置按钮状态
           if (buttonComponent) {
             buttonComponent.reset();
           }
           return; // 配额检查失败，已在方法内处理错误提示
         }
+        console.log('[addProfile] 配额检查通过，可以创建');
       }
 
       // 根据页面模式调用不同的处理方法
@@ -166,10 +171,14 @@ Page({
    * 检查用户配额
    */
   async checkUserQuota() {
+    console.log('[addProfile] checkUserQuota 开始执行');
     try {
+      console.log('[addProfile] 调用 userService.checkQuota()');
       const result = await userService.checkQuota();
+      console.log('[addProfile] userService.checkQuota() 返回结果:', result);
       
       if (result.success) {
+        console.log('[addProfile] 配额检查成功，解析数据:', result.data);
         const { canCreateMore, userType, currentCount, quota } = result.data;
         
         if (!canCreateMore) {
@@ -200,7 +209,7 @@ Page({
         
         return { canCreate: true };
       } else {
-        console.error('检查配额失败:', result.error);
+        console.error('[addProfile] 检查配额失败:', result.error);
         Message.error({
           context: this,
           offset: [120, 32],
@@ -210,7 +219,7 @@ Page({
         return { canCreate: false };
       }
     } catch (error) {
-      console.error('检查配额出错:', error);
+      console.error('[addProfile] 检查配额出错:', error);
       Message.error({
         context: this,
         offset: [120, 32],
@@ -289,7 +298,7 @@ Page({
   // 云端档案管理
   async searchBaziProfile(birthDate) {
     try {
-      const result = await searchProfile({ birthDate });
+      const result = await profileService.searchProfile({ birthDate });
       return result.success ? result.data.profiles : [];
     } catch (error) {
       console.error('搜索八字档案失败:', error);
@@ -299,7 +308,7 @@ Page({
 
   async saveBaziProfile(profileData) {
     try {
-      const result = await createProfile(profileData);
+      const result = await profileService.createProfile(profileData);
       if (result.success) {
         console.log('八字档案已保存到云端:', result.data.profileId);
         return result.data;
@@ -344,7 +353,7 @@ Page({
 
     try {
       // 重新计算八字数据
-      const baziResult = await calculateBazi(timestamp);
+      const baziResult = await baziService.calculateBazi(timestamp);
       
       if (!baziResult.success || !baziResult.baziData) {
         console.error('八字计算失败:', baziResult.error);
@@ -480,11 +489,15 @@ Page({
 
   // 确保用户已注册
   async ensureUserRegistered() {
+    console.log('[addProfile] ensureUserRegistered 开始执行');
     try {
-      const result = await createUser();
+      console.log('[addProfile] 调用 userService.createUser()');
+      const result = await userService.createUser();
+      console.log('[addProfile] userService.createUser() 返回结果:', result);
+      console.log('[addProfile] 用户注册成功:', result.success);
       return result.success;
     } catch (error) {
-      console.error('用户注册失败:', error);
+      console.error('[addProfile] 用户注册失败:', error);
       return false;
     }
   },
@@ -821,7 +834,11 @@ Page({
 
   // 查询数据
   async onQueryData() {
+    console.log('[addProfile] onQueryData 开始执行');
+    console.log('[addProfile] dateTimeValue:', this.data.dateTimeValue);
+    
     if (!this.data.dateTimeValue) {
+      console.log('[addProfile] 没有选择查询时间，返回');
       Message.warning({
         context: this,
         offset: [120, 32],
@@ -832,7 +849,9 @@ Page({
     }
 
     // 确保用户已注册
+    console.log('[addProfile] 开始确保用户已注册');
     const userRegistered = await this.ensureUserRegistered();
+    console.log('[addProfile] 用户注册结果:', userRegistered);
     if (!userRegistered) {
       Message.error({
         context: this,
@@ -930,14 +949,14 @@ Page({
     });
 
     try {
-      // 调用Coze API获取生辰八字数据
-      const result = await calculateBazi(timestamp);
+      // 调用Service层获取生辰八字数据
+      const result = await baziService.calculateBazi(timestamp);
       
       if (result.success) {
         console.log('Coze API调用成功，结果：', result);
         
         // 检查八字数据是否存在
-        if (!result.baziData) {
+        if (!result.data || !result.data.baziData) {
           console.error('Coze API返回成功但baziData为空:', result);
           wx.hideLoading();
           
@@ -953,9 +972,9 @@ Page({
         // 构建八字结果数据（使用标准化的数据结构）
         const baziResult = {
           timestamp: timestamp,
-          baziData: result.baziData,  // 标准化的八字数据
-          rawCozeData: result.rawCozeData,  // 原始coze数据（用于调试）
-          parameters: result.parameters,
+          baziData: result.data.baziData,  // 标准化的八字数据
+          rawCozeData: result.data.rawCozeData,  // 原始coze数据（用于调试）
+          parameters: result.data.parameters,
           calculatedAt: new Date().getTime()
         };
         
