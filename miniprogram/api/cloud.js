@@ -1,20 +1,26 @@
 /**
  * 云开发API调用模块
  * 使用微信云开发调用云函数
+ * 注意：此模块已废弃，请使用Service层进行API调用
+ * @deprecated 请使用 miniprogram/services/ 中的Service类
  */
 
 const { extractTimeParams } = require('../utils/util');
+const { ResponseBean } = require('../beans/ResponseBean');
 
 /**
  * 调用生辰八字计算云函数（带重试机制）
+ * @deprecated 请使用 BaziService.calculateBazi()
  * @param {number} timestamp - 时间戳
  * @param {number} retryCount - 重试次数，默认3次
- * @returns {Promise} 返回计算结果
+ * @returns {Promise<ResponseBean>} 返回计算结果
  */
 async function calculateBazi(timestamp, retryCount = 3) {
+  console.warn('[calculateBazi] 此函数已废弃，请使用 BaziService.calculateBazi()');
+  
   for (let attempt = 1; attempt <= retryCount; attempt++) {
     try {
-      console.log(`调用云函数calculateBazi，第${attempt}次尝试，参数:`, { timestamp });
+      console.log(`[calculateBazi] 第${attempt}次尝试，参数:`, { timestamp });
       
       // 调用云函数
       const result = await wx.cloud.callFunction({
@@ -24,51 +30,49 @@ async function calculateBazi(timestamp, retryCount = 3) {
         }
       });
 
-      console.log('云函数返回结果:', result);
+      console.log('[calculateBazi] 云函数返回结果:', result);
       
       if (result.result && result.result.success) {
-        return {
-          success: true,
+        const data = {
           baziData: result.result.baziData,  // 标准化的八字数据
           rawCozeData: result.result.rawCozeData,  // 原始coze数据（用于调试）
           parameters: result.result.parameters,
           timestamp: result.result.timestamp
         };
+        return ResponseBean.success(data, '八字计算成功');
       } else {
         // 如果是最后一次尝试，返回错误
         if (attempt === retryCount) {
-          return {
-            success: false,
-            error: result.result?.error || '云函数调用失败',
-            code: result.result?.code
-          };
+          return ResponseBean.error(
+            result.result?.error || '云函数调用失败',
+            result.result?.code || -1
+          );
         }
         // 否则继续重试
-        console.log(`第${attempt}次尝试失败，准备重试...`);
+        console.log(`[calculateBazi] 第${attempt}次尝试失败，准备重试...`);
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // 递增延迟
         continue;
       }
     } catch (error) {
-      console.error(`第${attempt}次云函数调用失败:`, error);
+      console.error(`[calculateBazi] 第${attempt}次云函数调用失败:`, error);
       
       // 如果是最后一次尝试，返回错误
       if (attempt === retryCount) {
-        return {
-          success: false,
-          error: error.message || '云函数调用失败',
-          code: error.errCode || -1
-        };
+        return ResponseBean.error(
+          error.message || '云函数调用失败',
+          error.errCode || -1
+        );
       }
       
       // 检查是否是超时错误
       if (error.errCode === -504003) {
-        console.log(`第${attempt}次尝试超时，准备重试...`);
+        console.log(`[calculateBazi] 第${attempt}次尝试超时，准备重试...`);
         await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // 超时错误使用更长的延迟
         continue;
       }
       
       // 其他错误，短暂延迟后重试
-      console.log(`第${attempt}次尝试失败，准备重试...`);
+      console.log(`[calculateBazi] 第${attempt}次尝试失败，准备重试...`);
       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
   }
@@ -89,12 +93,15 @@ function extractTimeParameters(timestamp) {
 
 /**
  * 创建或更新用户信息
+ * @deprecated 请使用 UserService.createUser()
  * @param {Object} userData - 用户数据
- * @returns {Promise} 返回操作结果
+ * @returns {Promise<ResponseBean>} 返回操作结果
  */
 async function createUser(userData = {}) {
+  console.warn('[createUser] 此函数已废弃，请使用 UserService.createUser()');
+  
   try {
-    console.log('API: 开始调用userManagement云函数，参数:', userData);
+    console.log('[createUser] 开始调用userManagement云函数，参数:', userData);
     
     const result = await wx.cloud.callFunction({
       name: 'userManagement',
@@ -104,22 +111,22 @@ async function createUser(userData = {}) {
       }
     });
 
-    console.log('API: 云函数调用完成，结果:', result);
-    return result.result;
+    console.log('[createUser] 云函数调用完成，结果:', result);
+    return ResponseBean.fromCloudResult(result);
   } catch (error) {
-    console.error('API: 创建用户失败:', error);
-    return {
-      success: false,
-      error: error.message || '用户操作失败'
-    };
+    console.error('[createUser] 创建用户失败:', error);
+    return ResponseBean.error(error.message || '用户操作失败', -1);
   }
 }
 
 /**
  * 获取用户信息
- * @returns {Promise} 返回用户信息
+ * @deprecated 请使用 UserService.getUserInfo()
+ * @returns {Promise<ResponseBean>} 返回用户信息
  */
 async function getUserInfo() {
+  console.warn('[getUserInfo] 此函数已废弃，请使用 UserService.getUserInfo()');
+  
   try {
     const result = await wx.cloud.callFunction({
       name: 'userManagement',
@@ -128,24 +135,24 @@ async function getUserInfo() {
       }
     });
 
-    return result.result;
+    return ResponseBean.fromCloudResult(result);
   } catch (error) {
-    console.error('获取用户信息失败:', error);
-    return {
-      success: false,
-      error: error.message || '获取用户信息失败'
-    };
+    console.error('[getUserInfo] 获取用户信息失败:', error);
+    return ResponseBean.error(error.message || '获取用户信息失败', -1);
   }
 }
 
 /**
  * 更新用户级别（管理员功能）
+ * @deprecated 请使用 UserService.updateUserLevel()
  * @param {string} targetOpenid - 目标用户openid
  * @param {string} newLevel - 新级别(normal/primary/internal)
  * @param {string} operatorOpenid - 操作员openid
- * @returns {Promise} 返回操作结果
+ * @returns {Promise<ResponseBean>} 返回操作结果
  */
 async function updateUserLevel(targetOpenid, newLevel, operatorOpenid) {
+  console.warn('[updateUserLevel] 此函数已废弃，请使用 UserService.updateUserLevel()');
+  
   try {
     const result = await wx.cloud.callFunction({
       name: 'userManagement',
@@ -159,24 +166,24 @@ async function updateUserLevel(targetOpenid, newLevel, operatorOpenid) {
       }
     });
 
-    return result.result;
+    return ResponseBean.fromCloudResult(result);
   } catch (error) {
-    console.error('更新用户级别失败:', error);
-    return {
-      success: false,
-      error: error.message || '更新用户级别失败'
-    };
+    console.error('[updateUserLevel] 更新用户级别失败:', error);
+    return ResponseBean.error(error.message || '更新用户级别失败', -1);
   }
 }
 
 /**
  * 按级别查询用户列表
+ * @deprecated 请使用 UserService.getUsersByLevel()
  * @param {string} level - 用户级别(normal/primary/internal)
  * @param {number} limit - 限制数量，默认20
  * @param {number} skip - 跳过数量，默认0
- * @returns {Promise} 返回用户列表
+ * @returns {Promise<ResponseBean>} 返回用户列表
  */
 async function getUsersByLevel(level, limit = 20, skip = 0) {
+  console.warn('[getUsersByLevel] 此函数已废弃，请使用 UserService.getUsersByLevel()');
+  
   try {
     const result = await wx.cloud.callFunction({
       name: 'userManagement',
@@ -190,21 +197,21 @@ async function getUsersByLevel(level, limit = 20, skip = 0) {
       }
     });
 
-    return result.result;
+    return ResponseBean.fromCloudResult(result);
   } catch (error) {
-    console.error('查询用户列表失败:', error);
-    return {
-      success: false,
-      error: error.message || '查询用户列表失败'
-    };
+    console.error('[getUsersByLevel] 查询用户列表失败:', error);
+    return ResponseBean.error(error.message || '查询用户列表失败', -1);
   }
 }
 
 /**
  * 获取用户级别统计
- * @returns {Promise} 返回统计数据
+ * @deprecated 请使用 UserService.getUserLevelStats()
+ * @returns {Promise<ResponseBean>} 返回统计数据
  */
 async function getUserLevelStats() {
+  console.warn('[getUserLevelStats] 此函数已废弃，请使用 UserService.getUserLevelStats()');
+  
   try {
     const result = await wx.cloud.callFunction({
       name: 'userManagement',
@@ -213,13 +220,10 @@ async function getUserLevelStats() {
       }
     });
 
-    return result.result;
+    return ResponseBean.fromCloudResult(result);
   } catch (error) {
-    console.error('获取用户级别统计失败:', error);
-    return {
-      success: false,
-      error: error.message || '获取用户级别统计失败'
-    };
+    console.error('[getUserLevelStats] 获取用户级别统计失败:', error);
+    return ResponseBean.error(error.message || '获取用户级别统计失败', -1);
   }
 }
 
@@ -229,10 +233,13 @@ async function getUserLevelStats() {
 
 /**
  * 创建八字档案
+ * @deprecated 请使用 ProfileService.createProfile()
  * @param {Object} profileData - 档案数据
- * @returns {Promise} 返回操作结果
+ * @returns {Promise<ResponseBean>} 返回操作结果
  */
 async function createProfile(profileData) {
+  console.warn('[createProfile] 此函数已废弃，请使用 ProfileService.createProfile()');
+  
   try {
     const result = await wx.cloud.callFunction({
       name: 'profileManagement',
@@ -242,22 +249,22 @@ async function createProfile(profileData) {
       }
     });
 
-    return result.result;
+    return ResponseBean.fromCloudResult(result);
   } catch (error) {
-    console.error('创建档案失败:', error);
-    return {
-      success: false,
-      error: error.message || '创建档案失败'
-    };
+    console.error('[createProfile] 创建档案失败:', error);
+    return ResponseBean.error(error.message || '创建档案失败', -1);
   }
 }
 
 /**
  * 获取用户的所有档案
+ * @deprecated 请使用 ProfileService.getProfiles()
  * @param {Object} queryData - 查询参数
- * @returns {Promise} 返回档案列表
+ * @returns {Promise<ResponseBean>} 返回档案列表
  */
 async function getProfiles(queryData = {}) {
+  console.warn('[getProfiles] 此函数已废弃，请使用 ProfileService.getProfiles()');
+  
   try {
     const result = await wx.cloud.callFunction({
       name: 'profileManagement',
@@ -267,22 +274,22 @@ async function getProfiles(queryData = {}) {
       }
     });
 
-    return result.result;
+    return ResponseBean.fromCloudResult(result);
   } catch (error) {
-    console.error('获取档案列表失败:', error);
-    return {
-      success: false,
-      error: error.message || '获取档案列表失败'
-    };
+    console.error('[getProfiles] 获取档案列表失败:', error);
+    return ResponseBean.error(error.message || '获取档案列表失败', -1);
   }
 }
 
 /**
  * 获取单个档案详情
+ * @deprecated 请使用 ProfileService.getProfile()
  * @param {string} profileId - 档案ID
- * @returns {Promise} 返回档案详情
+ * @returns {Promise<ResponseBean>} 返回档案详情
  */
 async function getProfile(profileId) {
+  console.warn('[getProfile] 此函数已废弃，请使用 ProfileService.getProfile()');
+  
   try {
     const result = await wx.cloud.callFunction({
       name: 'profileManagement',
@@ -292,22 +299,22 @@ async function getProfile(profileId) {
       }
     });
 
-    return result.result;
+    return ResponseBean.fromCloudResult(result);
   } catch (error) {
-    console.error('获取档案详情失败:', error);
-    return {
-      success: false,
-      error: error.message || '获取档案详情失败'
-    };
+    console.error('[getProfile] 获取档案详情失败:', error);
+    return ResponseBean.error(error.message || '获取档案详情失败', -1);
   }
 }
 
 /**
  * 根据生日搜索已有档案
+ * @deprecated 请使用 ProfileService.searchProfile()
  * @param {Object} searchData - 搜索条件
- * @returns {Promise} 返回搜索结果
+ * @returns {Promise<ResponseBean>} 返回搜索结果
  */
 async function searchProfile(searchData) {
+  console.warn('[searchProfile] 此函数已废弃，请使用 ProfileService.searchProfile()');
+  
   try {
     const result = await wx.cloud.callFunction({
       name: 'profileManagement',
@@ -317,13 +324,10 @@ async function searchProfile(searchData) {
       }
     });
 
-    return result.result;
+    return ResponseBean.fromCloudResult(result);
   } catch (error) {
-    console.error('搜索档案失败:', error);
-    return {
-      success: false,
-      error: error.message || '搜索档案失败'
-    };
+    console.error('[searchProfile] 搜索档案失败:', error);
+    return ResponseBean.error(error.message || '搜索档案失败', -1);
   }
 }
 

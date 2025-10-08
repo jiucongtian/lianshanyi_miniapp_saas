@@ -6,6 +6,7 @@
 // 导入所有Service类
 const { BaseService } = require('./BaseService');
 const { UserService, userService } = require('./UserService');
+const { ProfileService, profileService } = require('./ProfileService');
 
 // 导出所有Service类
 module.exports = {
@@ -14,12 +15,15 @@ module.exports = {
   
   // 具体服务类
   UserService,
+  ProfileService,
   
   // 服务单例实例
   userService,
+  profileService,
   
   // 服务列表（用于批量操作）
   services: {
-    userService
+    userService,
+    profileService
   }
 };

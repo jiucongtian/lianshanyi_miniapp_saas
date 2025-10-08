@@ -5,6 +5,7 @@ const eventBus = require('./utils/eventBus');
 const { userManager } = require('./utils/userManager');
 const { convertProfileToCardData } = require('./utils/util');
 const { imageCacheManager } = require('./utils/imageCacheManager');
+const { profileService } = require('./services/index');
 
 if (config.useMock) {
   Mock();
@@ -167,17 +168,13 @@ App({
     try {
       console.log('App: 开始获取档案列表...');
       
-      const result = await wx.cloud.callFunction({
-        name: 'profileManagement',
-        data: {
-          action: 'getProfiles',
-          page: 1,
-          limit: 1 // 只获取第一个档案
-        }
+      const result = await profileService.getProfiles({
+        page: 1,
+        limit: 1 // 只获取第一个档案
       });
 
-      if (result.result && result.result.success && result.result.data.profiles.length > 0) {
-        const firstProfile = result.result.data.profiles[0];
+      if (result.success && result.data.profiles.length > 0) {
+        const firstProfile = result.data.profiles[0];
         console.log('App: 找到第一个档案:', firstProfile._id);
         
         // 设置为当前档案
@@ -204,22 +201,16 @@ App({
     try {
       console.log('App: 开始加载档案详细数据:', profileId);
       
-      const result = await wx.cloud.callFunction({
-        name: 'profileManagement',
-        data: {
-          action: 'getProfile',
-          data: { profileId }
-        }
-      });
+      const result = await profileService.getProfile(profileId);
 
-      if (result.result && result.result.success) {
-        const profileData = result.result.data;
+      if (result.success) {
+        const profileData = result.data;
         console.log('App: 档案数据加载成功:', profileData);
         
         // 设置为当前档案
         this.setCurrentProfile(profileData);
       } else {
-        console.error('App: 档案数据加载失败:', result.result?.error);
+        console.error('App: 档案数据加载失败:', result.error);
         // 如果档案不存在，清除保存的ID并重新获取第一个档案
         wx.removeStorageSync('currentProfileId');
         this.globalData.currentProfileId = null;

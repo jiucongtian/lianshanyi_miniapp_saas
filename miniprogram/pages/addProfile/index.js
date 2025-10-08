@@ -6,6 +6,8 @@ const { config } = require('../../config/index');
 // 引入用户管理器和权限管理器
 const { userManager } = require('../../utils/userManager');
 const { permissionManager, USER_TYPES } = require('../../utils/permissionManager');
+// 引入Service层
+const { userService, profileService } = require('../../services/index');
 
 Page({
   data: {
@@ -165,7 +167,7 @@ Page({
    */
   async checkUserQuota() {
     try {
-      const result = await userManager.checkUserQuota();
+      const result = await userService.checkQuota();
       
       if (result.success) {
         const { canCreateMore, userType, currentCount, quota } = result.data;

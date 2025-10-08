@@ -2,6 +2,7 @@
 const { formatBirthTime, formatLunarTime, convertProfileToCardData } = require('../../utils/util');
 const { userManager } = require('../../utils/userManager');
 const { permissionManager, USER_TYPES } = require('../../utils/permissionManager');
+const { profileService, userService } = require('../../services/index');
 const eventBus = require('../../utils/eventBus');
 
 Page({
@@ -179,23 +180,20 @@ Page({
     if (userInfo.userType === 'guest' && userInfo.profileQuota === 1) {
       try {
         console.log('检测到临时用户配额为1，正在更新为3...');
-        const result = await wx.cloud.callFunction({
-          name: 'userManagement',
-          data: {
-            action: 'updateGuestUserQuota'
-          }
+        const result = await userService.callFunction('userManagement', {
+          action: 'updateGuestUserQuota'
         });
         
-        if (result.result.success) {
-          console.log('临时用户配额更新成功:', result.result.data);
+        if (result.success) {
+          console.log('临时用户配额更新成功:', result.data);
           // 更新本地用户信息
           userInfo.profileQuota = 3;
           userInfo.permissions = ['view', 'create_limited'];
         } else {
-          console.error('更新临时用户配额失败:', result.result.error);
+          console.error('更新临时用户配额失败:', result.error);
         }
       } catch (error) {
-        console.error('调用更新配额云函数失败:', error);
+        console.error('调用更新配额Service失败:', error);
       }
     }
   },
@@ -246,28 +244,24 @@ Page({
     this.setData({ loading: true });
     
     try {
-      const result = await wx.cloud.callFunction({
-        name: 'profileManagement',
-        data: {
-          action: 'getProfiles',
-          page: 1,
-          limit: 20
-        }
+      const result = await profileService.getProfiles({
+        page: 1,
+        limit: 20
       });
 
-      if (result.result.success) {
-        const profiles = this.formatProfileList(result.result.data.profiles);
+      if (result.success) {
+        const profiles = this.formatProfileList(result.data.profiles);
         this.setData({
           profileList: profiles,
           page: 1,
-          hasMore: result.result.data.hasMore,
+          hasMore: result.data.hasMore,
           loading: false
         });
         
         // 加载完成后检查并设置默认选中
         this.checkAndSetDefaultSelection(profiles);
       } else {
-        console.error('获取档案列表失败:', result.result.error);
+        console.error('获取档案列表失败:', result.error);
         wx.showToast({
           title: '获取牌库失败',
           icon: 'error',
@@ -276,7 +270,7 @@ Page({
         this.setData({ loading: false });
       }
     } catch (error) {
-      console.error('调用云函数失败:', error);
+      console.error('调用ProfileService失败:', error);
       wx.showToast({
         title: '网络错误',
         icon: 'error',
@@ -318,21 +312,17 @@ Page({
     const nextPage = this.data.page + 1;
     
     try {
-      const result = await wx.cloud.callFunction({
-        name: 'profileManagement',
-        data: {
-          action: 'getProfiles',
-          page: nextPage,
-          limit: 20
-        }
+      const result = await profileService.getProfiles({
+        page: nextPage,
+        limit: 20
       });
 
-      if (result.result.success) {
-        const newProfiles = this.formatProfileList(result.result.data.profiles);
+      if (result.success) {
+        const newProfiles = this.formatProfileList(result.data.profiles);
         this.setData({
           profileList: [...this.data.profileList, ...newProfiles],
           page: nextPage,
-          hasMore: result.result.data.hasMore,
+          hasMore: result.data.hasMore,
           loading: false
         });
       } else {
@@ -678,19 +668,11 @@ Page({
         mask: true
       });
 
-      const result = await wx.cloud.callFunction({
-        name: 'profileManagement',
-        data: {
-          action: 'deleteProfile',
-          data: {
-            profileId: profileId
-          }
-        }
-      });
+      const result = await profileService.deleteProfile(profileId);
 
       wx.hideLoading();
 
-      if (result.result.success) {
+      if (result.success) {
         console.log('档案删除成功:', profileId);
         
         // 从本地列表中移除已删除的档案
@@ -710,9 +692,9 @@ Page({
           duration: 2000
         });
       } else {
-        console.error('删除档案失败:', result.result.error);
+        console.error('删除档案失败:', result.error);
         wx.showToast({
-          title: result.result.error || '删除失败',
+          title: result.error || '删除失败',
           icon: 'error',
           duration: 2000
         });

@@ -1,9 +1,10 @@
 /**
  * 用户管理工具模块
  * 提供用户信息获取、保存、更新等功能
+ * 注意：此模块已重构为使用Service层
  */
 
-const { createUser, getUserInfo } = require('../api/cloud');
+const { userService } = require('../services/index');
 const { permissionManager } = require('./permissionManager');
 
 /**
@@ -31,12 +32,12 @@ class UserManager {
       const hasValidUserData = this.hasValidUserData(profileInfo);
       console.log('UserManager: 是否有有效用户数据:', hasValidUserData);
       
-      // 调用云函数保存/更新用户信息
+      // 调用Service层保存/更新用户信息
       // 如果没有有效的用户数据，传递空对象，只更新登录时间
       const dataToSend = hasValidUserData ? profileInfo : {};
-      console.log('UserManager: 准备调用云函数保存用户信息，传递数据:', dataToSend);
-      const result = await createUser(dataToSend);
-      console.log('UserManager: 云函数调用结果:', result);
+      console.log('UserManager: 准备调用UserService保存用户信息，传递数据:', dataToSend);
+      const result = await userService.createUser(dataToSend);
+      console.log('UserManager: UserService调用结果:', result);
       
       if (result.success) {
         // 获取完整的用户信息（从数据库）
@@ -50,7 +51,7 @@ class UserManager {
           // 如果获取完整信息失败，使用基本信息
           this.userInfo = {
             ...profileInfo,
-            userId: result.data.userId,
+            userId: result.data._id || result.data.userId,
             isNewUser: result.data.isNewUser,
             lastSaveTime: new Date().getTime()
           };
@@ -131,7 +132,7 @@ class UserManager {
     try {
       console.log('UserManager: 更新用户信息', updateData);
       
-      const result = await createUser(updateData);
+      const result = await userService.updateUserInfo(updateData);
       
       if (result.success) {
         // 更新本地缓存
@@ -227,15 +228,10 @@ class UserManager {
   async getFullUserInfo() {
     try {
       console.log('UserManager: 获取完整用户信息...');
-      const result = await wx.cloud.callFunction({
-        name: 'userManagement',
-        data: {
-          action: 'getUserInfo'
-        }
-      });
+      const result = await userService.getUserInfo();
 
-      if (result.result.success) {
-        const fullUserInfo = result.result.data;
+      if (result.success) {
+        const fullUserInfo = result.data;
         // 更新本地用户信息
         this.userInfo = {
           ...this.userInfo,
@@ -252,8 +248,8 @@ class UserManager {
           data: this.userInfo
         };
       } else {
-        console.error('UserManager: 获取完整用户信息失败', result.result.error);
-        return result.result;
+        console.error('UserManager: 获取完整用户信息失败', result.error);
+        return result;
       }
     } catch (error) {
       console.error('UserManager: 获取完整用户信息出错', error);
@@ -273,25 +269,16 @@ class UserManager {
   async upgradeUserType(targetUserType, registrationData = null) {
     try {
       console.log('UserManager: 升级用户类型', targetUserType, registrationData);
-      const result = await wx.cloud.callFunction({
-        name: 'userManagement',
-        data: {
-          action: 'upgradeUserType',
-          data: {
-            targetUserType,
-            registrationData
-          }
-        }
-      });
+      const result = await userService.upgradeUserType(targetUserType, registrationData);
 
-      if (result.result.success) {
+      if (result.success) {
         // 刷新用户信息
         await this.getFullUserInfo();
         console.log('UserManager: 用户类型升级成功');
-        return result.result;
+        return result;
       } else {
-        console.error('UserManager: 用户类型升级失败', result.result.error);
-        return result.result;
+        console.error('UserManager: 用户类型升级失败', result.error);
+        return result;
       }
     } catch (error) {
       console.error('UserManager: 升级用户类型出错', error);
@@ -309,19 +296,14 @@ class UserManager {
   async checkUserQuota() {
     try {
       console.log('UserManager: 检查用户配额...');
-      const result = await wx.cloud.callFunction({
-        name: 'userManagement',
-        data: {
-          action: 'checkUserQuota'
-        }
-      });
+      const result = await userService.checkQuota();
 
-      if (result.result.success) {
-        console.log('UserManager: 配额检查成功', result.result.data);
-        return result.result;
+      if (result.success) {
+        console.log('UserManager: 配额检查成功', result.data);
+        return result;
       } else {
-        console.error('UserManager: 配额检查失败', result.result.error);
-        return result.result;
+        console.error('UserManager: 配额检查失败', result.error);
+        return result;
       }
     } catch (error) {
       console.error('UserManager: 检查配额出错', error);

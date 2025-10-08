@@ -1,5 +1,6 @@
 // pages/mine/index.js
 const { userManager } = require('../../utils/userManager');
+const { userService } = require('../../services/index');
 const { imageCacheManager } = require('../../utils/imageCacheManager');
 
 Page({
@@ -85,8 +86,8 @@ Page({
       
       console.log('开始加载用户信息...');
       
-      // 调用云函数获取用户信息
-      const result = await this.callUserManagementCloudFunction('getUserInfo');
+      // 调用UserService获取用户信息
+      const result = await userService.getUserInfo();
       
       if (result.success) {
         const userInfo = result.data;
@@ -233,26 +234,4 @@ Page({
   },
 
 
-  /**
-   * 调用用户管理云函数
-   */
-  async callUserManagementCloudFunction(action, data = {}) {
-    return new Promise((resolve, reject) => {
-      wx.cloud.callFunction({
-        name: 'userManagement',
-        data: {
-          action: action,
-          data: data
-        },
-        success: (res) => {
-          console.log('云函数调用成功:', res);
-          resolve(res.result);
-        },
-        fail: (error) => {
-          console.error('云函数调用失败:', error);
-          reject(error);
-        }
-      });
-    });
-  }
 })
