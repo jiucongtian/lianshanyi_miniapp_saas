@@ -1029,13 +1029,13 @@ Page({
 
   convertBaziResultToProfile(baziResult, birthDate) {
     // 使用标准化的八字数据
-    if (!baziResult.data || !baziResult.data.baziData) {
+    if (!baziResult.baziData) {
       console.error('八字数据格式不正确，缺少baziData字段');
       console.error('baziResult完整数据:', baziResult);
       return null;
     }
 
-    const baziData = baziResult.data.baziData;
+    const baziData = baziResult.baziData;
     
     // 验证八字数据结构
     const requiredPillars = ['yearPillar', 'monthPillar', 'dayPillar', 'timePillar'];
@@ -1150,13 +1150,13 @@ Page({
     console.log('从八字结果构建卡牌数据:', baziResult);
     
     // 使用标准化的八字数据
-    if (!baziResult.data || !baziResult.data.baziData) {
+    if (!baziResult.baziData) {
       console.error('八字数据格式不正确，缺少baziData字段');
       console.error('baziResult完整数据:', baziResult);
       return null;
     }
 
-    const baziData = baziResult.data.baziData;
+    const baziData = baziResult.baziData;
     
     // 验证八字数据结构
     const requiredPillars = ['yearPillar', 'monthPillar', 'dayPillar', 'timePillar'];

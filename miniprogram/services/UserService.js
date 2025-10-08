@@ -167,9 +167,21 @@ class UserService extends BaseService {
       
       this._logServiceCall('createUser', params, response);
       
-      // 成功时将data转换为UserBean
-      if (response.success && response.data) {
-        response.data = new UserBean(response.data);
+      // 如果创建成功，获取完整的用户信息
+      if (response.success && response.data && response.data.userId) {
+        console.log('[UserService] 用户创建成功，获取完整用户信息');
+        const userInfoResponse = await this.getUserInfo();
+        if (userInfoResponse.success) {
+          response.data = userInfoResponse.data; // 使用完整的用户信息
+        } else {
+          console.warn('[UserService] 获取用户信息失败，使用基础信息');
+          // 如果获取完整信息失败，至少提供基础信息
+          response.data = {
+            _id: response.data.userId,
+            openid: '', // 这个字段在云函数中无法获取，需要后续调用getUserInfo获取
+            isNewUser: response.data.isNewUser
+          };
+        }
       }
       
       return response;
