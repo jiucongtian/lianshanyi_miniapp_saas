@@ -6,6 +6,8 @@ const { config } = require('../../config/index');
 // 引入用户管理器和权限管理器
 const { userManager } = require('../../utils/userManager');
 const { permissionManager, USER_TYPES } = require('../../utils/permissionManager');
+// 引入事件类型常量
+const { PROFILE_EVENTS } = require('../../utils/eventTypes');
 
 Page({
   data: {
@@ -426,11 +428,11 @@ Page({
                 success: () => {
                   // 通过事件总线通知档案页面选中指定档案并刷新数据
                   const eventBus = require('../../utils/eventBus');
-                  eventBus.emit('selectProfile', {
+                  eventBus.emit(PROFILE_EVENTS.PROFILE_SELECTED, {
                     profileId: this.data.editingProfileId
                   });
                   // 触发档案列表刷新事件（ProfileManager已更新，只需刷新UI）
-                  eventBus.emit('profileListRefresh');
+                  eventBus.emit(PROFILE_EVENTS.PROFILE_LIST_REFRESH);
                 }
               });
             } else {
@@ -937,11 +939,11 @@ Page({
             // 通过事件总线通知档案页面选中新创建的档案
             if (baziResult.profileId) {
               const eventBus = require('../../utils/eventBus');
-              eventBus.emit('selectProfile', {
+              eventBus.emit(PROFILE_EVENTS.PROFILE_SELECTED, {
                 profileId: baziResult.profileId
               });
               // 触发档案列表刷新事件
-              eventBus.emit('profileListRefresh');
+              eventBus.emit(PROFILE_EVENTS.PROFILE_LIST_REFRESH);
             }
           },
           fail: (error) => {

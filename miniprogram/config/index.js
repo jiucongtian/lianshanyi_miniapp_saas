@@ -2,7 +2,7 @@
 export const config = {
   useMock: false,
   // 调试模式：开启后不使用缓存，每次都从网络获取八字数据
-  debugMode: false,
+  debugMode: true,
   // 云环境配置
   cloud: {
     envId: 'cloudbase-8g06skyf81a65a87', // 云环境ID

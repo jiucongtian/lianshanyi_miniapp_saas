@@ -5,6 +5,7 @@ const { permissionManager, USER_TYPES } = require('../../utils/permissionManager
 const { profileService, userService } = require('../../services/index');
 const { profileManager } = require('../../utils/profileManager');
 const eventBus = require('../../utils/eventBus');
+const { PROFILE_EVENTS } = require('../../utils/eventTypes');
 
 Page({
 
@@ -40,9 +41,9 @@ Page({
     this.initializeUserInfo();
     
     // 监听档案选中事件
-    eventBus.on('selectProfile', this.handleSelectProfile.bind(this));
+    eventBus.on(PROFILE_EVENTS.PROFILE_SELECTED, this.handleSelectProfile.bind(this));
     // 监听档案列表刷新事件
-    eventBus.on('profileListRefresh', this.handleProfileListRefresh.bind(this));
+    eventBus.on(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this.handleProfileListRefresh.bind(this));
   },
 
   /**
@@ -150,8 +151,8 @@ Page({
    */
   onUnload() {
     // 清理事件监听
-    eventBus.off('selectProfile', this.handleSelectProfile);
-    eventBus.off('profileListRefresh', this.handleProfileListRefresh);
+    eventBus.off(PROFILE_EVENTS.PROFILE_SELECTED, this.handleSelectProfile);
+    eventBus.off(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this.handleProfileListRefresh);
   },
 
   /**
@@ -734,7 +735,7 @@ Page({
         }
         
         // 触发档案删除事件
-        eventBus.emit('profileDeleted', profileId);
+        eventBus.emit(PROFILE_EVENTS.PROFILE_DELETED, profileId);
         
         wx.showToast({
           title: '删除成功',

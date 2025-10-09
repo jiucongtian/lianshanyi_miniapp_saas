@@ -2,6 +2,7 @@
 import config from './config/index';
 import Mock from './mock/index';
 const eventBus = require('./utils/eventBus');
+const { USER_EVENTS, PROFILE_EVENTS, SYSTEM_EVENTS } = require('./utils/eventTypes');
 const { userManager } = require('./utils/userManager');
 const { imageCacheManager } = require('./utils/imageCacheManager');
 const { profileService } = require('./services/index');
@@ -90,7 +91,7 @@ App({
         this.globalData.userInfo = result.data;
         
         // 触发用户信息更新事件
-        this.eventBus.emit('userInfoUpdated', result.data);
+        this.eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, result.data);
         
         // 显示欢迎信息
         console.log(`App: ${result.message}`);
@@ -124,7 +125,7 @@ App({
         this.globalData.userInfo = result.data;
         
         // 触发更新事件
-        this.eventBus.emit('userInfoUpdated', result.data);
+        this.eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, result.data);
       }
       
       return result;
@@ -184,7 +185,7 @@ App({
         console.log('App: ProfileManager初始化完成');
         
         // 触发ProfileManager初始化完成事件
-        this.eventBus.emit('profileManagerReady');
+        this.eventBus.emit(SYSTEM_EVENTS.PROFILE_MANAGER_READY);
       } else {
         console.log('App: 获取档案列表失败，初始化空的ProfileManager');
         profileManager.initialize([]);
@@ -255,7 +256,7 @@ App({
     profileManager.setCurrentProfile(profileData);
     
     // 触发档案更新事件
-    this.eventBus.emit('profileUpdated', {
+    this.eventBus.emit(PROFILE_EVENTS.PROFILE_UPDATED, {
       profileId: profileData._id,
       profileData: profileData
     });
@@ -310,13 +311,13 @@ App({
    */
   setupEventListeners() {
     // 监听档案创建事件
-    this.eventBus.on('profileCreated', (profileData) => {
+    this.eventBus.on(PROFILE_EVENTS.PROFILE_CREATED, (profileData) => {
       console.log('App: 监听到档案创建事件');
       this.refreshProfileManager();
     });
     
     // 监听档案更新事件
-    this.eventBus.on('profileUpdated', (data) => {
+    this.eventBus.on(PROFILE_EVENTS.PROFILE_UPDATED, (data) => {
       console.log('App: 监听到档案更新事件');
       // 更新ProfileManager中的档案数据
       if (data.profileId && data.updateData) {
@@ -325,7 +326,7 @@ App({
     });
     
     // 监听档案删除事件
-    this.eventBus.on('profileDeleted', (profileId) => {
+    this.eventBus.on(PROFILE_EVENTS.PROFILE_DELETED, (profileId) => {
       console.log('App: 监听到档案删除事件');
       this.refreshProfileManager();
     });

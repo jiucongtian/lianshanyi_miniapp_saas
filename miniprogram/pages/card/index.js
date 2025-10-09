@@ -3,6 +3,8 @@ const { getBaziImageById, getBaziImageByPinyin } = require('../../utils/baziImag
 const { formatBirthTime, formatLunarTime } = require('../../utils/util');
 const { imageCacheManager } = require('../../utils/imageCacheManager');
 const { profileManager } = require('../../utils/profileManager');
+// 引入事件类型常量
+const { PROFILE_EVENTS, SYSTEM_EVENTS } = require('../../utils/eventTypes');
 
 // 静态卡牌描述数据
 const cardDescriptions = [
@@ -131,9 +133,9 @@ Page({
     
     // 监听ProfileManager初始化完成事件
     const eventBus = require('../../utils/eventBus');
-    eventBus.on('profileManagerReady', this.onProfileManagerReady.bind(this));
+    eventBus.on(SYSTEM_EVENTS.PROFILE_MANAGER_READY, this.onProfileManagerReady.bind(this));
     // 监听档案选中事件
-    eventBus.on('selectProfile', this.handleSelectProfile.bind(this));
+    eventBus.on(PROFILE_EVENTS.PROFILE_SELECTED, this.handleSelectProfile.bind(this));
   },
 
   onReady: function() {
@@ -155,8 +157,8 @@ Page({
     console.log('卡牌页面卸载，清理事件监听');
     // 清理事件监听
     const eventBus = require('../../utils/eventBus');
-    eventBus.off('profileManagerReady', this.onProfileManagerReady);
-    eventBus.off('selectProfile', this.handleSelectProfile);
+    eventBus.off(SYSTEM_EVENTS.PROFILE_MANAGER_READY, this.onProfileManagerReady);
+    eventBus.off(PROFILE_EVENTS.PROFILE_SELECTED, this.handleSelectProfile);
   },
 
   // 等待ProfileManager初始化完成并加载数据
