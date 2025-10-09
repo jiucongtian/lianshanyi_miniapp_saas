@@ -141,8 +141,8 @@ Page({
    */
   handleProfileListRefresh() {
     console.log('收到档案列表刷新事件');
-    // 刷新档案列表
-    this.loadDataFromProfileManager();
+    // 刷新用户信息和档案列表
+    this.refreshUserInfoAndProfiles();
   },
 
   /**
@@ -717,8 +717,15 @@ Page({
         
         // 从本地列表中移除已删除的档案
         const updatedProfileList = this.data.profileList.filter(profile => profile._id !== profileId);
+        
+        // 更新已使用档案数量
+        const newUsedProfiles = Math.max(0, this.data.usedProfiles - 1);
+        const newCanCreateMore = this.data.profileQuota === -1 || newUsedProfiles < this.data.profileQuota;
+        
         this.setData({
-          profileList: updatedProfileList
+          profileList: updatedProfileList,
+          usedProfiles: newUsedProfiles,
+          canCreateMore: newCanCreateMore
         });
         
         // 如果删除的是当前选中的档案，需要重新选中
