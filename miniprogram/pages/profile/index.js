@@ -56,19 +56,13 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
-    // 获取全局当前选中的档案ID
-    const app = getApp();
-    const currentProfileId = app.globalData?.currentProfileId || null;
-    this.setData({ currentProfileId });
-    console.log('档案列表页面显示，当前选中档案ID:', currentProfileId);
+    console.log('档案列表页面显示');
     
-    // 检查是否有新添加的档案需要选中
-    const newlyAddedProfileId = app.globalData?.newlyAddedProfileId;
-    if (newlyAddedProfileId) {
-      console.log('检测到新添加的档案ID:', newlyAddedProfileId);
-      // 清除标记，避免重复处理
-      app.globalData.newlyAddedProfileId = null;
-    }
+    // 使用ProfileManager获取当前档案ID
+    const currentProfile = profileManager.getCurrentProfile();
+    const currentProfileId = currentProfile ? currentProfile._id : null;
+    this.setData({ currentProfileId });
+    console.log('当前选中档案ID:', currentProfileId);
     
     // 使用ProfileManager获取数据，避免重复请求
     this.loadDataFromProfileManager();
@@ -110,8 +104,15 @@ Page({
     
     // 处理待选中的档案
     if (this.data.pendingSelectProfileId) {
-      this.selectProfileById(this.data.pendingSelectProfileId);
-      this.setData({ pendingSelectProfileId: null });
+      const profileId = this.data.pendingSelectProfileId;
+      const selectedProfile = profileManager.getProfileById(profileId);
+      if (selectedProfile) {
+        profileManager.setCurrentProfile(selectedProfile);
+        this.setData({ 
+          currentProfileId: profileId,
+          pendingSelectProfileId: null 
+        });
+      }
     }
   },
 
@@ -121,7 +122,10 @@ Page({
   handleSelectProfile(data) {
     console.log('收到档案选中事件:', data);
     if (data && data.profileId) {
-      // 设置要选中的档案ID
+      // 使用ProfileManager设置当前档案
+      profileManager.setCurrentProfile(data.profileId);
+      
+      // 更新页面状态
       this.setData({ 
         currentProfileId: data.profileId,
         pendingSelectProfileId: data.profileId 
@@ -138,7 +142,7 @@ Page({
   handleProfileListRefresh() {
     console.log('收到档案列表刷新事件');
     // 刷新档案列表
-    this.loadProfileList();
+    this.loadDataFromProfileManager();
   },
 
   /**
@@ -298,11 +302,10 @@ Page({
 
       if (result.success) {
         // 使用ProfileManager管理档案数据
-        const app = getApp();
-        app.globalData.profileManager.initialize(result.data.profiles);
+        profileManager.initialize(result.data.profiles);
         
         // 获取ProfileBean实例列表
-        const profileBeans = app.globalData.profileManager.getProfileList();
+        const profileBeans = profileManager.getProfileList();
         
         this.setData({
           profileList: profileBeans,
@@ -338,7 +341,11 @@ Page({
    */
   async refreshProfileList() {
     try {
+      // 重新从云函数加载数据并更新ProfileManager
       await this.loadProfileList();
+      // 然后从ProfileManager获取最新数据
+      this.loadDataFromProfileManager();
+      
       wx.stopPullDownRefresh();
       wx.showToast({
         title: '刷新成功',
@@ -412,9 +419,7 @@ Page({
       return;
     }
 
-    const app = getApp();
     const currentProfileId = this.data.currentProfileId;
-    const newlyAddedProfileId = app.globalData?.newlyAddedProfileId;
     const pendingSelectProfileId = this.data.pendingSelectProfileId;
     
     // 优先处理待选中的档案（从其他页面传递过来的）
@@ -422,7 +427,7 @@ Page({
       const pendingProfile = profiles.find(profile => profile._id === pendingSelectProfileId);
       if (pendingProfile) {
         console.log('选中待选中的档案:', pendingProfile.profileName);
-        app.setCurrentProfile(pendingProfile);
+        profileManager.setCurrentProfile(pendingProfile);
         this.setData({ 
           currentProfileId: pendingProfile._id,
           pendingSelectProfileId: null // 清除待选中标记
@@ -431,19 +436,6 @@ Page({
       } else {
         // 如果待选中的档案不存在，清除标记
         this.setData({ pendingSelectProfileId: null });
-      }
-    }
-    
-    // 处理新添加的档案
-    if (newlyAddedProfileId) {
-      const newProfile = profiles.find(profile => profile._id === newlyAddedProfileId);
-      if (newProfile) {
-        console.log('选中新添加的档案:', newProfile.profileName);
-        app.setCurrentProfile(newProfile);
-        this.setData({ currentProfileId: newProfile._id });
-        // 清除新添加档案的标记
-        app.globalData.newlyAddedProfileId = null;
-        return;
       }
     }
     
@@ -468,9 +460,8 @@ Page({
     const firstProfile = profiles[0];
     console.log('自动选中第一个档案:', firstProfile._id, firstProfile.profileName);
     
-    // 设置到全局数据
-    const app = getApp();
-    app.setCurrentProfile(firstProfile);
+    // 使用ProfileManager设置当前档案
+    profileManager.setCurrentProfile(firstProfile);
     
     // 更新本地状态
     this.setData({ currentProfileId: firstProfile._id });
@@ -481,11 +472,8 @@ Page({
    */
   clearCurrentSelection() {
     console.log('清除当前选中状态');
-    const app = getApp();
-    if (app.globalData) {
-      app.globalData.currentProfileId = null;
-      app.globalData.currentProfile = null;
-    }
+    // 使用ProfileManager清除当前档案
+    profileManager.setCurrentProfile(null);
     this.setData({ currentProfileId: null });
   },
 
@@ -505,22 +493,6 @@ Page({
   },
 
 
-  /**
-   * 根据ID选中档案
-   */
-  selectProfileById(profileId) {
-    console.log('选中档案ID:', profileId);
-    const selectedProfile = profileManager.getProfileById(profileId);
-    
-    if (selectedProfile) {
-      const app = getApp();
-      app.setCurrentProfile(selectedProfile);
-      this.setData({ currentProfileId: profileId });
-      console.log('已选中档案:', selectedProfile.profileName);
-    } else {
-      console.log('未找到档案:', profileId);
-    }
-  },
 
   /**
    * 点击档案项
@@ -543,11 +515,10 @@ Page({
     
     console.log('找到档案数据:', selectedProfile);
     
-    // 设置当前档案
-    const app = getApp();
-    app.setCurrentProfile(selectedProfile);
+    // 使用ProfileManager设置当前档案
+    profileManager.setCurrentProfile(selectedProfile);
     this.setData({ currentProfileId: selectedProfile._id });
-    console.log('已设置全局当前档案ID:', selectedProfile._id);
+    console.log('已设置当前档案ID:', selectedProfile._id);
     
     // 跳转到卡牌页面显示档案的八字卡牌
     wx.switchTab({
