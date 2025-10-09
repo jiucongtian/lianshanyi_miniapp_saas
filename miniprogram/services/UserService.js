@@ -40,20 +40,15 @@ class UserService extends BaseService {
    * @returns {Promise<ResponseBean>} 配额信息响应
    */
   async checkQuota() {
-    console.log('[UserService] checkQuota 开始执行');
     try {
-      console.log('[UserService] 准备调用 callFunction');
       const response = await this.callFunction('userManagement', {
         action: 'checkUserQuota'
       });
-      console.log('[UserService] callFunction 返回结果:', response);
       
       this._logServiceCall('checkQuota', {}, response);
-      console.log('[UserService] checkQuota 准备返回结果:', response);
       return response;
     } catch (error) {
       console.error('[UserService] checkQuota 异常:', error);
-      console.log('[UserService] 创建错误 ResponseBean');
       return ResponseBean.error('检查用户配额失败: ' + error.message, -1);
     }
   }
@@ -138,24 +133,17 @@ class UserService extends BaseService {
    * @returns {Promise<ResponseBean>} 创建结果响应
    */
   async createUser(userData = {}) {
-    console.log('[UserService] createUser 开始执行，userData:', userData);
     try {
       // 如果传入了userData，则验证必需参数
       if (userData && Object.keys(userData).length > 0) {
-        console.log('[UserService] 开始验证必需参数');
         const validation = this._validateRequiredParams(
           { userData }, 
           ['userData']
         );
-        console.log('[UserService] 参数验证结果:', validation);
         
         if (!validation.valid) {
-          console.log('[UserService] 参数验证失败，缺失字段:', validation.missingFields);
           return this._createValidationError(validation.missingFields);
         }
-        console.log('[UserService] 参数验证通过');
-      } else {
-        console.log('[UserService] 使用默认参数创建用户');
       }
       
       const params = {
@@ -169,7 +157,6 @@ class UserService extends BaseService {
       
       // 如果创建成功，获取完整的用户信息
       if (response.success && response.data && response.data.userId) {
-        console.log('[UserService] 用户创建成功，获取完整用户信息');
         const userInfoResponse = await this.getUserInfo();
         if (userInfoResponse.success) {
           response.data = userInfoResponse.data; // 使用完整的用户信息
