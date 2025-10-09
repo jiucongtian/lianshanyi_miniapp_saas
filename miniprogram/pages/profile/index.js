@@ -250,16 +250,22 @@ Page({
       });
 
       if (result.success) {
-        const profiles = this.formatProfileList(result.data.profiles);
+        // 使用ProfileManager管理档案数据
+        const app = getApp();
+        app.globalData.profileManager.initialize(result.data.profiles);
+        
+        // 获取ProfileBean实例列表
+        const profileBeans = app.globalData.profileManager.getProfileList();
+        
         this.setData({
-          profileList: profiles,
+          profileList: profileBeans,
           page: 1,
           hasMore: result.data.hasMore,
           loading: false
         });
         
         // 加载完成后检查并设置默认选中
-        this.checkAndSetDefaultSelection(profiles);
+        this.checkAndSetDefaultSelection(profileBeans);
       } else {
         console.error('获取档案列表失败:', result.error);
         wx.showToast({
@@ -459,8 +465,10 @@ Page({
     const profileId = e.currentTarget.dataset.id;
     console.log('点击档案:', profileId);
     
-    // 从当前档案列表中找到点击的档案数据
-    const selectedProfile = this.data.profileList.find(profile => profile._id === profileId);
+    // 使用ProfileManager获取档案
+    const app = getApp();
+    const selectedProfile = app.globalData.profileManager.getProfileById(profileId);
+    
     if (!selectedProfile) {
       console.error('未找到档案数据:', profileId);
       wx.showToast({
@@ -472,14 +480,8 @@ Page({
     
     console.log('找到档案数据:', selectedProfile);
     
-    // 将完整的档案数据存储到全局数据中
-    const app = getApp();
-    if (!app.globalData) {
-      app.globalData = {};
-    }
-    
-    // 使用app的方法设置当前档案（这会自动处理所有相关数据）
-    app.setCurrentProfile(selectedProfile);
+    // 设置当前档案
+    app.globalData.profileManager.setCurrentProfile(selectedProfile);
     this.setData({ currentProfileId: selectedProfile._id });
     console.log('已设置全局当前档案ID:', selectedProfile._id);
     

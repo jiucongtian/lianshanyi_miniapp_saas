@@ -3,9 +3,9 @@ import config from './config/index';
 import Mock from './mock/index';
 const eventBus = require('./utils/eventBus');
 const { userManager } = require('./utils/userManager');
-const { convertProfileToCardData } = require('./utils/util');
 const { imageCacheManager } = require('./utils/imageCacheManager');
 const { profileService } = require('./services/index');
+const { profileManager } = require('./utils/profileManager');
 
 if (config.useMock) {
   Mock();
@@ -62,10 +62,9 @@ App({
   },
   globalData: {
     userInfo: null,
-    currentProfileId: null, // 当前选中的档案ID
-    currentProfileData: null, // 当前选中的档案完整数据
     profilesLoaded: false, // 标记档案是否已加载
     version: '1.1.0', // 客户端版本
+    profileManager: profileManager, // 全局档案管理器
   },
 
   /** 全局事件总线 */
@@ -252,15 +251,6 @@ App({
     console.log('App: 当前档案设置完成');
   },
 
-  /**
-   * 更新卡牌数据到全局变量
-   * @param {Object} profileData 档案数据
-   */
-  updateCardData(profileData) {
-    // 使用工具函数转换数据格式
-    this.globalData.cardData = convertProfileToCardData(profileData);
-    console.log('App: 卡牌数据已更新:', this.globalData.cardData);
-  },
 
   /**
    * 获取当前档案数据

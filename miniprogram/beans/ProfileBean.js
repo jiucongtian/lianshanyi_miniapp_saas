@@ -136,6 +136,55 @@ class ProfileBean {
       updateTime: this.updateTime
     };
   }
+
+  /**
+   * 转换为卡牌页面显示专用格式
+   * @returns {Object} 卡牌页面显示数据
+   */
+  toCardDisplayData() {
+    return {
+      profileId: this._id,
+      profileName: this.profileName,
+      originalTime: this.formatBirthTime(),
+      lunarTime: this.formatLunarTime(),
+      isUncertainTime: this.isUncertainTime,
+      baziData: this.convertBaziToCardFormat()
+    };
+  }
+
+  /**
+   * 将八字数据转换为卡牌显示格式
+   * @returns {Object} 卡牌显示格式的八字数据
+   */
+  convertBaziToCardFormat() {
+    if (!this.baziData) {
+      return {
+        yearPillar: { heavenlyStem: '', earthlyBranch: '' },
+        monthPillar: { heavenlyStem: '', earthlyBranch: '' },
+        dayPillar: { heavenlyStem: '', earthlyBranch: '' },
+        timePillar: { heavenlyStem: '', earthlyBranch: '' }
+      };
+    }
+
+    return {
+      yearPillar: {
+        heavenlyStem: this.baziData.year?.gan || '',
+        earthlyBranch: this.baziData.year?.zhi || ''
+      },
+      monthPillar: {
+        heavenlyStem: this.baziData.month?.gan || '',
+        earthlyBranch: this.baziData.month?.zhi || ''
+      },
+      dayPillar: {
+        heavenlyStem: this.baziData.day?.gan || '',
+        earthlyBranch: this.baziData.day?.zhi || ''
+      },
+      timePillar: {
+        heavenlyStem: this.baziData.hour?.gan || '',
+        earthlyBranch: this.baziData.hour?.zhi || ''
+      }
+    };
+  }
   
   /**
    * 格式化出生时间显示

@@ -903,12 +903,27 @@ Page({
         // API调用成功，跳转到卡牌页面
         wx.hideLoading();
         
-        // 构建卡牌数据并设置到全局变量
-        const cardData = this.buildCardDataFromBaziResult(baziResult, birthDate);
-        if (cardData) {
+        // 将新创建的档案添加到ProfileManager并设置为当前档案
+        if (baziResult.profileId) {
           const app = getApp();
-          app.globalData.cardData = cardData;
-          console.log('卡牌数据已设置到全局变量:', cardData);
+          const newProfile = {
+            _id: baziResult.profileId,
+            profileName: this.data.profileName,
+            birthDate: birthDate,
+            gender: this.data.gender,
+            baziData: baziResult.baziData,
+            isUncertainTime: this.data.isUncertainTime,
+            description: this.data.description,
+            createTime: new Date().getTime(),
+            updateTime: new Date().getTime(),
+            isActive: true
+          };
+          
+          // 添加到ProfileManager
+          app.globalData.profileManager.addProfile(newProfile);
+          // 设置为当前档案
+          app.globalData.profileManager.setCurrentProfile(baziResult.profileId);
+          console.log('新档案已添加到ProfileManager并设置为当前档案:', baziResult.profileId);
         }
         
         // 档案创建成功后，直接跳转到卡牌页面

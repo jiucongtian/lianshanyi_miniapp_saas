@@ -2,6 +2,7 @@
 const { getBaziImageById, getBaziImageByPinyin } = require('../../utils/baziImageMap');
 const { formatBirthTime, formatLunarTime } = require('../../utils/util');
 const { imageCacheManager } = require('../../utils/imageCacheManager');
+const { profileManager } = require('../../utils/profileManager');
 
 // 静态卡牌描述数据
 const cardDescriptions = [
@@ -140,38 +141,13 @@ Page({
     // 完全重新初始化所有数据和变量
     this.completeReinitialize();
     
-    const app = getApp();
-    
-    // 优先检查是否有当前档案数据
-    const currentProfileData = app.getCurrentProfile();
-    if (currentProfileData) {
-      console.log('onShow: 找到当前档案数据，转换为全局卡牌数据:', currentProfileData._id);
-      this.loadProfileData(currentProfileData);
-      return;
-    }
-    
-    // 检查全局数据中是否有临时卡牌数据（从其他页面跳转过来的）
-    const cardData = app.globalData?.cardData;
-    
-    console.log('onShow: cardData:', cardData);
-    
-    if (cardData) {
-      console.log('onShow: 从全局数据加载卡牌数据');
-      this.loadCardDataFromGlobal(cardData);
-      // 清除全局数据，避免重复使用
-      app.globalData.cardData = null;
+    // 统一使用ProfileManager获取当前档案
+    const currentProfile = profileManager.getCurrentProfile();
+    if (currentProfile) {
+      console.log('onShow: 从ProfileManager找到当前档案:', currentProfile.profileName);
+      this.loadProfileData(currentProfile);
     } else {
-      console.log('onShow: 没有卡牌数据，等待档案初始化或检查其他数据源');
-      // 如果档案还没有初始化完成，等待一下
-      if (!app.globalData.profilesLoaded) {
-        console.log('onShow: 档案尚未初始化完成，等待...');
-        setTimeout(() => {
-          this.onShow(); // 递归调用，等待档案初始化完成
-        }, 100);
-        return;
-      }
-      
-      // 没有数据，显示无数据状态
+      console.log('onShow: 没有当前档案，显示无数据状态');
       this.showNoDataState();
     }
   },
@@ -246,29 +222,20 @@ Page({
     console.log('loadProfileData 开始执行，profileData:', profileData);
     
     try {
-      // 将档案数据转换为全局卡牌数据格式
-      const { convertProfileToCardData } = require('../../utils/util');
-      const cardData = convertProfileToCardData(profileData);
+      // 确保传入的是ProfileBean实例
+      let profileBean;
+      if (profileData && typeof profileData.toCardDisplayData === 'function') {
+        // 已经是ProfileBean实例
+        profileBean = profileData;
+      } else {
+        // 如果是原始数据，先转换为ProfileBean
+        const { ProfileBean } = require('../../beans/ProfileBean');
+        profileBean = new ProfileBean(profileData);
+      }
       
-      // 更新全局卡牌数据
-      const app = getApp();
-      app.globalData.cardData = cardData;
+      // 直接使用ProfileBean的转换方法
+      const cardData = profileBean.toCardDisplayData();
       
-      // 统一使用全局卡牌数据加载
-      this.loadCardDataFromGlobal(cardData);
-      
-      console.log('从档案数据转换为全局卡牌数据并加载成功');
-    } catch (error) {
-      console.error('从档案数据加载卡牌显示失败:', error);
-      this.showNoDataState();
-    }
-  },
-
-  // 从全局数据加载卡牌数据
-  loadCardDataFromGlobal: function(cardData) {
-    console.log('loadCardDataFromGlobal 开始执行，cardData:', cardData);
-    
-    try {
       // 先设置isUncertainTime，确保updateBaziDisplay能获取到正确的值
       this.setData({
         isUncertainTime: Boolean(cardData.isUncertainTime)
@@ -281,19 +248,21 @@ Page({
       this.setData({
         isLoading: false,
         isDataLoaded: true,
-        currentProfileName: cardData.profileName || '生命智慧卡牌', // 更新档案名称
+        currentProfileName: cardData.profileName || '生命智慧卡牌',
         // 重置预览状态
         showImagePreview: false,
         previewImagePath: '',
         previewCardDescription: null
       });
       
-      console.log('从全局数据加载卡牌数据成功');
+      console.log('从档案数据加载卡牌显示成功');
     } catch (error) {
-      console.error('从全局数据加载卡牌数据失败:', error);
+      console.error('从档案数据加载卡牌显示失败:', error);
       this.showNoDataState();
     }
   },
+
+
 
   // 处理接收到的参数
   handleReceivedParams: function(options) {
@@ -321,12 +290,10 @@ Page({
         }
       }
       
-      // 在控制台输出详细信息
       console.log('八字页面参数详情:', {
         timestamp,
         formattedTime,
-        hasCozeData,
-        globalData: getApp().globalData?.baziResult
+        hasCozeData
       });
     }
   },
@@ -618,33 +585,6 @@ Page({
     };
   },
 
-  // 更新八字图片
-  updateBaziImages: function(data) {
-    this.setData({
-      yearPillar: { 
-        heavenlyStem: data.yearPillar.heavenlyStem,
-        earthlyBranch: data.yearPillar.earthlyBranch,
-        imagePath: this.getBaziImagePath(data.yearPillar.heavenlyStem, data.yearPillar.earthlyBranch)
-      },
-      monthPillar: {
-        heavenlyStem: data.monthPillar.heavenlyStem,
-        earthlyBranch: data.monthPillar.earthlyBranch,
-        imagePath: this.getBaziImagePath(data.monthPillar.heavenlyStem, data.monthPillar.earthlyBranch)
-      },
-      dayPillar: {
-        heavenlyStem: data.dayPillar.heavenlyStem,
-        earthlyBranch: data.dayPillar.earthlyBranch,
-        imagePath: this.getBaziImagePath(data.dayPillar.heavenlyStem, data.dayPillar.earthlyBranch)
-      },
-      timePillar: {
-        heavenlyStem: data.timePillar.heavenlyStem,
-        earthlyBranch: data.timePillar.earthlyBranch,
-        imagePath: this.getBaziImagePath(data.timePillar.heavenlyStem, data.timePillar.earthlyBranch)
-      },
-      originalTime: data.originalTime,
-      lunarTime: data.lunarTime
-    });
-  },
 
   // 卡牌点击事件 - 只能从背面翻到正面，禁止从正面翻回背面
   onCardTap: function(e) {
