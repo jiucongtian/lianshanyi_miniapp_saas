@@ -132,6 +132,8 @@ Page({
     // 监听ProfileManager初始化完成事件
     const eventBus = require('../../utils/eventBus');
     eventBus.on('profileManagerReady', this.onProfileManagerReady.bind(this));
+    // 监听档案选中事件
+    eventBus.on('selectProfile', this.handleSelectProfile.bind(this));
   },
 
   onReady: function() {
@@ -147,6 +149,14 @@ Page({
     
     // 等待ProfileManager初始化完成后再获取当前档案
     this.waitForProfileManagerAndLoad();
+  },
+
+  onUnload: function() {
+    console.log('卡牌页面卸载，清理事件监听');
+    // 清理事件监听
+    const eventBus = require('../../utils/eventBus');
+    eventBus.off('profileManagerReady', this.onProfileManagerReady);
+    eventBus.off('selectProfile', this.handleSelectProfile);
   },
 
   // 等待ProfileManager初始化完成并加载数据
@@ -170,6 +180,15 @@ Page({
   onProfileManagerReady: function() {
     console.log('收到ProfileManager初始化完成事件');
     this.loadCurrentProfile();
+  },
+
+  // 处理档案选中事件
+  handleSelectProfile: function(data) {
+    console.log('卡牌页面收到档案选中事件:', data);
+    if (data && data.profileId) {
+      // 重新加载当前档案
+      this.loadCurrentProfile();
+    }
   },
 
   // 加载当前档案数据

@@ -41,6 +41,8 @@ Page({
     
     // 监听档案选中事件
     eventBus.on('selectProfile', this.handleSelectProfile.bind(this));
+    // 监听档案列表刷新事件
+    eventBus.on('profileListRefresh', this.handleProfileListRefresh.bind(this));
   },
 
   /**
@@ -131,11 +133,21 @@ Page({
   },
 
   /**
+   * 处理档案列表刷新事件
+   */
+  handleProfileListRefresh() {
+    console.log('收到档案列表刷新事件');
+    // 刷新档案列表
+    this.loadProfileList();
+  },
+
+  /**
    * 生命周期函数--监听页面卸载
    */
   onUnload() {
     // 清理事件监听
     eventBus.off('selectProfile', this.handleSelectProfile);
+    eventBus.off('profileListRefresh', this.handleProfileListRefresh);
   },
 
   /**

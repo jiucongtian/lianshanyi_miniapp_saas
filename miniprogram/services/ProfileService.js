@@ -104,7 +104,16 @@ class ProfileService extends BaseService {
       
       // 成功时将data转换为ProfileBean
       if (response.success && response.data) {
-        response.data = new ProfileBean(response.data);
+        // 对于createProfile，需要特殊处理，因为返回的是 { profileId, profile }
+        if (response.data.profile) {
+          // 创建档案时，使用profile字段的数据创建ProfileBean
+          console.log('[ProfileService] createProfile 原始profile数据:', response.data.profile);
+          response.data.profile = new ProfileBean(response.data.profile);
+          console.log('[ProfileService] createProfile ProfileBean创建完成');
+        } else {
+          // 其他情况，直接转换data
+          response.data = new ProfileBean(response.data);
+        }
       }
       
       return response;

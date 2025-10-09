@@ -888,9 +888,10 @@ Page({
         };
         
         // 保存到云端档案（非调试模式）
+        let savedProfile = null;
         if (!isDebugMode) {
           const profileData = this.buildProfileFromBaziResult(baziResult, birthDate);
-          const savedProfile = await this.saveBaziProfile(profileData);
+          savedProfile = await this.saveBaziProfile(profileData);
           if (savedProfile) {
             baziResult.profileId = savedProfile.profileId;
             
@@ -909,23 +910,12 @@ Page({
         wx.hideLoading();
         
         // 将新创建的档案添加到ProfileManager并设置为当前档案
-        if (baziResult.profileId) {
+        if (baziResult.profileId && savedProfile && savedProfile.profile) {
           const app = getApp();
-          const newProfile = {
-            _id: baziResult.profileId,
-            profileName: this.data.profileName,
-            birthDate: birthDate,
-            gender: this.data.gender,
-            baziData: baziResult.baziData,
-            isUncertainTime: this.data.isUncertainTime,
-            description: this.data.description,
-            createTime: new Date().getTime(),
-            updateTime: new Date().getTime(),
-            isActive: true
-          };
           
-          // 添加到ProfileManager
-          app.globalData.profileManager.addProfile(newProfile);
+          console.log('[addProfile] 准备添加到ProfileManager的数据:', savedProfile.profile);
+          // 添加到ProfileManager（使用云函数返回的完整档案数据）
+          app.globalData.profileManager.addProfile(savedProfile.profile);
           // 设置为当前档案
           app.globalData.profileManager.setCurrentProfile(baziResult.profileId);
           console.log('新档案已添加到ProfileManager并设置为当前档案:', baziResult.profileId);
@@ -949,8 +939,8 @@ Page({
               eventBus.emit('selectProfile', {
                 profileId: baziResult.profileId
               });
-              // 触发档案创建事件
-              eventBus.emit('profileCreated', baziResult);
+              // 触发档案列表刷新事件
+              eventBus.emit('profileListRefresh');
             }
           },
           fail: (error) => {

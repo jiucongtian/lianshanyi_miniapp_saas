@@ -230,7 +230,10 @@ async function createProfile(wxContext, profileData) {
       message: '档案创建成功',
       data: {
         profileId: result._id,
-        profile: profileDoc
+        profile: {
+          ...profileDoc,
+          _id: result._id
+        }
       }
     }
   } catch (error) {
