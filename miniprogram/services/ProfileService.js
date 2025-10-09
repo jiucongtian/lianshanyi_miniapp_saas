@@ -136,7 +136,7 @@ class ProfileService extends BaseService {
         action: 'updateProfile',
         data: {
           profileId,
-          updateData
+          ...updateData
         }
       };
       

@@ -16,7 +16,7 @@ class VersionManager {
     '1.1.0': {
       calculateBazi: 'v1_1',
       userManagement: 'v1_0',
-      profileManagement: 'v1_0'
+      profileManagement: 'v1_1'
     }
   };
   

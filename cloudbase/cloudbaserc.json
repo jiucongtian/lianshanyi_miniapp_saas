@@ -36,6 +36,12 @@
       "timeout": 10,
       "runtime": "Nodejs16.13",
       "memorySize": 256
+    },
+    {
+      "name": "profileManagement_v1_1",
+      "timeout": 10,
+      "runtime": "Nodejs16.13",
+      "memorySize": 256
     }
   ]
 }

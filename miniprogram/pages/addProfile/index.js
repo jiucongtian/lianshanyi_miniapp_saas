@@ -370,40 +370,27 @@ Page({
       // 直接使用云函数返回的档案格式八字数据
       const baziData = baziResult.data.baziData;
 
-      // 调用云函数更新档案
-      const result = await wx.cloud.callFunction({
-        name: 'profileManagement',
-        data: {
-          action: 'updateProfile',
-          data: {
-            profileId: this.data.editingProfileId,
-            profileName: this.data.formData.name.trim(),
-            birthDate: birthDate,
-            baziData: baziData,
-            gender: this.data.formData.gender,
-            isUncertainTime: this.data.isUncertainTime
-          }
-        }
-      });
+      // 使用ProfileService更新档案
+      const updateData = {
+        profileName: this.data.formData.name.trim(),
+        birthDate: birthDate,
+        baziData: baziData,
+        gender: this.data.formData.gender,
+        isUncertainTime: this.data.isUncertainTime
+      };
+      
+      const result = await profileService.updateProfile(this.data.editingProfileId, updateData);
 
       wx.hideLoading();
 
-      if (result.result.success) {
+      if (result.success) {
         console.log('档案更新成功');
         
         // 更新全局当前档案数据（如果更新的是当前选中的档案）
         const app = getApp();
         if (app.globalData?.currentProfileId === this.data.editingProfileId) {
-          // 构建更新后的档案数据
-          const updatedProfile = {
-            _id: this.data.editingProfileId,
-            profileName: this.data.formData.name.trim(),
-            birthDate: birthDate,
-            baziData: baziData,
-            gender: this.data.formData.gender,
-            isUncertainTime: this.data.isUncertainTime,
-            updateTime: new Date()
-          };
+          // 使用ProfileService返回的ProfileBean数据（v1.1版本返回完整档案数据）
+          const updatedProfile = result.data.toObject();
           app.setCurrentProfile(updatedProfile);
         }
         
@@ -446,12 +433,12 @@ Page({
           }
         }, 1500);
       } else {
-        console.error('更新信息失败:', result.result.error);
+        console.error('更新信息失败:', result.error);
         Message.error({
           context: this,
           offset: [120, 32],
           duration: 3000,
-          content: result.result.error || '更新失败，请重试',
+          content: result.error || '更新失败，请重试',
         });
       }
     } catch (error) {

@@ -61,9 +61,15 @@ const formatDateTime = (timestamp) => {
  * @returns {string} 格式化的生日时间字符串
  */
 const formatBirthTime = (birthDate) => {
-  const minute = birthDate.minute || 0;
-  const minuteStr = minute < 10 ? `0${minute}` : `${minute}`;
-  return `${birthDate.year}年${birthDate.month}月${birthDate.day}日 ${birthDate.hour}:${minuteStr}`;
+  if (!birthDate || !birthDate.year) {
+    return '未知';
+  }
+  
+  const { year, month, day, hour, minute } = birthDate;
+  const minuteStr = `:${minute.toString().padStart(2, '0')}`;
+  const hourStr = ` ${hour.toString().padStart(2, '0')}${minuteStr}`;
+  
+  return `${year}年${month}月${day}日${hourStr}`;
 };
 
 /**

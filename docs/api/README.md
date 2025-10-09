@@ -12,6 +12,7 @@
 | 生辰八字计算云函数 | [calculateBazi_v1_1-api.md](./calculateBazi_v1_1-api.md) | ✅ 已完成 | 云函数版本的生辰八字计算接口 |
 | 用户管理 | [userManagement-api.md](./userManagement-api.md) | ✅ 已完成 | 用户注册、信息获取和更新功能 |
 | 档案管理 | [profileManagement-api.md](./profileManagement-api.md) | ✅ 已完成 | 八字档案的增删改查功能 |
+| 档案管理 v1.1 | [profileManagement_v1_1-api.md](./profileManagement_v1_1-api.md) | ✅ 已完成 | 档案管理增强版，updateProfile返回完整数据 |
 
 ### 待添加接口
 

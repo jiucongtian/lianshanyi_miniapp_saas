@@ -9,8 +9,21 @@ class ProfileBean {
     this.userId = data.userId || '';
     this.openid = data.openid || '';
     this.profileName = data.profileName || '';
-    this.birthDate = data.birthDate || {};
-    this.baziData = data.baziData || {};
+    this.birthDate = {
+      year: data.birthDate?.year || 0,
+      month: data.birthDate?.month || 0,
+      day: data.birthDate?.day || 0,
+      hour: data.birthDate?.hour || 0,
+      minute: data.birthDate?.minute || 0,
+      isLunar: data.birthDate?.isLunar || false
+    };
+    this.baziData = {
+      year: data.baziData?.year || { gan: '', zhi: '', ganzhiIndex: 0 },
+      month: data.baziData?.month || { gan: '', zhi: '', ganzhiIndex: 0 },
+      day: data.baziData?.day || { gan: '', zhi: '', ganzhiIndex: 0 },
+      hour: data.baziData?.hour || { gan: '', zhi: '', ganzhiIndex: 0 },
+      lunarDate: data.baziData?.lunarDate || null
+    };
     this.gender = data.gender || 0;
     this.isUncertainTime = data.isUncertainTime || false;
     this.description = data.description || '';
@@ -134,8 +147,8 @@ class ProfileBean {
     }
     
     const { year, month, day, hour, minute } = this.birthDate;
-    const minuteStr = minute !== undefined ? `:${minute.toString().padStart(2, '0')}` : '';
-    const hourStr = hour !== undefined ? ` ${hour.toString().padStart(2, '0')}${minuteStr}` : '';
+    const minuteStr = `:${minute.toString().padStart(2, '0')}`;
+    const hourStr = ` ${hour.toString().padStart(2, '0')}${minuteStr}`;
     
     return `${year}年${month}月${day}日${hourStr}`;
   }
