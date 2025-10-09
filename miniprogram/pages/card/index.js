@@ -128,6 +128,10 @@ Page({
     
     // 处理传递过来的参数
     this.handleReceivedParams(options);
+    
+    // 监听ProfileManager初始化完成事件
+    const eventBus = require('../../utils/eventBus');
+    eventBus.on('profileManagerReady', this.onProfileManagerReady.bind(this));
   },
 
   onReady: function() {
@@ -141,13 +145,41 @@ Page({
     // 完全重新初始化所有数据和变量
     this.completeReinitialize();
     
-    // 统一使用ProfileManager获取当前档案
+    // 等待ProfileManager初始化完成后再获取当前档案
+    this.waitForProfileManagerAndLoad();
+  },
+
+  // 等待ProfileManager初始化完成并加载数据
+  waitForProfileManagerAndLoad: function() {
+    console.log('等待ProfileManager初始化完成...');
+    
+    // 检查ProfileManager是否已初始化
+    if (!profileManager.isReady()) {
+      console.log('ProfileManager未初始化，500ms后重试');
+      setTimeout(() => {
+        this.waitForProfileManagerAndLoad();
+      }, 500);
+      return;
+    }
+    
+    // ProfileManager已初始化，获取当前档案
+    this.loadCurrentProfile();
+  },
+
+  // ProfileManager初始化完成事件处理
+  onProfileManagerReady: function() {
+    console.log('收到ProfileManager初始化完成事件');
+    this.loadCurrentProfile();
+  },
+
+  // 加载当前档案数据
+  loadCurrentProfile: function() {
     const currentProfile = profileManager.getCurrentProfile();
     if (currentProfile) {
-      console.log('onShow: 从ProfileManager找到当前档案:', currentProfile.profileName);
+      console.log('从ProfileManager找到当前档案:', currentProfile.profileName);
       this.loadProfileData(currentProfile);
     } else {
-      console.log('onShow: 没有当前档案，显示无数据状态');
+      console.log('没有当前档案，显示无数据状态');
       this.showNoDataState();
     }
   },

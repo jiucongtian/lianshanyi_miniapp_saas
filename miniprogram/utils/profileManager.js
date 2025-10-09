@@ -77,10 +77,23 @@ class ProfileManager {
 
   /**
    * 获取当前档案
+   * 如果没有当前档案，则返回profile列表的第一个档案
    * @returns {ProfileBean|null} 当前档案实例
    */
   getCurrentProfile() {
-    return this.currentProfile;
+    // 如果有当前档案，直接返回
+    if (this.currentProfile) {
+      return this.currentProfile;
+    }
+    
+    // 如果没有当前档案，返回列表中的第一个档案
+    if (this.profileList.length > 0) {
+      console.log('[ProfileManager] 没有当前档案，返回第一个档案:', this.profileList[0].profileName);
+      return this.profileList[0];
+    }
+    
+    // 如果列表为空，返回null
+    return null;
   }
 
   /**

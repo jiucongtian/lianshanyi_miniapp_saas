@@ -423,6 +423,11 @@ Page({
                   eventBus.emit('selectProfile', {
                     profileId: this.data.editingProfileId
                   });
+                  // 触发档案更新事件
+                  eventBus.emit('profileUpdated', {
+                    profileId: this.data.editingProfileId,
+                    updateData: this.data.profileData
+                  });
                 }
               });
             } else {
@@ -944,6 +949,8 @@ Page({
               eventBus.emit('selectProfile', {
                 profileId: baziResult.profileId
               });
+              // 触发档案创建事件
+              eventBus.emit('profileCreated', baziResult);
             }
           },
           fail: (error) => {

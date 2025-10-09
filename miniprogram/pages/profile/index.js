@@ -3,6 +3,7 @@ const { formatBirthTime, formatLunarTime, convertProfileToCardData } = require('
 const { userManager } = require('../../utils/userManager');
 const { permissionManager, USER_TYPES } = require('../../utils/permissionManager');
 const { profileService, userService } = require('../../services/index');
+const { profileManager } = require('../../utils/profileManager');
 const eventBus = require('../../utils/eventBus');
 
 Page({
@@ -67,8 +68,8 @@ Page({
       app.globalData.newlyAddedProfileId = null;
     }
     
-    // 每次显示页面时刷新数据，以防从其他页面返回时数据有更新
-    this.refreshUserInfoAndProfiles();
+    // 使用ProfileManager获取数据，避免重复请求
+    this.loadDataFromProfileManager();
   },
 
   /**
@@ -76,6 +77,40 @@ Page({
    */
   onHide() {
 
+  },
+
+  /**
+   * 从ProfileManager加载数据
+   */
+  loadDataFromProfileManager() {
+    console.log('从ProfileManager加载档案数据');
+    
+    // 检查ProfileManager是否已初始化
+    if (!profileManager.isReady()) {
+      console.log('ProfileManager未初始化，等待初始化完成');
+      // 如果ProfileManager未初始化，等待一段时间后重试
+      setTimeout(() => {
+        this.loadDataFromProfileManager();
+      }, 500);
+      return;
+    }
+    
+    // 从ProfileManager获取档案列表
+    const profileList = profileManager.getProfileList();
+    console.log('从ProfileManager获取到档案列表，数量:', profileList.length);
+    
+    // 更新页面数据
+    this.setData({
+      profileList: profileList,
+      loading: false,
+      hasMore: false // ProfileManager中已包含所有数据
+    });
+    
+    // 处理待选中的档案
+    if (this.data.pendingSelectProfileId) {
+      this.selectProfileById(this.data.pendingSelectProfileId);
+      this.setData({ pendingSelectProfileId: null });
+    }
   },
 
   /**
@@ -90,8 +125,8 @@ Page({
         pendingSelectProfileId: data.profileId 
       });
       
-      // 刷新档案列表，刷新完成后会自动选中指定档案
-      this.refreshUserInfoAndProfiles();
+      // 从ProfileManager加载数据
+      this.loadDataFromProfileManager();
     }
   },
 
@@ -459,6 +494,23 @@ Page({
 
 
   /**
+   * 根据ID选中档案
+   */
+  selectProfileById(profileId) {
+    console.log('选中档案ID:', profileId);
+    const selectedProfile = profileManager.getProfileById(profileId);
+    
+    if (selectedProfile) {
+      const app = getApp();
+      app.setCurrentProfile(selectedProfile);
+      this.setData({ currentProfileId: profileId });
+      console.log('已选中档案:', selectedProfile.profileName);
+    } else {
+      console.log('未找到档案:', profileId);
+    }
+  },
+
+  /**
    * 点击档案项
    */
   onProfileTap(e) {
@@ -466,8 +518,7 @@ Page({
     console.log('点击档案:', profileId);
     
     // 使用ProfileManager获取档案
-    const app = getApp();
-    const selectedProfile = app.globalData.profileManager.getProfileById(profileId);
+    const selectedProfile = profileManager.getProfileById(profileId);
     
     if (!selectedProfile) {
       console.error('未找到档案数据:', profileId);
@@ -481,7 +532,8 @@ Page({
     console.log('找到档案数据:', selectedProfile);
     
     // 设置当前档案
-    app.globalData.profileManager.setCurrentProfile(selectedProfile);
+    const app = getApp();
+    app.setCurrentProfile(selectedProfile);
     this.setData({ currentProfileId: selectedProfile._id });
     console.log('已设置全局当前档案ID:', selectedProfile._id);
     
@@ -677,6 +729,9 @@ Page({
       if (result.success) {
         console.log('档案删除成功:', profileId);
         
+        // 从ProfileManager中移除档案
+        profileManager.removeProfile(profileId);
+        
         // 从本地列表中移除已删除的档案
         const updatedProfileList = this.data.profileList.filter(profile => profile._id !== profileId);
         this.setData({
@@ -687,6 +742,9 @@ Page({
         if (this.data.currentProfileId === profileId) {
           this.handleDeletedCurrentProfile(updatedProfileList);
         }
+        
+        // 触发档案删除事件
+        eventBus.emit('profileDeleted', profileId);
         
         wx.showToast({
           title: '删除成功',

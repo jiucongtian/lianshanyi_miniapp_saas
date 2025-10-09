@@ -33,6 +33,9 @@ App({
     // 初始化档案数据
     this.initProfileData();
     
+    // 设置事件监听
+    this.setupEventListeners();
+    
     // 清理过期的图片缓存
     this.cleanExpiredImageCache();
 
@@ -136,11 +139,14 @@ App({
 
   /**
    * 初始化档案数据
-   * 检查是否有已保存的当前档案，如果没有则获取档案列表并选择第一个
+   * 立即获取完整的profile列表并初始化ProfileManager
    */
   async initProfileData() {
     try {
       console.log('App: 开始初始化档案数据...');
+      
+      // 获取完整的profile列表
+      await this.loadAllProfiles();
       
       // 从本地存储获取已保存的当前档案ID
       const savedProfileId = wx.getStorageSync('currentProfileId');
@@ -149,11 +155,18 @@ App({
         console.log('App: 找到已保存的档案ID:', savedProfileId);
         this.globalData.currentProfileId = savedProfileId;
         
-        // 获取该档案的详细数据
-        await this.loadProfileData(savedProfileId);
+        // 从ProfileManager中获取该档案
+        const savedProfile = profileManager.getProfileById(savedProfileId);
+        if (savedProfile) {
+          console.log('App: 从ProfileManager找到已保存的档案');
+          this.setCurrentProfile(savedProfile);
+        } else {
+          console.log('App: ProfileManager中未找到已保存的档案，选择第一个档案');
+          await this.selectFirstProfile();
+        }
       } else {
-        console.log('App: 未找到已保存的档案ID，开始获取档案列表...');
-        await this.loadFirstProfile();
+        console.log('App: 未找到已保存的档案ID，选择第一个档案');
+        await this.selectFirstProfile();
       }
       
     } catch (error) {
@@ -162,20 +175,52 @@ App({
   },
 
   /**
-   * 获取档案列表并选择第一个档案
+   * 获取完整的profile列表并初始化ProfileManager
    */
-  async loadFirstProfile() {
+  async loadAllProfiles() {
     try {
-      console.log('App: 开始获取档案列表...');
+      console.log('App: 开始获取完整档案列表...');
       
       const result = await profileService.getProfiles({
         page: 1,
-        limit: 1 // 只获取第一个档案
+        limit: 100 // 获取所有档案
       });
 
-      if (result.success && result.data.profiles.length > 0) {
-        const firstProfile = result.data.profiles[0];
-        console.log('App: 找到第一个档案:', firstProfile._id);
+      if (result.success) {
+        const profiles = result.data.profiles || [];
+        console.log('App: 获取到档案列表，数量:', profiles.length);
+        
+        // 初始化ProfileManager
+        profileManager.initialize(profiles);
+        
+        console.log('App: ProfileManager初始化完成');
+        
+        // 触发ProfileManager初始化完成事件
+        this.eventBus.emit('profileManagerReady');
+      } else {
+        console.log('App: 获取档案列表失败，初始化空的ProfileManager');
+        profileManager.initialize([]);
+      }
+      
+      this.globalData.profilesLoaded = true;
+      
+    } catch (error) {
+      console.error('App: 获取档案列表失败:', error);
+      profileManager.initialize([]);
+      this.globalData.profilesLoaded = true;
+    }
+  },
+
+  /**
+   * 从ProfileManager中选择第一个档案
+   */
+  async selectFirstProfile() {
+    try {
+      const profileList = profileManager.getProfileList();
+      
+      if (profileList.length > 0) {
+        const firstProfile = profileList[0];
+        console.log('App: 选择第一个档案:', firstProfile._id);
         
         // 设置为当前档案
         this.setCurrentProfile(firstProfile);
@@ -185,49 +230,28 @@ App({
         console.log('App: 未找到任何档案，用户需要创建第一个档案');
       }
       
-      this.globalData.profilesLoaded = true;
-      
     } catch (error) {
-      console.error('App: 获取档案列表失败:', error);
-      this.globalData.profilesLoaded = true;
+      console.error('App: 选择第一个档案失败:', error);
     }
   },
 
   /**
-   * 加载指定档案的详细数据
-   * @param {string} profileId 档案ID
+   * 刷新ProfileManager数据
+   * 当有档案增删改操作时调用
    */
-  async loadProfileData(profileId) {
+  async refreshProfileManager() {
     try {
-      console.log('App: 开始加载档案详细数据:', profileId);
-      
-      const result = await profileService.getProfile(profileId);
-
-      if (result.success) {
-        const profileData = result.data;
-        console.log('App: 档案数据加载成功:', profileData);
-        
-        // 设置为当前档案
-        this.setCurrentProfile(profileData);
-      } else {
-        console.error('App: 档案数据加载失败:', result.error);
-        // 如果档案不存在，清除保存的ID并重新获取第一个档案
-        wx.removeStorageSync('currentProfileId');
-        this.globalData.currentProfileId = null;
-        await this.loadFirstProfile();
-      }
-      
-      this.globalData.profilesLoaded = true;
-      
+      console.log('App: 开始刷新ProfileManager数据...');
+      await this.loadAllProfiles();
+      console.log('App: ProfileManager数据刷新完成');
     } catch (error) {
-      console.error('App: 加载档案详细数据失败:', error);
-      this.globalData.profilesLoaded = true;
+      console.error('App: 刷新ProfileManager数据失败:', error);
     }
   },
 
   /**
    * 设置当前档案
-   * @param {Object} profileData 档案数据
+   * @param {Object|ProfileBean} profileData 档案数据
    */
   setCurrentProfile(profileData) {
     console.log('App: 设置当前档案:', profileData._id);
@@ -239,8 +263,8 @@ App({
     // 保存到本地存储
     wx.setStorageSync('currentProfileId', profileData._id);
     
-    // 构建卡牌页面需要的数据格式
-    this.updateCardData(profileData);
+    // 设置ProfileManager的当前档案
+    profileManager.setCurrentProfile(profileData);
     
     // 触发档案更新事件
     this.eventBus.emit('profileUpdated', {
@@ -298,6 +322,32 @@ App({
    */
   getImageCacheStats() {
     return imageCacheManager.getCacheStats();
+  },
+
+  /**
+   * 设置事件监听
+   */
+  setupEventListeners() {
+    // 监听档案创建事件
+    this.eventBus.on('profileCreated', (profileData) => {
+      console.log('App: 监听到档案创建事件');
+      this.refreshProfileManager();
+    });
+    
+    // 监听档案更新事件
+    this.eventBus.on('profileUpdated', (data) => {
+      console.log('App: 监听到档案更新事件');
+      // 更新ProfileManager中的档案数据
+      if (data.profileId && data.updateData) {
+        profileManager.updateProfile(data.profileId, data.updateData);
+      }
+    });
+    
+    // 监听档案删除事件
+    this.eventBus.on('profileDeleted', (profileId) => {
+      console.log('App: 监听到档案删除事件');
+      this.refreshProfileManager();
+    });
   },
 
   /**
