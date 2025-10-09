@@ -21,9 +21,10 @@ POST（云函数调用）
 ## 版本更新说明
 
 ### v1.1 更新内容
-- **updateProfile 方法增强**：现在返回更新后的完整档案数据
-- **数据一致性提升**：所有操作都返回完整的档案信息
-- **客户端简化**：减少客户端手动构建档案对象的复杂度
+- **createProfile 方法增强**：现在返回完整的ProfileBean数据，包含所有字段
+- **updateProfile 方法增强**：现在返回更新后的完整ProfileBean数据
+- **数据一致性提升**：所有操作都返回完整的档案信息，客户端可直接使用
+- **客户端简化**：减少客户端手动构建档案对象的复杂度，直接使用云函数返回的数据
 
 ## API列表
 
@@ -95,7 +96,46 @@ POST（云函数调用）
   "data": {
     "profileId": "profile_60a1b2c3d4e5f6789abcdef1",
     "profile": {
-      // 完整的档案数据
+      "_id": "profile_60a1b2c3d4e5f6789abcdef1",
+      "userId": "user_60a1b2c3d4e5f6789abcdef1",
+      "openid": "o1234567890abcdef",
+      "profileName": "我的生辰八字",
+      "birthDate": {
+        "year": 1990,
+        "month": 5,
+        "day": 15,
+        "hour": 14,
+        "minute": 30,
+        "isLunar": false
+      },
+      "baziData": {
+        "year": {
+          "gan": "庚",
+          "zhi": "午",
+          "ganzhiIndex": 7
+        },
+        "month": {
+          "gan": "辛",
+          "zhi": "巳",
+          "ganzhiIndex": 18
+        },
+        "day": {
+          "gan": "甲",
+          "zhi": "戌",
+          "ganzhiIndex": 11
+        },
+        "hour": {
+          "gan": "辛",
+          "zhi": "未",
+          "ganzhiIndex": 8
+        }
+      },
+      "gender": 1,
+      "isUncertainTime": false,
+      "description": "本人生辰八字档案",
+      "createTime": "2023-09-14T08:00:00.000Z",
+      "updateTime": "2023-09-14T08:00:00.000Z",
+      "isActive": true
     }
   }
 }
@@ -346,6 +386,14 @@ const createResult = await wx.cloud.callFunction({
   }
 });
 
+// 使用创建后的完整ProfileBean数据
+if (createResult.result.success) {
+  const newProfile = createResult.result.data.profile; // 完整的ProfileBean数据
+  console.log('新创建的档案:', newProfile);
+  // 可以直接添加到ProfileManager
+  profileManager.addProfile(newProfile);
+}
+
 // 更新档案（v1.1增强）
 const updateResult = await wx.cloud.callFunction({
   name: 'profileManagement_v1_1',
@@ -358,10 +406,12 @@ const updateResult = await wx.cloud.callFunction({
   }
 });
 
-// 获取更新后的完整档案数据
+// 使用更新后的完整ProfileBean数据
 if (updateResult.result.success) {
-  const updatedProfile = updateResult.result.data; // 完整的档案数据
+  const updatedProfile = updateResult.result.data; // 完整的ProfileBean数据
   console.log('更新后的档案:', updatedProfile);
+  // 可以直接更新ProfileManager
+  profileManager.updateProfile(updatedProfile._id, updatedProfile);
 }
 ```
 
@@ -372,13 +422,16 @@ if (updateResult.result.success) {
 4. 档案数据包含完整的生辰八字信息
 5. 建议单个用户档案数量控制在100个以内
 6. 分页查询避免一次性加载过多数据
-7. **v1.1版本**：updateProfile现在返回完整的更新后档案数据，便于客户端直接使用
+7. **v1.1版本**：createProfile和updateProfile现在返回完整的ProfileBean数据，客户端可直接使用
+8. **ProfileBean数据**：云函数返回的数据已包含所有必要字段，无需客户端重新构建
+9. **性能优化**：客户端可直接使用返回的ProfileBean数据更新ProfileManager，避免重复计算
 
 ## 版本历史
 
 ### v1.1 (2024-01-XX)
-- **新增功能**：updateProfile方法现在返回更新后的完整档案数据
+- **新增功能**：createProfile和updateProfile方法现在返回完整的ProfileBean数据
 - **改进**：提升数据一致性，简化客户端处理逻辑
+- **性能优化**：客户端可直接使用云函数返回的数据，避免重复计算和构建
 - **兼容性**：与v1.0版本完全兼容，仅增强功能
 
 ### v1.0 (2023-09-14)

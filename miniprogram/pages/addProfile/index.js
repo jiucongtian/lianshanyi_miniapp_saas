@@ -386,11 +386,16 @@ Page({
       if (result.success) {
         console.log('档案更新成功');
         
+        // 更新ProfileManager中的档案数据
+        const { profileManager } = require('../../utils/profileManager');
+        // 直接使用云函数返回的完整ProfileBean数据
+        const updatedProfile = result.data;
+        profileManager.updateProfile(this.data.editingProfileId, updatedProfile);
+        console.log('ProfileManager中的档案已更新:', this.data.editingProfileId);
+        
         // 更新全局当前档案数据（如果更新的是当前选中的档案）
         const app = getApp();
         if (app.globalData?.currentProfileId === this.data.editingProfileId) {
-          // 使用ProfileService返回的ProfileBean数据（v1.1版本返回完整档案数据）
-          const updatedProfile = result.data.toObject();
           app.setCurrentProfile(updatedProfile);
         }
         
@@ -418,16 +423,13 @@ Page({
               // 返回档案页面时传递档案ID
               wx.navigateBack({
                 success: () => {
-                  // 通过事件总线通知档案页面选中指定档案
+                  // 通过事件总线通知档案页面选中指定档案并刷新数据
                   const eventBus = require('../../utils/eventBus');
                   eventBus.emit('selectProfile', {
                     profileId: this.data.editingProfileId
                   });
-                  // 触发档案更新事件
-                  eventBus.emit('profileUpdated', {
-                    profileId: this.data.editingProfileId,
-                    updateData: this.data.profileData
-                  });
+                  // 触发档案列表刷新事件（ProfileManager已更新，只需刷新UI）
+                  eventBus.emit('profileListRefresh');
                 }
               });
             } else {
@@ -911,11 +913,11 @@ Page({
         
         // 将新创建的档案添加到ProfileManager
         if (baziResult.profileId && savedProfile && savedProfile.profile) {
-          const app = getApp();
+          const { profileManager } = require('../../utils/profileManager');
           
           console.log('[addProfile] 准备添加到ProfileManager的数据:', savedProfile.profile);
-          // 添加到ProfileManager（使用云函数返回的完整档案数据）
-          app.globalData.profileManager.addProfile(savedProfile.profile);
+          // 添加到ProfileManager（使用云函数返回的完整ProfileBean数据）
+          profileManager.addProfile(savedProfile.profile);
           console.log('新档案已添加到ProfileManager:', baziResult.profileId);
         }
         

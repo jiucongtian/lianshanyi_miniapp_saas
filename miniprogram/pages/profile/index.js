@@ -141,8 +141,8 @@ Page({
    */
   handleProfileListRefresh() {
     console.log('收到档案列表刷新事件');
-    // 刷新用户信息和档案列表
-    this.refreshUserInfoAndProfiles();
+    // 直接从ProfileManager获取数据，避免重新从云端获取
+    this.loadDataFromProfileManager();
   },
 
   /**

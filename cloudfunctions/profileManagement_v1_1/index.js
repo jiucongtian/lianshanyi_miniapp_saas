@@ -225,15 +225,18 @@ async function createProfile(wxContext, profileData) {
       data: profileDoc
     })
     
+    // 构建完整的档案数据（包含所有字段）
+    const fullProfileData = {
+      ...profileDoc,
+      _id: result._id
+    }
+    
     return {
       success: true,
       message: '档案创建成功',
       data: {
         profileId: result._id,
-        profile: {
-          ...profileDoc,
-          _id: result._id
-        }
+        profile: fullProfileData
       }
     }
   } catch (error) {
