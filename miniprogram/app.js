@@ -272,14 +272,6 @@ App({
     return profileManager.getCurrentProfile();
   },
 
-  /**
-   * 获取当前档案ID
-   * @returns {string|null} 当前档案ID
-   */
-  getCurrentProfileId() {
-    const currentProfile = profileManager.getCurrentProfile();
-    return currentProfile ? currentProfile._id : null;
-  },
 
   /**
    * 清理过期的图片缓存
