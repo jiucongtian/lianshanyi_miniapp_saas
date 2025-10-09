@@ -332,16 +332,33 @@ class BaziBean {
    * @returns {BaziBean} BaziBean实例
    */
   static fromCloudResult(cloudResult) {
+    // 检查云函数调用是否成功
     if (!cloudResult || !cloudResult.result) {
+      console.warn('[BaziBean] 云函数调用失败或结果为空');
       return new BaziBean({});
     }
     
     const result = cloudResult.result;
-    if (!result.success || !result.baziData) {
+    
+    // 检查云函数执行是否成功
+    if (!result.success) {
+      console.warn('[BaziBean] 云函数执行失败:', result.error);
       return new BaziBean({});
     }
     
-    return new BaziBean(result.baziData);
+    // 检查数据结构
+    if (!result.data) {
+      console.warn('[BaziBean] 云函数返回数据为空');
+      return new BaziBean({});
+    }
+    
+    // 检查baziData字段
+    if (!result.data.baziData) {
+      console.warn('[BaziBean] 云函数返回数据中缺少baziData字段');
+      return new BaziBean({});
+    }
+    
+    return new BaziBean(result.data.baziData);
   }
 }
 

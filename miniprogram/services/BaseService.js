@@ -1,9 +1,10 @@
 /**
  * 基础服务类
- * 提供统一的云函数调用、错误处理、重试机制等功能
+ * 提供统一的云函数调用、错误处理、重试机制、版本管理等功能
  * 所有具体Service类都应该继承此类
  */
 const { ResponseBean } = require('../beans/ResponseBean');
+const { VersionManager } = require('../utils/versionManager');
 
 class BaseService {
   constructor() {
@@ -11,21 +12,25 @@ class BaseService {
   }
 
   /**
-   * 调用云函数（带错误处理）
-   * @param {string} name - 云函数名称
+   * 调用云函数（带错误处理和版本管理）
+   * @param {string} name - 云函数基础名称
    * @param {Object} data - 传递给云函数的数据
+   * @param {string} version - 指定版本（可选，不指定则使用默认版本）
    * @returns {Promise<ResponseBean>} 统一格式的响应
    */
-  async callFunction(name, data = {}) {
+  async callFunction(name, data = {}, version = null) {
     try {
-      console.log(`[${this.serviceName}] 调用云函数 ${name}:`, data);
+      // 获取实际的云函数名称（包含版本后缀）
+      const actualFunctionName = VersionManager.getFunctionName(name, version);
+      
+      console.log(`[${this.serviceName}] 调用云函数 ${actualFunctionName} (基础名称: ${name}):`, data);
       
       const result = await wx.cloud.callFunction({ 
-        name, 
+        name: actualFunctionName, 
         data 
       });
       
-      console.log(`[${this.serviceName}] 云函数 ${name} 返回:`, result);
+      console.log(`[${this.serviceName}] 云函数 ${actualFunctionName} 返回:`, result);
       console.log(`[${this.serviceName}] 准备创建 ResponseBean，传入参数:`, result);
       const responseBean = ResponseBean.fromCloudResult(result);
       console.log(`[${this.serviceName}] ResponseBean 创建完成:`, responseBean);
@@ -38,16 +43,17 @@ class BaseService {
   }
 
   /**
-   * 带重试的云函数调用
-   * @param {string} name - 云函数名称
+   * 带重试的云函数调用（支持版本管理）
+   * @param {string} name - 云函数基础名称
    * @param {Object} data - 传递给云函数的数据
    * @param {number} retryCount - 重试次数，默认3次
+   * @param {string} version - 指定版本（可选）
    * @returns {Promise<ResponseBean>} 统一格式的响应
    */
-  async callFunctionWithRetry(name, data = {}, retryCount = 3) {
+  async callFunctionWithRetry(name, data = {}, retryCount = 3, version = null) {
     for (let i = 0; i < retryCount; i++) {
       try {
-        const result = await this.callFunction(name, data);
+        const result = await this.callFunction(name, data, version);
         
         // 如果成功，直接返回
         if (result.success) {
@@ -137,6 +143,45 @@ class BaseService {
       console.log(`[${this.serviceName}] ${method} 成功:`, logData);
     } else {
       console.error(`[${this.serviceName}] ${method} 失败:`, logData, result.error);
+    }
+  }
+
+  /**
+   * 获取云函数版本信息
+   * @param {string} functionName - 云函数基础名称
+   * @returns {string} 版本号
+   */
+  getFunctionVersion(functionName) {
+    return VersionManager.getFunctionVersion(functionName);
+  }
+
+  /**
+   * 检查云函数版本是否支持
+   * @param {string} functionName - 云函数基础名称
+   * @param {string} version - 版本号
+   * @returns {boolean} 是否支持
+   */
+  isVersionSupported(functionName, version) {
+    return VersionManager.isFunctionVersionSupported(functionName, version);
+  }
+
+  /**
+   * 批量调用云函数（支持版本管理）
+   * @param {Array} calls - 调用配置数组
+   * @returns {Promise<Array>} 调用结果数组
+   */
+  async callFunctionsBatch(calls) {
+    const promises = calls.map(call => {
+      const { functionName, data, version } = call;
+      return this.callFunction(functionName, data, version);
+    });
+    
+    try {
+      const results = await Promise.all(promises);
+      return results;
+    } catch (error) {
+      console.error(`[${this.serviceName}] 批量调用失败:`, error);
+      throw error;
     }
   }
 }

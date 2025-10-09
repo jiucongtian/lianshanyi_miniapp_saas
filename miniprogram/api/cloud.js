@@ -4,6 +4,7 @@
  * @deprecated 请使用 miniprogram/services/ 中的Service类
  * 
  * 此文件保留仅用于向后兼容，新代码请使用Service层
+ * 版本管理功能已集成到BaseService中
  */
 
 const { extractTimeParams } = require('../utils/util');

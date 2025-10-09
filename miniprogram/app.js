@@ -65,6 +65,7 @@ App({
     currentProfileId: null, // 当前选中的档案ID
     currentProfileData: null, // 当前选中的档案完整数据
     profilesLoaded: false, // 标记档案是否已加载
+    version: '1.1.0', // 客户端版本
   },
 
   /** 全局事件总线 */

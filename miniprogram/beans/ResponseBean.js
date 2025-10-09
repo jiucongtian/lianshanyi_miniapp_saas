@@ -88,7 +88,7 @@ class ResponseBean {
    * @returns {ResponseBean} 错误响应Bean
    */
   static error(errorMessage, code = -1, data = null) {
-    const bean = new ResponseBean();
+    const bean = new ResponseBean(undefined);
     bean.success = false;
     bean.error = errorMessage;
     bean.code = code;
@@ -105,7 +105,7 @@ class ResponseBean {
    * @returns {ResponseBean} 成功响应Bean
    */
   static success(data, message = '操作成功', code = 0) {
-    const bean = new ResponseBean();
+    const bean = new ResponseBean(undefined);
     bean.success = true;
     bean.data = data;
     bean.message = message;

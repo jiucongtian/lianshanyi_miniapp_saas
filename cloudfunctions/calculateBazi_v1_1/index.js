@@ -146,20 +146,20 @@ function parseBaziData(cozeResponse) {
  * @returns {Promise} 返回工作流执行结果
  */
 async function callCozeAPI(parameters) {
-  // 从环境变量中读取配置
+  // 硬编码配置（仅个人使用，无泄漏风险）
   const COZE_CONFIG = {
-    token: process.env.COZE_TOKEN,
-    baseURL: process.env.COZE_BASE_URL || 'https://api.coze.cn',
-    workflowId: process.env.COZE_WORKFLOW_ID
+    token: 'sat_JBr8tgHf8a8IkpwoFMpNWiioLFdqdAWj9O8HVRZ7DFmYqQf2wKzf92vRqKjQQMdv',
+    baseURL: 'https://api.coze.cn',
+    workflowId: '7544388114807095337'
   };
 
-  // 检查必需的环境变量
+  // 验证配置
   if (!COZE_CONFIG.token) {
-    throw new Error('缺少必需的环境变量 COZE_TOKEN，请在 cloudbase/cloudbaserc.json 中的 envVariables 中配置');
+    throw new Error('Coze配置错误：缺少token');
   }
   
   if (!COZE_CONFIG.workflowId) {
-    throw new Error('缺少必需的环境变量 COZE_WORKFLOW_ID，请在 cloudbase/cloudbaserc.json 中的 envVariables 中配置');
+    throw new Error('Coze配置错误：缺少workflowId');
   }
 
   try {
