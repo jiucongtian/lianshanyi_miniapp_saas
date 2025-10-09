@@ -51,26 +51,37 @@ class ProfileManager {
 
   /**
    * 设置当前档案
-   * @param {string|ProfileBean} profile - 档案ID或ProfileBean实例
+   * @param {string|ProfileBean|null} profile - 档案ID、ProfileBean实例或null
    * @returns {boolean} 是否设置成功
    */
   setCurrentProfile(profile) {
     try {
-      if (typeof profile === 'string') {
+      if (profile === null || profile === undefined) {
+        // 传入null或undefined，清空当前档案
+        this.currentProfile = null;
+        console.log('[ProfileManager] 清空当前档案');
+        return true;
+      } else if (typeof profile === 'string') {
         // 传入的是ID
         this.currentProfile = this.getProfileById(profile);
       } else if (profile && typeof profile.toCardDisplayData === 'function') {
         // 传入的是ProfileBean实例
         this.currentProfile = profile;
-      } else {
+      } else if (profile && typeof profile === 'object') {
         // 传入的是原始数据，转换为ProfileBean
         this.currentProfile = new ProfileBean(profile);
+      } else {
+        // 其他情况，清空当前档案
+        this.currentProfile = null;
+        console.log('[ProfileManager] 无效的档案参数，清空当前档案');
+        return true;
       }
       
-      console.log('[ProfileManager] 设置当前档案:', this.currentProfile?.profileName);
+      console.log('[ProfileManager] 设置当前档案:', this.currentProfile?.profileName || '无');
       return this.currentProfile !== null;
     } catch (error) {
       console.error('[ProfileManager] 设置当前档案失败:', error);
+      this.currentProfile = null;
       return false;
     }
   }

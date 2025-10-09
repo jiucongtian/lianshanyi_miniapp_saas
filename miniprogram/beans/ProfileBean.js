@@ -4,6 +4,12 @@
  */
 class ProfileBean {
   constructor(data) {
+    // 检查数据是否为null或undefined
+    if (!data || typeof data !== 'object') {
+      console.warn('[ProfileBean] 构造函数接收到无效数据:', data);
+      data = {}; // 提供空对象作为默认值
+    }
+    
     // 提供默认值，避免程序崩溃
     this._id = data._id || '';
     this.userId = data.userId || '';

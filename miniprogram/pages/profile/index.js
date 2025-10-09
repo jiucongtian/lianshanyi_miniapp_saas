@@ -96,9 +96,16 @@ Page({
     const profileList = profileManager.getProfileList();
     console.log('从ProfileManager获取到档案列表，数量:', profileList.length);
     
+    // 更新已使用档案数量
+    const usedProfiles = profileList.length;
+    const profileQuota = this.data.profileQuota;
+    const canCreateMore = profileQuota === -1 || usedProfiles < profileQuota;
+    
     // 更新页面数据
     this.setData({
       profileList: profileList,
+      usedProfiles: usedProfiles,
+      canCreateMore: canCreateMore,
       loading: false,
       hasMore: false // ProfileManager中已包含所有数据
     });
@@ -716,25 +723,15 @@ Page({
         // 从ProfileManager中移除档案
         profileManager.removeProfile(profileId);
         
-        // 从本地列表中移除已删除的档案
-        const updatedProfileList = this.data.profileList.filter(profile => profile._id !== profileId);
-        
-        // 更新已使用档案数量
-        const newUsedProfiles = Math.max(0, this.data.usedProfiles - 1);
-        const newCanCreateMore = this.data.profileQuota === -1 || newUsedProfiles < this.data.profileQuota;
-        
-        this.setData({
-          profileList: updatedProfileList,
-          usedProfiles: newUsedProfiles,
-          canCreateMore: newCanCreateMore
-        });
-        
         // 如果删除的是当前选中的档案，需要重新选中
         if (this.data.currentProfileId === profileId) {
-          this.handleDeletedCurrentProfile(updatedProfileList);
+          this.handleDeletedCurrentProfile(profileManager.getProfileList());
         }
         
-        // 触发档案删除事件
+        // 触发档案列表刷新事件，复用新增档案的刷新机制
+        eventBus.emit(PROFILE_EVENTS.PROFILE_LIST_REFRESH);
+        
+        // 触发档案删除事件（用于其他页面监听）
         eventBus.emit(PROFILE_EVENTS.PROFILE_DELETED, profileId);
         
         wx.showToast({
