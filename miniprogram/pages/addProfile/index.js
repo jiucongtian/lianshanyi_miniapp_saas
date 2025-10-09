@@ -909,16 +909,14 @@ Page({
         // API调用成功，跳转到卡牌页面
         wx.hideLoading();
         
-        // 将新创建的档案添加到ProfileManager并设置为当前档案
+        // 将新创建的档案添加到ProfileManager
         if (baziResult.profileId && savedProfile && savedProfile.profile) {
           const app = getApp();
           
           console.log('[addProfile] 准备添加到ProfileManager的数据:', savedProfile.profile);
           // 添加到ProfileManager（使用云函数返回的完整档案数据）
           app.globalData.profileManager.addProfile(savedProfile.profile);
-          // 设置为当前档案
-          app.globalData.profileManager.setCurrentProfile(baziResult.profileId);
-          console.log('新档案已添加到ProfileManager并设置为当前档案:', baziResult.profileId);
+          console.log('新档案已添加到ProfileManager:', baziResult.profileId);
         }
         
         // 档案创建成功后，直接跳转到卡牌页面
