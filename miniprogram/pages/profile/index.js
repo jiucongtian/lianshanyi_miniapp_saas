@@ -5,7 +5,7 @@ const { permissionManager, USER_TYPES } = require('../../utils/permissionManager
 const { profileService, userService } = require('../../services/index');
 const { profileManager } = require('../../utils/profileManager');
 const eventBus = require('../../utils/eventBus');
-const { PROFILE_EVENTS } = require('../../utils/eventTypes');
+const { PROFILE_EVENTS, SYSTEM_EVENTS } = require('../../utils/eventTypes');
 
 Page({
 
@@ -65,8 +65,18 @@ Page({
     this.setData({ currentProfileId });
     console.log('当前选中档案ID:', currentProfileId);
     
-    // 使用ProfileManager获取数据，避免重复请求
-    this.loadDataFromProfileManager();
+    // 检查ProfileManager是否已初始化，避免重复请求
+    if (profileManager.isReady()) {
+      console.log('ProfileManager已初始化，直接加载数据');
+      this.loadDataFromProfileManager();
+    } else {
+      console.log('ProfileManager未初始化，等待App初始化完成');
+      // 监听ProfileManager初始化完成事件
+      eventBus.once(SYSTEM_EVENTS.PROFILE_MANAGER_READY, () => {
+        console.log('收到ProfileManager初始化完成事件，开始加载数据');
+        this.loadDataFromProfileManager();
+      });
+    }
   },
 
   /**
@@ -81,16 +91,6 @@ Page({
    */
   loadDataFromProfileManager() {
     console.log('从ProfileManager加载档案数据');
-    
-    // 检查ProfileManager是否已初始化
-    if (!profileManager.isReady()) {
-      console.log('ProfileManager未初始化，等待初始化完成');
-      // 如果ProfileManager未初始化，等待一段时间后重试
-      setTimeout(() => {
-        this.loadDataFromProfileManager();
-      }, 500);
-      return;
-    }
     
     // 从ProfileManager获取档案列表
     const profileList = profileManager.getProfileList();
@@ -202,8 +202,8 @@ Page({
       console.error('初始化用户信息失败:', error);
     }
     
-    // 加载档案列表
-    this.loadProfileList();
+    // 不再在这里加载档案列表，避免重复请求
+    // 档案列表由onShow方法中的loadDataFromProfileManager处理
   },
 
   /**
