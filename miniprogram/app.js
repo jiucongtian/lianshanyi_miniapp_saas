@@ -324,12 +324,6 @@ App({
         profileManager.updateProfile(data.profileId, data.updateData);
       }
     });
-    
-    // 监听档案删除事件
-    this.eventBus.on(PROFILE_EVENTS.PROFILE_DELETED, (profileId) => {
-      console.log('App: 监听到档案删除事件');
-      this.refreshProfileManager();
-    });
   },
 
   /**

@@ -731,9 +731,6 @@ Page({
         // 触发档案列表刷新事件，复用新增档案的刷新机制
         eventBus.emit(PROFILE_EVENTS.PROFILE_LIST_REFRESH);
         
-        // 触发档案删除事件（用于其他页面监听）
-        eventBus.emit(PROFILE_EVENTS.PROFILE_DELETED, profileId);
-        
         wx.showToast({
           title: '删除成功',
           icon: 'success',
