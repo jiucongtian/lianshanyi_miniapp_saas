@@ -148,24 +148,12 @@ App({
       // 获取完整的profile列表
       await this.loadAllProfiles();
       
-      // 从本地存储获取已保存的当前档案ID
-      const savedProfileId = wx.getStorageSync('currentProfileId');
-      
-      if (savedProfileId) {
-        console.log('App: 找到已保存的档案ID:', savedProfileId);
-        this.globalData.currentProfileId = savedProfileId;
-        
-        // 从ProfileManager中获取该档案
-        const savedProfile = profileManager.getProfileById(savedProfileId);
-        if (savedProfile) {
-          console.log('App: 从ProfileManager找到已保存的档案');
-          this.setCurrentProfile(savedProfile);
-        } else {
-          console.log('App: ProfileManager中未找到已保存的档案，选择第一个档案');
-          await this.selectFirstProfile();
-        }
+      // 从ProfileManager获取当前档案
+      const currentProfile = profileManager.getCurrentProfile();
+      if (currentProfile) {
+        console.log('App: 找到当前档案:', currentProfile.profileName);
       } else {
-        console.log('App: 未找到已保存的档案ID，选择第一个档案');
+        console.log('App: 没有当前档案，选择第一个档案');
         await this.selectFirstProfile();
       }
       
@@ -254,14 +242,14 @@ App({
    * @param {Object|ProfileBean} profileData 档案数据
    */
   setCurrentProfile(profileData) {
+    if (!profileData) {
+      console.log('App: 清除当前档案');
+      // 清除ProfileManager的当前档案
+      profileManager.setCurrentProfile(null);
+      return;
+    }
+    
     console.log('App: 设置当前档案:', profileData._id);
-    
-    // 更新全局数据
-    this.globalData.currentProfileId = profileData._id;
-    this.globalData.currentProfileData = profileData;
-    
-    // 保存到本地存储
-    wx.setStorageSync('currentProfileId', profileData._id);
     
     // 设置ProfileManager的当前档案
     profileManager.setCurrentProfile(profileData);
@@ -281,7 +269,7 @@ App({
    * @returns {Object|null} 当前档案数据
    */
   getCurrentProfile() {
-    return this.globalData.currentProfileData;
+    return profileManager.getCurrentProfile();
   },
 
   /**
@@ -289,7 +277,8 @@ App({
    * @returns {string|null} 当前档案ID
    */
   getCurrentProfileId() {
-    return this.globalData.currentProfileId;
+    const currentProfile = profileManager.getCurrentProfile();
+    return currentProfile ? currentProfile._id : null;
   },
 
   /**

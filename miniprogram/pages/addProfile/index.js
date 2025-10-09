@@ -393,9 +393,10 @@ Page({
         profileManager.updateProfile(this.data.editingProfileId, updatedProfile);
         console.log('ProfileManager中的档案已更新:', this.data.editingProfileId);
         
-        // 更新全局当前档案数据（如果更新的是当前选中的档案）
+        // 更新当前档案数据（如果更新的是当前选中的档案）
         const app = getApp();
-        if (app.globalData?.currentProfileId === this.data.editingProfileId) {
+        const currentProfile = app.getCurrentProfile();
+        if (currentProfile && currentProfile._id === this.data.editingProfileId) {
           app.setCurrentProfile(updatedProfile);
         }
         
