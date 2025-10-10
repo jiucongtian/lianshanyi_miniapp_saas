@@ -65,41 +65,41 @@
 - [x] 编写使用文档
 
 #### ✅ Task 1.3: 实现AddProfileController
-- [ ] 创建 `controllers/AddProfileController.js`
-- [ ] 实现 `initialize()` 方法（初始化页面）
-  - [ ] 判断创建/编辑模式
-  - [ ] 加载编辑数据（编辑模式）
-- [ ] 实现 `validateForm()` 方法（表单验证）
-  - [ ] 验证档案名称
-  - [ ] 验证出生时间
-- [ ] 实现 `checkQuota()` 方法（检查配额）
-- [ ] 实现 `calculateBazi()` 方法（计算八字）
-- [ ] 实现 `searchExisting()` 方法（搜索已有档案）
-- [ ] 实现 `saveProfile()` 方法（保存档案）
-- [ ] 实现 `updateProfile()` 方法（更新档案）
-- [ ] 所有方法添加完整注释
-- [ ] 编写使用文档
+- [x] 创建 `controllers/AddProfileController.js`
+- [x] 实现 `initialize()` 方法（初始化页面）
+  - [x] 判断创建/编辑模式
+  - [x] 加载编辑数据（编辑模式）
+- [x] 实现 `validateForm()` 方法（表单验证）
+  - [x] 验证档案名称
+  - [x] 验证出生时间
+- [x] 实现 `checkQuota()` 方法（检查配额）
+- [x] 实现 `calculateBazi()` 方法（计算八字）
+- [x] 实现 `searchExisting()` 方法（搜索已有档案）
+- [x] 实现 `saveProfile()` 方法（保存档案）
+- [x] 实现 `updateProfile()` 方法（更新档案）
+- [x] 所有方法添加完整注释
+- [x] 编写使用文档
 
 #### ✅ Task 1.4: 实现CardController
-- [ ] 创建 `controllers/CardController.js`
-- [ ] 实现 `initialize()` 方法（初始化卡牌页面）
-- [ ] 实现 `loadProfileData()` 方法（加载档案数据）
-- [ ] 实现 `updateBaziDisplay()` 方法（更新八字显示）
-- [ ] 实现 `flipCard()` 方法（翻转卡牌）
-- [ ] 实现 `previewCard()` 方法（预览卡牌）
-- [ ] 实现图片缓存逻辑
-- [ ] 所有方法添加完整注释
-- [ ] 编写使用文档
+- [x] 创建 `controllers/CardController.js`
+- [x] 实现 `initialize()` 方法（初始化卡牌页面）
+- [x] 实现 `loadProfileData()` 方法（加载档案数据）
+- [x] 实现 `updateBaziDisplay()` 方法（更新八字显示）
+- [x] 实现 `flipCard()` 方法（翻转卡牌）
+- [x] 实现 `previewCard()` 方法（预览卡牌）
+- [x] 实现图片缓存逻辑
+- [x] 所有方法添加完整注释
+- [x] 编写使用文档
 
 #### ✅ Task 1.5: 实现MineController
-- [ ] 创建 `controllers/MineController.js`
-- [ ] 实现 `initialize()` 方法（初始化个人中心）
-- [ ] 实现 `loadUserInfo()` 方法（加载用户信息）
-- [ ] 实现 `updateUserInfo()` 方法（更新用户信息）
-- [ ] 实现 `clearCache()` 方法（清理缓存）
-- [ ] 实现 `showSettings()` 方法（显示设置）
-- [ ] 所有方法添加完整注释
-- [ ] 编写使用文档
+- [x] 创建 `controllers/MineController.js`
+- [x] 实现 `initialize()` 方法（初始化个人中心）
+- [x] 实现 `loadUserInfo()` 方法（加载用户信息）
+- [x] 实现 `updateUserInfo()` 方法（更新用户信息）
+- [x] 实现 `clearCache()` 方法（清理缓存）
+- [x] 实现 `showSettings()` 方法（显示设置）
+- [x] 所有方法添加完整注释
+- [x] 编写使用文档
 
 ---
 
@@ -426,19 +426,43 @@
   - ✅ 实现 `BaseController.js` 基类，包含所有通用辅助方法
   - ✅ 编写完整的BaseController使用文档
 
+- **Task 1.2: 实现ProfileController** (100% 完成)
+  - ✅ 创建 `controllers/ProfileController.js`
+  - ✅ 实现档案列表管理、用户信息管理、档案操作等核心功能
+  - ✅ 编写完整的ProfileController使用文档
+
+- **Task 1.3: 实现AddProfileController** (100% 完成)
+  - ✅ 创建 `controllers/AddProfileController.js`
+  - ✅ 实现档案创建和编辑页面的业务逻辑
+  - ✅ 支持表单验证、配额检查、八字计算等功能
+  - ✅ 编写完整的AddProfileController使用文档
+
+- **Task 1.4: 实现CardController** (100% 完成)
+  - ✅ 创建 `controllers/CardController.js`
+  - ✅ 实现卡牌页面的业务逻辑
+  - ✅ 支持档案数据加载、八字显示、卡牌翻转、图片预览等功能
+  - ✅ 编写完整的CardController使用文档
+
+- **Task 1.5: 实现MineController** (100% 完成)
+  - ✅ 创建 `controllers/MineController.js`
+  - ✅ 实现个人中心页面的业务逻辑
+  - ✅ 支持用户信息管理、缓存清理、设置等功能
+  - ✅ 编写完整的MineController使用文档
+
 ### 🔄 进行中任务
 - 无
 
 ### ⏳ 待开始任务
-- **Task 1.2: 实现ProfileController** (0% 完成)
-- **Task 1.3: 实现AddProfileController** (0% 完成)
-- **Task 1.4: 实现CardController** (0% 完成)
-- **Task 1.5: 实现MineController** (0% 完成)
+- **Task 2.1: 重构profile页面** (0% 完成)
+- **Task 2.2: 重构addProfile页面** (0% 完成)
+- **Task 2.3: 重构card页面** (0% 完成)
+- **Task 2.4: 重构mine页面** (0% 完成)
+- **Task 2.5: 重构register页面** (0% 完成)
 
 ### 📊 整体进度
-- **阶段一进度**: 20% (1/5 任务完成)
-- **总体进度**: 4% (1/25 任务完成)
+- **阶段一进度**: 100% (5/5 任务完成) ✅
+- **总体进度**: 20% (5/25 任务完成)
 
 ### 🎯 下一步计划
-接下来将实现 ProfileController，这是档案管理页面的核心控制器，包含档案列表加载、选择、删除等核心功能。
+阶段一Controller层实现已全部完成！接下来将进入阶段二：页面重构，将现有页面文件重构为使用Controller的架构，预计页面代码行数减少50%以上。
 

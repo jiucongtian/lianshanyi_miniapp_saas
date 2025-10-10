@@ -8,11 +8,45 @@
 
 ```
 controllers/
-├── BaseController.js    # 控制器基类
-├── ProfileController.js # 档案管理控制器
-├── CardController.js    # 卡牌展示控制器
-└── README.md           # 使用文档
+├── BaseController.js              # 控制器基类
+├── ProfileController.js           # 档案管理控制器
+├── ProfileController-README.md    # 档案控制器文档
+├── AddProfileController.js        # 添加档案控制器
+├── AddProfileController-README.md # 添加档案控制器文档
+├── CardController.js              # 卡牌展示控制器
+├── CardController-README.md       # 卡牌控制器文档
+├── MineController.js              # 个人中心控制器
+├── MineController-README.md       # 个人中心控制器文档
+└── README.md                      # 使用文档
 ```
+
+## 控制器列表
+
+### 已实现的控制器
+
+#### ProfileController
+- **文件**: `ProfileController.js`
+- **功能**: 档案页面控制器，处理档案列表管理、用户信息管理、档案操作等
+- **文档**: `ProfileController-README.md`
+- **状态**: ✅ 已完成
+
+#### AddProfileController
+- **文件**: `AddProfileController.js`
+- **功能**: 添加档案页面控制器，处理档案创建和编辑相关的业务逻辑
+- **文档**: `AddProfileController-README.md`
+- **状态**: ✅ 已完成
+
+#### CardController
+- **文件**: `CardController.js`
+- **功能**: 卡牌页面控制器，处理卡牌页面相关的业务逻辑
+- **文档**: `CardController-README.md`
+- **状态**: ✅ 已完成
+
+#### MineController
+- **文件**: `MineController.js`
+- **功能**: 个人中心页面控制器，处理个人中心相关的业务逻辑
+- **文档**: `MineController-README.md`
+- **状态**: ✅ 已完成
 
 ## ProfileController 档案管理控制器
 
