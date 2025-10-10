@@ -63,7 +63,6 @@
 - [x] 实现 `showQuotaExceededDialog()` 方法
 - [x] 所有方法添加完整注释
 - [x] 编写使用文档
-- [ ] 测试所有方法
 
 #### ✅ Task 1.3: 实现AddProfileController
 - [ ] 创建 `controllers/AddProfileController.js`
@@ -80,7 +79,6 @@
 - [ ] 实现 `updateProfile()` 方法（更新档案）
 - [ ] 所有方法添加完整注释
 - [ ] 编写使用文档
-- [ ] 测试所有方法
 
 #### ✅ Task 1.4: 实现CardController
 - [ ] 创建 `controllers/CardController.js`
@@ -92,7 +90,6 @@
 - [ ] 实现图片缓存逻辑
 - [ ] 所有方法添加完整注释
 - [ ] 编写使用文档
-- [ ] 测试所有方法
 
 #### ✅ Task 1.5: 实现MineController
 - [ ] 创建 `controllers/MineController.js`
@@ -103,7 +100,6 @@
 - [ ] 实现 `showSettings()` 方法（显示设置）
 - [ ] 所有方法添加完整注释
 - [ ] 编写使用文档
-- [ ] 测试所有方法
 
 ---
 
