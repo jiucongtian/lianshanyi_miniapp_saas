@@ -14,6 +14,95 @@ controllers/
 └── README.md           # 使用文档
 ```
 
+## ProfileController 档案管理控制器
+
+### 功能特性
+
+ProfileController 是档案页面的专用控制器，提供以下功能：
+
+- **用户信息管理**：加载和显示用户信息、配额状态
+- **档案列表管理**：加载、刷新、分页加载档案列表
+- **档案操作**：选择、删除、编辑档案
+- **配额管理**：检查用户配额，显示升级提示
+- **事件处理**：处理各种档案相关事件
+
+### 主要方法
+
+| 方法名 | 参数 | 说明 |
+|--------|------|------|
+| `initialize()` | 无 | 初始化页面，加载用户信息和档案列表 |
+| `loadUserInfo()` | 无 | 加载用户信息 |
+| `loadProfiles(page, limit, isRefresh)` | page: 页码, limit: 每页数量, isRefresh: 是否刷新 | 加载档案列表 |
+| `refreshProfiles()` | 无 | 刷新档案列表 |
+| `loadMoreProfiles()` | 无 | 加载更多档案 |
+| `selectProfile(profileId)` | profileId: 档案ID | 选择档案 |
+| `deleteProfile(profileId)` | profileId: 档案ID | 删除档案（带确认对话框） |
+| `editProfile(profileId)` | profileId: 档案ID | 编辑档案 |
+| `addProfile()` | 无 | 添加新档案 |
+| `showQuotaExceededDialog()` | 无 | 显示配额超限对话框 |
+
+### 使用示例
+
+```javascript
+// pages/profile/index.js
+const { ProfileController } = require('../../controllers/ProfileController');
+
+Page({
+  data: {
+    profileList: [],
+    loading: false,
+    userInfo: null,
+    canCreateMore: true
+  },
+
+  onLoad(options) {
+    this.controller = new ProfileController(this);
+    this.controller.initialize();
+  },
+
+  onShow() {
+    this.controller.onShow();
+  },
+
+  onHide() {
+    this.controller.onHide();
+  },
+
+  onUnload() {
+    this.controller.onUnload();
+  },
+
+  onPullDownRefresh() {
+    this.controller.onPullDownRefresh();
+  },
+
+  onReachBottom() {
+    this.controller.onReachBottom();
+  },
+
+  onProfileTap(e) {
+    const profileId = e.currentTarget.dataset.id;
+    this.controller.selectProfile(profileId);
+  },
+
+  onDeleteProfile(e) {
+    const profileId = e.currentTarget.dataset.id;
+    this.controller.deleteProfile(profileId);
+  },
+
+  onEditProfile(e) {
+    const profileId = e.currentTarget.dataset.id;
+    this.controller.editProfile(profileId);
+  },
+
+  onAddProfile() {
+    this.controller.addProfile();
+  }
+});
+```
+
+详细使用文档请参考：[ProfileController-README.md](./ProfileController-README.md)
+
 ## BaseController 基类
 
 ### 功能特性

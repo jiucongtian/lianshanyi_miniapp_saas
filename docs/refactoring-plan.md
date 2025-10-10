@@ -48,21 +48,21 @@
 - [x] 编写BaseController使用文档
 
 #### ✅ Task 1.2: 实现ProfileController
-- [ ] 创建 `controllers/ProfileController.js`
-- [ ] 实现 `initialize()` 方法（初始化页面）
-- [ ] 实现 `loadUserInfo()` 方法（加载用户信息）
-- [ ] 实现 `loadProfiles()` 方法（加载档案列表）
-  - [ ] 支持分页
-  - [ ] 支持下拉刷新
-  - [ ] 支持上拉加载更多
-- [ ] 实现 `selectProfile()` 方法（选择档案）
-- [ ] 实现 `deleteProfile()` 方法（删除档案）
-  - [ ] 带确认对话框
-  - [ ] 删除后刷新列表
-  - [ ] 处理当前选中档案被删除的情况
-- [ ] 实现 `showQuotaExceededDialog()` 方法
-- [ ] 所有方法添加完整注释
-- [ ] 编写使用文档
+- [x] 创建 `controllers/ProfileController.js`
+- [x] 实现 `initialize()` 方法（初始化页面）
+- [x] 实现 `loadUserInfo()` 方法（加载用户信息）
+- [x] 实现 `loadProfiles()` 方法（加载档案列表）
+  - [x] 支持分页
+  - [x] 支持下拉刷新
+  - [x] 支持上拉加载更多
+- [x] 实现 `selectProfile()` 方法（选择档案）
+- [x] 实现 `deleteProfile()` 方法（删除档案）
+  - [x] 带确认对话框
+  - [x] 删除后刷新列表
+  - [x] 处理当前选中档案被删除的情况
+- [x] 实现 `showQuotaExceededDialog()` 方法
+- [x] 所有方法添加完整注释
+- [x] 编写使用文档
 - [ ] 测试所有方法
 
 #### ✅ Task 1.3: 实现AddProfileController
