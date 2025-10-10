@@ -15,6 +15,8 @@ Page({
     pageMode: 'create',
     // 编辑模式下的档案ID
     editingProfileId: null,
+    // 原始档案数据（用于变化检测）
+    originalProfileData: null,
     // 表单数据
     formData: {
       name: '', // 名称
@@ -113,9 +115,6 @@ Page({
   async onSubmit(e) {
     console.log('[addProfile] onSubmit 开始执行');
     
-    // 获取按钮组件的引用
-    const buttonComponent = this.selectComponent('loading-button');
-    
     if (!this.validateForm()) {
       console.log('[addProfile] 表单验证失败');
       Message.warning({
@@ -124,10 +123,7 @@ Page({
         duration: 3000,
         content: '请完善必填信息',
       });
-      // 重置按钮状态
-      if (buttonComponent) {
-        buttonComponent.reset();
-      }
+      this.resetButtonState();
       return;
     }
 
@@ -139,10 +135,7 @@ Page({
         console.log('[addProfile] 配额检查结果:', quotaCheck);
         if (!quotaCheck.canCreate) {
           console.log('[addProfile] 配额检查失败，无法创建');
-          // 重置按钮状态
-          if (buttonComponent) {
-            buttonComponent.reset();
-          }
+          this.resetButtonState();
           return; // 配额检查失败，已在方法内处理错误提示
         }
         console.log('[addProfile] 配额检查通过，可以创建');
@@ -162,10 +155,7 @@ Page({
         duration: 3000,
         content: '提交过程中出现错误，请重试',
       });
-      // 重置按钮状态
-      if (buttonComponent) {
-        buttonComponent.reset();
-      }
+      this.resetButtonState();
     }
   },
 
@@ -324,6 +314,65 @@ Page({
     }
   },
 
+  // 重置按钮状态
+  resetButtonState() {
+    const buttonComponent = this.selectComponent('#loading-button');
+    if (buttonComponent) {
+      buttonComponent.reset();
+    }
+  },
+
+  // 检查数据是否有变化
+  hasDataChanged() {
+    if (!this.data.originalProfileData) {
+      console.log('没有原始数据，认为有变化');
+      return true;
+    }
+
+    const original = this.data.originalProfileData;
+    const current = {
+      profileName: this.data.formData.name.trim(),
+      birthDate: this.data.birthDate,
+      gender: this.data.formData.gender,
+      isUncertainTime: this.data.isUncertainTime
+    };
+
+    // 比较姓名
+    const nameChanged = original.profileName !== current.profileName;
+    
+    // 比较性别
+    const genderChanged = original.gender !== current.gender;
+    
+    // 比较不确定时辰状态
+    const uncertainTimeChanged = original.isUncertainTime !== current.isUncertainTime;
+    
+    // 比较出生日期
+    let birthDateChanged = false;
+    if (original.birthDate && current.birthDate) {
+      birthDateChanged = original.birthDate.year !== current.birthDate.year ||
+                        original.birthDate.month !== current.birthDate.month ||
+                        original.birthDate.day !== current.birthDate.day ||
+                        original.birthDate.hour !== current.birthDate.hour ||
+                        original.birthDate.minute !== current.birthDate.minute;
+    } else if (original.birthDate !== current.birthDate) {
+      birthDateChanged = true;
+    }
+
+    const hasChanges = nameChanged || genderChanged || uncertainTimeChanged || birthDateChanged;
+    
+    console.log('数据变化检查:', {
+      nameChanged,
+      genderChanged,
+      uncertainTimeChanged,
+      birthDateChanged,
+      hasChanges,
+      original,
+      current
+    });
+
+    return hasChanges;
+  },
+
   // 更新档案
   async onUpdateProfile() {
     if (!this.data.editingProfileId) {
@@ -333,6 +382,20 @@ Page({
         duration: 3000,
         content: '信息ID异常，无法更新',
       });
+      this.resetButtonState();
+      return;
+    }
+
+    // 检查数据是否有变化
+    if (!this.hasDataChanged()) {
+      console.log('数据没有变化，无需更新');
+      Message.info({
+        context: this,
+        offset: [120, 32],
+        duration: 2000,
+        content: '信息没有变化，无需更新',
+      });
+      this.resetButtonState();
       return;
     }
 
@@ -346,6 +409,7 @@ Page({
         duration: 3000,
         content: '出生日期信息异常，请重新选择',
       });
+      this.resetButtonState();
       return;
     }
 
@@ -436,6 +500,7 @@ Page({
           duration: 3000,
           content: result.error || '更新失败，请重试',
         });
+        this.resetButtonState();
       }
     } catch (error) {
       console.error('更新档案过程中出现错误:', error);
@@ -446,6 +511,7 @@ Page({
         duration: 3000,
         content: '更新过程中出现错误，请重试',
       });
+      this.resetButtonState();
     }
   },
 
@@ -510,6 +576,16 @@ Page({
           // 设置档案ID
           this.setData({
             editingProfileId: editingProfile._id
+          });
+          
+          // 保存原始档案数据用于变化检测
+          this.setData({
+            originalProfileData: {
+              profileName: editingProfile.profileName || editingProfile.name || '',
+              birthDate: editingProfile.birthDate,
+              gender: editingProfile.gender !== undefined ? editingProfile.gender : 1,
+              isUncertainTime: editingProfile.isUncertainTime !== undefined ? editingProfile.isUncertainTime : false
+            }
           });
           
           // 设置出生信息
@@ -816,6 +892,7 @@ Page({
         duration: 3000,
         content: '请先选择查询时间',
       });
+      this.resetButtonState();
       return;
     }
 
@@ -830,6 +907,7 @@ Page({
         duration: 3000,
         content: '用户注册失败，请重试',
       });
+      this.resetButtonState();
       return;
     }
 
@@ -929,6 +1007,7 @@ Page({
           duration: 3000,
           content: `创建失败：${result.error}，请重试`,
         });
+        this.resetButtonState();
       }
       
     } catch (error) {
@@ -941,6 +1020,7 @@ Page({
         duration: 3000,
         content: '计算过程中出现错误，请重试',
       });
+      this.resetButtonState();
     }
   },
 
