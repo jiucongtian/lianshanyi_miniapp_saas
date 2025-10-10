@@ -531,4 +531,3 @@ async function searchProfile(wxContext, searchData) {
     throw new Error('搜索档案失败')
   }
 }
-

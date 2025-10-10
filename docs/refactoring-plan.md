@@ -76,25 +76,26 @@
 ### 第2周：云函数公共模块提取
 
 #### ✅ Task 2.1: 创建云函数公共模块
-- [ ] 创建 `cloudfunctions/common/` 目录
-- [ ] 实现 `userTypeConfig.js` - 用户类型配置模块
-  - [ ] 实现 `getUserTypeConfig()` 函数（带缓存）
-  - [ ] 实现 `getDefaultConfig()` 函数
-  - [ ] 实现 `clearCache()` 函数
-  - [ ] 添加5分钟缓存机制
-  - [ ] 添加完整的错误处理和日志
-- [ ] 实现 `responseHelper.js` - 响应处理模块
-  - [ ] 实现 `success()` 函数
-  - [ ] 实现 `error()` 函数
-  - [ ] 实现 `paginated()` 函数（分页响应）
-- [ ] 实现 `validators.js` - 数据验证模块
-  - [ ] 实现常用数据验证函数
-  - [ ] 实现 `validateProfileData()` 档案数据验证
-  - [ ] 实现 `validateUserData()` 用户数据验证
-- [ ] 实现 `errorCodes.js` - 错误码定义
-  - [ ] 定义统一的错误码常量
-  - [ ] 定义错误码对应的错误消息
-- [ ] 编写公共模块使用文档
+- [x] 创建 `cloudfunctions/common/` 目录
+- [x] 实现 `userTypeConfig.js` - 用户类型配置模块
+  - [x] 实现 `getUserTypeConfig()` 函数（带缓存）
+  - [x] 实现 `getDefaultConfig()` 函数
+  - [x] 实现 `clearCache()` 函数
+  - [x] 添加5分钟缓存机制
+  - [x] 添加完整的错误处理和日志
+- [x] 实现 `responseHelper.js` - 响应处理模块
+  - [x] 实现 `success()` 函数
+  - [x] 实现 `error()` 函数
+  - [x] 实现 `paginated()` 函数（分页响应）
+- [x] 实现 `validators.js` - 数据验证模块
+  - [x] 实现常用数据验证函数
+  - [x] 实现 `validateProfileData()` 档案数据验证
+  - [x] 实现 `validateUserData()` 用户数据验证
+- [x] 实现 `errorCodes.js` - 错误码定义
+  - [x] 定义统一的错误码常量
+  - [x] 定义错误码对应的错误消息
+- [x] 编写公共模块使用文档
+- [x] 重构 `profileManagement_v1_1` 云函数使用公共模块
 
 #### ✅ Task 2.2: 重构userManagement云函数
 - [ ] 删除云函数内的 `getUserTypeConfig()` 重复代码
