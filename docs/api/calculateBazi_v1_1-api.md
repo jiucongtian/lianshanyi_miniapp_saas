@@ -56,16 +56,17 @@
 ## 客户端使用示例
 
 ```javascript
-// 通过BaziService调用（推荐）
-const { baziService } = require('../../services/BaziService');
-
-async function calculateBazi() {
-  const response = await baziService.calculateBazi(Date.now());
-  
-  if (response.success) {
-    const baziBean = response.data.baziData; // 已经是BaziBean实例
-    console.log('八字字符串:', baziBean.getBaziString());
+// 直接调用云函数（推荐）
+const result = await wx.cloud.callFunction({
+  name: 'calculateBazi_v1_1',
+  data: {
+    timestamp: Date.now()
   }
+});
+
+if (result.result.success) {
+  const baziData = result.result.data.baziData;
+  console.log('八字字符串:', baziData.baziString);
 }
 ```
 

@@ -1,6 +1,6 @@
 import Message from 'tdesign-miniprogram/message/index';
 // 使用Service层替代废弃的cloud.js接口
-const { baziService, userService, profileService } = require('../../services/index');
+const { userService, profileService } = require('../../services/index');
 // 引入配置
 const { config } = require('../../config/index');
 // 引入用户管理器和权限管理器
