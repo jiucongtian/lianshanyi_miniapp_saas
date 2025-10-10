@@ -24,22 +24,20 @@ function getGanZhiIndex(gan, zhi) {
 }
 
 /**
- * 从日期时间戳提取参数
- * @param {number} timestamp - 时间戳 (北京时间)
- * @returns {Object} 参数对象 (UTC时间，供Coze API使用)
+ * 从出生日期信息提取参数
+ * @param {Object} birthDate - 出生日期信息（北京时间）
+ * @returns {Object} 参数对象 (北京时间，供Coze API使用)
  */
-function extractTimeParams(timestamp) {
-  // Coze API使用UTC时间计算八字，需要将北京时间转换为UTC时间
-  // 北京时间 + 8小时偏移，然后提取UTC时间参数
-  const compensatedTimestamp = timestamp + (8 * 60 * 60 * 1000);
-  const date = new Date(compensatedTimestamp);
+function extractTimeParams(birthDate) {
+  // 直接使用北京时间参数，无需转换
+  const { year, month, day, hour, minute = 0 } = birthDate;
   
   return {
-    year: date.getUTCFullYear(),
-    month: date.getUTCMonth() + 1,
-    day: date.getUTCDate(),
-    hour: date.getUTCHours(),
-    min: date.getUTCMinutes()
+    year,
+    month,
+    day,
+    hour,
+    min: minute
   };
 }
 
@@ -233,20 +231,33 @@ exports.main = async (event, context) => {
   console.log('wxContext:', wxContext);
   
   try {
-    const { timestamp } = event;
-    console.log('接收到的timestamp:', timestamp);
+    const { birthDate } = event;
+    console.log('接收到的birthDate:', birthDate);
     
-    if (!timestamp) {
-      console.error('缺少必要参数: timestamp');
+    if (!birthDate) {
+      console.error('缺少必要参数: birthDate');
       return {
         success: false,
-        error: '缺少必要参数: timestamp'
+        error: '缺少必要参数: birthDate'
+      };
+    }
+
+    // 验证birthDate参数
+    const { year, month, day, hour, minute = 0 } = birthDate;
+    if (!year || !month || !day || hour === undefined) {
+      console.error('birthDate参数不完整:', birthDate);
+      return {
+        success: false,
+        error: 'birthDate参数不完整，缺少必要字段'
       };
     }
 
     // 提取时间参数
-    const parameters = extractTimeParams(timestamp);
-    console.log('调用Coze API，参数:', parameters);
+    const parameters = extractTimeParams(birthDate);
+    console.log('=== 时间参数提取详情 ===');
+    console.log('输入出生日期（北京时间）:', birthDate);
+    console.log('提取的Coze API参数:', parameters);
+    console.log('=== 开始调用Coze API ===');
     
     // 调用Coze API
     console.log('开始调用Coze API...');
@@ -279,7 +290,7 @@ exports.main = async (event, context) => {
         error: `八字数据解析失败: ${parseError.message}`,
         rawCozeData: result.data,  // 保留原始coze数据用于调试
         parameters,
-        timestamp: event.timestamp,
+        birthDate: event.birthDate,
         openid: wxContext.OPENID,
         appid: wxContext.APPID,
         unionid: wxContext.UNIONID,
@@ -293,7 +304,7 @@ exports.main = async (event, context) => {
         baziData: baziData,  // 标准化的八字数据
         rawCozeData: result.data,  // 保留原始coze数据用于调试
         parameters,
-        timestamp: event.timestamp,
+        birthDate: event.birthDate,
         openid: wxContext.OPENID,
         appid: wxContext.APPID,
         unionid: wxContext.UNIONID,

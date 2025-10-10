@@ -336,16 +336,18 @@ Page({
       return;
     }
 
-    // 确保日期格式正确
-    const date = new Date(this.data.dateTimeValue);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hour = date.getHours();
-    const minute = date.getMinutes();
+    // 直接使用页面数据中的birthDate
+    const birthDate = this.data.birthDate;
     
-    const birthDate = { year, month, day, hour, minute };
-    const timestamp = this.data.dateTimeValue;
+    if (!birthDate) {
+      Message.error({
+        context: this,
+        offset: [120, 32],
+        duration: 3000,
+        content: '出生日期信息异常，请重新选择',
+      });
+      return;
+    }
 
     // 显示加载状态
     wx.showLoading({
@@ -354,33 +356,17 @@ Page({
     });
 
     try {
-      // 重新计算八字数据
-      const baziResult = await baziService.calculateBazi(timestamp);
-      
-      if (!baziResult.success || !baziResult.data || !baziResult.data.baziData) {
-        console.error('八字计算失败:', baziResult.error);
-        wx.hideLoading();
-        Message.error({
-          context: this,
-          offset: [120, 32],
-          duration: 3000,
-          content: '八字计算失败，请重试',
-        });
-        return;
-      }
-
-      // 直接使用云函数返回的档案格式八字数据
-      const baziData = baziResult.data.baziData;
-
-      // 使用ProfileService更新档案
+      // 构建更新数据（不包含八字数据，由服务端自动重新计算）
       const updateData = {
         profileName: this.data.formData.name.trim(),
         birthDate: birthDate,
-        baziData: baziData,
         gender: this.data.formData.gender,
         isUncertainTime: this.data.isUncertainTime
       };
       
+      console.log('准备更新档案，数据:', updateData);
+      
+      // 使用ProfileService更新档案（服务端会自动重新计算八字）
       const result = await profileService.updateProfile(this.data.editingProfileId, updateData);
 
       wx.hideLoading();
@@ -496,7 +482,7 @@ Page({
     );
     
     let initialPickerValue;
-    let dateTimeValue = null;
+    let birthDate = null;
     let formatedDateTime = '';
     let formData = {
       name: '',
@@ -527,7 +513,7 @@ Page({
           });
           
           // 设置出生信息
-          const birthDate = editingProfile.birthDate;
+          birthDate = editingProfile.birthDate;
           if (birthDate) {
             const timeIndex = this.calculateTimeIndex(birthDate.hour);
             initialPickerValue = this.calculatePickerValue(
@@ -541,12 +527,8 @@ Page({
             const timeInfo = this.data.timeMap[timeIndex];
             formatedDateTime = `${birthDate.year}年${birthDate.month}月${birthDate.day}日 ${timeInfo.name}`;
             
-            // 构建时间戳
-            const formattedMonth = birthDate.month.toString().padStart(2, '0');
-            const formattedDay = birthDate.day.toString().padStart(2, '0');
-            const formattedHour = birthDate.hour.toString().padStart(2, '0');
-            const dateStr = `${birthDate.year}-${formattedMonth}-${formattedDay}T${formattedHour}:00:00`;
-            dateTimeValue = new Date(dateStr).getTime();
+            // 直接使用birthDate，无需构建时间戳
+            console.log('编辑模式：使用出生日期（北京时间）:', birthDate);
           }
         } else {
           console.error('编辑模式：未找到要编辑的档案数据');
@@ -594,20 +576,23 @@ Page({
       const timeInfo = this.data.timeMap[timeIndex];
       formatedDateTime = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${timeInfo.name}`;
       
-      // 构建时间戳
+      // 构建出生日期（北京时间）
       const year = now.getFullYear();
       const month = now.getMonth() + 1;
       const day = now.getDate();
       const hour = timeInfo.start; // 使用时辰的开始时间
-      const formattedMonth = month.toString().padStart(2, '0');
-      const formattedDay = day.toString().padStart(2, '0');
-      const formattedHour = hour.toString().padStart(2, '0');
-      const dateStr = `${year}-${formattedMonth}-${formattedDay}T${formattedHour}:00:00`;
-      dateTimeValue = new Date(dateStr).getTime();
+      
+      birthDate = {
+        year,
+        month,
+        day,
+        hour,
+        minute: 0
+      };
       
       console.log('创建模式初始化完成:', {
         formatedDateTime,
-        dateTimeValue,
+        birthDate,
         pickerValue: initialPickerValue,
         isUncertainTime: false
       });
@@ -616,7 +601,7 @@ Page({
     this.setData({
       yearRange,
       pickerValue: initialPickerValue,
-      dateTimeValue,
+      birthDate: birthDate,
       formatedDateTime,
       formData,
       isUncertainTime: this.data.isUncertainTime || false
@@ -719,24 +704,22 @@ Page({
     
     // 构建日期对象（使用时辰的开始时间）
     const baseHour = timeInfo.start;
-    // 确保月份和日期是两位数格式
-    const formattedMonth = month.toString().padStart(2, '0');
-    const formattedDay = day.toString().padStart(2, '0');
-    const formattedHour = baseHour.toString().padStart(2, '0');
     
-    const dateStr = `${year}-${formattedMonth}-${formattedDay}T${formattedHour}:00:00`;
-    console.log('构建的日期字符串:', dateStr);
-    
-    const dateTimeValue = new Date(dateStr).getTime();
-    console.log('构建的时间戳:', dateTimeValue);
-    
-    // 保存用户选择的时间到本地存储（暂不保存八字数据，在计算完成后再保存）
-    const userDateTimeData = {
-      dateTimeValue,
-      formatedDateTime: formatedTime,
+    // 直接保存北京时间参数，无需构建时间戳
+    const birthDate = {
       year,
       month,
       day,
+      hour: baseHour,
+      minute: 0
+    };
+    
+    console.log('保存的出生日期（北京时间）:', birthDate);
+    
+    // 保存用户选择的时间到本地存储（暂不保存八字数据，在计算完成后再保存）
+    const userDateTimeData = {
+      birthDate,
+      formatedDateTime: formatedTime,
       timeIndex,
       isUncertainTime: this.data.isUncertainTime, // 保存不确定时辰状态
       savedAt: Date.now()
@@ -751,7 +734,7 @@ Page({
     
     // 日期有效，保存并关闭选择器
     this.setData({
-      dateTimeValue,
+      birthDate: birthDate,
       formatedDateTime: formatedTime,
       showPicker: false,
       isUncertainTime: this.data.isUncertainTime
@@ -811,9 +794,9 @@ Page({
   // 查询数据
   async onQueryData() {
     console.log('[addProfile] onQueryData 开始执行');
-    console.log('[addProfile] dateTimeValue:', this.data.dateTimeValue);
+    console.log('[addProfile] birthDate:', this.data.birthDate);
     
-    if (!this.data.dateTimeValue) {
+    if (!this.data.birthDate) {
       console.log('[addProfile] 没有选择查询时间，返回');
       Message.warning({
         context: this,
@@ -838,93 +821,58 @@ Page({
       return;
     }
 
-    // 确保日期格式正确
-    const date = new Date(this.data.dateTimeValue);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hour = date.getHours();
-    const minute = date.getMinutes();
+    // 直接使用页面数据中的birthDate
+    const birthDate = this.data.birthDate;
     
-    const birthDate = { year, month, day, hour, minute };
-    const timestamp = this.data.dateTimeValue;
-    
-    // 检查是否为调试模式
-    const isDebugMode = config.debugMode;
-    console.log('当前调试模式状态:', isDebugMode);
-    
-    // 直接调用API计算八字（新增档案不需要检查现有档案）
-    console.log('开始调用API计算八字');
-
     // 显示加载状态
     wx.showLoading({
-      title: isDebugMode ? '调试模式：重新计算...' : '抽取智慧卡牌中...',
+      title: '创建档案中...',
       mask: true
     });
 
     try {
-      // 调用Service层获取生辰八字数据
-      const result = await baziService.calculateBazi(timestamp);
+      // 构建档案数据（不包含八字数据，由服务端自动计算）
+      const profileData = {
+        profileName: this.data.formData.name.trim(),
+        birthDate: birthDate,
+        gender: this.data.formData.gender,
+        isUncertainTime: this.data.isUncertainTime,
+        description: '用户创建的八字档案'
+      };
+      
+      console.log('准备创建档案，数据:', profileData);
+      
+      // 直接调用档案创建服务（服务端会自动计算八字）
+      const result = await profileService.createProfile(profileData);
       
       if (result.success) {
-        console.log('Coze API调用成功，结果：', result);
+        console.log('档案创建成功，结果：', result);
         
-        // 检查八字数据是否存在
-        if (!result.data || !result.data.baziData) {
-          console.error('Coze API返回成功但baziData为空:', result);
-          wx.hideLoading();
-          
-          Message.error({
-            context: this,
-            offset: [120, 32],
-            duration: 3000,
-            content: '八字数据解析失败，请重试',
-          });
-          return;
+        const savedProfile = result.data;
+        const profileId = savedProfile.profileId;
+        
+        // 设置新创建的档案为当前档案
+        const app = getApp();
+        if (savedProfile.profile) {
+          app.setCurrentProfile(savedProfile.profile);
+          // 设置新添加档案标记，用于档案列表页面的默认选中
+          app.globalData.newlyAddedProfileId = profileId;
+          console.log('新创建的档案已设置为当前档案:', profileId);
         }
-        
-        // 构建八字结果数据（使用标准化的数据结构）
-        const baziResult = {
-          timestamp: timestamp,
-          baziData: result.data.baziData,  // 标准化的八字数据
-          rawCozeData: result.data.rawCozeData,  // 原始coze数据（用于调试）
-          parameters: result.data.parameters,
-          calculatedAt: new Date().getTime()
-        };
-        
-        // 保存到云端档案（非调试模式）
-        let savedProfile = null;
-        if (!isDebugMode) {
-          const profileData = this.buildProfileFromBaziResult(baziResult, birthDate);
-          savedProfile = await this.saveBaziProfile(profileData);
-          if (savedProfile) {
-            baziResult.profileId = savedProfile.profileId;
-            
-            // 设置新创建的档案为当前档案
-            const app = getApp();
-            if (savedProfile.profile) {
-              app.setCurrentProfile(savedProfile.profile);
-              // 设置新添加档案标记，用于档案列表页面的默认选中
-              app.globalData.newlyAddedProfileId = savedProfile.profileId;
-              console.log('新创建的档案已设置为当前档案:', savedProfile.profileId);
-            }
-          }
-        }
-        
-        // API调用成功，跳转到卡牌页面
-        wx.hideLoading();
         
         // 将新创建的档案添加到ProfileManager
-        if (baziResult.profileId && savedProfile && savedProfile.profile) {
+        if (profileId && savedProfile.profile) {
           const { profileManager } = require('../../utils/profileManager');
           
           console.log('[addProfile] 准备添加到ProfileManager的数据:', savedProfile.profile);
           // 添加到ProfileManager（使用云函数返回的完整ProfileBean数据）
           profileManager.addProfile(savedProfile.profile);
-          console.log('新档案已添加到ProfileManager:', baziResult.profileId);
+          console.log('新档案已添加到ProfileManager:', profileId);
         }
         
-        // 档案创建成功后，直接跳转到卡牌页面
+        // 档案创建成功，跳转到卡牌页面
+        wx.hideLoading();
+        
         wx.switchTab({
           url: '/pages/card/index',
           success: () => {
@@ -937,10 +885,10 @@ Page({
             });
             
             // 通过事件总线通知档案页面选中新创建的档案
-            if (baziResult.profileId) {
+            if (profileId) {
               const eventBus = require('../../utils/eventBus');
               eventBus.emit(PROFILE_EVENTS.PROFILE_SELECTED, {
-                profileId: baziResult.profileId
+                profileId: profileId
               });
               // 触发档案列表刷新事件
               eventBus.emit(PROFILE_EVENTS.PROFILE_LIST_REFRESH);
@@ -958,8 +906,8 @@ Page({
         });
         
       } else {
-        // API调用失败，显示错误信息
-        console.error('服务端计算失败:', result.error);
+        // 档案创建失败，显示错误信息
+        console.error('档案创建失败:', result.error);
         
         wx.hideLoading();
         
@@ -967,7 +915,7 @@ Page({
           context: this,
           offset: [120, 32],
           duration: 3000,
-          content: `计算失败：${result.error}，请重试`,
+          content: `创建失败：${result.error}，请重试`,
         });
       }
       
@@ -984,117 +932,6 @@ Page({
     }
   },
 
-  // 从八字结果构建档案数据（直接使用统一的档案格式）
-  buildProfileFromBaziResult(baziResult, birthDate) {
-    // 使用统一的档案格式八字数据
-    if (!baziResult.baziData) {
-      console.error('八字数据格式不正确，缺少baziData字段');
-      console.error('baziResult完整数据:', baziResult);
-      return null;
-    }
-
-    const baziData = baziResult.baziData;
-    
-    // 验证八字数据结构（档案格式）
-    const requiredPillars = ['year', 'month', 'day', 'hour'];
-    for (const pillar of requiredPillars) {
-      if (!baziData[pillar]) {
-        console.error(`八字数据缺少${pillar}字段:`, baziData);
-        return null;
-      }
-      
-      if (!baziData[pillar].gan || !baziData[pillar].zhi) {
-        console.error(`${pillar}字段格式不正确:`, baziData[pillar]);
-        return null;
-      }
-    }
-    
-    // 生成档案名称（使用用户填写的名称，已通过表单验证）
-    const { formData } = this.data;
-    const profileName = formData.name.trim();
-    
-    return {
-      profileName,
-      name: formData.name || '', // 用户填写的名称
-      birthDate: {
-        year: birthDate.year,
-        month: birthDate.month,
-        day: birthDate.day,
-        hour: birthDate.hour,
-        minute: birthDate.minute || 0,
-        isLunar: false
-      },
-      baziData: baziData, // 直接使用云函数返回的档案格式数据
-      gender: formData.gender, // 使用用户选择的性别
-      isUncertainTime: this.data.isUncertainTime, // 是否不确定时辰信息
-      description: '用户创建的八字档案'
-    };
-  },
-
-
-
-  // 从档案数据构建卡牌数据
-  buildCardDataFromProfile(profile, baziResult) {
-    console.log('从档案数据构建卡牌数据:', profile);
-    
-    // 直接使用档案格式的八字数据
-    const baziData = profile.baziData;
-
-    // 格式化时间显示
-    const { formatBirthTime, formatLunarTime } = require('../../utils/util');
-    baziData.originalTime = formatBirthTime(profile.birthDate);
-    baziData.lunarTime = profile.baziData.lunarDate ? formatLunarTime(profile.baziData.lunarDate) : '';
-
-    return {
-      baziData,
-      timestamp: baziResult.timestamp,
-      profileId: profile._id,
-      isUncertainTime: profile.isUncertainTime || false,
-      calculatedAt: baziResult.calculatedAt
-    };
-  },
-
-  // 从八字结果构建卡牌数据
-  buildCardDataFromBaziResult(baziResult, birthDate) {
-    console.log('从八字结果构建卡牌数据:', baziResult);
-    
-    // 使用统一的档案格式八字数据
-    if (!baziResult.baziData) {
-      console.error('八字数据格式不正确，缺少baziData字段');
-      console.error('baziResult完整数据:', baziResult);
-      return null;
-    }
-
-    const baziData = baziResult.baziData;
-    
-    // 验证八字数据结构（档案格式）
-    const requiredPillars = ['year', 'month', 'day', 'hour'];
-    for (const pillar of requiredPillars) {
-      if (!baziData[pillar]) {
-        console.error(`八字数据缺少${pillar}字段:`, baziData);
-        return null;
-      }
-      
-      if (!baziData[pillar].gan || !baziData[pillar].zhi) {
-        console.error(`${pillar}字段格式不正确:`, baziData[pillar]);
-        return null;
-      }
-    }
-
-    // 格式化时间显示
-    const { formatBirthTime } = require('../../utils/util');
-    baziData.originalTime = formatBirthTime(birthDate);
-    baziData.lunarTime = ''; // 新计算的数据暂时没有农历时间
-
-    return {
-      baziData,
-      timestamp: baziResult.timestamp,
-      profileId: baziResult.profileId,
-      profileName: this.data.formData.name.trim() || '生命智慧卡牌', // 添加档案名称
-      isUncertainTime: this.data.isUncertainTime || false,
-      calculatedAt: baziResult.calculatedAt
-    };
-  },
 
   // 分享功能 - 激活右上角分享按钮
   onShareAppMessage: function() {

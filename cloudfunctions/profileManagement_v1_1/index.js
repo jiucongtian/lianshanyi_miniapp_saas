@@ -8,6 +8,56 @@ cloud.init({
 const db = cloud.database()
 
 /**
+ * 调用八字计算云函数
+ * @param {Object} birthDate - 出生日期信息（北京时间）
+ * @returns {Promise<Object>} 返回八字计算结果
+ */
+async function callBaziCalculation(birthDate) {
+  try {
+    console.log('=== 开始调用八字计算云函数 ===');
+    console.log('出生日期信息（北京时间）:', birthDate);
+    
+    // 直接传递北京时间参数，避免时区转换
+    const { year, month, day, hour, minute = 0 } = birthDate;
+    
+    console.log('直接传递北京时间参数给Coze API:', { year, month, day, hour, minute });
+    
+    // 调用八字计算云函数，直接传递北京时间参数
+    const result = await cloud.callFunction({
+      name: 'calculateBazi_v1_1',
+      data: {
+        birthDate: {
+          year,
+          month,
+          day,
+          hour,
+          minute
+        }
+      }
+    });
+    
+    console.log('八字计算云函数返回结果:', result);
+    
+    if (result.result && result.result.success) {
+      return {
+        success: true,
+        baziData: result.result.data.baziData,
+        rawCozeData: result.result.data.rawCozeData,
+        parameters: result.result.data.parameters,
+        birthDate: { year, month, day, hour, minute }
+      };
+    } else {
+      throw new Error(result.result?.error || '八字计算失败');
+    }
+  } catch (error) {
+    console.error('=== 调用八字计算云函数失败 ===');
+    console.error('错误信息:', error.message);
+    console.error('错误堆栈:', error.stack);
+    throw new Error(`八字计算失败: ${error.message}`);
+  }
+}
+
+/**
  * 获取用户类型配置
  * 优先从static_user_types表获取，如果不存在则使用默认配置
  */
@@ -128,9 +178,19 @@ async function createProfile(wxContext, profileData) {
   
   try {
     // 验证必填字段
-    if (!profileData.profileName || !profileData.birthDate || !profileData.baziData) {
-      throw new Error('缺少必填字段：档案名称、生日信息或八字数据')
+    if (!profileData.profileName || !profileData.birthDate) {
+      throw new Error('缺少必填字段：档案名称或生日信息')
     }
+    
+    // 自动计算八字数据
+    console.log('开始自动计算八字数据...');
+    const baziResult = await callBaziCalculation(profileData.birthDate);
+    
+    if (!baziResult.success || !baziResult.baziData) {
+      throw new Error(`八字计算失败: ${baziResult.error || '未知错误'}`);
+    }
+    
+    console.log('八字计算成功，数据:', baziResult.baziData);
     
     // 获取用户信息
     const userResult = await db.collection('users').where({
@@ -190,29 +250,7 @@ async function createProfile(wxContext, profileData) {
         minute: profileData.birthDate.minute || 0,
         isLunar: profileData.birthDate.isLunar || false
       },
-      baziData: {
-        year: {
-          gan: profileData.baziData.year.gan,
-          zhi: profileData.baziData.year.zhi,
-          ganzhiIndex: profileData.baziData.year.ganzhiIndex
-        },
-        month: {
-          gan: profileData.baziData.month.gan,
-          zhi: profileData.baziData.month.zhi,
-          ganzhiIndex: profileData.baziData.month.ganzhiIndex
-        },
-        day: {
-          gan: profileData.baziData.day.gan,
-          zhi: profileData.baziData.day.zhi,
-          ganzhiIndex: profileData.baziData.day.ganzhiIndex
-        },
-        hour: {
-          gan: profileData.baziData.hour.gan,
-          zhi: profileData.baziData.hour.zhi,
-          ganzhiIndex: profileData.baziData.hour.ganzhiIndex
-        },
-        ...(profileData.baziData.lunarDate && { lunarDate: profileData.baziData.lunarDate })
-      },
+      baziData: baziResult.baziData, // 使用计算出的八字数据
       gender: profileData.gender || 0,
       isUncertainTime: profileData.isUncertainTime || false,
       description: profileData.description || '',
@@ -341,11 +379,25 @@ async function updateProfile(wxContext, updateData) {
   try {
     const now = new Date()
     
+    // 如果更新了出生日期，需要重新计算八字
+    let baziData = null;
+    if (profileData.birthDate) {
+      console.log('检测到出生日期更新，开始重新计算八字...');
+      const baziResult = await callBaziCalculation(profileData.birthDate);
+      
+      if (!baziResult.success || !baziResult.baziData) {
+        throw new Error(`八字计算失败: ${baziResult.error || '未知错误'}`);
+      }
+      
+      baziData = baziResult.baziData;
+      console.log('八字重新计算成功，数据:', baziData);
+    }
+    
     const updateDoc = {
       updateTime: now,
       ...(profileData.profileName && { profileName: profileData.profileName }),
       ...(profileData.birthDate && { birthDate: profileData.birthDate }),
-      ...(profileData.baziData && { baziData: profileData.baziData }),
+      ...(baziData && { baziData: baziData }), // 使用重新计算的八字数据
       ...(profileData.gender !== undefined && { gender: profileData.gender }),
       ...(profileData.isUncertainTime !== undefined && { isUncertainTime: profileData.isUncertainTime }),
       ...(profileData.description !== undefined && { description: profileData.description })
