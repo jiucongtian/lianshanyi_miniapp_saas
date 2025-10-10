@@ -343,6 +343,7 @@ POST（云函数调用）
 }
 ```
 
+
 ## 错误响应
 ```json
 {
@@ -412,6 +413,7 @@ if (updateResult.result.success) {
   // 可以直接更新ProfileManager
   profileManager.updateProfile(updatedProfile._id, updatedProfile);
 }
+
 ```
 
 ## 注意事项

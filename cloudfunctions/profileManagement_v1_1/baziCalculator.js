@@ -1,10 +1,5 @@
-// 云函数入口文件
-const cloud = require('wx-server-sdk')
+// 八字计算模块
 const axios = require('axios')
-
-cloud.init({
-  env: cloud.DYNAMIC_CURRENT_ENV // 使用当前云环境
-})
 
 /**
  * 计算干支索引（简化版，实际应该使用完整的干支对照表）
@@ -221,35 +216,24 @@ async function callCozeAPI(parameters) {
   }
 }
 
-// 云函数入口函数
-exports.main = async (event, context) => {
-  const wxContext = cloud.getWXContext()
-  
-  console.log('=== 生辰八字计算云函数开始执行 ===');
-  console.log('event:', event);
-  console.log('context:', context);
-  console.log('wxContext:', wxContext);
-  
+/**
+ * 计算八字数据（主入口函数）
+ * @param {Object} birthDate - 出生日期信息（北京时间）
+ * @returns {Promise<Object>} 返回八字计算结果
+ */
+async function calculateBazi(birthDate) {
   try {
-    const { birthDate } = event;
+    console.log('=== 生辰八字计算开始执行 ===');
     console.log('接收到的birthDate:', birthDate);
     
     if (!birthDate) {
-      console.error('缺少必要参数: birthDate');
-      return {
-        success: false,
-        error: '缺少必要参数: birthDate'
-      };
+      throw new Error('缺少必要参数: birthDate');
     }
 
     // 验证birthDate参数
     const { year, month, day, hour, minute = 0 } = birthDate;
     if (!year || !month || !day || hour === undefined) {
-      console.error('birthDate参数不完整:', birthDate);
-      return {
-        success: false,
-        error: 'birthDate参数不完整，缺少必要字段'
-      };
+      throw new Error('birthDate参数不完整，缺少必要字段');
     }
 
     // 提取时间参数
@@ -285,33 +269,19 @@ exports.main = async (event, context) => {
     } catch (parseError) {
       console.error('解析八字数据失败:', parseError);
       console.error('解析错误堆栈:', parseError.stack);
-      return {
-        success: false,
-        error: `八字数据解析失败: ${parseError.message}`,
-        rawCozeData: result.data,  // 保留原始coze数据用于调试
-        parameters,
-        birthDate: event.birthDate,
-        openid: wxContext.OPENID,
-        appid: wxContext.APPID,
-        unionid: wxContext.UNIONID,
-      };
+      throw new Error(`八字数据解析失败: ${parseError.message}`);
     }
     
     console.log('=== 生辰八字计算成功，准备返回结果 ===');
-    const finalResult = {
+    return {
       success: true,
       data: {
         baziData: baziData,  // 标准化的八字数据
         rawCozeData: result.data,  // 保留原始coze数据用于调试
         parameters,
-        birthDate: event.birthDate,
-        openid: wxContext.OPENID,
-        appid: wxContext.APPID,
-        unionid: wxContext.UNIONID,
+        birthDate: birthDate
       }
     };
-    console.log('最终返回结果:', JSON.stringify(finalResult, null, 2));
-    return finalResult;
   } catch (error) {
     console.error('=== 生辰八字计算失败 ===');
     console.error('错误信息:', error.message);
@@ -324,3 +294,11 @@ exports.main = async (event, context) => {
     };
   }
 }
+
+module.exports = {
+  calculateBazi,
+  extractTimeParams,
+  parseBaziData,
+  callCozeAPI,
+  getGanZhiIndex
+};

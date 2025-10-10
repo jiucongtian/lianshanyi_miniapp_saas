@@ -1,5 +1,6 @@
 // 云函数入口文件
 const cloud = require('wx-server-sdk')
+const { calculateBazi } = require('./baziCalculator')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV // 使用当前云环境
@@ -8,13 +9,13 @@ cloud.init({
 const db = cloud.database()
 
 /**
- * 调用八字计算云函数
+ * 调用八字计算模块
  * @param {Object} birthDate - 出生日期信息（北京时间）
  * @returns {Promise<Object>} 返回八字计算结果
  */
 async function callBaziCalculation(birthDate) {
   try {
-    console.log('=== 开始调用八字计算云函数 ===');
+    console.log('=== 开始调用八字计算模块 ===');
     console.log('出生日期信息（北京时间）:', birthDate);
     
     // 直接传递北京时间参数，避免时区转换
@@ -22,35 +23,30 @@ async function callBaziCalculation(birthDate) {
     
     console.log('直接传递北京时间参数给Coze API:', { year, month, day, hour, minute });
     
-    // 调用八字计算云函数，直接传递北京时间参数
-    const result = await cloud.callFunction({
-      name: 'calculateBazi_v1_1',
-      data: {
-        birthDate: {
-          year,
-          month,
-          day,
-          hour,
-          minute
-        }
-      }
+    // 调用八字计算模块
+    const result = await calculateBazi({
+      year,
+      month,
+      day,
+      hour,
+      minute
     });
     
-    console.log('八字计算云函数返回结果:', result);
+    console.log('八字计算模块返回结果:', result);
     
-    if (result.result && result.result.success) {
+    if (result.success) {
       return {
         success: true,
-        baziData: result.result.data.baziData,
-        rawCozeData: result.result.data.rawCozeData,
-        parameters: result.result.data.parameters,
+        baziData: result.data.baziData,
+        rawCozeData: result.data.rawCozeData,
+        parameters: result.data.parameters,
         birthDate: { year, month, day, hour, minute }
       };
     } else {
-      throw new Error(result.result?.error || '八字计算失败');
+      throw new Error(result.error || '八字计算失败');
     }
   } catch (error) {
-    console.error('=== 调用八字计算云函数失败 ===');
+    console.error('=== 调用八字计算模块失败 ===');
     console.error('错误信息:', error.message);
     console.error('错误堆栈:', error.stack);
     throw new Error(`八字计算失败: ${error.message}`);
@@ -535,3 +531,4 @@ async function searchProfile(wxContext, searchData) {
     throw new Error('搜索档案失败')
   }
 }
+
