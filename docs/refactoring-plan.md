@@ -21,16 +21,31 @@
 ### 第1周：Controller层基础架构
 
 #### ✅ Task 1.1: 创建Controller层基础
-- [ ] 创建 `miniprogram/controllers/` 目录
-- [ ] 实现 `BaseController.js` 基类
-  - [ ] 定义通用的辅助方法
-  - [ ] `_showSuccess()` - 显示成功提示
-  - [ ] `_showError()` - 显示错误提示
-  - [ ] `_showLoading()` - 显示加载提示
-  - [ ] `_hideLoading()` - 隐藏加载提示
-  - [ ] `_confirm()` - 确认对话框
-  - [ ] `_prompt()` - 输入对话框
-- [ ] 编写BaseController使用文档
+- [x] 创建 `miniprogram/controllers/` 目录
+- [x] 实现 `BaseController.js` 基类
+  - [x] 定义通用的辅助方法
+  - [x] `_showSuccess()` - 显示成功提示
+  - [x] `_showError()` - 显示错误提示
+  - [x] `_showLoading()` - 显示加载提示
+  - [x] `_hideLoading()` - 隐藏加载提示
+  - [x] `_confirm()` - 确认对话框
+  - [x] `_prompt()` - 输入对话框
+  - [x] `_showMessage()` - 显示普通提示
+  - [x] `_showActionSheet()` - 操作菜单
+  - [x] `_setData()` - 更新页面数据
+  - [x] `_getData()` - 获取页面数据
+  - [x] `_setLoading()` - 设置加载状态
+  - [x] `_navigateTo()` - 页面跳转
+  - [x] `_redirectTo()` - 页面重定向
+  - [x] `_navigateBack()` - 返回上一页
+  - [x] `_switchTab()` - 切换TabBar页面
+  - [x] `_debounce()` - 防抖函数
+  - [x] `_throttle()` - 节流函数
+  - [x] `_formatTime()` - 时间格式化
+  - [x] `_handleError()` - 统一错误处理
+  - [x] `_handleApiError()` - API错误处理
+  - [x] 生命周期辅助方法
+- [x] 编写BaseController使用文档
 
 #### ✅ Task 1.2: 实现ProfileController
 - [ ] 创建 `controllers/ProfileController.js`
@@ -400,8 +415,34 @@
 
 ---
 
-**重构开始日期：** ____年____月____日  
+**重构开始日期：** 2024年12月19日  
 **预计完成日期：** ____年____月____日  
 **实际完成日期：** ____年____月____日  
 **负责人：** ___________
+
+---
+
+## 当前进度总结
+
+### ✅ 已完成任务
+- **Task 1.1: 创建Controller层基础** (100% 完成)
+  - ✅ 创建 `miniprogram/controllers/` 目录
+  - ✅ 实现 `BaseController.js` 基类，包含所有通用辅助方法
+  - ✅ 编写完整的BaseController使用文档
+
+### 🔄 进行中任务
+- 无
+
+### ⏳ 待开始任务
+- **Task 1.2: 实现ProfileController** (0% 完成)
+- **Task 1.3: 实现AddProfileController** (0% 完成)
+- **Task 1.4: 实现CardController** (0% 完成)
+- **Task 1.5: 实现MineController** (0% 完成)
+
+### 📊 整体进度
+- **阶段一进度**: 20% (1/5 任务完成)
+- **总体进度**: 4% (1/25 任务完成)
+
+### 🎯 下一步计划
+接下来将实现 ProfileController，这是档案管理页面的核心控制器，包含档案列表加载、选择、删除等核心功能。
 
