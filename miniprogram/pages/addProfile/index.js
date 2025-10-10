@@ -637,6 +637,18 @@ Page({
         pickerValue: targetPickerValue
       });
       
+    } else if (this.data.birthDate) {
+      // 编辑模式：使用档案中的出生时间作为默认值
+      console.log('编辑模式：使用档案中的出生时间作为默认值');
+      const { year, month, day, hour } = this.data.birthDate;
+      const timeIndex = this.calculateTimeIndex(hour);
+      targetPickerValue = this.calculatePickerValue(year, month, day, timeIndex);
+      
+      console.log('使用档案中的出生时间:', {
+        birthDate: this.data.birthDate,
+        pickerValue: targetPickerValue
+      });
+      
     } else {
       console.log('用户未选择时间，使用当前系统时间作为默认值');
       const now = new Date();
