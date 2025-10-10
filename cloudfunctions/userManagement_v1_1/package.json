@@ -1,9 +1,0 @@
-{
-  "name": "userManagement_v1_1",
-  "version": "1.1.0",
-  "description": "用户管理云函数 v1.1 - 重构版本",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "~2.6.3"
-  }
-}
