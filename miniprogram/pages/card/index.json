@@ -1,5 +1,7 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "bazi-card": "/components/bazi-card/index"
+  },
   "navigationBarTitleText": "生命智慧卡牌",
   "enablePullDownRefresh": true
 }

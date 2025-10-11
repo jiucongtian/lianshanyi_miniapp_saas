@@ -48,11 +48,17 @@ static VERSION_CONFIG = {
 
 ### 使用方式
 ```javascript
-// 自动版本选择（推荐）
-const result = await baziService.calculateBazi(timestamp);
+// 直接调用云函数（推荐）
+const result = await wx.cloud.callFunction({
+  name: 'calculateBazi_v1_1',
+  data: { timestamp }
+});
 
-// 指定版本调用
-const result = await baziService.callFunction('calculateBazi', data, 'v1_1');
+// 或者调用旧版本
+const result = await wx.cloud.callFunction({
+  name: 'calculateBazi',
+  data: { timestamp }
+});
 ```
 
 ## 版本升级流程

@@ -9,10 +9,9 @@
 | 接口名称 | 文档链接 | 状态 | 描述 |
 |----------|----------|------|------|
 | Coze 生辰八字计算 | [coze-bazi-api.md](./coze-bazi-api.md) | ✅ 已完成 | 调用Coze平台计算生辰八字信息 |
-| 生辰八字计算云函数 | [calculateBazi_v1_1-api.md](./calculateBazi_v1_1-api.md) | ✅ 已完成 | 云函数版本的生辰八字计算接口 |
 | 用户管理 | [userManagement-api.md](./userManagement-api.md) | ✅ 已完成 | 用户注册、信息获取和更新功能 |
 | 档案管理 | [profileManagement-api.md](./profileManagement-api.md) | ✅ 已完成 | 八字档案的增删改查功能 |
-| 档案管理 v1.1 | [profileManagement_v1_1-api.md](./profileManagement_v1_1-api.md) | ✅ 已完成 | 档案管理增强版，updateProfile返回完整数据 |
+| 档案管理 v1.1 | [profileManagement_v1_1-api.md](./profileManagement_v1_1-api.md) | ✅ 已完成 | 档案管理增强版，集成八字计算功能 |
 
 ### 待添加接口
 
@@ -80,9 +79,9 @@ const result = await api.call(params);
 docs/api/
 ├── README.md                    # 本文件，接口文档索引
 ├── coze-bazi-api.md            # Coze生辰八字计算接口
-├── calculateBazi_v1_1-api.md   # 生辰八字计算云函数接口
 ├── userManagement-api.md       # 用户管理云函数接口
 ├── profileManagement-api.md    # 档案管理云函数接口
+├── profileManagement_v1_1-api.md # 档案管理云函数接口v1.1（集成八字计算）
 ├── userClassification-api.md   # 用户分类接口
 └── [future-api].md             # 未来的其他接口文档
 ```

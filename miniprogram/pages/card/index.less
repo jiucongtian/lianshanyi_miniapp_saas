@@ -170,6 +170,38 @@
     color: #6c757d;
   }
 
+  /* 单张卡牌加载遮罩层 */
+  .card-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 12rpx;
+    z-index: 5;
+    backdrop-filter: blur(4rpx);
+  }
+
+  .card-loading-overlay .loading-spinner {
+    width: 60rpx;
+    height: 60rpx;
+    border: 4rpx solid #e9ecef;
+    border-top: 4rpx solid #007bff;
+    border-radius: 50%;
+    margin-bottom: 16rpx;
+    animation: spin 1s linear infinite;
+  }
+
+  .card-loading-overlay .loading-text {
+    font-size: 24rpx;
+    color: #666;
+  }
+
   /* 不确定时辰问号标识样式 */
   .uncertain-time-indicator {
     position: absolute;

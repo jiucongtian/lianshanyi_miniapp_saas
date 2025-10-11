@@ -31,6 +31,33 @@ function createBus() {
     },
     
     /**
+     * 监听事件（只执行一次）
+     * @param {string} event - 事件名称
+     * @param {Function} callback - 回调函数
+     */
+    once(event, callback) {
+      // 开发环境下验证事件名称
+      if (isDev && !isValidEventName(event)) {
+        console.warn(`[EventBus] 未知事件名称: "${event}"`);
+        console.warn(`[EventBus] 请检查 eventTypes.js 中是否定义了该事件`);
+      }
+      
+      // 创建一个包装函数，执行一次后自动移除
+      const onceCallback = (...args) => {
+        callback(...args);
+        this.off(event, onceCallback);
+      };
+      
+      this.on(event, onceCallback);
+      
+      // 开发环境下记录事件监听
+      if (isDev) {
+        const category = getEventCategory(event);
+        console.log(`[EventBus] 监听事件(一次性): ${event} (${category || '未知分类'})`);
+      }
+    },
+
+    /**
      * 取消监听事件
      * @param {string} event - 事件名称
      * @param {Function} callback - 回调函数（可选，不传则取消所有监听）

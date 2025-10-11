@@ -21,10 +21,13 @@ POST（云函数调用）
 ## 版本更新说明
 
 ### v1.1 更新内容
+- **自动八字计算**：createProfile和updateProfile现在自动计算八字数据，无需客户端传入
 - **createProfile 方法增强**：现在返回完整的ProfileBean数据，包含所有字段
-- **updateProfile 方法增强**：现在返回更新后的完整ProfileBean数据
+- **updateProfile 方法增强**：现在返回更新后的完整ProfileBean数据，自动重新计算八字
 - **数据一致性提升**：所有操作都返回完整的档案信息，客户端可直接使用
 - **客户端简化**：减少客户端手动构建档案对象的复杂度，直接使用云函数返回的数据
+- **性能优化**：减少网络请求次数，服务端统一处理八字计算
+- **时间处理修复**：修复了时区处理问题，确保八字计算使用正确的北京时间
 
 ## API列表
 
@@ -44,29 +47,8 @@ POST（云函数调用）
       "minute": 30,
       "isLunar": false
     },
-    "baziData": {
-      "year": {
-        "gan": "庚",
-        "zhi": "午",
-        "ganzhiIndex": 7
-      },
-      "month": {
-        "gan": "辛",
-        "zhi": "巳",
-        "ganzhiIndex": 18
-      },
-      "day": {
-        "gan": "甲",
-        "zhi": "戌",
-        "ganzhiIndex": 11
-      },
-      "hour": {
-        "gan": "辛",
-        "zhi": "未",
-        "ganzhiIndex": 8
-      }
-    },
     "gender": 1,
+    "isUncertainTime": false,
     "description": "本人生辰八字档案"
   }
 }
@@ -84,9 +66,11 @@ POST（云函数调用）
 | data.birthDate.hour | number | 是 | 出生时辰(0-23) |
 | data.birthDate.minute | number | 否 | 出生分钟(0-59) |
 | data.birthDate.isLunar | boolean | 否 | 是否为农历 |
-| data.baziData | object | 是 | 生辰八字数据 |
 | data.gender | number | 否 | 性别(0:未知,1:男,2:女) |
+| data.isUncertainTime | boolean | 否 | 是否不确定时辰信息 |
 | data.description | string | 否 | 档案描述 |
+
+**注意**：baziData参数已移除，云函数会自动根据birthDate计算八字数据
 
 #### 成功响应
 ```json
@@ -359,6 +343,7 @@ POST（云函数调用）
 }
 ```
 
+
 ## 错误响应
 ```json
 {
@@ -371,48 +356,64 @@ POST（云函数调用）
 
 ### JavaScript调用示例
 ```javascript
-// 创建档案
+// 创建档案（v1.1简化版 - 无需传入八字数据）
 const createResult = await wx.cloud.callFunction({
   name: 'profileManagement_v1_1',
   data: {
     action: 'createProfile',
     data: {
       profileName: '我的八字',
-      birthDate: { year: 1990, month: 5, day: 15, hour: 14 },
-      baziData: {
-        // 八字数据
-      }
+      birthDate: { 
+        year: 1990, 
+        month: 5, 
+        day: 15, 
+        hour: 14, 
+        minute: 30,
+        isLunar: false 
+      },
+      gender: 1,
+      isUncertainTime: false,
+      description: '本人生辰八字档案'
     }
   }
 });
 
-// 使用创建后的完整ProfileBean数据
+// 使用创建后的完整ProfileBean数据（包含自动计算的八字数据）
 if (createResult.result.success) {
   const newProfile = createResult.result.data.profile; // 完整的ProfileBean数据
   console.log('新创建的档案:', newProfile);
+  console.log('自动计算的八字数据:', newProfile.baziData);
   // 可以直接添加到ProfileManager
   profileManager.addProfile(newProfile);
 }
 
-// 更新档案（v1.1增强）
+// 更新档案（v1.1增强 - 自动重新计算八字）
 const updateResult = await wx.cloud.callFunction({
   name: 'profileManagement_v1_1',
   data: {
     action: 'updateProfile',
     data: {
       profileId: 'profile_60a1b2c3d4e5f6789abcdef1',
-      profileName: '更新后的名称'
+      profileName: '更新后的名称',
+      birthDate: { 
+        year: 1990, 
+        month: 6, 
+        day: 15, 
+        hour: 14 
+      } // 如果更新了出生日期，会自动重新计算八字
     }
   }
 });
 
-// 使用更新后的完整ProfileBean数据
+// 使用更新后的完整ProfileBean数据（包含重新计算的八字数据）
 if (updateResult.result.success) {
   const updatedProfile = updateResult.result.data; // 完整的ProfileBean数据
   console.log('更新后的档案:', updatedProfile);
+  console.log('重新计算的八字数据:', updatedProfile.baziData);
   // 可以直接更新ProfileManager
   profileManager.updateProfile(updatedProfile._id, updatedProfile);
 }
+
 ```
 
 ## 注意事项
@@ -423,15 +424,21 @@ if (updateResult.result.success) {
 5. 建议单个用户档案数量控制在100个以内
 6. 分页查询避免一次性加载过多数据
 7. **v1.1版本**：createProfile和updateProfile现在返回完整的ProfileBean数据，客户端可直接使用
-8. **ProfileBean数据**：云函数返回的数据已包含所有必要字段，无需客户端重新构建
-9. **性能优化**：客户端可直接使用返回的ProfileBean数据更新ProfileManager，避免重复计算
+8. **自动八字计算**：云函数会自动根据birthDate计算八字数据，无需客户端传入baziData
+9. **数据一致性**：更新出生日期时会自动重新计算八字，确保数据一致性
+10. **性能优化**：减少网络请求次数，服务端统一处理八字计算
+11. **ProfileBean数据**：云函数返回的数据已包含所有必要字段，无需客户端重新构建
+12. **客户端简化**：客户端只需传入基本信息，八字计算由服务端处理
 
 ## 版本历史
 
 ### v1.1 (2024-01-XX)
+- **重大更新**：自动八字计算功能，createProfile和updateProfile无需客户端传入baziData
 - **新增功能**：createProfile和updateProfile方法现在返回完整的ProfileBean数据
 - **改进**：提升数据一致性，简化客户端处理逻辑
-- **性能优化**：客户端可直接使用云函数返回的数据，避免重复计算和构建
+- **性能优化**：减少网络请求次数，服务端统一处理八字计算
+- **架构优化**：客户端只需传入基本信息，八字计算由服务端自动处理
+- **时间处理修复**：修复了时区处理问题，确保八字计算使用正确的北京时间
 - **兼容性**：与v1.0版本完全兼容，仅增强功能
 
 ### v1.0 (2023-09-14)

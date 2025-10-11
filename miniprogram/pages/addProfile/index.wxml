@@ -83,6 +83,7 @@
   <!-- 操作按钮区域 -->
   <view class="action-section">
     <loading-button
+      id="loading-button"
       theme="primary"
       size="large"
       block="{{true}}"

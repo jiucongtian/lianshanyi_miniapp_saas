@@ -17,85 +17,54 @@
 
     <!-- 卡牌内容 -->
     <view class="pillars-flex" wx:else>
-      <!-- 年柱 -->
-      <view class="pillar-item" animation="{{yearAnimation}}">
-        <view class="pillar-title">时空关系卡</view>
-        <view class="image-container" bindtap="onCardTap" data-pillar="year">
-          <image 
-            class="pillar-image" 
-            src="{{yearPillar.imagePath}}" 
-            mode="aspectFit" 
-            bindtap="onImageTap" 
-            binderror="onImageError"
-            data-pillar="year"
-            wx:if="{{yearPillar.imagePath}}" />
-          <view class="image-placeholder" wx:if="{{!yearPillar.imagePath && isLoadingImages}}">
-            <view class="loading-spinner"></view>
-            <view class="loading-text">加载中...</view>
-          </view>
-        </view>
-      </view>
+      <!-- 年柱 - 使用组件 -->
+      <bazi-card
+        title="时空关系卡"
+        pillar-name="year"
+        image-path="{{yearPillar.imagePath}}"
+        loading="{{yearCardLoading}}"
+        animation="{{yearAnimation}}"
+        bind:cardtap="onCardTap"
+        bind:imageload="onImageLoad"
+        bind:imageerror="onImageError"
+      />
 
-      <!-- 月柱 -->
-      <view class="pillar-item" animation="{{monthAnimation}}">
-        <view class="pillar-title">事业关系卡</view>
-        <view class="image-container" bindtap="onCardTap" data-pillar="month">
-          <image 
-            class="pillar-image" 
-            src="{{monthPillar.imagePath}}" 
-            mode="aspectFit" 
-            bindtap="onImageTap" 
-            binderror="onImageError"
-            data-pillar="month"
-            wx:if="{{monthPillar.imagePath}}" />
-          <view class="image-placeholder" wx:if="{{!monthPillar.imagePath && isLoadingImages}}">
-            <view class="loading-spinner"></view>
-            <view class="loading-text">加载中...</view>
-          </view>
-        </view>
-      </view>
+      <!-- 月柱 - 使用组件 -->
+      <bazi-card
+        title="事业关系卡"
+        pillar-name="month"
+        image-path="{{monthPillar.imagePath}}"
+        loading="{{monthCardLoading}}"
+        animation="{{monthAnimation}}"
+        bind:cardtap="onCardTap"
+        bind:imageload="onImageLoad"
+        bind:imageerror="onImageError"
+      />
 
-      <!-- 日柱 -->
-      <view class="pillar-item" animation="{{dayAnimation}}">
-        <view class="pillar-title">家庭关系卡</view>
-        <view class="image-container" bindtap="onCardTap" data-pillar="day">
-          <image 
-            class="pillar-image" 
-            src="{{dayPillar.imagePath}}" 
-            mode="aspectFit" 
-            bindtap="onImageTap" 
-            binderror="onImageError"
-            data-pillar="day"
-            wx:if="{{dayPillar.imagePath}}" />
-          <view class="image-placeholder" wx:if="{{!dayPillar.imagePath && isLoadingImages}}">
-            <view class="loading-spinner"></view>
-            <view class="loading-text">加载中...</view>
-          </view>
-        </view>
-      </view>
+      <!-- 日柱 - 使用组件 -->
+      <bazi-card
+        title="家庭关系卡"
+        pillar-name="day"
+        image-path="{{dayPillar.imagePath}}"
+        loading="{{dayCardLoading}}"
+        animation="{{dayAnimation}}"
+        bind:cardtap="onCardTap"
+        bind:imageload="onImageLoad"
+        bind:imageerror="onImageError"
+      />
 
-      <!-- 时柱 -->
-      <view class="pillar-item" animation="{{timeAnimation}}">
-        <view class="pillar-title">亲子关系卡</view>
-        <view class="image-container" bindtap="onCardTap" data-pillar="time">
-          <image 
-            class="pillar-image" 
-            src="{{timePillar.imagePath}}" 
-            mode="aspectFit" 
-            bindtap="onImageTap" 
-            binderror="onImageError"
-            data-pillar="time"
-            wx:if="{{timePillar.imagePath}}" />
-          <view class="image-placeholder" wx:if="{{!timePillar.imagePath && isLoadingImages}}">
-            <view class="loading-spinner"></view>
-            <view class="loading-text">加载中...</view>
-          </view>
-          <!-- 不确定时辰问号标识 -->
-          <view class="uncertain-time-indicator" wx:if="{{isUncertainTime}}">
-            <text class="question-mark">?</text>
-          </view>
-        </view>
-      </view>
+      <!-- 时柱 - 使用组件 -->
+      <bazi-card
+        title="亲子关系卡"
+        pillar-name="time"
+        image-path="{{timePillar.imagePath}}"
+        loading="{{timeCardLoading}}"
+        show-uncertain-indicator="{{isUncertainTime}}"
+        animation="{{timeAnimation}}"
+        bind:cardtap="onCardTap"
+        bind:imageload="onImageLoad"
+        bind:imageerror="onImageError"
+      />
     </view>
   </view>
 
