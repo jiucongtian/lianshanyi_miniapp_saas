@@ -88,6 +88,9 @@ class MineController extends BaseController {
         this.userInfo = userInfo;
         this._setData({
           userInfo: userInfo,
+          userTypeText: this.userTypeText,
+          genderText: this.genderText,
+          phoneNumberText: this.phoneNumberText,
           loading: false
         });
         
