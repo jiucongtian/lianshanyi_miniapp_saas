@@ -362,19 +362,23 @@ class ProfileBean {
   }
   
   /**
-   * 转换为简单对象（用于调试或日志）
-   * @returns {Object} 简化的档案对象
+   * 转换为完整对象（用于编辑、存储等需要完整数据的场景）
+   * @returns {Object} 完整的档案对象
    */
   toObject() {
     return {
       _id: this._id,
       profileName: this.profileName,
-      birthTime: this.formatBirthTime(),
-      baziString: this.getBaziString(),
+      birthDate: this.birthDate,
       gender: this.gender,
       isUncertainTime: this.isUncertainTime,
       isActive: this.isActive,
-      createTime: this.createTime
+      createTime: this.createTime,
+      userId: this.userId,
+      openid: this.openid,
+      // 额外提供格式化后的数据，便于显示
+      birthTime: this.formatBirthTime(),
+      baziString: this.getBaziString()
     };
   }
   
