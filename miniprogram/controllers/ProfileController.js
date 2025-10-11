@@ -528,6 +528,10 @@ class ProfileController extends BaseController {
     if (!currentProfileExists) {
       // 如果当前选中的档案不存在，自动选中第一个档案
       this._autoSelectFirstProfile();
+    } else {
+      // 如果当前选中的档案存在，确保页面数据正确显示高亮状态
+      console.log('[ProfileController] 当前选中的档案存在，确保高亮状态正确:', this.currentProfileId);
+      this._setData({ currentProfileId: this.currentProfileId });
     }
   }
 
@@ -636,6 +640,8 @@ class ProfileController extends BaseController {
     // 使用ProfileManager获取当前档案ID
     const currentProfile = profileManager.getCurrentProfile();
     this.currentProfileId = currentProfile ? currentProfile._id : null;
+    console.log('[ProfileController] 从ProfileManager获取当前档案ID:', this.currentProfileId);
+    console.log('[ProfileController] 当前档案对象:', currentProfile ? currentProfile.profileName : 'null');
     this._setData({ currentProfileId: this.currentProfileId });
     
     // 检查ProfileManager是否已初始化，避免重复请求

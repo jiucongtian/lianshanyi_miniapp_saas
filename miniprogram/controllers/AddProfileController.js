@@ -271,6 +271,14 @@ class AddProfileController extends BaseController {
         if (result.profile) {
           profileManager.addProfile(result.profile);
           console.log('[AddProfileController] 档案已添加到ProfileManager');
+          
+          // 设置新创建的档案为当前档案
+          profileManager.setCurrentProfile(result.profile);
+          console.log('[AddProfileController] 新创建的档案已设置为当前档案');
+          
+          // 设置全局数据中的新添加档案标记
+          const app = getApp();
+          app.globalData.newlyAddedProfileId = result.profileId;
         }
         
         // 触发档案列表刷新事件
@@ -343,6 +351,18 @@ class AddProfileController extends BaseController {
         // 更新ProfileManager中的档案数据
         profileManager.updateProfile(this.editingProfileId, result.data);
         console.log('[AddProfileController] ProfileManager中的档案已更新');
+        
+        // 编辑档案后，将编辑的档案设置为当前档案（提升用户体验）
+        console.log('[AddProfileController] 编辑档案后，将编辑的档案设置为当前档案');
+        console.log('[AddProfileController] 编辑档案ID:', this.editingProfileId);
+        console.log('[AddProfileController] 更新后的档案数据:', result.data);
+        
+        profileManager.setCurrentProfile(result.data);
+        console.log('[AddProfileController] 编辑的档案已设置为当前档案');
+        
+        // 验证设置是否成功
+        const updatedCurrentProfile = profileManager.getCurrentProfile();
+        console.log('[AddProfileController] 验证设置后的当前档案:', updatedCurrentProfile ? updatedCurrentProfile._id : 'null');
         
         // 清除本地存储的编辑数据
         try {
@@ -515,7 +535,7 @@ class AddProfileController extends BaseController {
     
     // 设置默认时间（当前时间）
     const now = new Date();
-    const timeIndex = this._calculateTimeIndex(now.getHours());
+    const timeIndex = this._calculateTimeIndex(now.getHours(), timeMap);
     const timeInfo = timeMap[timeIndex];
     const formatedDateTime = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${timeInfo.name}`;
     
@@ -577,7 +597,7 @@ class AddProfileController extends BaseController {
         
         if (this.birthDate) {
           const timeIndex = this._calculateTimeIndex(this.birthDate.hour);
-          const timeInfo = this.data.timeMap[timeIndex];
+          const timeInfo = this.page.data.timeMap[timeIndex];
           this.formatedDateTime = `${this.birthDate.year}年${this.birthDate.month}月${this.birthDate.day}日 ${timeInfo.name}`;
         }
         
@@ -767,12 +787,18 @@ class AddProfileController extends BaseController {
   /**
    * 根据小时计算对应的时辰索引
    * @param {number} hour - 小时
+   * @param {Array} timeMap - 时辰对照表
    * @returns {number} 时辰索引
    * @private
    */
-  _calculateTimeIndex(hour) {
-    for (let i = 0; i < this.data.timeMap.length; i++) {
-      const time = this.data.timeMap[i];
+  _calculateTimeIndex(hour, timeMap = null) {
+    // 如果没有传入timeMap，尝试从页面数据获取
+    if (!timeMap) {
+      timeMap = this.page.data.timeMap;
+    }
+    
+    for (let i = 0; i < timeMap.length; i++) {
+      const time = timeMap[i];
       if (time.name.includes('子时')) {
         if (hour >= 23 || hour < 1) {
           return i;

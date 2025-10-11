@@ -171,6 +171,13 @@ class ProfileManager {
         // 更新ProfileBean实例的数据
         Object.assign(profile, updateData);
         console.log('[ProfileManager] 更新档案:', profile.profileName);
+        
+        // 如果当前档案就是被更新的档案，同步更新currentProfile引用
+        if (this.currentProfile && this.currentProfile._id === profileId) {
+          this.currentProfile = profile;
+          console.log('[ProfileManager] 当前档案已同步更新');
+        }
+        
         return true;
       }
       return false;
