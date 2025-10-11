@@ -20,12 +20,12 @@
       <!-- 年柱 -->
       <view class="pillar-item" animation="{{yearAnimation}}">
         <view class="pillar-title">时空关系卡</view>
-        <view class="image-container" bindtap="onCardTap" data-pillar="year">
+        <view class="image-container">
           <image 
             class="pillar-image" 
             src="{{yearPillar.imagePath}}" 
             mode="aspectFit" 
-            bindtap="onImageTap" 
+            bindtap="{{yearCardFlipped ? 'onImageTap' : 'onCardTap'}}"
             binderror="onImageError"
             data-pillar="year"
             wx:if="{{yearPillar.imagePath}}" />
@@ -39,12 +39,12 @@
       <!-- 月柱 -->
       <view class="pillar-item" animation="{{monthAnimation}}">
         <view class="pillar-title">事业关系卡</view>
-        <view class="image-container" bindtap="onCardTap" data-pillar="month">
+        <view class="image-container">
           <image 
             class="pillar-image" 
             src="{{monthPillar.imagePath}}" 
             mode="aspectFit" 
-            bindtap="onImageTap" 
+            bindtap="{{monthCardFlipped ? 'onImageTap' : 'onCardTap'}}"
             binderror="onImageError"
             data-pillar="month"
             wx:if="{{monthPillar.imagePath}}" />
@@ -58,12 +58,12 @@
       <!-- 日柱 -->
       <view class="pillar-item" animation="{{dayAnimation}}">
         <view class="pillar-title">家庭关系卡</view>
-        <view class="image-container" bindtap="onCardTap" data-pillar="day">
+        <view class="image-container">
           <image 
             class="pillar-image" 
             src="{{dayPillar.imagePath}}" 
             mode="aspectFit" 
-            bindtap="onImageTap" 
+            bindtap="{{dayCardFlipped ? 'onImageTap' : 'onCardTap'}}"
             binderror="onImageError"
             data-pillar="day"
             wx:if="{{dayPillar.imagePath}}" />
@@ -77,12 +77,12 @@
       <!-- 时柱 -->
       <view class="pillar-item" animation="{{timeAnimation}}">
         <view class="pillar-title">亲子关系卡</view>
-        <view class="image-container" bindtap="onCardTap" data-pillar="time">
+        <view class="image-container">
           <image 
             class="pillar-image" 
             src="{{timePillar.imagePath}}" 
             mode="aspectFit" 
-            bindtap="onImageTap" 
+            bindtap="{{timeCardFlipped ? 'onImageTap' : 'onCardTap'}}"
             binderror="onImageError"
             data-pillar="time"
             wx:if="{{timePillar.imagePath}}" />

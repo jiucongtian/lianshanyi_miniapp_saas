@@ -27,6 +27,14 @@ class BaseController {
     this._loadingCount = 0; // 加载计数器，支持嵌套加载
   }
 
+  /**
+   * 获取页面数据的便捷访问器
+   * @returns {Object} 页面的data对象
+   */
+  get data() {
+    return this.page ? this.page.data : null;
+  }
+
   // ==================== 用户交互提示方法 ====================
 
   /**
