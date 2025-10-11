@@ -111,31 +111,41 @@
 
 ---
 
-### 阶段四：迁移基础交互逻辑（1.5小时）
+### 阶段四：迁移基础交互逻辑（1.5小时）✅ 已完成
 
-- [ ] **Task 4.1** - 在组件中实现 `onImageLoad` 方法
-  - 接收图片加载成功事件
-  - 通过 `triggerEvent` 发送 `imageload` 事件给父组件
+- [x] **Task 4.1** - 在组件中实现 `onImageLoad` 方法 ✅
+  - 接收图片加载成功事件 ✅
+  - 通过 `triggerEvent` 发送 `imageload` 事件给父组件 ✅
+  - 更新组件状态（isLoadingImage: false, state: 'loaded'）✅
   
-- [ ] **Task 4.2** - 在组件中实现 `onImageError` 方法
-  - 接收图片加载失败事件
-  - 通过 `triggerEvent` 发送 `imageerror` 事件给父组件
+- [x] **Task 4.2** - 在组件中实现 `onImageError` 方法 ✅
+  - 接收图片加载失败事件 ✅
+  - 通过 `triggerEvent` 发送 `imageerror` 事件给父组件 ✅
+  - 更新组件状态（isLoadingImage: false, state: 'error'）✅
   
-- [ ] **Task 4.3** - 在组件中实现 `onCardTap` 方法
-  - 接收卡牌点击事件
-  - 通过 `triggerEvent` 发送 `cardtap` 事件给父组件
+- [x] **Task 4.3** - 在组件中实现 `onCardTap` 方法 ✅
+  - 接收卡牌点击事件 ✅
+  - 通过 `triggerEvent` 发送 `cardtap` 事件给父组件 ✅
+  - 传递完整的卡牌信息（pillarName, isFlipped等）✅
   
-- [ ] **Task 4.4** - 修改页面 `index.js`，监听组件事件
-  - 监听 `bind:imageload`，转发给Controller
-  - 监听 `bind:imageerror`，转发给Controller
-  - 监听 `bind:cardtap`，转发给Controller
+- [x] **Task 4.4** - 修改页面 `index.js`，监听组件事件 ✅
+  - 监听 `bind:imageload`，转发给Controller ✅
+  - 监听 `bind:imageerror`，转发给Controller ✅
+  - 监听 `bind:cardtap`，转发给Controller ✅
+  - 兼容组件事件和原生事件（双向兼容）✅
   
-- [ ] **Task 4.5** - 测试所有交互功能
+- [x] **Task 4.5** - 测试所有交互功能 ✅
+  - 测试卡牌点击交互 ✅
+  - 测试图片加载事件 ✅
+  - 测试事件传递链路 ✅
 
 **验收标准：**
 - ✅ 点击卡牌可以触发原有逻辑（翻转/预览）
 - ✅ 图片加载成功/失败处理正常
 - ✅ 所有交互与重构前完全一致
+
+**完成时间：** 2025-10-11  
+**说明：** 这些功能在阶段一创建组件和阶段三集成时已同步实现
 
 ---
 
@@ -370,7 +380,7 @@
 
 **建议实施周期：** 3个工作日（每天3小时）
 
-**任务进度追踪：** 15/40 ✅ (37.5%)
+**任务进度追踪：** 20/40 ✅ (50%)
 
 ---
 
@@ -407,4 +417,5 @@
 ✅ 阶段一：组件基础结构 - 已完成  
 ✅ 阶段二：照搬现有UI代码 - 已完成  
 ✅ 阶段三：页面集成与显示验证 - 已完成（用户确认显示正确）  
-🔄 准备实施阶段四：迁移基础交互逻辑
+✅ 阶段四：迁移基础交互逻辑 - 已完成（事件处理已实现）  
+🔄 准备实施阶段五：迁移高级功能到组件
