@@ -209,9 +209,9 @@
 
 - [x] **Task 6.1** - 删除 `_loadSingleCard()` 方法 ✅
 - [x] **Task 6.2** - 删除 `onImageLoadSuccess()` 方法 ✅
-- [ ] **Task 6.3** - 删除 `onImageLoadError()` 方法
-- [ ] **Task 6.4** - 删除 `_getBaziImageInfo()` 方法
-- [ ] **Task 6.5** - 删除 `_getBaziImagePath()` 方法
+- [x] **Task 6.3** - 删除 `onImageLoadError()` 方法（已不存在）
+- [x] **Task 6.4** - 删除 `_getBaziImageInfo()` 方法（已不存在）
+- [x] **Task 6.5** - 删除 `_getBaziImagePath()` 方法（已不存在）
 - [x] **Task 6.6** - 简化 `updateBaziDisplay()` 方法 ✅
   - ✅ 只需设置天干地支数据
   - ✅ 移除图片加载逻辑
