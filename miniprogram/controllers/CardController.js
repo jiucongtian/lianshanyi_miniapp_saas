@@ -408,9 +408,7 @@ class CardController extends BaseController {
   _completeReinitialize() {
     console.log('[CardController] 开始完全重新初始化卡牌页面数据');
     
-    const currentCardBackImagePath = this.data?.cardBackImagePath || '/static/card-back.jpg';
-    
-    // 重置所有状态变量
+    // 重置所有状态变量（只设置必要字段，组件会自己管理状态）
     this._setData({
       // 重置所有显示状态
       isDataLoaded: false,
@@ -423,40 +421,23 @@ class CardController extends BaseController {
       previewImagePath: '',
       previewCardDescription: null,
       
-      // 重置所有卡牌翻转状态（日柱卡牌将在数据加载后设置为正面）
-      yearCardFlipped: false,
-      monthCardFlipped: false,
-      dayCardFlipped: false, // 将在数据加载后设置为 true
-      timeCardFlipped: false,
-      
-      // 重置所有柱子数据为初始状态
+      // 重置所有柱子数据（只需要天干地支，组件会自动处理图片加载和显示）
       yearPillar: { 
         heavenlyStem: '',
-        earthlyBranch: '',
-        imagePath: currentCardBackImagePath,
-        baziImagePath: ''
+        earthlyBranch: ''
       },
       monthPillar: {
         heavenlyStem: '',
-        earthlyBranch: '',
-        imagePath: currentCardBackImagePath,
-        baziImagePath: ''
+        earthlyBranch: ''
       },
       dayPillar: {
         heavenlyStem: '',
-        earthlyBranch: '',
-        imagePath: currentCardBackImagePath,
-        baziImagePath: ''
+        earthlyBranch: ''
       },
       timePillar: {
         heavenlyStem: '',
-        earthlyBranch: '',
-        imagePath: currentCardBackImagePath,
-        baziImagePath: ''
-      },
-      
-      // 保持卡牌背面图片路径
-      cardBackImagePath: currentCardBackImagePath
+        earthlyBranch: ''
+      }
     });
     
     console.log('[CardController] 完全重新初始化完成，所有数据已重置为初始状态');
@@ -528,23 +509,13 @@ class CardController extends BaseController {
    */
   _clearImageData() {
     console.log('[CardController] 清空图片数据');
-    const currentCardBackImagePath = this.data?.cardBackImagePath || '/static/card-back.jpg';
     
+    // 只清空天干地支数据，组件会自动处理状态重置
     this._setData({
-      yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
-      monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
-      dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
-      timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
-      // 重置所有卡牌的加载状态
-      yearCardLoading: false,
-      monthCardLoading: false,
-      dayCardLoading: false,
-      timeCardLoading: false,
-      // 重置卡牌翻转状态（日柱卡牌将在数据加载后设置为正面）
-      yearCardFlipped: false,
-      monthCardFlipped: false,
-      dayCardFlipped: false, // 将在数据加载后设置为 true
-      timeCardFlipped: false
+      yearPillar: { heavenlyStem: '', earthlyBranch: '' },
+      monthPillar: { heavenlyStem: '', earthlyBranch: '' },
+      dayPillar: { heavenlyStem: '', earthlyBranch: '' },
+      timePillar: { heavenlyStem: '', earthlyBranch: '' }
     });
   }
 
@@ -554,31 +525,24 @@ class CardController extends BaseController {
    */
   _showNoDataState() {
     console.log('[CardController] 显示无数据状态');
-    const currentCardBackImagePath = this.data?.cardBackImagePath || '/static/card-back.jpg';
     
+    // 只设置必要的状态字段
     this._setData({
       isLoading: false,
       isDataLoaded: false,
-      currentProfileName: '生命智慧卡牌', // 保持默认档案名称
-      isUncertainTime: false, // 重置不确定时辰状态
-      yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
-      monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
-      dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
-      timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
-      // 重置所有卡牌的加载状态
-      yearCardLoading: false,
-      monthCardLoading: false,
-      dayCardLoading: false,
-      timeCardLoading: false,
+      currentProfileName: '生命智慧卡牌',
+      isUncertainTime: false,
+      
+      // 清空天干地支数据
+      yearPillar: { heavenlyStem: '', earthlyBranch: '' },
+      monthPillar: { heavenlyStem: '', earthlyBranch: '' },
+      dayPillar: { heavenlyStem: '', earthlyBranch: '' },
+      timePillar: { heavenlyStem: '', earthlyBranch: '' },
+      
       // 重置图片预览相关
       showImagePreview: false,
       previewImagePath: '',
-      previewCardDescription: null,
-      // 重置卡牌翻转状态
-      yearCardFlipped: false,
-      monthCardFlipped: false,
-      dayCardFlipped: false,
-      timeCardFlipped: false
+      previewCardDescription: null
     });
   }
 
