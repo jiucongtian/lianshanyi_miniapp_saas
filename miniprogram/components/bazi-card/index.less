@@ -2,7 +2,155 @@
  * 八字卡牌组件样式
  */
 
-.bazi-card-wrapper {
-  /* 组件样式待补充 */
+/* 卡牌容器 */
+.pillar-item {
+  height: 550rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 卡牌标题 */
+.pillar-title {
+  font-size: 28rpx;
+  margin-bottom: 12rpx;
+  text-align: center;
+}
+
+/* 图片容器 */
+.image-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 卡牌图片 */
+.pillar-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.pillar-image:active {
+  transform: scale(0.98);
+}
+
+/* 加载动画 - 转圈 */
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #e9ecef;
+  border-top: 4rpx solid #007bff;
+  border-radius: 50%;
+  margin-bottom: 16rpx;
+  animation: spin 1s linear infinite;
+}
+
+/* 单张卡牌加载遮罩层 */
+.card-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12rpx;
+  z-index: 5;
+  backdrop-filter: blur(4rpx);
+}
+
+.card-loading-overlay .loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #e9ecef;
+  border-top: 4rpx solid #007bff;
+  border-radius: 50%;
+  margin-bottom: 16rpx;
+  animation: spin 1s linear infinite;
+}
+
+.card-loading-overlay .loading-text {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 不确定时辰问号标识样式 */
+.uncertain-time-indicator {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  width: 60rpx;
+  height: 60rpx;
+  background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.4);
+  z-index: 10;
+  animation: pulse-glow 2s ease-in-out infinite;
+  border: 3rpx solid #fff;
+}
+
+.question-mark {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
+  line-height: 1;
+}
+
+/* === 动画定义 === */
+
+/* 脉搏动画 */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 转圈动画 */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 问号标识发光动画 */
+@keyframes pulse-glow {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 6rpx 20rpx rgba(255, 107, 107, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.4);
+  }
 }
 

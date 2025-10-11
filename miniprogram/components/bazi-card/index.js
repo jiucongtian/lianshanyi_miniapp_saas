@@ -7,7 +7,7 @@ Component({
    * 组件的属性列表
    */
   properties: {
-    // 卡牌标题（例如："年柱"）
+    // 卡牌标题（例如："年柱"、"时空关系卡"）
     title: {
       type: String,
       value: ''
@@ -19,34 +19,16 @@ Component({
       value: ''
     },
     
-    // 天干
-    heavenlyStem: {
+    // 当前显示的图片路径（由父组件传入）
+    imagePath: {
       type: String,
       value: ''
     },
     
-    // 地支
-    earthlyBranch: {
-      type: String,
-      value: ''
-    },
-    
-    // 八字图片ID
-    baziImageId: {
-      type: String,
-      value: ''
-    },
-    
-    // 是否默认显示正面（日柱为true）
-    defaultShowFront: {
+    // 是否正在加载（由父组件控制加载状态）
+    loading: {
       type: Boolean,
       value: false
-    },
-    
-    // 背面图片路径
-    cardBackImage: {
-      type: String,
-      value: ''
     },
     
     // 是否显示不确定标识（仅时柱）
@@ -59,6 +41,38 @@ Component({
     animation: {
       type: Object,
       value: null
+    },
+    
+    // === 以下属性为后续阶段扩展使用 ===
+    
+    // 天干（阶段五使用：组件内部图片加载）
+    heavenlyStem: {
+      type: String,
+      value: ''
+    },
+    
+    // 地支（阶段五使用：组件内部图片加载）
+    earthlyBranch: {
+      type: String,
+      value: ''
+    },
+    
+    // 八字图片ID（阶段五使用：组件内部图片加载）
+    baziImageId: {
+      type: String,
+      value: ''
+    },
+    
+    // 是否默认显示正面（阶段五使用：组件内部翻转逻辑）
+    defaultShowFront: {
+      type: Boolean,
+      value: false
+    },
+    
+    // 背面图片路径（阶段五使用：组件内部翻转逻辑）
+    cardBackImage: {
+      type: String,
+      value: ''
     }
   },
 

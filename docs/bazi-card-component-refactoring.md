@@ -34,37 +34,39 @@
 
 ---
 
-### 阶段二：照搬现有UI代码（1小时）⭐️ 关键
+### 阶段二：照搬现有UI代码（1小时）⭐️ 关键 ✅ 已完成
 
-- [ ] **Task 2.1** - 从 `pages/card/index.wxml` 复制单张卡牌的完整WXML结构
-  - 包括：`.pillar-item` 容器
-  - 包括：`.pillar-title` 标题
-  - 包括：`.image-container` 图片容器
-  - 包括：`<image>` 标签及所有属性
-  - 包括：`.card-loading-overlay` 加载状态
-  - 包括：`.uncertain-time-indicator` 不确定时辰标识
+- [x] **Task 2.1** - 从 `pages/card/index.wxml` 复制单张卡牌的完整WXML结构
+  - 包括：`.pillar-item` 容器 ✅
+  - 包括：`.pillar-title` 标题 ✅
+  - 包括：`.image-container` 图片容器 ✅
+  - 包括：`<image>` 标签及所有属性 ✅
+  - 包括：`.card-loading-overlay` 加载状态 ✅
+  - 包括：`.uncertain-time-indicator` 不确定时辰标识 ✅
   
-- [ ] **Task 2.2** - 从 `pages/card/index.less` 复制所有卡牌相关样式
-  - 复制：`.pillar-item` 及相关样式
-  - 复制：`.image-container`、`.pillar-image` 样式
-  - 复制：`.card-loading-overlay` 及 `.loading-spinner` 样式
-  - 复制：`.uncertain-time-indicator` 及动画样式
-  - 复制：所有 `@keyframes` 动画定义（spin、pulse-glow等）
+- [x] **Task 2.2** - 从 `pages/card/index.less` 复制所有卡牌相关样式
+  - 复制：`.pillar-item` 及相关样式 ✅
+  - 复制：`.image-container`、`.pillar-image` 样式 ✅
+  - 复制：`.card-loading-overlay` 及 `.loading-spinner` 样式 ✅
+  - 复制：`.uncertain-time-indicator` 及动画样式 ✅
+  - 复制：所有 `@keyframes` 动画定义（spin、pulse、pulse-glow）✅
   
-- [ ] **Task 2.3** - 在组件 `index.js` 中定义所有需要的属性
-  - 定义：`title`（卡牌标题）
-  - 定义：`pillarName`（柱子名称）
-  - 定义：`imagePath`（当前显示的图片路径）
-  - 定义：`loading`（是否正在加载）
-  - 定义：`showUncertainIndicator`（是否显示不确定标识）
-  - 定义：`animation`（动画对象）
+- [x] **Task 2.3** - 在组件 `index.js` 中定义所有需要的属性
+  - 定义：`title`（卡牌标题）✅
+  - 定义：`pillarName`（柱子名称）✅
+  - 定义：`imagePath`（当前显示的图片路径）✅
+  - 定义：`loading`（是否正在加载）✅
+  - 定义：`showUncertainIndicator`（是否显示不确定标识）✅
+  - 定义：`animation`（动画对象）✅
   
-- [ ] **Task 2.4** - 确保组件WXML中的数据绑定使用properties
+- [x] **Task 2.4** - 确保组件WXML中的数据绑定使用properties ✅
 
 **验收标准：**
 - ✅ 组件WXML结构与页面中的单张卡牌完全一致
 - ✅ 组件样式与页面样式完全一致
 - ✅ 组件可以独立编译通过
+
+**完成时间：** 2025-10-11
 
 ---
 
@@ -363,7 +365,7 @@
 
 **建议实施周期：** 3个工作日（每天3小时）
 
-**任务进度追踪：** 6/40 ✅ (15%)
+**任务进度追踪：** 10/40 ✅ (25%)
 
 ---
 
