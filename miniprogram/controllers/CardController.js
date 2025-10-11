@@ -215,6 +215,11 @@ class CardController extends BaseController {
 
   /**
    * 加载单张卡牌
+   * 业务逻辑：
+   * 1. 检查并准备卡牌背面图片（静态资源）
+   * 2. 检查并缓存卡牌正面图片（云存储资源）
+   * 3. 完成所有图片准备后才取消loading状态
+   * 
    * @param {Object} pillarConfig - 柱子配置 { name, data, defaultShowFront }
    * @param {string} cardBackImagePath - 卡牌背面图片路径
    * @private
@@ -223,7 +228,7 @@ class CardController extends BaseController {
     const { name, data, defaultShowFront } = pillarConfig;
     
     try {
-      console.log(`[CardController] 开始加载 ${name} 卡牌`);
+      console.log(`[CardController] 开始加载 ${name} 卡牌 - 需要准备背面和正面图片`);
       
       // 设置卡牌为加载中状态
       this._setData({
@@ -237,21 +242,27 @@ class CardController extends BaseController {
         [`${name}CardFlipped`]: false // 重置翻转状态
       });
 
-      // 获取图片信息
+      // 步骤1: 验证背面图片可用性（静态资源，通常直接可用）
+      console.log(`[CardController] ${name} - 步骤1: 验证背面图片 ${cardBackImagePath}`);
+      // 背面图片是本地静态资源，无需特殊处理
+      
+      // 步骤2: 获取并缓存正面图片（云存储资源）
+      console.log(`[CardController] ${name} - 步骤2: 开始缓存正面图片`);
       const imageInfo = this._getBaziImageInfo(data.heavenlyStem, data.earthlyBranch);
       
-      // 异步获取图片路径（优先使用缓存）
+      // 异步获取图片路径（会自动下载并缓存，如果本地没有的话）
       let imagePath;
       try {
         imagePath = await imageCacheManager.getImagePath(imageInfo.cloudPath, imageInfo.fileName);
+        console.log(`[CardController] ${name} - 正面图片缓存完成:`, imagePath);
       } catch (error) {
-        console.warn(`[CardController] ${name} 卡牌缓存加载失败，使用云存储路径:`, error);
+        console.warn(`[CardController] ${name} - 正面图片缓存失败，使用云存储路径:`, error);
         imagePath = this._getBaziImagePath(data.heavenlyStem, data.earthlyBranch);
       }
 
-      console.log(`[CardController] ${name} 卡牌图片路径获取完成:`, imagePath);
-
-      // 更新卡牌数据（图片会触发 bindload 事件）
+      // 步骤3: 所有图片准备完成，更新卡牌数据并取消loading状态
+      console.log(`[CardController] ${name} - 步骤3: 图片准备完成，取消loading状态`);
+      
       const updateData = {
         [`${name}Pillar`]: {
           heavenlyStem: data.heavenlyStem,
@@ -259,17 +270,13 @@ class CardController extends BaseController {
           imagePath: defaultShowFront ? imagePath : cardBackImagePath, // 根据配置显示正面或背面
           baziImagePath: imagePath // 保存八字图片路径
         },
-        [`${name}CardFlipped`]: defaultShowFront // 日柱默认翻转显示正面
+        [`${name}CardFlipped`]: defaultShowFront, // 日柱默认翻转显示正面
+        [`${name}CardLoading`]: false // 图片准备完成，取消loading状态
       };
-      
-      // 如果默认显示正面，立即取消加载状态
-      if (defaultShowFront) {
-        updateData[`${name}CardLoading`] = false;
-      }
       
       this._setData(updateData);
       
-      console.log(`[CardController] ${name} 卡牌数据更新完成`);
+      console.log(`[CardController] ${name} 卡牌加载完成，可响应用户交互`);
     } catch (error) {
       console.error(`[CardController] ${name} 卡牌加载失败:`, error);
       
@@ -281,29 +288,21 @@ class CardController extends BaseController {
   }
 
   /**
-   * 图片加载成功回调
+   * 图片加载成功回调（仅用于日志记录）
+   * 注意：loading状态由 _loadSingleCard 方法统一管理，不在此处修改
    * @param {string} pillar - 柱子名称（year/month/day/time）
    */
   onImageLoadSuccess(pillar) {
-    console.log(`[CardController] ${pillar} 卡牌图片加载成功`);
-    
-    // 取消该卡牌的加载状态
-    this._setData({
-      [`${pillar}CardLoading`]: false
-    });
+    console.log(`[CardController] ${pillar} 卡牌图片渲染成功`);
   }
 
   /**
-   * 图片加载失败回调
+   * 图片加载失败回调（仅用于错误日志）
+   * 注意：loading状态由 _loadSingleCard 方法统一管理，不在此处修改
    * @param {string} pillar - 柱子名称（year/month/day/time）
    */
   onImageLoadError(pillar) {
-    console.error(`[CardController] ${pillar} 卡牌图片加载失败`);
-    
-    // 取消该卡牌的加载状态
-    this._setData({
-      [`${pillar}CardLoading`]: false
-    });
+    console.error(`[CardController] ${pillar} 卡牌图片渲染失败`);
   }
 
   /**
