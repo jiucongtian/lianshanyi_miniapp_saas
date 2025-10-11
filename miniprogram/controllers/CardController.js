@@ -168,138 +168,44 @@ class CardController extends BaseController {
   }
 
   /**
-   * 更新八字显示 - 异步并发加载每张卡牌
+   * 更新八字显示 - 设置天干地支数据，由组件自主加载图片
    * @param {Object} baziData - 八字数据
    */
   async updateBaziDisplay(baziData) {
-    console.log('[CardController] 开始更新八字显示（异步并发模式），数据:', baziData);
+    console.log('[CardController] 更新八字显示，数据:', baziData);
     
     if (!baziData || !baziData.yearPillar || !baziData.monthPillar || !baziData.dayPillar || !baziData.timePillar) {
       console.log('[CardController] 八字数据不完整，无法更新显示');
       return;
     }
 
-    const currentCardBackImagePath = this.data?.cardBackImagePath || '/static/card-back.jpg';
-    
-    // 定义四柱配置
-    const pillars = [
-      { 
-        name: 'year', 
-        data: baziData.yearPillar, 
-        defaultShowFront: false // 默认显示背面
+    // 直接设置天干地支数据，组件会自动加载对应的图片
+    this._setData({
+      yearPillar: {
+        heavenlyStem: baziData.yearPillar.heavenlyStem,
+        earthlyBranch: baziData.yearPillar.earthlyBranch
       },
-      { 
-        name: 'month', 
-        data: baziData.monthPillar, 
-        defaultShowFront: false 
+      monthPillar: {
+        heavenlyStem: baziData.monthPillar.heavenlyStem,
+        earthlyBranch: baziData.monthPillar.earthlyBranch
       },
-      { 
-        name: 'day', 
-        data: baziData.dayPillar, 
-        defaultShowFront: true // 日柱默认显示正面
+      dayPillar: {
+        heavenlyStem: baziData.dayPillar.heavenlyStem,
+        earthlyBranch: baziData.dayPillar.earthlyBranch
       },
-      { 
-        name: 'time', 
-        data: baziData.timePillar, 
-        defaultShowFront: false 
+      timePillar: {
+        heavenlyStem: baziData.timePillar.heavenlyStem,
+        earthlyBranch: baziData.timePillar.earthlyBranch
       }
-    ];
-
-    // 并发加载所有卡牌图片
-    const loadPromises = pillars.map(pillar => this._loadSingleCard(pillar, currentCardBackImagePath));
+    });
     
-    // 等待所有卡牌加载完成（不阻塞，各自独立完成）
-    await Promise.allSettled(loadPromises);
-    
-    console.log('[CardController] 所有卡牌加载任务已启动');
+    console.log('[CardController] 八字数据已设置，组件将自动加载图片');
   }
 
-  /**
-   * 加载单张卡牌
-   * 业务逻辑：
-   * 1. 检查并准备卡牌背面图片（静态资源）
-   * 2. 检查并缓存卡牌正面图片（云存储资源）
-   * 3. 完成所有图片准备后才取消loading状态
-   * 
-   * @param {Object} pillarConfig - 柱子配置 { name, data, defaultShowFront }
-   * @param {string} cardBackImagePath - 卡牌背面图片路径
-   * @private
-   */
-  async _loadSingleCard(pillarConfig, cardBackImagePath) {
-    const { name, data, defaultShowFront } = pillarConfig;
-    
-    try {
-      console.log(`[CardController] 开始加载 ${name} 卡牌 - 需要准备背面和正面图片`);
-      
-      // 设置卡牌为加载中状态
-      this._setData({
-        [`${name}CardLoading`]: true,
-        [`${name}Pillar`]: {
-          heavenlyStem: data.heavenlyStem,
-          earthlyBranch: data.earthlyBranch,
-          imagePath: cardBackImagePath, // 先显示背面
-          baziImagePath: '' // 八字图片路径待加载
-        },
-        [`${name}CardFlipped`]: false // 重置翻转状态
-      });
-
-      // 步骤1: 验证背面图片可用性（静态资源，通常直接可用）
-      console.log(`[CardController] ${name} - 步骤1: 验证背面图片 ${cardBackImagePath}`);
-      // 背面图片是本地静态资源，无需特殊处理
-      
-      // 步骤2: 获取并缓存正面图片（云存储资源）
-      console.log(`[CardController] ${name} - 步骤2: 开始缓存正面图片`);
-      const imageInfo = this._getBaziImageInfo(data.heavenlyStem, data.earthlyBranch);
-      
-      // 异步获取图片路径（会自动下载并缓存，如果本地没有的话）
-      let imagePath;
-      try {
-        imagePath = await imageCacheManager.getImagePath(imageInfo.cloudPath, imageInfo.fileName);
-        console.log(`[CardController] ${name} - 正面图片缓存完成:`, imagePath);
-      } catch (error) {
-        console.warn(`[CardController] ${name} - 正面图片缓存失败，使用云存储路径:`, error);
-        imagePath = this._getBaziImagePath(data.heavenlyStem, data.earthlyBranch);
-      }
-
-      // 步骤3: 所有图片准备完成，更新卡牌数据并取消loading状态
-      console.log(`[CardController] ${name} - 步骤3: 图片准备完成，取消loading状态`);
-      
-      const updateData = {
-        [`${name}Pillar`]: {
-          heavenlyStem: data.heavenlyStem,
-          earthlyBranch: data.earthlyBranch,
-          imagePath: defaultShowFront ? imagePath : cardBackImagePath, // 根据配置显示正面或背面
-          baziImagePath: imagePath // 保存八字图片路径
-        },
-        [`${name}CardFlipped`]: defaultShowFront, // 日柱默认翻转显示正面
-        [`${name}CardLoading`]: false // 图片准备完成，取消loading状态
-      };
-      
-      this._setData(updateData);
-      
-      console.log(`[CardController] ${name} 卡牌加载完成，可响应用户交互`);
-    } catch (error) {
-      console.error(`[CardController] ${name} 卡牌加载失败:`, error);
-      
-      // 加载失败，取消加载状态
-      this._setData({
-        [`${name}CardLoading`]: false
-      });
-    }
-  }
-
-  /**
-   * 图片加载成功回调（仅用于日志记录）
-   * 注意：loading状态由 _loadSingleCard 方法统一管理，不在此处修改
-   * @param {string} pillar - 柱子名称（year/month/day/time）
-   */
-  onImageLoadSuccess(pillar) {
-    console.log(`[CardController] ${pillar} 卡牌图片渲染成功`);
-  }
 
   /**
    * 图片加载失败回调（仅用于错误日志）
-   * 注意：loading状态由 _loadSingleCard 方法统一管理，不在此处修改
+   * 注意：图片加载现在由 bazi-card 组件内部管理
    * @param {string} pillar - 柱子名称（year/month/day/time）
    */
   onImageLoadError(pillar) {
@@ -317,30 +223,17 @@ class CardController extends BaseController {
       return;
     }
     
-    const flippedKey = `${pillar}CardFlipped`;
     const pillarData = this.page.data[`${pillar}Pillar`];
     
-    console.log(`[CardController] 点击${pillar}卡牌，当前状态:`, this.page.data[flippedKey]);
+    console.log(`[CardController] 点击${pillar}卡牌`);
     
-    // 如果没有八字数据，不进行切换
-    if (!pillarData || !pillarData.baziImagePath) {
-      console.log(`${pillar}卡牌没有八字数据，不进行切换`);
+    // 检查是否有八字数据（天干地支）
+    if (!pillarData || !pillarData.heavenlyStem || !pillarData.earthlyBranch) {
+      console.log(`${pillar}卡牌没有八字数据，不进行翻转`);
       return;
     }
     
-    // 如果卡牌已经是正面（已翻转），则不允许再次点击
-    if (this.page.data[flippedKey]) {
-      console.log(`${pillar}卡牌已经是正面，不允许翻回背面`);
-      return;
-    }
-    
-    // 先更新数据状态
-    this._setData({
-      [flippedKey]: true,
-      [`${pillar}Pillar.imagePath`]: pillarData.baziImagePath
-    });
-    
-    // 调用组件的翻转动画方法
+    // 直接调用组件的翻转方法，组件会处理状态和动画
     const card = this.page.selectComponent(`#${pillar}-card`);
     if (card && typeof card.flipToFront === 'function') {
       console.log(`[CardController] 调用 ${pillar} 组件的翻转动画`);
@@ -348,8 +241,6 @@ class CardController extends BaseController {
     } else {
       console.warn(`[CardController] 未找到 ${pillar} 组件或 flipToFront 方法`);
     }
-    
-    console.log(`${pillar}卡牌翻转为正面`);
   }
 
   /**
@@ -364,25 +255,41 @@ class CardController extends BaseController {
     }
     
     const pillarData = this.page.data[`${pillar}Pillar`];
-    const flippedKey = `${pillar}CardFlipped`;
     
-    console.log('[CardController] 图片点击事件:', { pillar, pillarData, flipped: this.page.data[flippedKey] });
+    console.log('[CardController] 预览卡牌:', pillar);
     
-    // 只有显示正面（八字图片）时才允许放大预览
-    if (this.page.data[flippedKey] && pillarData && pillarData.baziImagePath) {
-      // 只有日柱才显示描述信息
-      let cardDescription = null;
-      if (pillar === 'day') {
-        cardDescription = this._getCardDescription(pillarData.heavenlyStem, pillarData.earthlyBranch);
-        console.log('[CardController] 获取到的日柱卡牌描述:', cardDescription);
-      }
-      
-      this._setData({
-        showImagePreview: true,
-        previewImagePath: pillarData.baziImagePath,
-        previewCardDescription: cardDescription
-      });
+    // 获取组件实例，从中读取八字图片路径
+    const card = this.page.selectComponent(`#${pillar}-card`);
+    if (!card) {
+      console.warn('[CardController] 未找到组件实例');
+      return;
     }
+    
+    // 检查组件是否已翻转（显示正面）
+    if (!card.data.isFlipped) {
+      console.log('[CardController] 卡牌未翻转，不允许预览');
+      return;
+    }
+    
+    // 获取八字图片路径
+    const baziImagePath = card.data.baziImagePath;
+    if (!baziImagePath) {
+      console.warn('[CardController] 未找到八字图片路径');
+      return;
+    }
+    
+    // 只有日柱才显示描述信息
+    let cardDescription = null;
+    if (pillar === 'day' && pillarData) {
+      cardDescription = this._getCardDescription(pillarData.heavenlyStem, pillarData.earthlyBranch);
+      console.log('[CardController] 获取到的日柱卡牌描述:', cardDescription);
+    }
+    
+    this._setData({
+      showImagePreview: true,
+      previewImagePath: baziImagePath,
+      previewCardDescription: cardDescription
+    });
   }
 
   /**

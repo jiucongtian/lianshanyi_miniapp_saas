@@ -207,14 +207,16 @@
 
 ### 阶段六：Controller重构（1.5小时）
 
-- [ ] **Task 6.1** - 删除 `_loadSingleCard()` 方法
-- [ ] **Task 6.2** - 删除 `onImageLoadSuccess()` 方法
+- [x] **Task 6.1** - 删除 `_loadSingleCard()` 方法 ✅
+- [x] **Task 6.2** - 删除 `onImageLoadSuccess()` 方法 ✅
 - [ ] **Task 6.3** - 删除 `onImageLoadError()` 方法
 - [ ] **Task 6.4** - 删除 `_getBaziImageInfo()` 方法
 - [ ] **Task 6.5** - 删除 `_getBaziImagePath()` 方法
-- [ ] **Task 6.6** - 简化 `updateBaziDisplay()` 方法
-  - 只需设置天干地支数据
-  - 移除图片加载逻辑
+- [x] **Task 6.6** - 简化 `updateBaziDisplay()` 方法 ✅
+  - ✅ 只需设置天干地支数据
+  - ✅ 移除图片加载逻辑
+  - ✅ 修改 WXML 使用 `heavenly-stem` 和 `earthly-branch` 属性
+  - ✅ 修改页面事件处理方法
   
 - [ ] **Task 6.7** - 简化 `flipCard()` 方法
   - 通过 `selectComponent()` 获取组件实例

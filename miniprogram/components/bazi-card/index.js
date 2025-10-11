@@ -140,6 +140,16 @@ Component({
     'heavenlyStem, earthlyBranch': function(heavenlyStem, earthlyBranch) {
       if (heavenlyStem && earthlyBranch) {
         console.log('[BaziCard] 天干地支变化，重新加载图片:', heavenlyStem, earthlyBranch);
+        
+        // 重置翻转状态到初始值（根据 defaultShowFront 决定）
+        const shouldShowFront = this.data.defaultShowFront;
+        this.setData({
+          isFlipped: shouldShowFront,
+          state: shouldShowFront ? 'flipped' : 'loading'
+        });
+        
+        console.log('[BaziCard] 翻转状态已重置为:', shouldShowFront ? '正面' : '背面');
+        
         this._loadBaziImageByPinyin(heavenlyStem, earthlyBranch);
       }
     },
@@ -148,6 +158,14 @@ Component({
     'baziImageId': function(baziImageId) {
       if (baziImageId) {
         console.log('[BaziCard] 八字图片ID变化，重新加载图片:', baziImageId);
+        
+        // 重置翻转状态到初始值（根据 defaultShowFront 决定）
+        const shouldShowFront = this.data.defaultShowFront;
+        this.setData({
+          isFlipped: shouldShowFront,
+          state: shouldShowFront ? 'flipped' : 'loading'
+        });
+        
         this._loadBaziImageById(baziImageId);
       }
     }
@@ -184,13 +202,28 @@ Component({
         
         console.log('[BaziCard] 图片加载完成:', imagePath);
         
-        // 更新显示的图片
+        // 保存正面图片路径
         this.setData({
           baziImagePath: imagePath,
-          currentImagePath: imagePath,
           isLoadingImage: false,
           state: 'loaded'
         });
+        
+        // 根据 isFlipped 状态决定显示正面还是背面
+        // 如果已翻转或默认显示正面，则显示正面图片；否则显示背面图片
+        if (this.data.isFlipped || this.data.defaultShowFront) {
+          this.setData({
+            currentImagePath: imagePath
+          });
+          console.log('[BaziCard] 显示正面图片');
+        } else {
+          // 显示背面图片
+          const backImage = this.data.cardBackImage || '/static/card-back.jpg';
+          this.setData({
+            currentImagePath: backImage
+          });
+          console.log('[BaziCard] 显示背面图片:', backImage);
+        }
         
         // 触发图片加载完成事件
         this.triggerEvent('imageloaded', {
@@ -216,12 +249,12 @@ Component({
     },
 
     /**
-     * 根据天干地支拼音加载图片（使用缓存）
-     * @param {string} heavenlyStem - 天干拼音
-     * @param {string} earthlyBranch - 地支拼音
+     * 根据天干地支加载图片（使用缓存）
+     * @param {string} heavenlyStem - 天干（汉字或拼音）
+     * @param {string} earthlyBranch - 地支（汉字或拼音）
      */
     async _loadBaziImageByPinyin(heavenlyStem, earthlyBranch) {
-      console.log('[BaziCard] 根据拼音加载八字图片:', heavenlyStem, earthlyBranch);
+      console.log('[BaziCard] 根据天干地支加载八字图片:', heavenlyStem, earthlyBranch);
       
       this.setData({
         isLoadingImage: true,
@@ -229,8 +262,25 @@ Component({
       });
       
       try {
+        // 汉字到拼音的映射表
+        const tianGanMap = {
+          '甲': 'jia', '乙': 'yi', '丙': 'bing', '丁': 'ding', '戊': 'wu',
+          '己': 'ji', '庚': 'geng', '辛': 'xin', '壬': 'ren', '癸': 'gui'
+        };
+        
+        const diZhiMap = {
+          '子': 'zi', '丑': 'chou', '寅': 'yin', '卯': 'mao', '辰': 'chen', '巳': 'si',
+          '午': 'wu', '未': 'wei', '申': 'shen', '酉': 'you', '戌': 'xu', '亥': 'hai'
+        };
+        
+        // 转换为拼音（如果是汉字的话）
+        const tianGanPinyin = tianGanMap[heavenlyStem] || heavenlyStem;
+        const diZhiPinyin = diZhiMap[earthlyBranch] || earthlyBranch;
+        
         // 拼接完整的拼音
-        const fullPinyin = `${heavenlyStem}${earthlyBranch}`.toLowerCase();
+        const fullPinyin = `${tianGanPinyin}${diZhiPinyin}`.toLowerCase();
+        
+        console.log('[BaziCard] 转换后的拼音:', fullPinyin);
         
         // 获取八字图片信息
         const imageInfo = getBaziImageByPinyin(fullPinyin);
@@ -246,13 +296,28 @@ Component({
         
         console.log('[BaziCard] 图片加载完成:', imagePath);
         
-        // 更新显示的图片
+        // 保存正面图片路径
         this.setData({
           baziImagePath: imagePath,
-          currentImagePath: imagePath,
           isLoadingImage: false,
           state: 'loaded'
         });
+        
+        // 根据 isFlipped 状态决定显示正面还是背面
+        // 如果已翻转或默认显示正面，则显示正面图片；否则显示背面图片
+        if (this.data.isFlipped || this.data.defaultShowFront) {
+          this.setData({
+            currentImagePath: imagePath
+          });
+          console.log('[BaziCard] 显示正面图片');
+        } else {
+          // 显示背面图片
+          const backImage = this.data.cardBackImage || '/static/card-back.jpg';
+          this.setData({
+            currentImagePath: backImage
+          });
+          console.log('[BaziCard] 显示背面图片:', backImage);
+        }
         
         // 触发图片加载完成事件
         this.triggerEvent('imageloaded', {

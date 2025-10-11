@@ -90,39 +90,19 @@ Page({
    * - 如果卡牌显示正面（已翻转），点击后放大预览
    */
   onCardTap: function(e) {
-    // 兼容组件事件和原生事件
-    let pillar;
-    if (e.detail && e.detail.pillarName) {
-      // 来自组件的事件
-      pillar = e.detail.pillarName;
-    } else {
-      // 来自原生元素的事件
-      pillar = e.currentTarget.dataset.pillar;
-    }
+    // 从组件事件中获取信息
+    const { pillarName, isFlipped } = e.detail;
     
-    if (!pillar) return;
+    if (!pillarName) return;
 
-    // 检查该卡牌是否正在加载
-    const isLoading = this.data[`${pillar}CardLoading`];
-    if (isLoading) {
-      console.log(`[CardPage] ${pillar} 卡牌正在加载中，暂不响应点击`);
-      wx.showToast({
-        title: '图片加载中...',
-        icon: 'loading',
-        duration: 1000
-      });
-      return;
-    }
-
-    // 获取当前卡牌的翻转状态
-    const isFlipped = this.data[`${pillar}CardFlipped`];
+    console.log(`[CardPage] ${pillarName} 卡牌被点击，当前状态: ${isFlipped ? '正面' : '背面'}`);
     
     if (isFlipped) {
       // 卡牌已翻转（显示正面），执行预览操作
-      this.controller.previewCard(pillar);
+      this.controller.previewCard(pillarName);
     } else {
       // 卡牌未翻转（显示背面），执行翻转操作
-      this.controller.flipCard(pillar);
+      this.controller.flipCard(pillarName);
     }
   },
 
@@ -133,60 +113,24 @@ Page({
     }
   },
 
-  // 图片加载成功
-  onImageLoad: function(e) {
-    // 兼容组件事件和原生事件
-    let pillar;
-    if (e.detail && e.detail.pillarName) {
-      // 来自组件的事件
-      pillar = e.detail.pillarName;
-    } else {
-      // 来自原生元素的事件
-      pillar = e.currentTarget.dataset.pillar;
-    }
-    
-    console.log(`[CardPage] ${pillar} 卡牌图片加载成功`);
-    
-    // 通知 Controller 图片加载完成
-    if (this.controller && pillar) {
-      this.controller.onImageLoadSuccess(pillar);
-    }
+  // 图片加载成功（组件触发的 imageloaded 事件）
+  onImageLoaded: function(e) {
+    const { pillarName, imagePath } = e.detail;
+    console.log(`[CardPage] ${pillarName} 卡牌图片加载成功:`, imagePath);
+    // 组件内部已经处理了所有逻辑，这里只记录日志
   },
 
-  // 图片加载失败
-  onImageError: function(e) {
-    console.error('[CardPage] 图片加载失败:', e);
+  // 图片加载失败（组件触发的 imageloaderror 事件）
+  onImageLoadError: function(e) {
+    const { pillarName, error } = e.detail;
+    console.error(`[CardPage] ${pillarName} 卡牌图片加载失败:`, error);
     
-    // 兼容组件事件和原生事件
-    let pillar;
-    if (e.detail && e.detail.pillarName) {
-      // 来自组件的事件
-      pillar = e.detail.pillarName;
-    } else {
-      // 来自原生元素的事件
-      pillar = e.currentTarget.dataset.pillar;
-    }
-    
-    if (pillar) {
-      const pillarData = this.data[`${pillar}Pillar`];
-      console.error(`[CardPage] ${pillar} 卡牌图片加载失败:`, pillarData.imagePath);
-      
-      // 通知 Controller 图片加载失败
-      if (this.controller) {
-        this.controller.onImageLoadError(pillar);
-      }
-      
-      wx.showToast({
-        title: '图片加载失败',
-        icon: 'none',
-        duration: 2000
-      });
-    } else {
-      wx.showToast({
-        title: '图片加载失败',
-        icon: 'none'
-      });
-    }
+    // 提示用户
+    wx.showToast({
+      title: '图片加载失败',
+      icon: 'none',
+      duration: 2000
+    });
   },
 
   // 分享功能 - 激活右上角分享按钮

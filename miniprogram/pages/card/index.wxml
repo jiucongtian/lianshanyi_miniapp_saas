@@ -19,51 +19,63 @@
     <view class="pillars-flex" wx:else>
       <!-- 年柱 - 使用组件 -->
       <bazi-card
+        id="year-card"
         title="时空关系卡"
         pillar-name="year"
-        image-path="{{yearPillar.imagePath}}"
-        loading="{{yearCardLoading}}"
+        heavenly-stem="{{yearPillar.heavenlyStem}}"
+        earthly-branch="{{yearPillar.earthlyBranch}}"
+        card-back-image="{{cardBackImagePath}}"
+        default-show-front="{{false}}"
         animation="{{yearAnimation}}"
         bind:cardtap="onCardTap"
-        bind:imageload="onImageLoad"
-        bind:imageerror="onImageError"
+        bind:imageloaded="onImageLoaded"
+        bind:imageloaderror="onImageLoadError"
       />
 
       <!-- 月柱 - 使用组件 -->
       <bazi-card
+        id="month-card"
         title="事业关系卡"
         pillar-name="month"
-        image-path="{{monthPillar.imagePath}}"
-        loading="{{monthCardLoading}}"
+        heavenly-stem="{{monthPillar.heavenlyStem}}"
+        earthly-branch="{{monthPillar.earthlyBranch}}"
+        card-back-image="{{cardBackImagePath}}"
+        default-show-front="{{false}}"
         animation="{{monthAnimation}}"
         bind:cardtap="onCardTap"
-        bind:imageload="onImageLoad"
-        bind:imageerror="onImageError"
+        bind:imageloaded="onImageLoaded"
+        bind:imageloaderror="onImageLoadError"
       />
 
       <!-- 日柱 - 使用组件 -->
       <bazi-card
+        id="day-card"
         title="家庭关系卡"
         pillar-name="day"
-        image-path="{{dayPillar.imagePath}}"
-        loading="{{dayCardLoading}}"
+        heavenly-stem="{{dayPillar.heavenlyStem}}"
+        earthly-branch="{{dayPillar.earthlyBranch}}"
+        card-back-image="{{cardBackImagePath}}"
+        default-show-front="{{true}}"
         animation="{{dayAnimation}}"
         bind:cardtap="onCardTap"
-        bind:imageload="onImageLoad"
-        bind:imageerror="onImageError"
+        bind:imageloaded="onImageLoaded"
+        bind:imageloaderror="onImageLoadError"
       />
 
       <!-- 时柱 - 使用组件 -->
       <bazi-card
+        id="time-card"
         title="亲子关系卡"
         pillar-name="time"
-        image-path="{{timePillar.imagePath}}"
-        loading="{{timeCardLoading}}"
+        heavenly-stem="{{timePillar.heavenlyStem}}"
+        earthly-branch="{{timePillar.earthlyBranch}}"
+        card-back-image="{{cardBackImagePath}}"
+        default-show-front="{{false}}"
         show-uncertain-indicator="{{isUncertainTime}}"
         animation="{{timeAnimation}}"
         bind:cardtap="onCardTap"
-        bind:imageload="onImageLoad"
-        bind:imageerror="onImageError"
+        bind:imageloaded="onImageLoaded"
+        bind:imageloaderror="onImageLoadError"
       />
     </view>
   </view>
