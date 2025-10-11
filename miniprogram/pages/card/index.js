@@ -90,7 +90,16 @@ Page({
    * - 如果卡牌显示正面（已翻转），点击后放大预览
    */
   onCardTap: function(e) {
-    const pillar = e.currentTarget.dataset.pillar;
+    // 兼容组件事件和原生事件
+    let pillar;
+    if (e.detail && e.detail.pillarName) {
+      // 来自组件的事件
+      pillar = e.detail.pillarName;
+    } else {
+      // 来自原生元素的事件
+      pillar = e.currentTarget.dataset.pillar;
+    }
+    
     if (!pillar) return;
 
     // 检查该卡牌是否正在加载
@@ -126,7 +135,16 @@ Page({
 
   // 图片加载成功
   onImageLoad: function(e) {
-    const pillar = e.currentTarget.dataset.pillar;
+    // 兼容组件事件和原生事件
+    let pillar;
+    if (e.detail && e.detail.pillarName) {
+      // 来自组件的事件
+      pillar = e.detail.pillarName;
+    } else {
+      // 来自原生元素的事件
+      pillar = e.currentTarget.dataset.pillar;
+    }
+    
     console.log(`[CardPage] ${pillar} 卡牌图片加载成功`);
     
     // 通知 Controller 图片加载完成
@@ -138,7 +156,16 @@ Page({
   // 图片加载失败
   onImageError: function(e) {
     console.error('[CardPage] 图片加载失败:', e);
-    const pillar = e.currentTarget.dataset.pillar;
+    
+    // 兼容组件事件和原生事件
+    let pillar;
+    if (e.detail && e.detail.pillarName) {
+      // 来自组件的事件
+      pillar = e.detail.pillarName;
+    } else {
+      // 来自原生元素的事件
+      pillar = e.currentTarget.dataset.pillar;
+    }
     
     if (pillar) {
       const pillarData = this.data[`${pillar}Pillar`];
