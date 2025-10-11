@@ -105,7 +105,9 @@ POST（云函数调用）
   "action": "updateUserInfo",
   "data": {
     "nickName": "李四",
-    "gender": 2
+    "gender": 2,
+    "phoneNumber": "13800138000",
+    "avatarUrl": "cloud://xxx.jpg"
   }
 }
 ```
@@ -115,14 +117,54 @@ POST（云函数调用）
 |-----|---|---|---|
 | action | string | 是 | 操作类型，固定为"updateUserInfo" |
 | data | object | 是 | 要更新的用户数据 |
+| data.nickName | string | 否 | 用户昵称 |
+| data.gender | number | 否 | 用户性别(0:未知,1:男,2:女) |
+| data.phoneNumber | string | 否 | 手机号 |
+| data.avatarUrl | string | 否 | 用户头像URL |
 
 #### 成功响应
 ```json
 {
   "success": true,
-  "message": "用户信息更新成功"
+  "message": "用户信息更新成功",
+  "data": {
+    "_id": "user_id",
+    "openid": "user_openid",
+    "unionid": "user_unionid",
+    "nickName": "李四",
+    "avatarUrl": "cloud://xxx.jpg",
+    "gender": 2,
+    "phoneNumber": "13800138000",
+    "userType": "normal",
+    "typeName": "探索者",
+    "displayName": "探索者",
+    "profileQuota": 50,
+    "usedProfiles": 5,
+    "permissions": ["view", "create"],
+    "createTime": "2024-01-01T00:00:00.000Z",
+    "updateTime": "2024-01-02T00:00:00.000Z",
+    "lastLoginTime": "2024-01-02T00:00:00.000Z"
+  }
 }
 ```
+
+#### 返回字段说明
+| 字段名 | 类型 | 说明 |
+|-----|---|---|
+| success | boolean | 是否成功 |
+| message | string | 返回消息 |
+| data | object | 更新后的完整用户信息 |
+| data._id | string | 用户ID |
+| data.openid | string | 微信openid |
+| data.nickName | string | 用户昵称 |
+| data.gender | number | 用户性别 |
+| data.phoneNumber | string | 手机号 |
+| data.avatarUrl | string | 用户头像URL |
+| data.userType | string | 用户类型(guest/normal/premium) |
+| data.typeName | string | 用户类型名称 |
+| data.profileQuota | number | 档案配额(-1表示无限制) |
+| data.usedProfiles | number | 已使用档案数 |
+| data.permissions | array | 用户权限列表 |
 
 ## 错误响应
 ```json

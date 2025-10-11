@@ -384,8 +384,47 @@ async function updateUserInfo(wxContext, userData) {
       }
     }
     
+    // 获取更新后的完整用户信息
+    const userResult = await db.collection('users').where({
+      openid: OPENID,
+      isActive: true
+    }).get()
+    
+    if (userResult.data.length === 0) {
+      return {
+        success: false,
+        error: '获取更新后的用户信息失败'
+      }
+    }
+    
+    const updatedUser = userResult.data[0]
+    
+    // 获取用户权限和配额信息
+    const permissionsAndQuota = await getUserPermissionsAndQuota(updatedUser)
+    
+    // 组装完整的用户信息
+    const fullUserInfo = {
+      _id: updatedUser._id,
+      openid: updatedUser.openid,
+      unionid: updatedUser.unionid,
+      nickName: updatedUser.nickName,
+      avatarUrl: updatedUser.avatarUrl,
+      gender: updatedUser.gender,
+      phoneNumber: updatedUser.phoneNumber,
+      userType: permissionsAndQuota.userType,
+      typeName: permissionsAndQuota.typeName,
+      displayName: permissionsAndQuota.displayName,
+      profileQuota: permissionsAndQuota.profileQuota,
+      usedProfiles: updatedUser.usedProfiles || 0,
+      permissions: permissionsAndQuota.permissions,
+      createTime: updatedUser.createTime,
+      updateTime: updatedUser.updateTime,
+      lastLoginTime: updatedUser.lastLoginTime
+    }
+    
     return {
       success: true,
+      data: fullUserInfo,
       message: '用户信息更新成功'
     }
   } catch (error) {

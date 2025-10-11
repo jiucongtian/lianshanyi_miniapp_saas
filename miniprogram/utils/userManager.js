@@ -135,14 +135,17 @@ class UserManager {
       const result = await userService.updateUserInfo(updateData);
       
       if (result.success) {
-        // 更新本地缓存
+        // 更新本地缓存 - 使用云函数返回的完整数据
         this.userInfo = {
           ...this.userInfo,
-          ...updateData,
+          ...result.data,  // 使用云函数返回的完整用户信息
           lastSaveTime: new Date().getTime()
         };
         
-        console.log('UserManager: 用户信息更新成功');
+        // 更新权限管理器
+        permissionManager.setUserInfo(this.userInfo);
+        
+        console.log('UserManager: 用户信息更新成功', this.userInfo);
         return {
           success: true,
           data: this.userInfo
