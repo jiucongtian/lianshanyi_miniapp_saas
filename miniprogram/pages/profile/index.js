@@ -8,12 +8,9 @@ Page({
   data: {
     profileList: [],
     loading: false,
-    page: 1,
-    hasMore: true,
     currentProfileId: null,
     
     // 用户信息和权限
-    userInfo: null,
     userType: 'guest',
     userTypeName: '临时用户',
     profileQuota: 3,

@@ -91,7 +91,6 @@ class ProfileController extends BaseController {
         
         // 更新页面数据
         this._setData({
-          userInfo: this.userInfo,
           userType: this.userInfo.userType,
           userTypeName: this.userInfo.getDisplayName(),
           profileQuota: this.userInfo.profileQuota,
@@ -158,8 +157,6 @@ class ProfileController extends BaseController {
         // 更新页面数据
         this._setData({
           profileList: this.profileList,
-          page: this.currentPage,
-          hasMore: this.hasMore,
           loading: false
         });
         
@@ -486,8 +483,7 @@ class ProfileController extends BaseController {
       profileList: this.profileList,
       usedProfiles: usedProfiles,
       canCreateMore: canCreateMore,
-      loading: false,
-      hasMore: false // ProfileManager中已包含所有数据
+      loading: false
     });
     
     // 处理档案选中逻辑
