@@ -153,6 +153,7 @@ class CardController extends BaseController {
         isLoading: false,
         isDataLoaded: true,
         currentProfileName: cardData.profileName || '生命智慧卡牌',
+        isUncertainTime: this.isUncertainTime, // 同步不确定时辰状态到页面
         // 重置预览状态
         showImagePreview: false,
         previewImagePath: '',
@@ -306,7 +307,7 @@ class CardController extends BaseController {
   }
 
   /**
-   * 翻转卡牌
+   * 翻转卡牌（带动画）
    * @param {string} pillar - 柱子名称（year/month/day/time）
    */
   flipCard(pillar) {
@@ -333,11 +334,20 @@ class CardController extends BaseController {
       return;
     }
     
-    // 只能从背面翻到正面
+    // 先更新数据状态
     this._setData({
       [flippedKey]: true,
       [`${pillar}Pillar.imagePath`]: pillarData.baziImagePath
     });
+    
+    // 调用组件的翻转动画方法
+    const card = this.page.selectComponent(`#${pillar}-card`);
+    if (card && typeof card.flipToFront === 'function') {
+      console.log(`[CardController] 调用 ${pillar} 组件的翻转动画`);
+      card.flipToFront();
+    } else {
+      console.warn(`[CardController] 未找到 ${pillar} 组件或 flipToFront 方法`);
+    }
     
     console.log(`${pillar}卡牌翻转为正面`);
   }
@@ -398,6 +408,11 @@ class CardController extends BaseController {
     
     // 监听档案选中事件
     eventBus.on(PROFILE_EVENTS.PROFILE_SELECTED, this._handleSelectProfile.bind(this));
+    
+    // 监听档案更新事件（档案属性被修改）
+    eventBus.on(PROFILE_EVENTS.PROFILE_UPDATED, this._handleProfileUpdated.bind(this));
+    
+    console.log('[CardController] 事件监听器已绑定');
   }
 
   /**
@@ -419,6 +434,28 @@ class CardController extends BaseController {
     if (data && data.profileId) {
       // 重新加载当前档案
       this._loadCurrentProfile();
+    }
+  }
+
+  /**
+   * 处理档案更新事件（档案属性被修改）
+   * @param {Object} data - 事件数据
+   * @private
+   */
+  _handleProfileUpdated(data) {
+    console.log('[CardController] 收到档案更新事件:', data);
+    
+    // 如果更新的档案是当前正在显示的档案，强制重新加载
+    if (data && data.profileId === this.currentLoadedProfileId) {
+      console.log('[CardController] 当前档案已更新，强制重新加载数据');
+      
+      // 从 profileManager 获取最新的档案数据
+      const updatedProfile = profileManager.getCurrentProfile();
+      if (updatedProfile) {
+        this.loadProfileData(updatedProfile);
+      } else {
+        console.warn('[CardController] 无法获取更新后的档案数据');
+      }
     }
   }
 
@@ -883,6 +920,7 @@ class CardController extends BaseController {
     // 清理事件监听
     eventBus.off(SYSTEM_EVENTS.PROFILE_MANAGER_READY, this._handleProfileManagerReady);
     eventBus.off(PROFILE_EVENTS.PROFILE_SELECTED, this._handleSelectProfile);
+    eventBus.off(PROFILE_EVENTS.PROFILE_UPDATED, this._handleProfileUpdated);
     
     super.onUnload();
   }

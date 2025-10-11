@@ -374,6 +374,12 @@ class AddProfileController extends BaseController {
         // 触发档案列表刷新事件
         eventBus.emit(PROFILE_EVENTS.PROFILE_LIST_REFRESH);
         
+        // 触发档案更新事件，通知其他页面刷新显示
+        eventBus.emit(PROFILE_EVENTS.PROFILE_UPDATED, { 
+          profileId: this.editingProfileId, 
+          profile: result.data 
+        });
+        
         this._showSuccess('档案更新成功');
         
         // 延迟返回上一页
