@@ -41,36 +41,22 @@ class CardController extends BaseController {
     this.currentProfileName = '生命智慧卡牌';
     this.isUncertainTime = false;
     
-    // 卡牌状态
-    this.yearCardFlipped = false;
-    this.monthCardFlipped = false;
-    this.dayCardFlipped = false;
-    this.timeCardFlipped = false;
-    
-    // 八字数据
+    // 八字数据（只保留天干地支，图片和翻转状态由组件管理）
     this.yearPillar = { 
       heavenlyStem: '',
-      earthlyBranch: '',
-      imagePath: '',
-      baziImagePath: ''
+      earthlyBranch: ''
     };
     this.monthPillar = {
       heavenlyStem: '',
-      earthlyBranch: '',
-      imagePath: '',
-      baziImagePath: ''
+      earthlyBranch: ''
     };
     this.dayPillar = {
       heavenlyStem: '',
-      earthlyBranch: '',
-      imagePath: '',
-      baziImagePath: ''
+      earthlyBranch: ''
     };
     this.timePillar = {
       heavenlyStem: '',
-      earthlyBranch: '',
-      imagePath: '',
-      baziImagePath: ''
+      earthlyBranch: ''
     };
     
     // 图片预览
@@ -546,59 +532,6 @@ class CardController extends BaseController {
     });
   }
 
-  /**
-   * 根据天干地支获取对应的图片信息
-   * @param {string} heavenlyStem - 天干
-   * @param {string} earthlyBranch - 地支
-   * @returns {Object} 图片信息
-   * @private
-   */
-  _getBaziImageInfo(heavenlyStem, earthlyBranch) {
-    // 将天干地支转换为拼音
-    const tianGanMap = {
-      '甲': 'jia', '乙': 'yi', '丙': 'bing', '丁': 'ding', '戊': 'wu',
-      '己': 'ji', '庚': 'geng', '辛': 'xin', '壬': 'ren', '癸': 'gui'
-    };
-    
-    const diZhiMap = {
-      '子': 'zi', '丑': 'chou', '寅': 'yin', '卯': 'mao', '辰': 'chen', '巳': 'si',
-      '午': 'wu', '未': 'wei', '申': 'shen', '酉': 'you', '戌': 'xu', '亥': 'hai'
-    };
-    
-    const tianGanPinyin = tianGanMap[heavenlyStem];
-    const diZhiPinyin = diZhiMap[earthlyBranch];
-    
-    if (tianGanPinyin && diZhiPinyin) {
-      const pinyin = tianGanPinyin + diZhiPinyin;
-      const imageInfo = getBaziImageByPinyin(pinyin);
-      
-      if (imageInfo) {
-        return {
-          cloudPath: imageInfo.imagePath,
-          fileName: imageInfo.fileName
-        };
-      }
-    }
-    
-    // 默认返回第一张图片
-    const defaultImage = getBaziImageById(1);
-    return {
-      cloudPath: defaultImage.imagePath,
-      fileName: defaultImage.fileName
-    };
-  }
-
-  /**
-   * 根据天干地支获取对应的图片路径（兼容旧代码）
-   * @param {string} heavenlyStem - 天干
-   * @param {string} earthlyBranch - 地支
-   * @returns {string} 图片路径
-   * @private
-   */
-  _getBaziImagePath(heavenlyStem, earthlyBranch) {
-    const imageInfo = this._getBaziImageInfo(heavenlyStem, earthlyBranch);
-    return imageInfo.cloudPath;
-  }
 
   /**
    * 根据天干地支获取卡牌描述信息

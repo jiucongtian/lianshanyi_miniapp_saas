@@ -84,16 +84,20 @@ this.controller.loadProfileData(profileData);
 ```
 
 #### `updateBaziDisplay(baziData)`
-更新八字显示数据。
+更新八字显示数据（设置天干地支，组件自动加载图片）。
 
 **参数：**
 - `baziData` (Object): 八字数据
-  - `yearPillar` (Object): 年柱数据
-  - `monthPillar` (Object): 月柱数据
-  - `dayPillar` (Object): 日柱数据
-  - `timePillar` (Object): 时柱数据
-  - `originalTime` (string): 原始时间
-  - `lunarTime` (string): 农历时间
+  - `yearPillar` (Object): 年柱数据（包含 heavenlyStem 和 earthlyBranch）
+  - `monthPillar` (Object): 月柱数据（包含 heavenlyStem 和 earthlyBranch）
+  - `dayPillar` (Object): 日柱数据（包含 heavenlyStem 和 earthlyBranch）
+  - `timePillar` (Object): 时柱数据（包含 heavenlyStem 和 earthlyBranch）
+
+**工作原理：**
+1. Controller 只设置天干地支数据到页面
+2. `bazi-card` 组件通过 observers 监听天干地支变化
+3. 组件自动加载对应的八字图片
+4. 组件内部管理图片缓存和加载状态
 
 **示例：**
 ```javascript
@@ -101,9 +105,7 @@ const baziData = {
   yearPillar: { heavenlyStem: '甲', earthlyBranch: '子' },
   monthPillar: { heavenlyStem: '乙', earthlyBranch: '丑' },
   dayPillar: { heavenlyStem: '丙', earthlyBranch: '寅' },
-  timePillar: { heavenlyStem: '丁', earthlyBranch: '卯' },
-  originalTime: '1990年5月15日 14:30',
-  lunarTime: '1990年四月廿一'
+  timePillar: { heavenlyStem: '丁', earthlyBranch: '卯' }
 };
 this.controller.updateBaziDisplay(baziData);
 ```
@@ -111,10 +113,15 @@ this.controller.updateBaziDisplay(baziData);
 ### 卡牌操作方法
 
 #### `flipCard(pillar)`
-翻转指定卡牌。
+翻转指定卡牌（调用组件的 `flipToFront()` 方法）。
 
 **参数：**
 - `pillar` (string): 柱子名称（'year'/'month'/'day'/'time'）
+
+**工作原理：**
+1. 通过 `selectComponent()` 获取组件实例
+2. 调用组件的 `flipToFront()` 方法
+3. 组件内部处理翻转动画和状态更新
 
 **示例：**
 ```javascript
@@ -163,25 +170,16 @@ this.controller.closeTimePopup();
 ### 页面状态
 - `isDataLoaded`: 数据是否已加载
 - `isLoading`: 是否正在加载
-- `isLoadingImages`: 图片是否正在加载
 - `currentProfileName`: 当前档案名称
 - `isUncertainTime`: 是否不确定时辰
 
-### 卡牌状态
-- `yearCardFlipped`: 年柱卡牌是否翻转
-- `monthCardFlipped`: 月柱卡牌是否翻转
-- `dayCardFlipped`: 日柱卡牌是否翻转
-- `timeCardFlipped`: 时柱卡牌是否翻转
-
 ### 八字数据
-- `yearPillar`: 年柱数据
-- `monthPillar`: 月柱数据
-- `dayPillar`: 日柱数据
-- `timePillar`: 时柱数据
+- `yearPillar`: 年柱数据（包含 heavenlyStem 和 earthlyBranch）
+- `monthPillar`: 月柱数据（包含 heavenlyStem 和 earthlyBranch）
+- `dayPillar`: 日柱数据（包含 heavenlyStem 和 earthlyBranch）
+- `timePillar`: 时柱数据（包含 heavenlyStem 和 earthlyBranch）
 
-### 时间显示
-- `originalTime`: 原始时间
-- `lunarTime`: 农历时间
+**注意**：图片路径和翻转状态由 `bazi-card` 组件内部管理，Controller 只负责设置天干地支数据。
 
 ### 图片预览
 - `showImagePreview`: 是否显示图片预览
@@ -210,10 +208,12 @@ this.controller.closeTimePopup();
 
 ## 卡牌翻转规则
 
-1. **只能从背面翻到正面**：防止用户误操作
-2. **日柱默认显示正面**：突出重要信息
-3. **其他柱子默认显示背面**：增加神秘感
-4. **翻转后不可逆**：保持卡牌状态
+卡牌的翻转逻辑由 `bazi-card` 组件管理：
+
+1. **Controller 调用组件方法**：通过 `selectComponent()` 获取组件实例，调用 `flipToFront()` 方法
+2. **组件内部管理状态**：翻转状态、加载状态、图片路径等都由组件自己管理
+3. **组件自动加载图片**：根据天干地支自动加载对应的八字图片
+4. **只能从背面翻到正面**：防止用户误操作
 
 ## 设备适配
 
@@ -235,9 +235,9 @@ this.controller.closeTimePopup();
 ## 注意事项
 
 1. **ProfileManager依赖**：需要等待ProfileManager初始化完成
-2. **图片缓存**：首次加载可能需要时间
-3. **卡牌翻转**：只能从背面翻到正面
-4. **设备适配**：自动适配不同屏幕尺寸
+2. **组件化架构**：卡牌的图片加载、翻转状态、动画等都由 `bazi-card` 组件管理
+3. **Controller职责**：Controller 只负责设置天干地支数据和调用组件方法
+4. **图片自动加载**：组件会根据天干地支自动加载对应的图片
 5. **事件监听**：页面卸载时会自动清理
 
 ## 示例页面集成
@@ -250,20 +250,16 @@ Page({
   data: {
     isDataLoaded: false,
     isLoading: true,
-    isLoadingImages: false,
     currentProfileName: '生命智慧卡牌',
     isUncertainTime: false,
     showImagePreview: false,
     previewImagePath: '',
     previewCardDescription: null,
-    yearCardFlipped: false,
-    monthCardFlipped: false,
-    dayCardFlipped: false,
-    timeCardFlipped: false,
-    yearPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '', baziImagePath: '' },
-    monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '', baziImagePath: '' },
-    dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '', baziImagePath: '' },
-    timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '', baziImagePath: '' },
+    // 八字数据（只保留天干地支，图片加载和翻转状态由组件管理）
+    yearPillar: { heavenlyStem: '', earthlyBranch: '' },
+    monthPillar: { heavenlyStem: '', earthlyBranch: '' },
+    dayPillar: { heavenlyStem: '', earthlyBranch: '' },
+    timePillar: { heavenlyStem: '', earthlyBranch: '' },
     cardBackImagePath: '/static/card-back.jpg'
   },
 

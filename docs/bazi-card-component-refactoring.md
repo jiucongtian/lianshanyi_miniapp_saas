@@ -218,15 +218,21 @@
   - ✅ 修改 WXML 使用 `heavenly-stem` 和 `earthly-branch` 属性
   - ✅ 修改页面事件处理方法
   
-- [ ] **Task 6.7** - 简化 `flipCard()` 方法
-  - 通过 `selectComponent()` 获取组件实例
-  - 调用组件的 `flipToFront()` 方法
+- [x] **Task 6.7** - 简化 `flipCard()` 方法 ✅
+  - ✅ 已通过 `selectComponent()` 获取组件实例
+  - ✅ 已调用组件的 `flipToFront()` 方法
   
-- [ ] **Task 6.8** - 清理不再使用的变量
-  - 移除 `yearCardLoading`、`monthCardLoading` 等状态
-  - 移除 `baziImagePath` 等字段
+- [x] **Task 6.8** - 清理不再使用的变量 ✅
+  - ✅ 移除 `yearCardFlipped`、`monthCardFlipped`、`dayCardFlipped`、`timeCardFlipped` 状态
+  - ✅ 移除 `yearCardLoading`、`monthCardLoading`、`dayCardLoading`、`timeCardLoading` 状态
+  - ✅ 移除 `imagePath`、`baziImagePath` 字段
+  - ✅ 删除 `_getBaziImageInfo()` 和 `_getBaziImagePath()` 方法
   
-- [ ] **Task 6.9** - 更新 `CardController-README.md` 文档
+- [x] **Task 6.9** - 更新 `CardController-README.md` 文档 ✅
+  - ✅ 更新数据属性说明
+  - ✅ 更新方法说明（增加工作原理）
+  - ✅ 更新示例代码
+  - ✅ 更新注意事项
 
 **验收标准：**
 - ✅ Controller代码量减少40%以上

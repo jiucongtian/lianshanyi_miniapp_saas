@@ -12,39 +12,22 @@ Page({
     previewImagePath: '',
     // 卡牌描述信息
     previewCardDescription: null,
-    // 卡牌状态：true表示显示正面（八字图片），false表示显示背面（card-back.jpg）
-    yearCardFlipped: false,
-    monthCardFlipped: false,
-    dayCardFlipped: false,
-    timeCardFlipped: false,
-    // 每张卡牌的加载状态：true表示正在加载，false表示加载完成
-    yearCardLoading: false,
-    monthCardLoading: false,
-    dayCardLoading: false,
-    timeCardLoading: false,
+    // 八字数据（只保留天干地支，图片加载和翻转状态由组件管理）
     yearPillar: { 
       heavenlyStem: '',
-      earthlyBranch: '',
-      imagePath: '',
-      baziImagePath: '' // 存储八字图片路径
+      earthlyBranch: ''
     },
     monthPillar: {
       heavenlyStem: '',
-      earthlyBranch: '',
-      imagePath: '',
-      baziImagePath: '' // 存储八字图片路径
+      earthlyBranch: ''
     },
     dayPillar: {
       heavenlyStem: '',
-      earthlyBranch: '',
-      imagePath: '',
-      baziImagePath: '' // 存储八字图片路径
+      earthlyBranch: ''
     },
     timePillar: {
       heavenlyStem: '',
-      earthlyBranch: '',
-      imagePath: '',
-      baziImagePath: '' // 存储八字图片路径
+      earthlyBranch: ''
     },
     cardBackImagePath: '/static/card-back.jpg', // 卡牌背面图片路径
   },
