@@ -4,15 +4,16 @@
   <view class="image-container">
     <image 
       class="pillar-image" 
-      src="{{imagePath}}" 
+      src="{{currentImagePath || imagePath}}" 
       mode="aspectFit" 
       bindtap="onCardTap"
       bindload="onImageLoad"
       binderror="onImageError"
       data-pillar="{{pillarName}}"
-      wx:if="{{imagePath}}" />
+      animation="{{flipAnimation}}"
+      wx:if="{{currentImagePath || imagePath}}" />
     <!-- 单张卡牌加载状态 -->
-    <view class="card-loading-overlay" wx:if="{{loading}}">
+    <view class="card-loading-overlay" wx:if="{{loading || isLoadingImage}}">
       <view class="loading-spinner"></view>
       <view class="loading-text">加载中...</view>
     </view>

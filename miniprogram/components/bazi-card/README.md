@@ -2,12 +2,14 @@
 
 ## 功能特性
 
-- 支持卡牌翻转动画（背面→正面）
-- 支持图片懒加载和缓存
-- 支持加载状态显示
-- 支持不确定时辰标识
-- 支持卡牌点击预览
-- 封装完整的卡牌交互逻辑
+- ✨ **智能缓存**：集成图片缓存管理器，自动缓存八字图片到本地
+- 🎨 **流畅动画**：基于 scaleX 的卡牌翻转动画（背面↔正面）
+- 🔄 **自动加载**：监听天干地支/图片ID变化，自动重新加载图片
+- 📦 **图片管理**：支持通过八字图片ID或天干地支拼音加载图片
+- 📊 **状态管理**：完整的加载状态管理（loading/loaded/flipped/error）
+- 📡 **事件系统**：丰富的事件通知（点击、加载、翻转等）
+- ⚡ **高性能**：使用本地缓存，减少网络请求
+- 🎯 **灵活配置**：支持多种属性配置方式
 
 ## 组件接口
 
@@ -30,15 +32,18 @@
 | 事件名 | 说明 | 回调参数 |
 |--------|------|----------|
 | cardtap | 卡牌点击事件 | `{ pillarName, isFlipped, heavenlyStem, earthlyBranch, imagePath }` |
-| imageload | 图片加载成功 | `{ pillarName, imagePath }` |
-| imageerror | 图片加载失败 | `{ pillarName, imagePath, error }` |
-| statechange | 状态变化 | `{ pillarName, state }` |
+| imageload | 图片元素加载成功（原生） | `{ pillarName, imagePath }` |
+| imageerror | 图片元素加载失败（原生） | `{ pillarName, imagePath, error }` |
+| imageloaded | 图片完全加载成功（含缓存） | `{ pillarName, imagePath, imageInfo }` |
+| imageloaderror | 图片加载失败（含缓存） | `{ pillarName, error }` |
+| statechange | 卡牌状态变化 | `{ pillarName, state }` |
 
 ### Public Methods 公共方法
 
 | 方法名 | 说明 | 参数 | 返回值 |
 |--------|------|------|--------|
 | flipToFront() | 翻转卡牌到正面（带动画） | 无 | 无 |
+| flipToBack() | 翻转卡牌到背面（带动画） | 无 | 无 |
 | reloadImage() | 重新加载图片 | 无 | 无 |
 | getState() | 获取当前卡牌状态 | 无 | Object |
 
@@ -225,12 +230,30 @@ console.log('卡牌状态:', state);
 - [x] Task 4.4 - 页面监听组件事件
 - [x] Task 4.5 - 测试所有交互功能
 
+### 阶段五：迁移高级功能到组件 ✅
+- [x] Task 5.1 - 引入 imageCacheManager
+- [x] Task 5.2 - 引入 baziImageMap
+- [x] Task 5.3 - 实现组件内部图片加载逻辑
+- [x] Task 5.4 - 实现 observers 监听器
+- [x] Task 5.5 - 实现卡牌翻转动画逻辑
+- [x] Task 5.6 - 测试所有高级功能
+
 ### 待完成阶段
-- [ ] 阶段五：迁移高级功能
 - [ ] 阶段六：Controller重构
 - [ ] 阶段七：测试与优化
 
 ## 更新日志
+
+### v0.5.0 (2025-10-11) - 高级功能完整版本
+- ✅ 集成 imageCacheManager，支持图片自动缓存
+- ✅ 集成 baziImageMap，支持通过ID或拼音加载图片
+- ✅ 实现 _loadBaziImageById() 和 _loadBaziImageByPinyin() 方法
+- ✅ 实现 observers 监听器，天干地支变化自动重新加载
+- ✅ 实现完整的翻转动画逻辑（flipToFront/flipToBack）
+- ✅ 动画采用 scaleX 缩放效果，流畅自然
+- ✅ 新增 imageloaded 和 imageloaderror 事件
+- ✅ 组件完全自主管理图片加载和翻转
+- ✅ 支持从组件内部或外部触发图片加载
 
 ### v0.4.0 (2025-10-11) - 交互逻辑完善版本
 - ✅ 完整实现图片加载事件处理（onImageLoad, onImageError）

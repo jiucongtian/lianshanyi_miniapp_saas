@@ -2,6 +2,7 @@
 
 **创建日期**：2025-10-11  
 **预计耗时**：10.5小时（3个工作日）  
+**当前进度**：✅ 阶段一至五已完成（5/7阶段，约70%）  
 **目标**：将卡牌页面重构为组件化架构，代码量减少40%+
 
 ---
@@ -149,35 +150,57 @@
 
 ---
 
-### 阶段五：迁移高级功能到组件（2小时）
+### 阶段五：迁移高级功能到组件（2小时）✅ 已完成
 
-- [ ] **Task 5.1** - 在组件中引入 `imageCacheManager`
-  - 在组件 `index.js` 头部引入工具类
+- [x] **Task 5.1** - 在组件中引入 `imageCacheManager` ✅
+  - 在组件 `index.js` 头部引入工具类 ✅
   
-- [ ] **Task 5.2** - 在组件中引入 `baziImageMap`
-  - 引入 `getBaziImageById` 和 `getBaziImageByPinyin` 方法
+- [x] **Task 5.2** - 在组件中引入 `baziImageMap` ✅
+  - 引入 `getBaziImageById` 和 `getBaziImageByPinyin` 方法 ✅
   
-- [ ] **Task 5.3** - 实现组件内部的图片加载逻辑
-  - 添加 `heavenlyStem`、`earthlyBranch` 属性
-  - 实现 `_loadBaziImage` 方法
-  - 管理 `baziImagePath` 内部状态
-  - 管理 `isLoadingImage` 加载状态
+- [x] **Task 5.3** - 实现组件内部的图片加载逻辑 ✅
+  - 添加 `heavenlyStem`、`earthlyBranch` 属性（阶段二已完成）✅
+  - 实现 `_loadBaziImageById` 方法 ✅
+  - 实现 `_loadBaziImageByPinyin` 方法 ✅
+  - 管理 `baziImagePath` 内部状态 ✅
+  - 管理 `isLoadingImage` 加载状态 ✅
+  - 触发 `imageloaded` 和 `imageloaderror` 事件 ✅
   
-- [ ] **Task 5.4** - 实现组件的 `observers` 监听器
-  - 监听 `heavenlyStem, earthlyBranch` 变化
-  - 自动触发图片重新加载
+- [x] **Task 5.4** - 实现组件的 `observers` 监听器 ✅
+  - 监听 `heavenlyStem, earthlyBranch` 变化 ✅
+  - 监听 `baziImageId` 变化 ✅
+  - 自动触发图片重新加载 ✅
   
-- [ ] **Task 5.5** - 实现卡牌翻转动画逻辑
-  - 添加 `isFlipped` 内部状态
-  - 实现 `flipToFront()` 公共方法
-  - 实现翻转动画（scaleX缩放效果）
+- [x] **Task 5.5** - 实现卡牌翻转动画逻辑 ✅
+  - 添加 `isFlipped` 内部状态（阶段二已完成）✅
+  - 实现 `flipToFront()` 公共方法（带动画）✅
+  - 实现 `flipToBack()` 公共方法（带动画）✅
+  - 实现翻转动画（scaleX缩放效果）✅
+  - 添加 `flipAnimation` 动画对象 ✅
+  - 在 WXML 中应用动画 ✅
   
-- [ ] **Task 5.6** - 测试所有高级功能
+- [x] **Task 5.6** - 测试所有高级功能 ✅
+  - 图片缓存功能正常 ✅
+  - observers 监听器工作正常 ✅
+  - 翻转动画流畅自然 ✅
+  - 所有事件正确触发 ✅
 
 **验收标准：**
 - ✅ 图片加载逻辑在组件内部运行正常
 - ✅ 卡牌翻转动画流畅
 - ✅ 加载状态显示正确
+- ✅ imageCacheManager 集成成功
+- ✅ baziImageMap 集成成功
+- ✅ observers 监听器工作正常
+- ✅ 翻转动画基于 scaleX 实现
+
+**完成时间：** 2025-10-11  
+**说明：** 
+- 组件现在完全自主管理图片加载和缓存
+- 支持通过八字图片ID或天干地支拼音加载图片
+- 实现了流畅的翻转动画（scaleX 缩放效果）
+- 新增了 imageloaded 和 imageloaderror 事件用于缓存加载状态通知
+- 组件功能已经非常完整，可以独立运行
 - ✅ 数据变化时组件自动更新
 
 ---
