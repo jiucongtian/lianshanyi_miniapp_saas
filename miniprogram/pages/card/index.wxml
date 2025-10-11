@@ -26,10 +26,12 @@
             src="{{yearPillar.imagePath}}" 
             mode="aspectFit" 
             bindtap="onCardTap"
+            bindload="onImageLoad"
             binderror="onImageError"
             data-pillar="year"
             wx:if="{{yearPillar.imagePath}}" />
-          <view class="image-placeholder" wx:if="{{!yearPillar.imagePath && isLoadingImages}}">
+          <!-- 单张卡牌加载状态 -->
+          <view class="card-loading-overlay" wx:if="{{yearCardLoading}}">
             <view class="loading-spinner"></view>
             <view class="loading-text">加载中...</view>
           </view>
@@ -45,10 +47,12 @@
             src="{{monthPillar.imagePath}}" 
             mode="aspectFit" 
             bindtap="onCardTap"
+            bindload="onImageLoad"
             binderror="onImageError"
             data-pillar="month"
             wx:if="{{monthPillar.imagePath}}" />
-          <view class="image-placeholder" wx:if="{{!monthPillar.imagePath && isLoadingImages}}">
+          <!-- 单张卡牌加载状态 -->
+          <view class="card-loading-overlay" wx:if="{{monthCardLoading}}">
             <view class="loading-spinner"></view>
             <view class="loading-text">加载中...</view>
           </view>
@@ -64,10 +68,12 @@
             src="{{dayPillar.imagePath}}" 
             mode="aspectFit" 
             bindtap="onCardTap"
+            bindload="onImageLoad"
             binderror="onImageError"
             data-pillar="day"
             wx:if="{{dayPillar.imagePath}}" />
-          <view class="image-placeholder" wx:if="{{!dayPillar.imagePath && isLoadingImages}}">
+          <!-- 单张卡牌加载状态 -->
+          <view class="card-loading-overlay" wx:if="{{dayCardLoading}}">
             <view class="loading-spinner"></view>
             <view class="loading-text">加载中...</view>
           </view>
@@ -83,10 +89,12 @@
             src="{{timePillar.imagePath}}" 
             mode="aspectFit" 
             bindtap="onCardTap"
+            bindload="onImageLoad"
             binderror="onImageError"
             data-pillar="time"
             wx:if="{{timePillar.imagePath}}" />
-          <view class="image-placeholder" wx:if="{{!timePillar.imagePath && isLoadingImages}}">
+          <!-- 单张卡牌加载状态 -->
+          <view class="card-loading-overlay" wx:if="{{timeCardLoading}}">
             <view class="loading-spinner"></view>
             <view class="loading-text">加载中...</view>
           </view>

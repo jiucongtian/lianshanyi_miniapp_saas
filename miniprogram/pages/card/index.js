@@ -5,7 +5,6 @@ Page({
   data: {
     isDataLoaded: false, // 标记数据是否已加载
     isLoading: true, // 标记是否正在加载
-    isLoadingImages: false, // 标记图片是否正在加载
     currentProfileName: '生命智慧卡牌', // 当前档案名称，默认为生命智慧卡牌
     isUncertainTime: false, // 是否不确定时辰信息
     // 图片预览相关
@@ -18,6 +17,11 @@ Page({
     monthCardFlipped: false,
     dayCardFlipped: false,
     timeCardFlipped: false,
+    // 每张卡牌的加载状态：true表示正在加载，false表示加载完成
+    yearCardLoading: false,
+    monthCardLoading: false,
+    dayCardLoading: false,
+    timeCardLoading: false,
     yearPillar: { 
       heavenlyStem: '',
       earthlyBranch: '',
@@ -81,12 +85,25 @@ Page({
   /**
    * 卡牌点击事件 - 统一处理翻转和预览
    * 逻辑：
+   * - 如果卡牌正在加载，不响应点击
    * - 如果卡牌显示背面（未翻转），点击后翻转显示正面
    * - 如果卡牌显示正面（已翻转），点击后放大预览
    */
   onCardTap: function(e) {
     const pillar = e.currentTarget.dataset.pillar;
     if (!pillar) return;
+
+    // 检查该卡牌是否正在加载
+    const isLoading = this.data[`${pillar}CardLoading`];
+    if (isLoading) {
+      console.log(`[CardPage] ${pillar} 卡牌正在加载中，暂不响应点击`);
+      wx.showToast({
+        title: '图片加载中...',
+        icon: 'loading',
+        duration: 1000
+      });
+      return;
+    }
 
     // 获取当前卡牌的翻转状态
     const isFlipped = this.data[`${pillar}CardFlipped`];
@@ -110,17 +127,27 @@ Page({
   // 图片加载成功
   onImageLoad: function(e) {
     const pillar = e.currentTarget.dataset.pillar;
-    console.log(`${pillar} 卡牌图片加载成功`);
+    console.log(`[CardPage] ${pillar} 卡牌图片加载成功`);
+    
+    // 通知 Controller 图片加载完成
+    if (this.controller && pillar) {
+      this.controller.onImageLoadSuccess(pillar);
+    }
   },
 
   // 图片加载失败
   onImageError: function(e) {
-    console.error('图片加载失败:', e);
+    console.error('[CardPage] 图片加载失败:', e);
     const pillar = e.currentTarget.dataset.pillar;
     
     if (pillar) {
       const pillarData = this.data[`${pillar}Pillar`];
-      console.log(`${pillar} 卡牌图片加载失败:`, pillarData.imagePath);
+      console.error(`[CardPage] ${pillar} 卡牌图片加载失败:`, pillarData.imagePath);
+      
+      // 通知 Controller 图片加载失败
+      if (this.controller) {
+        this.controller.onImageLoadError(pillar);
+      }
       
       wx.showToast({
         title: '图片加载失败',
