@@ -25,7 +25,7 @@
             class="pillar-image" 
             src="{{yearPillar.imagePath}}" 
             mode="aspectFit" 
-            bindtap="{{yearCardFlipped ? 'onImageTap' : 'onCardTap'}}"
+            bindtap="onCardTap"
             binderror="onImageError"
             data-pillar="year"
             wx:if="{{yearPillar.imagePath}}" />
@@ -44,7 +44,7 @@
             class="pillar-image" 
             src="{{monthPillar.imagePath}}" 
             mode="aspectFit" 
-            bindtap="{{monthCardFlipped ? 'onImageTap' : 'onCardTap'}}"
+            bindtap="onCardTap"
             binderror="onImageError"
             data-pillar="month"
             wx:if="{{monthPillar.imagePath}}" />
@@ -63,7 +63,7 @@
             class="pillar-image" 
             src="{{dayPillar.imagePath}}" 
             mode="aspectFit" 
-            bindtap="{{dayCardFlipped ? 'onImageTap' : 'onCardTap'}}"
+            bindtap="onCardTap"
             binderror="onImageError"
             data-pillar="day"
             wx:if="{{dayPillar.imagePath}}" />
@@ -82,7 +82,7 @@
             class="pillar-image" 
             src="{{timePillar.imagePath}}" 
             mode="aspectFit" 
-            bindtap="{{timeCardFlipped ? 'onImageTap' : 'onCardTap'}}"
+            bindtap="onCardTap"
             binderror="onImageError"
             data-pillar="time"
             wx:if="{{timePillar.imagePath}}" />

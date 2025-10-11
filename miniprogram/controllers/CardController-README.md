@@ -248,10 +248,14 @@ const { CardController } = require('../../controllers/CardController');
 
 Page({
   data: {
-    deviceSize: 'medium',
     isDataLoaded: false,
     isLoading: true,
+    isLoadingImages: false,
     currentProfileName: '生命智慧卡牌',
+    isUncertainTime: false,
+    showImagePreview: false,
+    previewImagePath: '',
+    previewCardDescription: null,
     yearCardFlipped: false,
     monthCardFlipped: false,
     dayCardFlipped: false,
@@ -260,11 +264,7 @@ Page({
     monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '', baziImagePath: '' },
     dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '', baziImagePath: '' },
     timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: '', baziImagePath: '' },
-    originalTime: '',
-    lunarTime: '',
-    showImagePreview: false,
-    previewImagePath: '',
-    previewCardDescription: null
+    cardBackImagePath: '/static/card-back.jpg'
   },
 
   onLoad(options) {

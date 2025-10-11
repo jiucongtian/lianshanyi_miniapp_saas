@@ -3,8 +3,6 @@ const { CardController } = require('../../controllers/CardController');
 
 Page({
   data: {
-    deviceSize: 'medium',
-    showTimePopup: false,
     isDataLoaded: false, // 标记数据是否已加载
     isLoading: true, // 标记是否正在加载
     isLoadingImages: false, // 标记图片是否正在加载
@@ -44,8 +42,6 @@ Page({
       imagePath: '',
       baziImagePath: '' // 存储八字图片路径
     },
-    originalTime: '',
-    lunarTime: '',
     cardBackImagePath: '/static/card-back.jpg', // 卡牌背面图片路径
   },
 
@@ -82,38 +78,25 @@ Page({
 
   // ==================== 事件处理方法 ====================
 
-  // 显示时间详情
-  showTimeDetail: function() {
-    if (this.controller) {
-      this.controller.showTimeDetail();
-    }
-  },
-
-  // 关闭时间详情
-  closeTimePopup: function() {
-    if (this.controller) {
-      this.controller.closeTimePopup();
-    }
-  },
-
-  // 处理弹出层状态变化
-  onTimePopupChange: function(e) {
-    this.setData({ showTimePopup: e.detail.visible });
-  },
-
-  // 卡牌点击事件 - 翻转卡牌
+  /**
+   * 卡牌点击事件 - 统一处理翻转和预览
+   * 逻辑：
+   * - 如果卡牌显示背面（未翻转），点击后翻转显示正面
+   * - 如果卡牌显示正面（已翻转），点击后放大预览
+   */
   onCardTap: function(e) {
     const pillar = e.currentTarget.dataset.pillar;
-    if (this.controller) {
-      this.controller.flipCard(pillar);
-    }
-  },
+    if (!pillar) return;
 
-  // 图片点击事件 - 放大预览
-  onImageTap: function(e) {
-    const pillar = e.currentTarget.dataset.pillar;
-    if (this.controller) {
+    // 获取当前卡牌的翻转状态
+    const isFlipped = this.data[`${pillar}CardFlipped`];
+    
+    if (isFlipped) {
+      // 卡牌已翻转（显示正面），执行预览操作
       this.controller.previewCard(pillar);
+    } else {
+      // 卡牌未翻转（显示背面），执行翻转操作
+      this.controller.flipCard(pillar);
     }
   },
 

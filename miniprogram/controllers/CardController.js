@@ -74,10 +74,6 @@ class CardController extends BaseController {
       baziImagePath: ''
     };
     
-    // 时间显示
-    this.originalTime = '';
-    this.lunarTime = '';
-    
     // 图片预览
     this.showImagePreview = false;
     this.previewImagePath = '';
@@ -103,9 +99,6 @@ class CardController extends BaseController {
     console.log('[CardController] 开始初始化页面，参数:', options);
     
     try {
-      // 初始化设备尺寸
-      this._initDeviceSize();
-      
       // 初始化动画
       this._initAnimations();
       
@@ -234,8 +227,6 @@ class CardController extends BaseController {
             imagePath: currentCardBackImagePath, // 默认显示背面
             baziImagePath: timePath // 保存八字图片路径
           },
-          originalTime: baziData.originalTime || '',
-          lunarTime: baziData.lunarTime || '',
           isLoadingImages: false,
           // 保持isUncertainTime的值不变
           isUncertainTime: this.isUncertainTime,
@@ -283,8 +274,6 @@ class CardController extends BaseController {
             imagePath: currentCardBackImagePath, // 默认显示背面
             baziImagePath: timeImagePath // 保存八字图片路径
           },
-          originalTime: baziData.originalTime || '',
-          lunarTime: baziData.lunarTime || '',
           isLoadingImages: false,
           // 保持isUncertainTime的值不变
           isUncertainTime: this.isUncertainTime,
@@ -381,20 +370,6 @@ class CardController extends BaseController {
     });
   }
 
-  /**
-   * 显示时间详情
-   */
-  showTimeDetail() {
-    this._setData({ showTimePopup: true });
-  }
-
-  /**
-   * 关闭时间详情
-   */
-  closeTimePopup() {
-    this._setData({ showTimePopup: false });
-  }
-
   // ==================== 私有方法 ====================
 
   /**
@@ -473,17 +448,11 @@ class CardController extends BaseController {
   _completeReinitialize() {
     console.log('[CardController] 开始完全重新初始化卡牌页面数据');
     
-    // 获取当前设备尺寸，如果不存在则使用默认值
-    const currentDeviceSize = this.data?.deviceSize || 'medium';
     const currentCardBackImagePath = this.data?.cardBackImagePath || '/static/card-back.jpg';
     
     // 重置所有状态变量
     this._setData({
-      // 设备尺寸保持，不需要重置
-      deviceSize: currentDeviceSize,
-      
       // 重置所有显示状态
-      showTimePopup: false,
       isDataLoaded: false,
       isLoading: true,
       isLoadingImages: false,
@@ -526,10 +495,6 @@ class CardController extends BaseController {
         imagePath: currentCardBackImagePath,
         baziImagePath: ''
       },
-      
-      // 重置时间显示
-      originalTime: '',
-      lunarTime: '',
       
       // 保持卡牌背面图片路径
       cardBackImagePath: currentCardBackImagePath
@@ -577,20 +542,6 @@ class CardController extends BaseController {
   }
 
   /**
-   * 初始化设备尺寸
-   * @private
-   */
-  _initDeviceSize() {
-    wx.getSystemInfo({
-      success: (res) => {
-        const deviceSize = res.screenWidth < 375 ? 'small' : 
-                         res.screenWidth < 414 ? 'medium' : 'large';
-        this._setData({ deviceSize });
-      }
-    });
-  }
-
-  /**
    * 初始化动画
    * @private
    */
@@ -625,8 +576,6 @@ class CardController extends BaseController {
       monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
       dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
       timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
-      originalTime: '',
-      lunarTime: '',
       isLoadingImages: true,
       // 重置卡牌翻转状态（日柱卡牌将在数据加载后设置为正面）
       yearCardFlipped: false,
@@ -654,8 +603,6 @@ class CardController extends BaseController {
       monthPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
       dayPillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
       timePillar: { heavenlyStem: '', earthlyBranch: '', imagePath: currentCardBackImagePath, baziImagePath: '' },
-      originalTime: '',
-      lunarTime: '',
       // 重置图片预览相关
       showImagePreview: false,
       previewImagePath: '',
