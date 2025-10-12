@@ -234,9 +234,9 @@ class Logger {
   }
 
   /**
-   * 获取调用者信息（类名:方法名:行号）
+   * 获取调用者信息（类名:方法名）
    * @private
-   * @returns {string} 格式：ClassName:methodName:lineNumber
+   * @returns {string} 格式：ClassName:methodName
    */
   getCallerInfo() {
     try {
@@ -261,7 +261,7 @@ class Logger {
           continue;
         }
         
-        // 解析调用栈行
+        // 解析调用栈行（不包含行号）
         const info = this.parseStackLine(line);
         if (info) {
           return info;
@@ -275,7 +275,7 @@ class Logger {
   }
 
   /**
-   * 解析调用栈行，提取类名、方法名、行号
+   * 解析调用栈行，提取类名、方法名（不包含行号）
    * @private
    */
   parseStackLine(line) {
@@ -289,32 +289,28 @@ class Logger {
       if (match) {
         const className = match[1];
         const methodName = match[2];
-        const lineNum = match[4];
-        return `${className}:${methodName}:${lineNum}`;
+        return `${className}:${methodName}`;
       }
       
       // 匹配模式2: at Object.methodName (file:line:col)
       match = line.match(/at\s+Object\.(\w+)\s+\((.+):(\d+):\d+\)/);
       if (match) {
         const methodName = match[1];
-        const lineNum = match[3];
-        return `Object:${methodName}:${lineNum}`;
+        return `Object:${methodName}`;
       }
       
       // 匹配模式3: at methodName (file:line:col)
       match = line.match(/at\s+(\w+)\s+\((.+):(\d+):\d+\)/);
       if (match) {
         const methodName = match[1];
-        const lineNum = match[3];
-        return `${methodName}:${lineNum}`;
+        return methodName;
       }
       
-      // 匹配模式4: at file:line:col
+      // 匹配模式4: at file:line:col（提取文件名）
       match = line.match(/at\s+(.+):(\d+):\d+/);
       if (match) {
         const file = match[1].split('/').pop();
-        const lineNum = match[2];
-        return `${file}:${lineNum}`;
+        return file;
       }
       
       return null;
