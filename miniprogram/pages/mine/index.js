@@ -90,5 +90,14 @@ Page({
     if (this.controller) {
       this.controller.onEditProfile();
     }
+  },
+
+  /**
+   * 点击设置按钮
+   */
+  onSettingsTap() {
+    if (this.controller) {
+      this.controller.showSettings();
+    }
   }
 })

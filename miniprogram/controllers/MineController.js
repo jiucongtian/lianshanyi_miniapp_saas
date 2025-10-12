@@ -199,29 +199,27 @@ class MineController extends BaseController {
   showSettings() {
     this._log('showSettings', '显示设置');
     
+    // 所有用户显示相同的菜单项
     const itemList = [
+      '编辑用户资料',
       '清理缓存',
-      '关于我们',
-      '用户协议',
-      '隐私政策'
+      '用户协议'
     ];
     
     wx.showActionSheet({
       itemList: itemList,
       success: (res) => {
         const index = res.tapIndex;
+        
         switch (index) {
           case 0:
-            this._handleClearCache();
+            this.onEditProfile();
             break;
           case 1:
-            this._showAboutUs();
+            this._handleClearCache();
             break;
           case 2:
             this._showUserAgreement();
-            break;
-          case 3:
-            this._showPrivacyPolicy();
             break;
         }
       }

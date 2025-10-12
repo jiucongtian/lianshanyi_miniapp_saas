@@ -1,5 +1,10 @@
 <!--pages/mine/index.wxml-->
 <view class="mine-container">
+  <!-- 右上角设置按钮 -->
+  <view class="settings-button" bindtap="onSettingsTap">
+    <text class="settings-icon">⚙️</text>
+  </view>
+
   <!-- 用户信息头部 -->
   <view class="user-header">
     <view class="user-avatar">
@@ -34,20 +39,6 @@
           <text class="benefit-icon">📋</text>
           <text class="benefit-text">创建50个档案</text>
         </view>
-      </view>
-    </view>
-
-    <!-- 已注册用户显示编辑按钮 -->
-    <view class="action-card" wx:else>
-      <view class="action-header">
-        <text class="action-title">账户管理</text>
-        <text class="action-subtitle">管理您的个人信息</text>
-      </view>
-      <view class="action-buttons">
-        <button class="action-button secondary" bindtap="onEditProfile">
-          <text class="button-icon">✏️</text>
-          <text class="button-text">编辑资料</text>
-        </button>
       </view>
     </view>
   </view>

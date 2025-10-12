@@ -3,6 +3,33 @@
   background-color: #f5f5f5;
   min-height: 100vh;
   padding-bottom: 40rpx;
+  position: relative;
+}
+
+/* 右上角设置按钮 */
+.settings-button {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 88rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  background: transparent;
+  transition: all 0.3s ease;
+  
+  &:active {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+  
+  .settings-icon {
+    font-size: 44rpx;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+  }
 }
 
 /* 用户信息头部 */
