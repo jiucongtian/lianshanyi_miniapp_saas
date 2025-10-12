@@ -17,6 +17,16 @@ if (config.useMock) {
 }
 
 App({
+  globalData: {
+    userInfo: null,
+    profilesLoaded: false, // 标记档案是否已加载
+    version: '1.1.0', // 客户端版本
+    profileManager: profileManager, // 全局档案管理器
+  },
+
+  /** 全局事件总线 */
+  eventBus: eventBus,
+
   onLaunch() {
     log.info('onLaunch', '小程序启动，开始初始化');
     
@@ -71,15 +81,6 @@ App({
     // 每次小程序进入前台时也更新用户信息
     this.autoSaveUser();
   },
-  globalData: {
-    userInfo: null,
-    profilesLoaded: false, // 标记档案是否已加载
-    version: '1.1.0', // 客户端版本
-    profileManager: profileManager, // 全局档案管理器
-  },
-
-  /** 全局事件总线 */
-  eventBus: eventBus,
 
   /**
    * 自动保存用户信息到数据库

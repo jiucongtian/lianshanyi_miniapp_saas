@@ -38,8 +38,8 @@ class VersionManager {
         return appConfig.globalData.version;
       }
       
-      // 如果无法获取版本信息，返回默认版本
-      log.warn('getCurrentVersion', '无法获取App版本信息，使用默认版本 1.1.0');
+      // 如果无法获取版本信息，返回默认版本（这是正常的降级行为）
+      log.debug('getCurrentVersion', 'App实例未完全初始化，使用默认版本 1.1.0');
       return '1.1.0';
     } catch (error) {
       log.error('getCurrentVersion', '获取版本信息失败', { error: error.message });
