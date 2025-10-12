@@ -2,12 +2,14 @@
  * 统一响应处理Bean
  * 用于处理所有云函数返回的数据，提供统一的数据格式化和验证
  */
-class ResponseBean {
+const { BaseClass } = require('../common/BaseClass');
+
+class ResponseBean extends BaseClass {
   constructor(cloudResult) {
-    console.log('[ResponseBean] 构造函数被调用，传入参数:', cloudResult);
-    console.log('[ResponseBean] 参数类型:', typeof cloudResult);
-    console.log('[ResponseBean] 参数是否为null:', cloudResult === null);
-    console.log('[ResponseBean] 参数是否为undefined:', cloudResult === undefined);
+    super(); // 调用BaseClass构造函数
+    
+    this._debug('构造函数被调用，传入参数:', cloudResult);
+    this._debug('参数类型:', typeof cloudResult);
     
     this.success = false;
     this.data = null;
@@ -27,12 +29,11 @@ class ResponseBean {
    * @param {Object} cloudResult - 云函数返回的原始结果
    */
   _parse(cloudResult) {
-    console.log('[ResponseBean] _parse 方法开始执行，参数:', cloudResult);
+    this._debug('_parse 方法开始执行，参数:', cloudResult);
     
     // 1. 检查云函数调用是否成功
     if (!cloudResult || !cloudResult.result) {
-      console.error('[ResponseBean] 云函数调用失败，cloudResult:', cloudResult);
-      console.error('[ResponseBean] cloudResult.result:', cloudResult ? cloudResult.result : 'undefined');
+      this._error('云函数调用失败', null, { cloudResult });
       this.error = '云函数调用失败';
       this.code = -1;
       return;
@@ -42,7 +43,7 @@ class ResponseBean {
     
     // 2. 验证必需字段
     if (typeof result.success !== 'boolean') {
-      console.error('[ResponseBean] 响应格式错误，缺少success字段:', result);
+      this._error('响应格式错误，缺少success字段', null, { result });
       this.error = '响应格式错误：缺少success字段';
       this.code = -2;
       return;
@@ -57,13 +58,13 @@ class ResponseBean {
     
     // 4. 记录详细日志
     if (this.success) {
-      console.log('[ResponseBean] 云函数调用成功:', {
+      this._log('云函数调用成功:', {
         code: this.code,
         message: this.message,
         hasData: !!this.data
       });
     } else {
-      console.error('[ResponseBean] 云函数调用失败:', {
+      this._error('云函数调用失败', null, {
         code: this.code,
         error: this.error,
         message: this.message

@@ -4,14 +4,98 @@
 
 Bean层是项目架构中的数据层，负责处理云函数返回的数据格式化和验证。所有云函数返回的数据都必须通过Bean函数处理，确保数据的安全性和一致性。
 
+**所有Bean类都继承自BaseBean，BaseBean又继承自BaseClass。**
+
+## 继承关系
+
+```
+BaseClass (顶层基类)
+  └── BaseBean (数据Bean基类)
+        ├── UserBean (用户数据Bean)
+        ├── ProfileBean (档案数据Bean)
+        └── BaziBean (八字数据Bean)
+  
+  └── ResponseBean (云函数响应Bean，直接继承BaseClass)
+```
+
+**注意**：ResponseBean由于其特殊性（处理云函数响应而非数据模型），直接继承BaseClass而非BaseBean。
+
 ## 设计原则
 
 1. **数据安全检查**：所有Bean类都进行字段存在性检查和数据类型验证
 2. **默认值提供**：为所有字段提供合理的默认值，避免程序崩溃
-3. **详细错误日志**：记录详细的错误日志用于调试
+3. **详细错误日志**：通过BaseClass提供的统一日志功能记录详细日志
 4. **业务方法封装**：提供业务相关的便捷方法
+5. **继承复用**：通过继承BaseBean复用通用的数据处理功能
 
 ## Bean类说明
+
+### BaseBean - 数据Bean基类
+
+BaseBean是所有数据Bean的基类，提供通用的数据处理功能。
+
+#### 核心功能
+
+1. **字段提取与验证**
+   - `_getField(obj, fieldName, defaultValue, expectedType)` - 安全地获取字段值
+   - `_getNestedField(obj, path, defaultValue)` - 获取嵌套字段值
+   - `_validateRequiredField(fieldName, value)` - 验证必需字段
+   - `_validateFieldType(fieldName, value, expectedType)` - 验证字段类型
+   - `_validateFieldRange(fieldName, value, min, max)` - 验证数值范围
+   - `_validateStringLength(fieldName, value, minLength, maxLength)` - 验证字符串长度
+   - `_validateArray(fieldName, value, minLength)` - 验证数组
+
+2. **数据转换**
+   - `toObject()` - 转换为普通对象
+   - `toJSON(pretty)` - 转换为JSON字符串
+   - `getRawData()` - 获取原始数据
+   - `clone()` - 克隆Bean实例
+   - `merge(newData)` - 合并数据
+
+3. **验证管理**
+   - `hasValidationErrors()` - 是否有验证错误
+   - `getValidationErrors()` - 获取验证错误列表
+   - `isValid()` - 是否验证通过
+
+#### 使用示例
+
+```javascript
+const { BaseBean } = require('./BaseBean');
+
+class MyBean extends BaseBean {
+  constructor(data) {
+    super(data); // 必须调用
+    
+    // 使用_getField提取字段（带类型检查）
+    this.id = this._getField(this.data, 'id', '', 'string');
+    this.name = this._getField(this.data, 'name', '', 'string');
+    this.age = this._getField(this.data, 'age', 0, 'number');
+    
+    // 获取嵌套字段
+    this.city = this._getNestedField(this.data, 'address.city', '');
+    
+    // 执行验证
+    this._validate();
+  }
+  
+  _validate() {
+    // 验证必需字段
+    this._validateRequiredField('id', this.id);
+    this._validateRequiredField('name', this.name);
+    
+    // 验证字段类型
+    this._validateFieldType('age', this.age, 'number');
+    
+    // 验证数值范围
+    this._validateFieldRange('age', this.age, 0, 150);
+    
+    // 验证字符串长度
+    this._validateStringLength('name', this.name, 1, 50);
+    
+    this._isValidated = true;
+  }
+}
+```
 
 ### ResponseBean - 统一响应处理Bean
 
@@ -217,17 +301,81 @@ if (userBean.canCreateMore()) {
 ### 添加新的Bean类
 
 1. 在`beans/`目录下创建新的Bean文件
-2. 继承基本的数据验证和格式化功能
-3. 添加业务相关的便捷方法
-4. 在`index.js`中导出新Bean
-5. 更新使用文档
+2. **继承BaseBean**（而不是从零开始）
+3. 在构造函数中调用`super(data)`
+4. 使用`_getField`方法提取字段
+5. 实现`_validate`方法进行数据验证
+6. 添加业务相关的便捷方法
+7. 在`index.js`中导出新Bean
+8. 更新使用文档
+
+#### 新Bean类模板
+
+```javascript
+const { BaseBean } = require('./BaseBean');
+
+class NewBean extends BaseBean {
+  constructor(data) {
+    super(data); // 必须调用
+    
+    // 提取字段
+    this.field1 = this._getField(this.data, 'field1', '', 'string');
+    this.field2 = this._getField(this.data, 'field2', 0, 'number');
+    
+    // 执行验证
+    this._validate();
+  }
+  
+  _validate() {
+    // 验证逻辑
+    this._validateRequiredField('field1', this.field1);
+    this._validateFieldType('field2', this.field2, 'number');
+    
+    this._isValidated = true;
+  }
+  
+  // 业务方法
+  getDisplayName() {
+    return `${this.field1} - ${this.field2}`;
+  }
+}
+
+module.exports = { NewBean };
+```
 
 ### 添加新的验证规则
 
 1. 在`_validate`方法中添加新的验证逻辑
-2. 使用`console.error`记录验证错误
-3. 提供合理的默认值
-4. 更新文档说明
+2. 使用`this._addValidationError(fieldName, message)`记录验证错误
+3. 可以使用BaseBean提供的验证方法：
+   - `_validateRequiredField` - 验证必需字段
+   - `_validateFieldType` - 验证字段类型
+   - `_validateFieldRange` - 验证数值范围
+   - `_validateStringLength` - 验证字符串长度
+   - `_validateArray` - 验证数组
+4. 提供合理的默认值（在`_getField`调用时设置）
+5. 更新文档说明
+
+#### 自定义验证示例
+
+```javascript
+_validate() {
+  // 使用BaseBean提供的验证方法
+  this._validateRequiredField('email', this.email);
+  
+  // 自定义验证逻辑
+  if (this.email && !this._isValidEmail(this.email)) {
+    this._addValidationError('email', '邮箱格式不正确');
+  }
+  
+  this._isValidated = true;
+}
+
+_isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+```
 
 ## 注意事项
 

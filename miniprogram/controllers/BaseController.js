@@ -14,12 +14,15 @@
  * 4. 调用各种辅助方法
  */
 
-class BaseController {
+const { BaseClass } = require('../common/BaseClass');
+
+class BaseController extends BaseClass {
   /**
    * 构造函数
    * @param {Object} page - 页面实例（Page对象）
    */
   constructor(page) {
+    super(); // 调用BaseClass构造函数
     if (!page) {
       throw new Error('BaseController: page实例不能为空');
     }
@@ -227,7 +230,7 @@ class BaseController {
     wx.navigateTo({
       url: fullUrl,
       fail: (error) => {
-        console.error('[BaseController] 页面跳转失败:', error);
+        this._error('页面跳转失败', error);
         this._showError('页面跳转失败');
       }
     });
@@ -245,7 +248,7 @@ class BaseController {
     wx.redirectTo({
       url: fullUrl,
       fail: (error) => {
-        console.error('[BaseController] 页面重定向失败:', error);
+        this._error('页面重定向失败', error);
         this._showError('页面重定向失败');
       }
     });
@@ -259,7 +262,7 @@ class BaseController {
     wx.navigateBack({
       delta: delta,
       fail: (error) => {
-        console.error('[BaseController] 返回上一页失败:', error);
+        this._error('返回上一页失败', error);
         this._showError('返回失败');
       }
     });
@@ -273,7 +276,7 @@ class BaseController {
     wx.switchTab({
       url: url,
       fail: (error) => {
-        console.error('[BaseController] 切换TabBar失败:', error);
+        this._error('切换TabBar失败', error);
         this._showError('页面切换失败');
       }
     });
@@ -296,56 +299,6 @@ class BaseController {
       .join('&');
   }
 
-  /**
-   * 防抖函数
-   * @param {Function} func - 要防抖的函数
-   * @param {number} delay - 延迟时间（毫秒）
-   * @returns {Function} 防抖后的函数
-   */
-  _debounce(func, delay) {
-    let timeoutId;
-    return (...args) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func.apply(this, args), delay);
-    };
-  }
-
-  /**
-   * 节流函数
-   * @param {Function} func - 要节流的函数
-   * @param {number} delay - 延迟时间（毫秒）
-   * @returns {Function} 节流后的函数
-   */
-  _throttle(func, delay) {
-    let lastCall = 0;
-    return (...args) => {
-      const now = Date.now();
-      if (now - lastCall >= delay) {
-        lastCall = now;
-        func.apply(this, args);
-      }
-    };
-  }
-
-  /**
-   * 格式化时间戳
-   * @param {number} timestamp - 时间戳
-   * @returns {string} 格式化后的时间字符串
-   */
-  _formatTime(timestamp) {
-    const date = new Date(timestamp);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hour = date.getHours();
-    const minute = date.getMinutes();
-    const second = date.getSeconds();
-    
-    const formatNumber = (n) => n.toString().padStart(2, '0');
-    
-    return `${year}-${formatNumber(month)}-${formatNumber(day)} ${formatNumber(hour)}:${formatNumber(minute)}:${formatNumber(second)}`;
-  }
-
   // ==================== 错误处理方法 ====================
 
   /**
@@ -357,7 +310,7 @@ class BaseController {
     const errorMessage = error instanceof Error ? error.message : error;
     const fullContext = context ? `[${context}] ` : '';
     
-    console.error(`${fullContext}错误:`, error);
+    this._error(`${fullContext}错误`, error);
     this._showError(`${fullContext}${errorMessage}`);
   }
 
@@ -381,7 +334,7 @@ class BaseController {
    * 子类可以重写此方法
    */
   async initialize() {
-    console.log('[BaseController] 页面初始化');
+    this._log('页面初始化');
   }
 
   /**
@@ -389,7 +342,7 @@ class BaseController {
    * 子类可以重写此方法
    */
   onShow() {
-    console.log('[BaseController] 页面显示');
+    this._log('页面显示');
   }
 
   /**
@@ -397,7 +350,7 @@ class BaseController {
    * 子类可以重写此方法
    */
   onHide() {
-    console.log('[BaseController] 页面隐藏');
+    this._log('页面隐藏');
     // 隐藏所有加载提示
     this._hideAllLoading();
   }
@@ -407,7 +360,7 @@ class BaseController {
    * 子类可以重写此方法
    */
   onUnload() {
-    console.log('[BaseController] 页面卸载');
+    this._log('页面卸载');
     // 隐藏所有加载提示
     this._hideAllLoading();
   }

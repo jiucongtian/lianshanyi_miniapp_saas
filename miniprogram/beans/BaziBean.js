@@ -2,69 +2,65 @@
  * 八字数据Bean
  * 用于处理生辰八字相关的数据格式化和验证
  */
-class BaziBean {
+const { BaseBean } = require('./BaseBean');
+
+class BaziBean extends BaseBean {
   constructor(data) {
-    // 提供默认值，避免程序崩溃
-    this.year = data.year || {};
-    this.month = data.month || {};
-    this.day = data.day || {};
-    this.hour = data.hour || {};
-    this.lunarDate = data.lunarDate || null;
-    this.parameters = data.parameters || {};
-    this.timestamp = data.timestamp || null;
-    this.rawCozeData = data.rawCozeData || null;
+    super(data); // 调用BaseBean构造函数
+    
+    // 使用BaseBean提供的_getField方法提取字段
+    this.year = this._getField(this.data, 'year', {});
+    this.month = this._getField(this.data, 'month', {});
+    this.day = this._getField(this.data, 'day', {});
+    this.hour = this._getField(this.data, 'hour', {});
+    this.lunarDate = this._getField(this.data, 'lunarDate', null);
+    this.parameters = this._getField(this.data, 'parameters', {});
+    this.timestamp = this._getField(this.data, 'timestamp', null);
+    this.rawCozeData = this._getField(this.data, 'rawCozeData', null);
     
     // 验证关键字段
-    this._validate(data);
+    this._validate();
   }
   
   /**
    * 验证数据完整性
-   * @param {Object} data - 原始数据
    */
-  _validate(data) {
+  _validate() {
     // 验证四柱数据
     const pillars = ['year', 'month', 'day', 'hour'];
     
     pillars.forEach(pillar => {
-      if (data[pillar]) {
-        const pillarData = data[pillar];
-        
+      const pillarData = this[pillar];
+      if (pillarData && Object.keys(pillarData).length > 0) {
         if (typeof pillarData.gan !== 'string') {
-          console.error(`[BaziBean] ${pillar}.gan字段类型错误:`, typeof pillarData.gan);
+          this._addValidationError(`${pillar}.gan`, `类型错误: ${typeof pillarData.gan}`);
         }
         
         if (typeof pillarData.zhi !== 'string') {
-          console.error(`[BaziBean] ${pillar}.zhi字段类型错误:`, typeof pillarData.zhi);
+          this._addValidationError(`${pillar}.zhi`, `类型错误: ${typeof pillarData.zhi}`);
         }
         
         if (typeof pillarData.ganzhiIndex !== 'number') {
-          console.error(`[BaziBean] ${pillar}.ganzhiIndex字段类型错误:`, typeof pillarData.ganzhiIndex);
+          this._addValidationError(`${pillar}.ganzhiIndex`, `类型错误: ${typeof pillarData.ganzhiIndex}`);
         }
         
         // 验证天干地支的有效性
         this._validateGanZhi(pillarData.gan, pillarData.zhi, pillar);
       } else {
-        console.warn(`[BaziBean] 缺少${pillar}柱数据`);
+        this._addValidationError(pillar, `缺少${pillar}柱数据`);
       }
     });
     
     // 验证农历日期
-    if (data.lunarDate) {
-      const lunarDate = data.lunarDate;
-      if (typeof lunarDate.year !== 'number') {
-        console.error('[BaziBean] lunarDate.year字段类型错误:', typeof lunarDate.year);
-      }
-      if (typeof lunarDate.month !== 'number') {
-        console.error('[BaziBean] lunarDate.month字段类型错误:', typeof lunarDate.month);
-      }
-      if (typeof lunarDate.day !== 'number') {
-        console.error('[BaziBean] lunarDate.day字段类型错误:', typeof lunarDate.day);
-      }
-      if (typeof lunarDate.isLeap !== 'boolean') {
-        console.error('[BaziBean] lunarDate.isLeap字段类型错误:', typeof lunarDate.isLeap);
-      }
+    if (this.lunarDate) {
+      this._validateFieldType('lunarDate.year', this.lunarDate.year, 'number');
+      this._validateFieldType('lunarDate.month', this.lunarDate.month, 'number');
+      this._validateFieldType('lunarDate.day', this.lunarDate.day, 'number');
+      this._validateFieldType('lunarDate.isLeap', this.lunarDate.isLeap, 'boolean');
     }
+    
+    // 标记为已验证
+    this._isValidated = true;
   }
   
   /**
@@ -78,11 +74,11 @@ class BaziBean {
     const validZhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
     
     if (gan && !validGan.includes(gan)) {
-      console.warn(`[BaziBean] ${pillar}柱天干无效:`, gan);
+      this._addValidationError(`${pillar}.gan`, `天干无效: ${gan}`);
     }
     
     if (zhi && !validZhi.includes(zhi)) {
-      console.warn(`[BaziBean] ${pillar}柱地支无效:`, zhi);
+      this._addValidationError(`${pillar}.zhi`, `地支无效: ${zhi}`);
     }
   }
   
@@ -332,30 +328,32 @@ class BaziBean {
    * @returns {BaziBean} BaziBean实例
    */
   static fromCloudResult(cloudResult) {
+    const bean = new BaziBean({});
+    
     // 检查云函数调用是否成功
     if (!cloudResult || !cloudResult.result) {
-      console.warn('[BaziBean] 云函数调用失败或结果为空');
-      return new BaziBean({});
+      bean._warn('云函数调用失败或结果为空');
+      return bean;
     }
     
     const result = cloudResult.result;
     
     // 检查云函数执行是否成功
     if (!result.success) {
-      console.warn('[BaziBean] 云函数执行失败:', result.error);
-      return new BaziBean({});
+      bean._warn('云函数执行失败:', result.error);
+      return bean;
     }
     
     // 检查数据结构
     if (!result.data) {
-      console.warn('[BaziBean] 云函数返回数据为空');
-      return new BaziBean({});
+      bean._warn('云函数返回数据为空');
+      return bean;
     }
     
     // 检查baziData字段
     if (!result.data.baziData) {
-      console.warn('[BaziBean] 云函数返回数据中缺少baziData字段');
-      return new BaziBean({});
+      bean._warn('云函数返回数据中缺少baziData字段');
+      return bean;
     }
     
     return new BaziBean(result.data.baziData);

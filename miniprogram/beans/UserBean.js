@@ -2,81 +2,71 @@
  * 用户数据Bean
  * 用于处理用户相关的数据格式化和验证
  */
-class UserBean {
+const { BaseBean } = require('./BaseBean');
+
+class UserBean extends BaseBean {
   constructor(data) {
-    // 提供默认值，避免程序崩溃
-    this._id = data._id || '';
-    this.openid = data.openid || '';
-    this.unionid = data.unionid || '';
-    this.nickName = data.nickName || '微信用户';
-    this.avatarUrl = data.avatarUrl || '';
-    this.gender = data.gender || 0;
-    this.phoneNumber = data.phoneNumber || '';
-    this.createTime = data.createTime || null;
-    this.updateTime = data.updateTime || null;
-    this.lastLoginTime = data.lastLoginTime || null;
-    this.userType = data.userType || data.userTypeCode || 'guest';
-    this.registrationTime = data.registrationTime || null;
-    this.upgradeTime = data.upgradeTime || null;
-    this.usedProfiles = data.usedProfiles || 0;
-    this.isActive = data.isActive !== undefined ? data.isActive : true;
+    super(data); // 调用BaseBean构造函数
+    
+    // 使用BaseBean提供的_getField方法提取字段
+    this._id = this._getField(this.data, '_id', '', 'string');
+    this.openid = this._getField(this.data, 'openid', '', 'string');
+    this.unionid = this._getField(this.data, 'unionid', '', 'string');
+    this.nickName = this._getField(this.data, 'nickName', '微信用户', 'string');
+    this.avatarUrl = this._getField(this.data, 'avatarUrl', '', 'string');
+    this.gender = this._getField(this.data, 'gender', 0, 'number');
+    this.phoneNumber = this._getField(this.data, 'phoneNumber', '', 'string');
+    this.createTime = this._getField(this.data, 'createTime', null);
+    this.updateTime = this._getField(this.data, 'updateTime', null);
+    this.lastLoginTime = this._getField(this.data, 'lastLoginTime', null);
+    this.userType = this._getField(this.data, 'userType', this.data.userTypeCode || 'guest', 'string');
+    this.registrationTime = this._getField(this.data, 'registrationTime', null);
+    this.upgradeTime = this._getField(this.data, 'upgradeTime', null);
+    this.usedProfiles = this._getField(this.data, 'usedProfiles', 0, 'number');
+    this.isActive = this.data.isActive !== undefined ? this.data.isActive : true;
     
     // 用户类型相关字段（从static_user_types表获取）
-    this.typeName = data.typeName || '';
-    this.displayName = data.displayName || '';
-    this.description = data.description || '';
-    this.profileQuota = data.profileQuota || 3;
-    this.permissions = data.permissions || [];
+    this.typeName = this._getField(this.data, 'typeName', '', 'string');
+    this.displayName = this._getField(this.data, 'displayName', '', 'string');
+    this.description = this._getField(this.data, 'description', '', 'string');
+    this.profileQuota = this._getField(this.data, 'profileQuota', 3, 'number');
+    this.permissions = this._getField(this.data, 'permissions', []);
     
     // 计算字段（存储原始值，方法会重新计算）
-    this._canCreateMoreValue = data.canCreateMore;
-    this._remainingQuotaValue = data.remainingQuota;
+    this._canCreateMoreValue = this._getField(this.data, 'canCreateMore');
+    this._remainingQuotaValue = this._getField(this.data, 'remainingQuota');
     
     // 验证关键字段
-    this._validate(data);
+    this._validate();
   }
   
   /**
    * 验证数据完整性
-   * @param {Object} data - 原始数据
    */
-  _validate(data) {
+  _validate() {
     // 验证必需字段
-    if (!data._id) {
-      console.warn('[UserBean] 缺少_id字段');
-    }
-    
-    if (!data.openid) {
-      console.warn('[UserBean] 缺少openid字段');
-    }
+    this._validateRequiredField('_id', this._id);
+    this._validateRequiredField('openid', this.openid);
     
     // 验证数据类型
-    if (typeof this.profileQuota !== 'number') {
-      console.error('[UserBean] profileQuota字段类型错误:', typeof this.profileQuota);
-    }
-    
-    if (!Array.isArray(this.permissions)) {
-      console.error('[UserBean] permissions字段类型错误，期望数组，实际:', typeof this.permissions);
-    }
-    
-    if (typeof this.usedProfiles !== 'number') {
-      console.error('[UserBean] usedProfiles字段类型错误:', typeof this.usedProfiles);
-    }
-    
-    if (typeof this.isActive !== 'boolean') {
-      console.error('[UserBean] isActive字段类型错误:', typeof this.isActive);
-    }
+    this._validateFieldType('profileQuota', this.profileQuota, 'number');
+    this._validateArray('permissions', this.permissions);
+    this._validateFieldType('usedProfiles', this.usedProfiles, 'number');
+    this._validateFieldType('isActive', this.isActive, 'boolean');
     
     // 验证用户类型
     const validUserTypes = ['guest', 'normal', 'premium'];
     if (!validUserTypes.includes(this.userType)) {
-      console.warn('[UserBean] 无效的用户类型:', this.userType);
+      this._addValidationError('userType', `无效的用户类型: ${this.userType}`);
     }
     
     // 验证性别
     if (this.gender !== 0 && this.gender !== 1 && this.gender !== 2) {
-      console.warn('[UserBean] 无效的性别值:', this.gender);
+      this._addValidationError('gender', `无效的性别值: ${this.gender}`);
     }
+    
+    // 标记为已验证
+    this._isValidated = true;
   }
   
   /**

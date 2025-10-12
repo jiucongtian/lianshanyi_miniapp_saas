@@ -2,125 +2,94 @@
  * 档案数据Bean
  * 用于处理档案相关的数据格式化和验证
  */
-class ProfileBean {
+const { BaseBean } = require('./BaseBean');
+
+class ProfileBean extends BaseBean {
   constructor(data) {
-    // 检查数据是否为null或undefined
-    if (!data || typeof data !== 'object') {
-      console.warn('[ProfileBean] 构造函数接收到无效数据:', data);
-      data = {}; // 提供空对象作为默认值
-    }
+    super(data); // 调用BaseBean构造函数
     
-    // 提供默认值，避免程序崩溃
-    this._id = data._id || '';
-    this.userId = data.userId || '';
-    this.openid = data.openid || '';
-    this.profileName = data.profileName || '';
+    // 使用BaseBean提供的_getField方法提取字段
+    this._id = this._getField(this.data, '_id', '', 'string');
+    this.userId = this._getField(this.data, 'userId', '', 'string');
+    this.openid = this._getField(this.data, 'openid', '', 'string');
+    this.profileName = this._getField(this.data, 'profileName', '', 'string');
+    
+    // 处理嵌套的birthDate对象
+    const birthDateData = this._getField(this.data, 'birthDate', {});
     this.birthDate = {
-      year: data.birthDate?.year || 0,
-      month: data.birthDate?.month || 0,
-      day: data.birthDate?.day || 0,
-      hour: data.birthDate?.hour || 0,
-      minute: data.birthDate?.minute || 0,
-      isLunar: data.birthDate?.isLunar || false
+      year: this._getField(birthDateData, 'year', 0, 'number'),
+      month: this._getField(birthDateData, 'month', 0, 'number'),
+      day: this._getField(birthDateData, 'day', 0, 'number'),
+      hour: this._getField(birthDateData, 'hour', 0, 'number'),
+      minute: this._getField(birthDateData, 'minute', 0, 'number'),
+      isLunar: this._getField(birthDateData, 'isLunar', false, 'boolean')
     };
+    
+    // 处理嵌套的baziData对象
+    const baziDataRaw = this._getField(this.data, 'baziData', {});
     this.baziData = {
-      year: data.baziData?.year || { gan: '', zhi: '', ganzhiIndex: 0 },
-      month: data.baziData?.month || { gan: '', zhi: '', ganzhiIndex: 0 },
-      day: data.baziData?.day || { gan: '', zhi: '', ganzhiIndex: 0 },
-      hour: data.baziData?.hour || { gan: '', zhi: '', ganzhiIndex: 0 },
-      lunarDate: data.baziData?.lunarDate || null
+      year: baziDataRaw.year || { gan: '', zhi: '', ganzhiIndex: 0 },
+      month: baziDataRaw.month || { gan: '', zhi: '', ganzhiIndex: 0 },
+      day: baziDataRaw.day || { gan: '', zhi: '', ganzhiIndex: 0 },
+      hour: baziDataRaw.hour || { gan: '', zhi: '', ganzhiIndex: 0 },
+      lunarDate: baziDataRaw.lunarDate || null
     };
-    this.gender = data.gender || 0;
-    this.isUncertainTime = data.isUncertainTime || false;
-    this.description = data.description || '';
-    this.createTime = data.createTime || null;
-    this.updateTime = data.updateTime || null;
-    this.isActive = data.isActive !== undefined ? data.isActive : true;
+    
+    this.gender = this._getField(this.data, 'gender', 0, 'number');
+    this.isUncertainTime = this._getField(this.data, 'isUncertainTime', false, 'boolean');
+    this.description = this._getField(this.data, 'description', '', 'string');
+    this.createTime = this._getField(this.data, 'createTime', null);
+    this.updateTime = this._getField(this.data, 'updateTime', null);
+    this.isActive = this.data.isActive !== undefined ? this.data.isActive : true;
     
     // 验证关键字段
-    this._validate(data);
+    this._validate();
   }
   
   /**
    * 验证数据完整性
-   * @param {Object} data - 原始数据
    */
-  _validate(data) {
+  _validate() {
     // 验证必需字段
-    if (!data._id) {
-      console.warn('[ProfileBean] 缺少_id字段');
-    }
-    
-    if (!data.userId) {
-      console.warn('[ProfileBean] 缺少userId字段');
-    }
-    
-    if (!data.openid) {
-      console.warn('[ProfileBean] 缺少openid字段');
-    }
-    
-    if (!data.profileName) {
-      console.warn('[ProfileBean] 缺少profileName字段');
-    }
-    
-    if (!data.birthDate) {
-      console.warn('[ProfileBean] 缺少birthDate字段');
-    }
-    
-    if (!data.baziData) {
-      console.warn('[ProfileBean] 缺少baziData字段');
-    }
+    this._validateRequiredField('_id', this._id);
+    this._validateRequiredField('userId', this.userId);
+    this._validateRequiredField('openid', this.openid);
+    this._validateRequiredField('profileName', this.profileName);
     
     // 验证生日数据
-    if (data.birthDate) {
-      const birthDate = data.birthDate;
-      if (typeof birthDate.year !== 'number') {
-        console.error('[ProfileBean] birthDate.year字段类型错误:', typeof birthDate.year);
-      }
-      if (typeof birthDate.month !== 'number') {
-        console.error('[ProfileBean] birthDate.month字段类型错误:', typeof birthDate.month);
-      }
-      if (typeof birthDate.day !== 'number') {
-        console.error('[ProfileBean] birthDate.day字段类型错误:', typeof birthDate.day);
-      }
-      if (typeof birthDate.hour !== 'number') {
-        console.error('[ProfileBean] birthDate.hour字段类型错误:', typeof birthDate.hour);
-      }
+    if (this.birthDate) {
+      this._validateFieldType('birthDate.year', this.birthDate.year, 'number');
+      this._validateFieldType('birthDate.month', this.birthDate.month, 'number');
+      this._validateFieldType('birthDate.day', this.birthDate.day, 'number');
+      this._validateFieldType('birthDate.hour', this.birthDate.hour, 'number');
     }
     
     // 验证八字数据
-    if (data.baziData) {
-      const baziData = data.baziData;
+    if (this.baziData) {
       const pillars = ['year', 'month', 'day', 'hour'];
-      
       pillars.forEach(pillar => {
-        if (baziData[pillar]) {
-          const pillarData = baziData[pillar];
+        if (this.baziData[pillar]) {
+          const pillarData = this.baziData[pillar];
           if (typeof pillarData.gan !== 'string') {
-            console.error(`[ProfileBean] baziData.${pillar}.gan字段类型错误:`, typeof pillarData.gan);
+            this._addValidationError(`baziData.${pillar}.gan`, `类型错误: ${typeof pillarData.gan}`);
           }
           if (typeof pillarData.zhi !== 'string') {
-            console.error(`[ProfileBean] baziData.${pillar}.zhi字段类型错误:`, typeof pillarData.zhi);
+            this._addValidationError(`baziData.${pillar}.zhi`, `类型错误: ${typeof pillarData.zhi}`);
           }
           if (typeof pillarData.ganzhiIndex !== 'number') {
-            console.error(`[ProfileBean] baziData.${pillar}.ganzhiIndex字段类型错误:`, typeof pillarData.ganzhiIndex);
+            this._addValidationError(`baziData.${pillar}.ganzhiIndex`, `类型错误: ${typeof pillarData.ganzhiIndex}`);
           }
         }
       });
     }
     
     // 验证其他字段类型
-    if (typeof this.gender !== 'number') {
-      console.error('[ProfileBean] gender字段类型错误:', typeof this.gender);
-    }
+    this._validateFieldType('gender', this.gender, 'number');
+    this._validateFieldType('isUncertainTime', this.isUncertainTime, 'boolean');
+    this._validateFieldType('isActive', this.isActive, 'boolean');
     
-    if (typeof this.isUncertainTime !== 'boolean') {
-      console.error('[ProfileBean] isUncertainTime字段类型错误:', typeof this.isUncertainTime);
-    }
-    
-    if (typeof this.isActive !== 'boolean') {
-      console.error('[ProfileBean] isActive字段类型错误:', typeof this.isActive);
-    }
+    // 标记为已验证
+    this._isValidated = true;
   }
   
   /**
