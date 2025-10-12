@@ -170,13 +170,63 @@
 - 所有业务逻辑委托给MineController处理
 - 无linter错误
 
-#### ✅ Task 2.5: 重构register页面
-- [ ] 修改 `pages/register/index.js`
-  - [ ] 创建RegisterController实例
-  - [ ] 简化页面逻辑
-  - [ ] 事件处理委托给Controller
-- [ ] 测试注册流程
-- [ ] 确认代码行数减少至少50%
+#### ✅ Task 2.5: 重构register页面 【已完成】
+- [x] 创建 `RegisterController.js`
+  - [x] 实现页面初始化逻辑
+  - [x] 实现表单管理和验证
+  - [x] 实现头像上传功能
+  - [x] 实现数据提交（注册/编辑）
+  - [x] 实现跳过注册功能
+- [x] 修改 `pages/register/index.js`
+  - [x] 创建RegisterController实例
+  - [x] 简化页面逻辑
+  - [x] 事件处理委托给Controller
+- [x] 创建 `RegisterController-README.md`
+- [x] 测试注册流程
+  - [x] 注册模式
+  - [x] 编辑模式
+  - [x] 头像上传
+  - [x] 表单验证
+- [x] 确认代码行数减少至少50%（从458行减少到110行，减少76%）
+
+**重构成果：**
+- 代码行数：458行 → 110行（减少348行，约76%）
+- 代码职责更清晰：页面只负责生命周期和事件绑定
+- 所有业务逻辑委托给RegisterController处理
+- 无linter错误
+
+---
+
+### 🎉 阶段二总结 【已完成】
+
+**总体成果：**
+
+所有页面重构已完成，重构效果显著：
+
+| 页面 | 重构前 | 重构后 | 减少行数 | 减少比例 |
+|------|--------|--------|---------|---------|
+| profile | 196 行 | 84 行 | 112 行 | 57% |
+| addProfile | 379 行 | 104 行 | 275 行 | 73% |
+| card | 433 行 | 132 行 | 301 行 | 70% |
+| mine | 237 行 | 92 行 | 145 行 | 61% |
+| register | 458 行 | 110 行 | 348 行 | 76% |
+| **总计** | **1703 行** | **522 行** | **1181 行** | **69%** |
+
+**架构改进：**
+1. ✅ 所有页面都采用 Controller 模式
+2. ✅ 页面代码平均减少 69%
+3. ✅ 职责分离清晰（View-Controller-Service）
+4. ✅ 代码复用性显著提高
+5. ✅ 可维护性和可测试性大幅提升
+6. ✅ 无 linter 错误
+
+**创建的文档：**
+- ProfileController-README.md
+- AddProfileController-README.md
+- CardController-README.md
+- MineController-README.md
+- RegisterController-README.md
+- register-refactoring-summary.md
 
 ---
 
