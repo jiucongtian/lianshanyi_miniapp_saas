@@ -1,5 +1,7 @@
 // 引入CardController
 const { CardController } = require('../../controllers/CardController');
+const { createModuleLogger } = require('../../utils/logger/index');
+const log = createModuleLogger('CardPage');
 
 Page({
   data: {
@@ -33,31 +35,31 @@ Page({
   },
 
   onLoad: function(options) {
-    console.log('[CardPage] 页面加载，参数:', options);
+    log.info('onLoad', '页面加载', { options });
     this.controller = new CardController(this);
     this.controller.initialize(options);
   },
 
   onReady: function() {
-    console.log('[CardPage] 页面渲染完成');
+    log.debug('onReady', '页面渲染完成');
   },
 
   onShow: function() {
-    console.log('[CardPage] 页面显示');
+    log.debug('onShow', '页面显示');
     if (this.controller) {
       this.controller.onShow();
     }
   },
 
   onHide: function() {
-    console.log('[CardPage] 页面隐藏');
+    log.debug('onHide', '页面隐藏');
     if (this.controller) {
       this.controller.onHide();
     }
   },
 
   onUnload: function() {
-    console.log('[CardPage] 页面卸载');
+    log.debug('onUnload', '页面卸载');
     if (this.controller) {
       this.controller.onUnload();
     }
@@ -78,7 +80,7 @@ Page({
     
     if (!pillarName) return;
 
-    console.log(`[CardPage] ${pillarName} 卡牌被点击，当前状态: ${isFlipped ? '正面' : '背面'}`);
+    log.debug('onCardTap', '卡牌被点击', { pillarName, isFlipped: isFlipped ? '正面' : '背面' });
     
     if (isFlipped) {
       // 卡牌已翻转（显示正面），执行预览操作
@@ -99,14 +101,14 @@ Page({
   // 图片加载成功（组件触发的 imageloaded 事件）
   onImageLoaded: function(e) {
     const { pillarName, imagePath } = e.detail;
-    console.log(`[CardPage] ${pillarName} 卡牌图片加载成功:`, imagePath);
+    log.debug('onImageLoaded', '卡牌图片加载成功', { pillarName, imagePath });
     // 组件内部已经处理了所有逻辑，这里只记录日志
   },
 
   // 图片加载失败（组件触发的 imageloaderror 事件）
   onImageLoadError: function(e) {
     const { pillarName, error } = e.detail;
-    console.error(`[CardPage] ${pillarName} 卡牌图片加载失败:`, error);
+    log.error('onImageLoadError', '卡牌图片加载失败', { pillarName, error });
     
     // 提示用户
     wx.showToast({

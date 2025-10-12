@@ -4,6 +4,8 @@
  */
 
 const { ProfileBean } = require('../beans/ProfileBean');
+const { createModuleLogger } = require('./logger/index');
+const log = createModuleLogger('ProfileManager');
 
 class ProfileManager {
   constructor() {
@@ -17,16 +19,16 @@ class ProfileManager {
    * @param {Array} profileDataList - 原始档案数据列表
    */
   initialize(profileDataList = []) {
-    console.log('[ProfileManager] 初始化档案管理器，数据量:', profileDataList.length);
+    log.info('initialize', '初始化档案管理器', { dataCount: profileDataList.length });
     
     try {
       // 将原始数据转换为ProfileBean实例
       this.profileList = profileDataList.map(data => new ProfileBean(data));
       this.isInitialized = true;
       
-      console.log('[ProfileManager] 档案管理器初始化完成，档案数量:', this.profileList.length);
+      log.info('initialize', '档案管理器初始化完成', { profileCount: this.profileList.length });
     } catch (error) {
-      console.error('[ProfileManager] 初始化失败:', error);
+      log.error('initialize', '初始化失败', { error: error.message });
       this.profileList = [];
       this.isInitialized = false;
     }
@@ -59,7 +61,7 @@ class ProfileManager {
       if (profile === null || profile === undefined) {
         // 传入null或undefined，清空当前档案
         this.currentProfile = null;
-        console.log('[ProfileManager] 清空当前档案');
+        log.info('setCurrentProfile', '清空当前档案');
         return true;
       } else if (typeof profile === 'string') {
         // 传入的是ID
@@ -73,14 +75,14 @@ class ProfileManager {
       } else {
         // 其他情况，清空当前档案
         this.currentProfile = null;
-        console.log('[ProfileManager] 无效的档案参数，清空当前档案');
+        log.warn('setCurrentProfile', '无效的档案参数，清空当前档案');
         return true;
       }
       
-      console.log('[ProfileManager] 设置当前档案:', this.currentProfile?.profileName || '无');
+      log.info('setCurrentProfile', '设置当前档案', { profileName: this.currentProfile?.profileName || '无' });
       return this.currentProfile !== null;
     } catch (error) {
-      console.error('[ProfileManager] 设置当前档案失败:', error);
+      log.error('setCurrentProfile', '设置当前档案失败', { error: error.message });
       this.currentProfile = null;
       return false;
     }
@@ -99,7 +101,7 @@ class ProfileManager {
     
     // 如果没有当前档案，返回列表中的第一个档案
     if (this.profileList.length > 0) {
-      console.log('[ProfileManager] 没有当前档案，返回第一个档案:', this.profileList[0].profileName);
+      log.debug('getCurrentProfile', '没有当前档案，返回第一个档案', { profileName: this.profileList[0].profileName });
       return this.profileList[0];
     }
     
@@ -124,10 +126,10 @@ class ProfileManager {
       }
       
       this.profileList.push(profileBean);
-      console.log('[ProfileManager] 添加新档案:', profileBean.profileName);
+      log.info('addProfile', '添加新档案', { profileName: profileBean.profileName });
       return true;
     } catch (error) {
-      console.error('[ProfileManager] 添加档案失败:', error);
+      log.error('addProfile', '添加档案失败', { error: error.message });
       return false;
     }
   }
@@ -142,7 +144,7 @@ class ProfileManager {
       const index = this.profileList.findIndex(profile => profile._id === profileId);
       if (index !== -1) {
         const removedProfile = this.profileList.splice(index, 1)[0];
-        console.log('[ProfileManager] 删除档案:', removedProfile.profileName);
+        log.info('removeProfile', '删除档案', { profileName: removedProfile.profileName });
         
         // 如果删除的是当前档案，清空当前档案
         if (this.currentProfile && this.currentProfile._id === profileId) {
@@ -153,7 +155,7 @@ class ProfileManager {
       }
       return false;
     } catch (error) {
-      console.error('[ProfileManager] 删除档案失败:', error);
+      log.error('removeProfile', '删除档案失败', { error: error.message });
       return false;
     }
   }
@@ -170,19 +172,19 @@ class ProfileManager {
       if (profile) {
         // 更新ProfileBean实例的数据
         Object.assign(profile, updateData);
-        console.log('[ProfileManager] 更新档案:', profile.profileName);
+        log.info('updateProfile', '更新档案', { profileName: profile.profileName });
         
         // 如果当前档案就是被更新的档案，同步更新currentProfile引用
         if (this.currentProfile && this.currentProfile._id === profileId) {
           this.currentProfile = profile;
-          console.log('[ProfileManager] 当前档案已同步更新');
+          log.debug('updateProfile', '当前档案已同步更新');
         }
         
         return true;
       }
       return false;
     } catch (error) {
-      console.error('[ProfileManager] 更新档案失败:', error);
+      log.error('updateProfile', '更新档案失败', { error: error.message });
       return false;
     }
   }
@@ -194,7 +196,7 @@ class ProfileManager {
     this.currentProfile = null;
     this.profileList = [];
     this.isInitialized = false;
-    console.log('[ProfileManager] 清空所有档案数据');
+    log.info('clear', '清空所有档案数据');
   }
 
   /**

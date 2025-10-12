@@ -6,6 +6,8 @@
 // 引入工具类
 const { imageCacheManager } = require('../../utils/imageCacheManager');
 const { getBaziImageById, getBaziImageByPinyin } = require('../../utils/baziImageMap');
+const { createModuleLogger } = require('../../utils/logger/index');
+const log = createModuleLogger('BaziCard');
 
 Component({
   /**
@@ -109,7 +111,7 @@ Component({
    */
   lifetimes: {
     attached() {
-      console.log('[BaziCard] 组件挂载:', this.data.pillarName);
+      log.debug('attached', '组件挂载', { pillarName: this.data.pillarName });
       
       // 根据默认配置初始化状态
       if (this.data.defaultShowFront) {
@@ -128,7 +130,7 @@ Component({
     },
     
     detached() {
-      console.log('[BaziCard] 组件卸载:', this.data.pillarName);
+      log.debug('detached', '组件卸载', { pillarName: this.data.pillarName });
     }
   },
 
@@ -139,7 +141,7 @@ Component({
     // 监听天干地支变化，自动重新加载图片
     'heavenlyStem, earthlyBranch': function(heavenlyStem, earthlyBranch) {
       if (heavenlyStem && earthlyBranch) {
-        console.log('[BaziCard] 天干地支变化，重新加载图片:', heavenlyStem, earthlyBranch);
+        log.debug('observer', '天干地支变化，重新加载图片', { heavenlyStem, earthlyBranch });
         
         // 重置翻转状态到初始值（根据 defaultShowFront 决定）
         const shouldShowFront = this.data.defaultShowFront;
@@ -148,7 +150,7 @@ Component({
           state: shouldShowFront ? 'flipped' : 'loading'
         });
         
-        console.log('[BaziCard] 翻转状态已重置为:', shouldShowFront ? '正面' : '背面');
+        log.debug('observer', '翻转状态已重置', { state: shouldShowFront ? '正面' : '背面' });
         
         this._loadBaziImageByPinyin(heavenlyStem, earthlyBranch);
       }
@@ -157,7 +159,7 @@ Component({
     // 监听八字图片ID变化
     'baziImageId': function(baziImageId) {
       if (baziImageId) {
-        console.log('[BaziCard] 八字图片ID变化，重新加载图片:', baziImageId);
+        log.debug('observer', '八字图片ID变化，重新加载图片', { baziImageId });
         
         // 重置翻转状态到初始值（根据 defaultShowFront 决定）
         const shouldShowFront = this.data.defaultShowFront;
@@ -180,7 +182,7 @@ Component({
      * @param {number} imageId - 八字图片ID (1-60)
      */
     async _loadBaziImageById(imageId) {
-      console.log('[BaziCard] 根据ID加载八字图片:', imageId);
+      log.debug('loadBaziImageById', '根据ID加载八字图片', { imageId });
       
       this.setData({
         isLoadingImage: true,
@@ -200,7 +202,7 @@ Component({
           imageInfo.fileName
         );
         
-        console.log('[BaziCard] 图片加载完成:', imagePath);
+        log.debug('loadBaziImageById', '图片加载完成', { imagePath });
         
         // 保存正面图片路径
         this.setData({
@@ -215,14 +217,14 @@ Component({
           this.setData({
             currentImagePath: imagePath
           });
-          console.log('[BaziCard] 显示正面图片');
+          log.debug('loadBaziImageById', '显示正面图片');
         } else {
           // 显示背面图片
           const backImage = this.data.cardBackImage || '/static/card-back.jpg';
           this.setData({
             currentImagePath: backImage
           });
-          console.log('[BaziCard] 显示背面图片:', backImage);
+          log.debug('loadBaziImageById', '显示背面图片', { backImage });
         }
         
         // 触发图片加载完成事件
@@ -233,7 +235,7 @@ Component({
         });
         
       } catch (error) {
-        console.error('[BaziCard] 加载图片失败:', error);
+        log.error('loadBaziImageById', '加载图片失败', { error: error.message });
         
         this.setData({
           isLoadingImage: false,
@@ -254,7 +256,7 @@ Component({
      * @param {string} earthlyBranch - 地支（汉字或拼音）
      */
     async _loadBaziImageByPinyin(heavenlyStem, earthlyBranch) {
-      console.log('[BaziCard] 根据天干地支加载八字图片:', heavenlyStem, earthlyBranch);
+      log.debug('loadBaziImageByPinyin', '根据天干地支加载八字图片', { heavenlyStem, earthlyBranch });
       
       this.setData({
         isLoadingImage: true,
@@ -280,7 +282,7 @@ Component({
         // 拼接完整的拼音
         const fullPinyin = `${tianGanPinyin}${diZhiPinyin}`.toLowerCase();
         
-        console.log('[BaziCard] 转换后的拼音:', fullPinyin);
+        log.debug('loadBaziImageByPinyin', '转换后的拼音', { fullPinyin });
         
         // 获取八字图片信息
         const imageInfo = getBaziImageByPinyin(fullPinyin);
@@ -294,7 +296,7 @@ Component({
           imageInfo.fileName
         );
         
-        console.log('[BaziCard] 图片加载完成:', imagePath);
+        log.debug('loadBaziImageByPinyin', '图片加载完成', { imagePath });
         
         // 保存正面图片路径
         this.setData({
@@ -309,14 +311,14 @@ Component({
           this.setData({
             currentImagePath: imagePath
           });
-          console.log('[BaziCard] 显示正面图片');
+          log.debug('loadBaziImageByPinyin', '显示正面图片');
         } else {
           // 显示背面图片
           const backImage = this.data.cardBackImage || '/static/card-back.jpg';
           this.setData({
             currentImagePath: backImage
           });
-          console.log('[BaziCard] 显示背面图片:', backImage);
+          log.debug('loadBaziImageByPinyin', '显示背面图片', { backImage });
         }
         
         // 触发图片加载完成事件
@@ -327,7 +329,7 @@ Component({
         });
         
       } catch (error) {
-        console.error('[BaziCard] 加载图片失败:', error);
+        log.error('loadBaziImageByPinyin', '加载图片失败', { error: error.message });
         
         this.setData({
           isLoadingImage: false,
@@ -346,7 +348,7 @@ Component({
      * 图片加载成功
      */
     onImageLoad(e) {
-      console.log('[BaziCard] 图片加载成功:', this.data.pillarName);
+      log.debug('onImageLoad', '图片加载成功', { pillarName: this.data.pillarName });
       
       this.setData({
         isLoadingImage: false,
@@ -364,7 +366,7 @@ Component({
      * 图片加载失败
      */
     onImageError(e) {
-      console.error('[BaziCard] 图片加载失败:', this.data.pillarName, e.detail);
+      log.error('onImageError', '图片加载失败', { pillarName: this.data.pillarName, detail: e.detail });
       
       this.setData({
         isLoadingImage: false,
@@ -383,7 +385,7 @@ Component({
      * 卡牌点击事件
      */
     onCardTap(e) {
-      console.log('[BaziCard] 卡牌被点击:', this.data.pillarName);
+      log.debug('onTap', '卡牌被点击', { pillarName: this.data.pillarName });
       
       // 触发自定义事件，通知父组件
       this.triggerEvent('cardtap', {
@@ -400,11 +402,11 @@ Component({
      * 公共方法，供父组件调用
      */
     flipToFront() {
-      console.log('[BaziCard] 翻转卡牌到正面:', this.data.pillarName);
+      log.debug('flipToFront', '翻转卡牌到正面', { pillarName: this.data.pillarName });
       
       // 如果已经翻转，不重复翻转
       if (this.data.isFlipped) {
-        console.log('[BaziCard] 卡牌已经是正面，跳过翻转');
+        log.debug('flipToFront', '卡牌已经是正面，跳过翻转');
         return;
       }
       
@@ -455,11 +457,11 @@ Component({
      * 公共方法，供父组件调用
      */
     flipToBack() {
-      console.log('[BaziCard] 翻转卡牌到背面:', this.data.pillarName);
+      log.debug('flipToBack', '翻转卡牌到背面', { pillarName: this.data.pillarName });
       
       // 如果已经是背面，不重复翻转
       if (!this.data.isFlipped) {
-        console.log('[BaziCard] 卡牌已经是背面，跳过翻转');
+        log.debug('flipToBack', '卡牌已经是背面，跳过翻转');
         return;
       }
       
@@ -510,7 +512,7 @@ Component({
      * 公共方法，供父组件调用
      */
     reloadImage() {
-      console.log('[BaziCard] 重新加载图片:', this.data.pillarName);
+      log.debug('reloadImage', '重新加载图片', { pillarName: this.data.pillarName });
       
       this.setData({
         isLoadingImage: true,

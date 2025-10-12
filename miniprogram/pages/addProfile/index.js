@@ -1,5 +1,7 @@
 import Message from 'tdesign-miniprogram/message/index';
 const { AddProfileController } = require('../../controllers/AddProfileController');
+const { createModuleLogger } = require('../../utils/logger/index');
+const log = createModuleLogger('AddProfilePage');
 
 Page({
   data: {
@@ -44,27 +46,27 @@ Page({
 
   // 页面生命周期
   onLoad(options) {
-    console.log('[addProfile] 页面加载，参数:', options);
+    log.info('onLoad', '页面加载', { options });
     this.controller = new AddProfileController(this);
     this.controller.initialize(options);
   },
 
   onShow() {
-    console.log('[addProfile] 页面显示');
+    log.debug('onShow', '页面显示');
     if (this.controller) {
       this.controller.onShow();
     }
   },
 
   onHide() {
-    console.log('[addProfile] 页面隐藏');
+    log.debug('onHide', '页面隐藏');
     if (this.controller) {
       this.controller.onHide();
     }
   },
 
   onUnload() {
-    console.log('[addProfile] 页面卸载');
+    log.debug('onUnload', '页面卸载');
     if (this.controller) {
       this.controller.onUnload();
     }
@@ -139,7 +141,7 @@ Page({
   },
 
   onInputTap() {
-    console.log('点击输入框，打开选择器');
+    log.debug('onInputTap', '点击输入框，打开选择器');
     
     let targetPickerValue;
     

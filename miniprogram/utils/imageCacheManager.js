@@ -2,6 +2,8 @@
  * 通用图片缓存管理器
  * 支持不同类型的图片缓存（头像、卡牌等）
  */
+const { createModuleLogger } = require('./logger/index');
+const log = createModuleLogger('ImageCache');
 
 /**
  * 图片缓存管理器类
@@ -40,9 +42,9 @@ class ImageCacheManager {
       // 目录不存在，创建目录
       try {
         this.fs.mkdirSync(this.cacheDir, true);
-        console.log(`缓存目录创建成功: ${this.cacheDir}`);
+        log.info('initCacheDir', '缓存目录创建成功', { cacheDir: this.cacheDir });
       } catch (err) {
-        console.error(`创建缓存目录失败: ${this.cacheDir}`, err);
+        log.error('initCacheDir', '创建缓存目录失败', { cacheDir: this.cacheDir, error: err.message });
       }
     }
   }
@@ -56,7 +58,7 @@ class ImageCacheManager {
       const cacheMap = wx.getStorageSync(this.config.cacheMapKey);
       return cacheMap || {};
     } catch (e) {
-      console.error('加载缓存映射表失败:', e);
+      log.error('loadCacheMap', '加载缓存映射表失败', { error: e.message });
       return {};
     }
   }
@@ -68,7 +70,7 @@ class ImageCacheManager {
     try {
       wx.setStorageSync(this.config.cacheMapKey, this.cacheMap);
     } catch (e) {
-      console.error('保存缓存映射表失败:', e);
+      log.error('saveCacheMap', '保存缓存映射表失败', { error: e.message });
     }
   }
 
@@ -96,7 +98,7 @@ class ImageCacheManager {
     // 检查缓存是否过期
     const now = Date.now();
     if (now - cacheInfo.cacheTime > this.config.expireTime) {
-      console.log('缓存已过期:', cloudPath);
+      log.debug('getCacheInfo', '缓存已过期', { cloudPath });
       this.removeCacheFile(cloudPath);
       return null;
     }
@@ -106,7 +108,7 @@ class ImageCacheManager {
       this.fs.accessSync(cacheInfo.localPath);
       return cacheInfo;
     } catch (e) {
-      console.log('缓存文件不存在:', cacheInfo.localPath);
+      log.debug('getCacheInfo', '缓存文件不存在', { localPath: cacheInfo.localPath });
       delete this.cacheMap[cloudPath];
       this.saveCacheMap();
       return null;
@@ -123,17 +125,17 @@ class ImageCacheManager {
     // 1. 检查缓存
     const cacheInfo = this.getCacheInfo(cloudPath);
     if (cacheInfo) {
-      console.log('使用缓存图片:', fileName);
+      log.debug('getImagePath', '使用缓存图片', { fileName });
       return cacheInfo.localPath;
     }
 
     // 2. 缓存不存在，需要下载
-    console.log('下载并缓存图片:', fileName);
+    log.info('getImagePath', '下载并缓存图片', { fileName });
     try {
       const localPath = await this.downloadAndCache(cloudPath, fileName);
       return localPath;
     } catch (error) {
-      console.error('下载图片失败:', error);
+      log.error('getImagePath', '下载图片失败', { fileName, error: error.message });
       // 下载失败，返回云存储路径，让微信自动处理
       return cloudPath;
     }
@@ -178,10 +180,10 @@ class ImageCacheManager {
                   };
                   this.saveCacheMap();
                   
-                  console.log('图片缓存成功:', fileName);
+                  log.info('downloadAndCache', '图片缓存成功', { fileName });
                   resolve(localPath);
                 } catch (saveError) {
-                  console.error('保存文件失败:', saveError);
+                  log.error('downloadAndCache', '保存文件失败', { fileName, error: saveError.message });
                   reject(saveError);
                 }
               } else {
@@ -189,13 +191,13 @@ class ImageCacheManager {
               }
             },
             fail: err => {
-              console.error('下载文件失败:', err);
+              log.error('downloadAndCache', '下载文件失败', { fileName, error: err.errMsg });
               reject(err);
             }
           });
         },
         fail: err => {
-          console.error('获取临时链接失败:', err);
+          log.error('downloadAndCache', '获取临时链接失败', { cloudPath, error: err.errMsg });
           reject(err);
         }
       });
@@ -208,7 +210,7 @@ class ImageCacheManager {
    * @returns {Promise<Object>} 加载结果统计
    */
   async preloadImages(imageList) {
-    console.log(`开始预加载 ${imageList.length} 张图片...`);
+    log.info('preloadImages', '开始预加载图片', { count: imageList.length });
     
     const results = {
       total: imageList.length,
@@ -229,12 +231,12 @@ class ImageCacheManager {
           results.downloaded++;
         }
       } catch (error) {
-        console.error(`预加载失败: ${image.fileName}`, error);
+        log.error('preloadImages', '预加载失败', { fileName: image.fileName, error: error.message });
         results.failed++;
       }
     }
 
-    console.log('预加载完成:', results);
+    log.info('preloadImages', '预加载完成', results);
     return results;
   }
 
@@ -255,7 +257,7 @@ class ImageCacheManager {
           localPath: path
         });
       } catch (error) {
-        console.error(`获取图片路径失败: ${image.fileName}`, error);
+        log.error('batchGetImagePaths', '获取图片路径失败', { fileName: image.fileName, error: error.message });
         paths.push({
           cloudPath: image.cloudPath,
           fileName: image.fileName,
@@ -280,9 +282,9 @@ class ImageCacheManager {
 
     try {
       this.fs.unlinkSync(cacheInfo.localPath);
-      console.log('删除缓存文件:', cacheInfo.fileName);
+      log.debug('removeCacheFile', '删除缓存文件', { fileName: cacheInfo.fileName });
     } catch (e) {
-      console.error('删除缓存文件失败:', e);
+      log.error('removeCacheFile', '删除缓存文件失败', { fileName: cacheInfo.fileName, error: e.message });
     }
 
     delete this.cacheMap[cloudPath];
@@ -293,7 +295,7 @@ class ImageCacheManager {
    * 清理过期缓存
    */
   cleanExpiredCache() {
-    console.log('开始清理过期缓存...');
+    log.info('cleanExpiredCache', '开始清理过期缓存');
     
     const now = Date.now();
     let cleanCount = 0;
@@ -306,14 +308,14 @@ class ImageCacheManager {
       }
     });
 
-    console.log(`清理完成，共清理 ${cleanCount} 个过期缓存`);
+    log.info('cleanExpiredCache', '清理完成', { cleanCount });
   }
 
   /**
    * 清空所有缓存
    */
   clearAllCache() {
-    console.log('清空所有缓存...');
+    log.info('clearAllCache', '清空所有缓存');
     
     Object.keys(this.cacheMap).forEach(cloudPath => {
       this.removeCacheFile(cloudPath);
@@ -322,7 +324,7 @@ class ImageCacheManager {
     this.cacheMap = {};
     this.saveCacheMap();
     
-    console.log('缓存已清空');
+    log.info('clearAllCache', '缓存已清空');
   }
 
   /**

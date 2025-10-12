@@ -3,6 +3,8 @@
  * 使用MineController处理业务逻辑
  */
 const { MineController } = require('../../controllers/MineController');
+const { createModuleLogger } = require('../../utils/logger/index');
+const log = createModuleLogger('MinePage');
 
 Page({
   /**
@@ -22,7 +24,7 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
-    console.log('[MinePage] 页面加载');
+    log.info('onLoad', '页面加载');
     this.controller = new MineController(this);
     this.controller.initialize();
   },

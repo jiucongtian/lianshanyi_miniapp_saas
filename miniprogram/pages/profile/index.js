@@ -1,5 +1,7 @@
 // pages/profile/index.js
 const { ProfileController } = require('../../controllers/ProfileController');
+const { createModuleLogger } = require('../../utils/logger/index');
+const log = createModuleLogger('ProfilePage');
 
 Page({
   /**
@@ -26,7 +28,7 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
-    console.log('[ProfilePage] 页面加载');
+    log.info('onLoad', '页面加载');
     this.controller = new ProfileController(this);
     this.controller.initialize();
   },
@@ -42,7 +44,7 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
-    console.log('[ProfilePage] 页面显示');
+    log.debug('onShow', '页面显示');
     this.controller.onShow();
   },
 
@@ -50,7 +52,7 @@ Page({
    * 生命周期函数--监听页面隐藏
    */
   onHide() {
-    console.log('[ProfilePage] 页面隐藏');
+    log.debug('onHide', '页面隐藏');
     this.controller.onHide();
   },
 
@@ -58,7 +60,7 @@ Page({
    * 生命周期函数--监听页面卸载
    */
   onUnload() {
-    console.log('[ProfilePage] 页面卸载');
+    log.debug('onUnload', '页面卸载');
     this.controller.onUnload();
   },
 
@@ -99,10 +101,10 @@ Page({
     wx.switchTab({
       url: '/pages/card/index',
       success: () => {
-        console.log('[ProfilePage] 成功跳转到卡牌页面');
+        log.debug('navigateToCard', '成功跳转到卡牌页面');
       },
       fail: (error) => {
-        console.error('[ProfilePage] 跳转失败:', error);
+        log.error('navigateToCard', '跳转失败', { error: error.errMsg });
       }
     });
   },

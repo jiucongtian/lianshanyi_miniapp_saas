@@ -6,6 +6,8 @@
 
 const { userService } = require('../services/index');
 const { permissionManager } = require('./permissionManager');
+const { createModuleLogger } = require('./logger/index');
+const log = createModuleLogger('UserManager');
 
 /**
  * 用户管理器类
@@ -22,22 +24,22 @@ class UserManager {
    */
   async initUser() {
     try {
-      console.log('UserManager: 开始初始化用户信息...');
+      log.info('initUser', '开始初始化用户信息');
       
       // 获取用户基本信息（可选授权）
       const profileInfo = await this.getUserProfile();
-      console.log('UserManager: 获取到的用户资料:', profileInfo);
+      log.debug('initUser', '获取到的用户资料', { profileInfo });
       
       // 检查是否有有效的用户信息需要更新
       const hasValidUserData = this.hasValidUserData(profileInfo);
-      console.log('UserManager: 是否有有效用户数据:', hasValidUserData);
+      log.debug('initUser', '是否有有效用户数据', { hasValidUserData });
       
       // 调用Service层保存/更新用户信息
       // 如果没有有效的用户数据，传递空对象，只更新登录时间
       const dataToSend = hasValidUserData ? profileInfo : {};
-      console.log('UserManager: 准备调用UserService保存用户信息，传递数据:', dataToSend);
+      log.debug('initUser', '准备调用UserService保存用户信息', { dataToSend });
       const result = await userService.createUser(dataToSend);
-      console.log('UserManager: UserService调用结果:', result);
+      log.debug('initUser', 'UserService调用结果', { success: result.success });
       
       if (result.success) {
         // 获取完整的用户信息（从数据库）
@@ -61,7 +63,10 @@ class UserManager {
         permissionManager.setUserInfo(this.userInfo);
         
         this.isInitialized = true;
-        console.log('UserManager: 用户信息初始化成功', this.userInfo);
+        log.info('initUser', '用户信息初始化成功', { 
+          userId: this.userInfo._id,
+          isNewUser: result.data.isNewUser 
+        });
         
         return {
           success: true,
@@ -69,14 +74,14 @@ class UserManager {
           message: result.data.isNewUser ? '欢迎新用户！' : '欢迎回来！'
         };
       } else {
-        console.error('UserManager: 用户信息保存失败', result.error);
+        log.error('initUser', '用户信息保存失败', { error: result.error });
         return {
           success: false,
           error: result.error
         };
       }
     } catch (error) {
-      console.error('UserManager: 初始化用户信息失败', error);
+      log.error('initUser', '初始化用户信息失败', { error: error.message });
       return {
         success: false,
         error: error.message || '初始化失败'
@@ -108,17 +113,17 @@ class UserManager {
    */
   async getUserProfile() {
     try {
-      console.log('UserManager: 开始获取用户资料...');
+      log.debug('getUserProfile', '开始获取用户资料');
       
       // 微信政策变更：不再支持自动获取用户信息
       // wx.getUserInfo() 已废弃，只返回匿名信息
       // wx.getUserProfile() 必须用户主动点击触发
       // 因此，启动时不获取用户信息，返回空对象
-      console.log('UserManager: 根据微信新政策，启动时不自动获取用户信息');
+      log.debug('getUserProfile', '根据微信新政策，启动时不自动获取用户信息');
       
       return {};
     } catch (error) {
-      console.log('UserManager: 获取用户信息失败，使用默认信息', error.message);
+      log.warn('getUserProfile', '获取用户信息失败，使用默认信息', { error: error.message });
       return {};
     }
   }
@@ -130,7 +135,7 @@ class UserManager {
    */
   async updateUserInfo(updateData) {
     try {
-      console.log('UserManager: 更新用户信息', updateData);
+      log.info('updateUserInfo', '更新用户信息', { updateData });
       
       const result = await userService.updateUserInfo(updateData);
       
@@ -145,17 +150,17 @@ class UserManager {
         // 更新权限管理器
         permissionManager.setUserInfo(this.userInfo);
         
-        console.log('UserManager: 用户信息更新成功', this.userInfo);
+        log.info('updateUserInfo', '用户信息更新成功', { userId: this.userInfo._id });
         return {
           success: true,
           data: this.userInfo
         };
       } else {
-        console.error('UserManager: 用户信息更新失败', result.error);
+        log.error('updateUserInfo', '用户信息更新失败', { error: result.error });
         return result;
       }
     } catch (error) {
-      console.error('UserManager: 更新用户信息出错', error);
+      log.error('updateUserInfo', '更新用户信息出错', { error: error.message });
       return {
         success: false,
         error: error.message || '更新失败'
@@ -194,19 +199,19 @@ class UserManager {
    */
   async requestUserAuthorization() {
     try {
-      console.log('UserManager: 请求用户授权...');
+      log.info('requestUserAuthorization', '请求用户授权');
       
       // 调用新版API获取用户信息
       const userProfile = await this.requestUserProfile('用于完善您的个人资料');
       const userInfo = userProfile.userInfo;
       
-      console.log('UserManager: 用户授权成功，获取到信息:', userInfo);
+      log.info('requestUserAuthorization', '用户授权成功，获取到信息', { userInfo });
       
       // 更新用户信息到数据库
       const result = await this.updateUserInfo(userInfo);
       
       if (result.success) {
-        console.log('UserManager: 用户信息更新成功');
+        log.info('requestUserAuthorization', '用户信息更新成功');
         return {
           success: true,
           data: result.data,
@@ -216,7 +221,7 @@ class UserManager {
         return result;
       }
     } catch (error) {
-      console.error('UserManager: 用户授权失败:', error);
+      log.error('requestUserAuthorization', '用户授权失败', { error: error.message });
       return {
         success: false,
         error: error.message || '用户授权失败'
@@ -230,7 +235,7 @@ class UserManager {
    */
   async getFullUserInfo() {
     try {
-      console.log('UserManager: 获取完整用户信息...');
+      log.info('getFullUserInfo', '获取完整用户信息');
       const result = await userService.getUserInfo();
 
       if (result.success) {
@@ -245,17 +250,17 @@ class UserManager {
         // 更新权限管理器
         permissionManager.setUserInfo(this.userInfo);
         
-        console.log('UserManager: 完整用户信息获取成功', this.userInfo);
+        log.info('getFullUserInfo', '完整用户信息获取成功', { userId: this.userInfo._id });
         return {
           success: true,
           data: this.userInfo
         };
       } else {
-        console.error('UserManager: 获取完整用户信息失败', result.error);
+        log.error('getFullUserInfo', '获取完整用户信息失败', { error: result.error });
         return result;
       }
     } catch (error) {
-      console.error('UserManager: 获取完整用户信息出错', error);
+      log.error('getFullUserInfo', '获取完整用户信息出错', { error: error.message });
       return {
         success: false,
         error: error.message || '获取用户信息失败'
@@ -271,20 +276,20 @@ class UserManager {
    */
   async upgradeUserType(targetUserType, registrationData = null) {
     try {
-      console.log('UserManager: 升级用户类型', targetUserType, registrationData);
+      log.info('upgradeUserType', '升级用户类型', { targetUserType });
       const result = await userService.upgradeUserType(targetUserType, registrationData);
 
       if (result.success) {
         // 刷新用户信息
         await this.getFullUserInfo();
-        console.log('UserManager: 用户类型升级成功');
+        log.info('upgradeUserType', '用户类型升级成功', { targetUserType });
         return result;
       } else {
-        console.error('UserManager: 用户类型升级失败', result.error);
+        log.error('upgradeUserType', '用户类型升级失败', { error: result.error });
         return result;
       }
     } catch (error) {
-      console.error('UserManager: 升级用户类型出错', error);
+      log.error('upgradeUserType', '升级用户类型出错', { error: error.message });
       return {
         success: false,
         error: error.message || '升级失败'
@@ -298,18 +303,18 @@ class UserManager {
    */
   async checkUserQuota() {
     try {
-      console.log('UserManager: 检查用户配额...');
+      log.info('checkUserQuota', '检查用户配额');
       const result = await userService.checkQuota();
 
       if (result.success) {
-        console.log('UserManager: 配额检查成功', result.data);
+        log.info('checkUserQuota', '配额检查成功', { quota: result.data });
         return result;
       } else {
-        console.error('UserManager: 配额检查失败', result.error);
+        log.error('checkUserQuota', '配额检查失败', { error: result.error });
         return result;
       }
     } catch (error) {
-      console.error('UserManager: 检查配额出错', error);
+      log.error('checkUserQuota', '检查配额出错', { error: error.message });
       return {
         success: false,
         error: error.message || '检查配额失败'
@@ -332,7 +337,7 @@ class UserManager {
     this.userInfo = null;
     this.isInitialized = false;
     permissionManager.setUserInfo(null);
-    console.log('UserManager: 用户信息缓存已清除');
+    log.info('clearUserInfo', '用户信息缓存已清除');
   }
 
   // 辅助方法：Promise化微信API

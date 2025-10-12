@@ -1,4 +1,7 @@
 // pages/agreement/index.js
+const { createModuleLogger } = require('../../utils/logger/index');
+const log = createModuleLogger('AgreementPage');
+
 Page({
   /**
    * 页面的初始数据
@@ -11,7 +14,7 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
-    console.log('用户协议页面加载，参数:', options);
+    log.info('onLoad', '用户协议页面加载', { options });
     this.loadAgreementContent();
   },
 

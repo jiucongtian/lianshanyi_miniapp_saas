@@ -9,6 +9,8 @@ const { profileService } = require('./services/index');
 const { profileManager } = require('./utils/profileManager');
 const logger = require('./utils/logger/Logger');
 const { LogCleaner } = require('./utils/logger/LogCleaner');
+const { createModuleLogger } = require('./utils/logger/index');
+const log = createModuleLogger('App');
 
 if (config.useMock) {
   Mock();
@@ -16,7 +18,7 @@ if (config.useMock) {
 
 App({
   onLaunch() {
-    console.log('小程序启动，开始初始化...');
+    log.info('onLaunch', '小程序启动，开始初始化');
     
     // 初始化日志清理器
     this.initLogCleaner();
@@ -65,7 +67,7 @@ App({
   },
 
   onShow() {
-    console.log('小程序进入前台');
+    log.info('onShow', '小程序进入前台');
     // 每次小程序进入前台时也更新用户信息
     this.autoSaveUser();
   },
@@ -84,13 +86,13 @@ App({
    */
   async autoSaveUser() {
     try {
-      console.log('App: 开始自动保存用户信息...');
+      log.info('autoSaveUser', '开始自动保存用户信息');
       
       // 使用用户管理器初始化用户
       const result = await userManager.initUser();
       
       if (result.success) {
-        console.log('App: 用户信息保存成功:', result.message);
+        log.info('autoSaveUser', '用户信息保存成功', { message: result.message });
         
         // 更新全局用户信息
         this.globalData.userInfo = result.data;
@@ -99,12 +101,12 @@ App({
         this.eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, result.data);
         
         // 显示欢迎信息
-        console.log(`App: ${result.message}`);
+        log.info('autoSaveUser', result.message);
       } else {
-        console.error('App: 用户信息保存失败:', result.error);
+        log.error('autoSaveUser', '用户信息保存失败', { error: result.error });
       }
     } catch (error) {
-      console.error('App: 自动保存用户信息出错:', error);
+      log.error('autoSaveUser', '自动保存用户信息出错', { error: error.message });
     }
   },
 
@@ -135,7 +137,7 @@ App({
       
       return result;
     } catch (error) {
-      console.error('App: 更新用户信息失败:', error);
+      log.error('updateUserInfo', '更新用户信息失败', { error: error.message });
       return {
         success: false,
         error: error.message || '更新失败'
@@ -149,7 +151,7 @@ App({
    */
   async initProfileData() {
     try {
-      console.log('App: 开始初始化档案数据...');
+      log.info('initProfileData', '开始初始化档案数据');
       
       // 获取完整的profile列表
       await this.loadAllProfiles();
@@ -157,14 +159,14 @@ App({
       // 从ProfileManager获取当前档案
       const currentProfile = profileManager.getCurrentProfile();
       if (currentProfile) {
-        console.log('App: 找到当前档案:', currentProfile.profileName);
+        log.info('initProfileData', '找到当前档案', { profileName: currentProfile.profileName });
       } else {
-        console.log('App: 没有当前档案，选择第一个档案');
+        log.info('initProfileData', '没有当前档案，选择第一个档案');
         await this.selectFirstProfile();
       }
       
     } catch (error) {
-      console.error('App: 初始化档案数据失败:', error);
+      log.error('initProfileData', '初始化档案数据失败', { error: error.message });
     }
   },
 
@@ -173,7 +175,7 @@ App({
    */
   async loadAllProfiles() {
     try {
-      console.log('App: 开始获取完整档案列表...');
+      log.info('loadAllProfiles', '开始获取完整档案列表');
       
       const result = await profileService.getProfiles({
         page: 1,
@@ -182,24 +184,24 @@ App({
 
       if (result.success) {
         const profiles = result.data.profiles || [];
-        console.log('App: 获取到档案列表，数量:', profiles.length);
+        log.info('loadAllProfiles', '获取到档案列表', { count: profiles.length });
         
         // 初始化ProfileManager
         profileManager.initialize(profiles);
         
-        console.log('App: ProfileManager初始化完成');
+        log.info('loadAllProfiles', 'ProfileManager初始化完成');
         
         // 触发ProfileManager初始化完成事件
         this.eventBus.emit(SYSTEM_EVENTS.PROFILE_MANAGER_READY);
       } else {
-        console.log('App: 获取档案列表失败，初始化空的ProfileManager');
+        log.warn('loadAllProfiles', '获取档案列表失败，初始化空的ProfileManager');
         profileManager.initialize([]);
       }
       
       this.globalData.profilesLoaded = true;
       
     } catch (error) {
-      console.error('App: 获取档案列表失败:', error);
+      log.error('loadAllProfiles', '获取档案列表失败', { error: error.message });
       profileManager.initialize([]);
       this.globalData.profilesLoaded = true;
     }
@@ -214,18 +216,18 @@ App({
       
       if (profileList.length > 0) {
         const firstProfile = profileList[0];
-        console.log('App: 选择第一个档案:', firstProfile._id);
+        log.info('selectFirstProfile', '选择第一个档案', { profileId: firstProfile._id });
         
         // 设置为当前档案
         this.setCurrentProfile(firstProfile);
         
-        console.log('App: 已自动选择第一个档案作为当前档案');
+        log.info('selectFirstProfile', '已自动选择第一个档案作为当前档案');
       } else {
-        console.log('App: 未找到任何档案，用户需要创建第一个档案');
+        log.info('selectFirstProfile', '未找到任何档案，用户需要创建第一个档案');
       }
       
     } catch (error) {
-      console.error('App: 选择第一个档案失败:', error);
+      log.error('selectFirstProfile', '选择第一个档案失败', { error: error.message });
     }
   },
 
@@ -235,11 +237,11 @@ App({
    */
   async refreshProfileManager() {
     try {
-      console.log('App: 开始刷新ProfileManager数据...');
+      log.info('refreshProfileManager', '开始刷新ProfileManager数据');
       await this.loadAllProfiles();
-      console.log('App: ProfileManager数据刷新完成');
+      log.info('refreshProfileManager', 'ProfileManager数据刷新完成');
     } catch (error) {
-      console.error('App: 刷新ProfileManager数据失败:', error);
+      log.error('refreshProfileManager', '刷新ProfileManager数据失败', { error: error.message });
     }
   },
 
@@ -249,13 +251,13 @@ App({
    */
   setCurrentProfile(profileData) {
     if (!profileData) {
-      console.log('App: 清除当前档案');
+      log.info('setCurrentProfile', '清除当前档案');
       // 清除ProfileManager的当前档案
       profileManager.setCurrentProfile(null);
       return;
     }
     
-    console.log('App: 设置当前档案:', profileData._id);
+    log.info('setCurrentProfile', '设置当前档案', { profileId: profileData._id });
     
     // 设置ProfileManager的当前档案
     profileManager.setCurrentProfile(profileData);
@@ -266,7 +268,7 @@ App({
       profileData: profileData
     });
     
-    console.log('App: 当前档案设置完成');
+    log.info('setCurrentProfile', '当前档案设置完成');
   },
 
 
@@ -285,21 +287,21 @@ App({
    */
   cleanExpiredImageCache() {
     try {
-      console.log('App: 开始清理过期图片缓存...');
+      log.info('cleanExpiredImageCache', '开始清理过期图片缓存');
       
       // 获取缓存统计信息
       const stats = imageCacheManager.getCacheStats();
-      console.log('App: 当前缓存统计:', stats);
+      log.debug('cleanExpiredImageCache', '当前缓存统计', stats);
       
       // 清理过期缓存
       imageCacheManager.cleanExpiredCache();
       
       // 再次获取统计信息
       const newStats = imageCacheManager.getCacheStats();
-      console.log('App: 清理后缓存统计:', newStats);
+      log.info('cleanExpiredImageCache', '清理后缓存统计', newStats);
       
     } catch (error) {
-      console.error('App: 清理图片缓存失败:', error);
+      log.error('cleanExpiredImageCache', '清理图片缓存失败', { error: error.message });
     }
   },
 
@@ -317,13 +319,13 @@ App({
   setupEventListeners() {
     // 监听档案创建事件
     this.eventBus.on(PROFILE_EVENTS.PROFILE_CREATED, (profileData) => {
-      console.log('App: 监听到档案创建事件');
+      log.info('setupEventListeners', '监听到档案创建事件');
       this.refreshProfileManager();
     });
     
     // 监听档案更新事件
     this.eventBus.on(PROFILE_EVENTS.PROFILE_UPDATED, (data) => {
-      console.log('App: 监听到档案更新事件');
+      log.debug('setupEventListeners', '监听到档案更新事件');
       // 更新ProfileManager中的档案数据
       if (data.profileId && data.updateData) {
         profileManager.updateProfile(data.profileId, data.updateData);
@@ -360,9 +362,9 @@ App({
       // 启动自动清理（异步执行，不阻塞启动）
       logCleaner.autoClean();
       
-      console.log('App: 日志清理器初始化完成');
+      log.info('initLogCleaner', '日志清理器初始化完成');
     } catch (error) {
-      console.error('App: 初始化日志清理器失败:', error);
+      log.error('initLogCleaner', '初始化日志清理器失败', { error: error.message });
     }
   },
 

@@ -2,6 +2,9 @@
  * 版本管理器
  * 负责管理客户端版本和云函数版本的映射关系
  */
+const { createModuleLogger } = require('./logger/index');
+const log = createModuleLogger('VersionManager');
+
 class VersionManager {
   /**
    * 版本配置映射
@@ -36,10 +39,10 @@ class VersionManager {
       }
       
       // 如果无法获取版本信息，返回默认版本
-      console.warn('[VersionManager] 无法获取App版本信息，使用默认版本 1.1.0');
+      log.warn('getCurrentVersion', '无法获取App版本信息，使用默认版本 1.1.0');
       return '1.1.0';
     } catch (error) {
-      console.error('[VersionManager] 获取版本信息失败:', error);
+      log.error('getCurrentVersion', '获取版本信息失败', { error: error.message });
       return '1.1.0';
     }
   }
@@ -54,12 +57,12 @@ class VersionManager {
     const config = this.VERSION_CONFIG[currentVersion];
     
     if (!config) {
-      console.warn(`未找到客户端版本 ${currentVersion} 的配置，使用默认版本 v1_0`);
+      log.warn('getFunctionVersion', '未找到客户端版本的配置，使用默认版本 v1_0', { currentVersion });
       return 'v1_0';
     }
     
     if (!config[functionName]) {
-      console.warn(`未找到函数 ${functionName} 的版本配置，使用默认版本 v1_0`);
+      log.warn('getFunctionVersion', '未找到函数的版本配置，使用默认版本 v1_0', { functionName });
       return 'v1_0';
     }
     
@@ -248,12 +251,12 @@ class VersionManager {
       const appConfig = getApp();
       if (appConfig && appConfig.globalData) {
         appConfig.globalData.version = version;
-        console.log(`[VersionManager] 版本已设置为: ${version}`);
+        log.info('setVersion', '版本已设置', { version });
       } else {
-        console.warn('[VersionManager] 无法设置版本，App实例或globalData不存在');
+        log.warn('setVersion', '无法设置版本，App实例或globalData不存在');
       }
     } catch (error) {
-      console.error('[VersionManager] 设置版本失败:', error);
+      log.error('setVersion', '设置版本失败', { error: error.message });
     }
   }
   
@@ -265,12 +268,12 @@ class VersionManager {
       const appConfig = getApp();
       if (appConfig && appConfig.globalData) {
         delete appConfig.globalData.version;
-        console.log('[VersionManager] 版本已重置为默认值');
+        log.info('resetToDefault', '版本已重置为默认值');
       } else {
-        console.warn('[VersionManager] 无法重置版本，App实例或globalData不存在');
+        log.warn('resetToDefault', '无法重置版本，App实例或globalData不存在');
       }
     } catch (error) {
-      console.error('[VersionManager] 重置版本失败:', error);
+      log.error('resetToDefault', '重置版本失败', { error: error.message });
     }
   }
 }

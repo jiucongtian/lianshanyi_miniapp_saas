@@ -1,5 +1,7 @@
 // pages/register/index.js
 const { RegisterController } = require('../../controllers/RegisterController');
+const { createModuleLogger } = require('../../utils/logger/index');
+const log = createModuleLogger('RegisterPage');
 
 Page({
   /**
@@ -37,7 +39,7 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
-    console.log('[RegisterPage] 页面加载，参数:', options);
+    log.info('onLoad', '页面加载', { options });
     this.controller = new RegisterController(this);
     this.controller.initialize(options);
   },
