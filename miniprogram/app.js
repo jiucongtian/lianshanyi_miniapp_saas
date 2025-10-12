@@ -7,6 +7,8 @@ const { userManager } = require('./utils/userManager');
 const { imageCacheManager } = require('./utils/imageCacheManager');
 const { profileService } = require('./services/index');
 const { profileManager } = require('./utils/profileManager');
+const logger = require('./utils/logger/Logger');
+const { LogCleaner } = require('./utils/logger/LogCleaner');
 
 if (config.useMock) {
   Mock();
@@ -15,6 +17,9 @@ if (config.useMock) {
 App({
   onLaunch() {
     console.log('小程序启动，开始初始化...');
+    
+    // 初始化日志清理器
+    this.initLogCleaner();
     
     // 初始化云开发
     if (wx.cloud) {
@@ -334,6 +339,49 @@ App({
     imageCacheManager.clearAllCache();
     wx.showToast({
       title: '缓存已清空',
+      icon: 'success'
+    });
+  },
+
+  /**
+   * 初始化日志清理器
+   * 启动时自动清理过期日志
+   */
+  initLogCleaner() {
+    try {
+      const loggerConfig = config.logger || {};
+      const storageConfig = loggerConfig.storage || {};
+      
+      const logCleaner = new LogCleaner({
+        retentionDays: storageConfig.retentionDays || 30,
+        autoCleanEnabled: storageConfig.enabled !== false
+      });
+      
+      // 启动自动清理（异步执行，不阻塞启动）
+      logCleaner.autoClean();
+      
+      console.log('App: 日志清理器初始化完成');
+    } catch (error) {
+      console.error('App: 初始化日志清理器失败:', error);
+    }
+  },
+
+  /**
+   * 获取日志统计信息
+   * 供"我的"页面使用
+   */
+  getLogStats() {
+    return logger.getStats();
+  },
+
+  /**
+   * 清空所有日志
+   * 供"我的"页面设置使用
+   */
+  clearAllLogs() {
+    logger.clearLogs();
+    wx.showToast({
+      title: '日志已清空',
       icon: 'success'
     });
   }

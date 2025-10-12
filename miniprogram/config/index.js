@@ -2,6 +2,7 @@
 export const config = {
   useMock: false,
   // 调试模式：开启后不使用缓存，每次都从网络获取八字数据
+  // 同时控制日志系统的行为（true=开发模式，false=生产模式）
   debugMode: false,
   // 云环境配置
   cloud: {
@@ -12,6 +13,25 @@ export const config = {
     cloudStorageId: '636c-cloudbase-8g06skyf81a65a87-1378890368', // 临时使用环境ID，需要根据实际情况调整
     // 卡牌图片云存储路径
     cardImagesPath: 'cards', // 云存储中卡牌图片的文件夹路径
+  },
+  // 日志配置
+  logger: {
+    // 本地存储配置
+    storage: {
+      enabled: true,                  // 是否启用本地存储
+      maxLogsPerDay: 500,            // 每天最多存储日志数
+      retentionDays: 30,             // 日志保留天数
+    },
+    // 开发模式配置（debugMode: true）
+    development: {
+      console: true,                 // 是否输出到控制台
+      levels: ['DEBUG', 'INFO', 'WARN', 'ERROR']  // 记录所有级别
+    },
+    // 生产模式配置（debugMode: false）
+    production: {
+      console: false,                // 生产环境不输出到控制台
+      levels: ['WARN', 'ERROR']      // 只记录警告和错误
+    }
   },
 };
 

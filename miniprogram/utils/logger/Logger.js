@@ -1,0 +1,385 @@
+/**
+ * 日志管理器
+ * @description 统一的日志打印和存储管理器，支持环境区分、本地存储、调用栈追踪
+ */
+const { LogLevel, LogLevelNames } = require('./LogLevel');
+const { LogStorage } = require('./LogStorage');
+const { config } = require('../../config/index');
+
+class Logger {
+  constructor() {
+    // 从配置文件读取调试模式
+    this.debugMode = config.debugMode || false;
+    
+    // 日志配置
+    const loggerConfig = config.logger || {};
+    
+    // 初始化存储管理器
+    this.storage = new LogStorage(loggerConfig.storage || {});
+    
+    // 获取当前环境配置
+    this.envConfig = this.debugMode 
+      ? (loggerConfig.development || {})
+      : (loggerConfig.production || {});
+    
+    // 是否输出到控制台
+    this.consoleEnabled = this.envConfig.console !== false;
+    
+    // 允许的日志级别
+    this.allowedLevels = this.envConfig.levels || ['WARN', 'ERROR'];
+    
+    // 敏感字段列表
+    this.sensitiveFields = ['password', 'token', 'openid', 'sessionKey', 'phoneNumber'];
+    
+    console.log(`[Logger] 初始化完成 - 调试模式: ${this.debugMode}, 控制台输出: ${this.consoleEnabled}`);
+  }
+
+  /**
+   * 调试日志（仅开发环境）
+   * @param {string} module - 功能模块名
+   * @param {string} message - 日志信息
+   * @param {any} data - 附加数据（可选）
+   * @param {string} caller - 调用者信息（可选，自动获取）
+   */
+  debug(module, message, data = undefined, caller = null) {
+    this._log(LogLevel.DEBUG, module, message, data, caller);
+  }
+
+  /**
+   * 信息日志
+   * @param {string} module - 功能模块名
+   * @param {string} message - 日志信息
+   * @param {any} data - 附加数据（可选）
+   * @param {string} caller - 调用者信息（可选，自动获取）
+   */
+  info(module, message, data = undefined, caller = null) {
+    this._log(LogLevel.INFO, module, message, data, caller);
+  }
+
+  /**
+   * 警告日志
+   * @param {string} module - 功能模块名
+   * @param {string} message - 日志信息
+   * @param {any} data - 附加数据（可选）
+   * @param {string} caller - 调用者信息（可选，自动获取）
+   */
+  warn(module, message, data = undefined, caller = null) {
+    this._log(LogLevel.WARN, module, message, data, caller);
+  }
+
+  /**
+   * 错误日志（总是打印并存储）
+   * @param {string} module - 功能模块名
+   * @param {string} message - 日志信息
+   * @param {any} error - 错误对象或附加数据
+   * @param {string} caller - 调用者信息（可选，自动获取）
+   */
+  error(module, message, error = undefined, caller = null) {
+    this._log(LogLevel.ERROR, module, message, error, caller);
+  }
+
+  /**
+   * 核心日志方法
+   * @private
+   */
+  _log(level, module, message, data, caller) {
+    // 检查是否应该记录此级别的日志
+    if (!this.shouldLog(level)) {
+      return;
+    }
+
+    try {
+      // 获取调用者信息
+      const callerInfo = caller || this.getCallerInfo();
+      
+      // 构建日志对象
+      const logData = {
+        timestamp: Date.now(),
+        level: LogLevelNames[level],
+        module: module,
+        caller: callerInfo,
+        message: message,
+        data: this.formatData(data)
+      };
+
+      // 输出到控制台
+      if (this.consoleEnabled) {
+        this.printToConsole(level, logData);
+      }
+
+      // 保存到本地存储
+      this.saveToStorage(logData);
+    } catch (e) {
+      // 日志记录失败不应影响主流程
+      console.error('[Logger] 记录日志失败:', e);
+    }
+  }
+
+  /**
+   * 判断是否应该记录此级别的日志
+   * @private
+   */
+  shouldLog(level) {
+    const levelName = LogLevelNames[level];
+    
+    // 开发模式：记录所有级别
+    if (this.debugMode) {
+      return true;
+    }
+    
+    // 生产模式：只记录配置中允许的级别
+    return this.allowedLevels.includes(levelName);
+  }
+
+  /**
+   * 输出到控制台
+   * @private
+   */
+  printToConsole(level, logData) {
+    const prefix = this.debugMode 
+      ? `[${this.formatTime(logData.timestamp)}] [${logData.level}] [${logData.module}] [${logData.caller}]`
+      : `[${logData.level}] [${logData.module}] [${logData.caller}]`;
+    
+    const message = logData.data !== undefined 
+      ? `${logData.message}:`
+      : logData.message;
+
+    // 根据级别选择console方法
+    switch (level) {
+      case LogLevel.DEBUG:
+      case LogLevel.INFO:
+        if (logData.data !== undefined) {
+          console.log(prefix, message, logData.data);
+        } else {
+          console.log(prefix, message);
+        }
+        break;
+      case LogLevel.WARN:
+        if (logData.data !== undefined) {
+          console.warn(prefix, message, logData.data);
+        } else {
+          console.warn(prefix, message);
+        }
+        break;
+      case LogLevel.ERROR:
+        if (logData.data !== undefined) {
+          console.error(prefix, message, logData.data);
+        } else {
+          console.error(prefix, message);
+        }
+        break;
+    }
+  }
+
+  /**
+   * 保存到本地存储
+   * @private
+   */
+  saveToStorage(logData) {
+    try {
+      // 添加设备信息
+      const systemInfo = wx.getSystemInfoSync();
+      const storageData = {
+        ...logData,
+        deviceInfo: {
+          model: systemInfo.model,
+          system: systemInfo.system,
+          version: systemInfo.version,
+          platform: systemInfo.platform
+        }
+      };
+      
+      this.storage.save(storageData);
+    } catch (e) {
+      // 存储失败不影响主流程
+      console.error('[Logger] 保存日志到本地失败:', e);
+    }
+  }
+
+  /**
+   * 获取调用者信息（类名:方法名:行号）
+   * @private
+   * @returns {string} 格式：ClassName:methodName:lineNumber
+   */
+  getCallerInfo() {
+    try {
+      const stack = new Error().stack;
+      if (!stack) return 'Unknown';
+      
+      const lines = stack.split('\n');
+      
+      // 跳过前面的内部调用，找到实际调用者
+      // 通常：Error -> getCallerInfo -> _log -> debug/info/warn/error -> 实际调用者
+      for (let i = 4; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // 跳过 logger 内部调用
+        if (line.includes('Logger.js') || line.includes('logger/')) {
+          continue;
+        }
+        
+        // 解析调用栈行
+        const info = this.parseStackLine(line);
+        if (info) {
+          return info;
+        }
+      }
+      
+      return 'Unknown';
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+
+  /**
+   * 解析调用栈行，提取类名、方法名、行号
+   * @private
+   */
+  parseStackLine(line) {
+    try {
+      // 微信小程序的调用栈格式示例：
+      // at UserService.getUserInfo (UserService.js:125:10)
+      // at Object.getUserInfo (pages/index/index.js:45:20)
+      
+      // 匹配模式1: at ClassName.methodName (file:line:col)
+      let match = line.match(/at\s+(\w+)\.(\w+)\s+\((.+):(\d+):\d+\)/);
+      if (match) {
+        const className = match[1];
+        const methodName = match[2];
+        const lineNum = match[4];
+        return `${className}:${methodName}:${lineNum}`;
+      }
+      
+      // 匹配模式2: at Object.methodName (file:line:col)
+      match = line.match(/at\s+Object\.(\w+)\s+\((.+):(\d+):\d+\)/);
+      if (match) {
+        const methodName = match[1];
+        const lineNum = match[3];
+        return `Object:${methodName}:${lineNum}`;
+      }
+      
+      // 匹配模式3: at methodName (file:line:col)
+      match = line.match(/at\s+(\w+)\s+\((.+):(\d+):\d+\)/);
+      if (match) {
+        const methodName = match[1];
+        const lineNum = match[3];
+        return `${methodName}:${lineNum}`;
+      }
+      
+      // 匹配模式4: at file:line:col
+      match = line.match(/at\s+(.+):(\d+):\d+/);
+      if (match) {
+        const file = match[1].split('/').pop();
+        const lineNum = match[2];
+        return `${file}:${lineNum}`;
+      }
+      
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * 格式化数据，处理敏感信息和大对象
+   * @private
+   */
+  formatData(data) {
+    if (data === undefined || data === null) {
+      return undefined;
+    }
+
+    try {
+      // 过滤敏感信息
+      const filtered = this.filterSensitiveData(data);
+      
+      // 检查大小并截断
+      const str = JSON.stringify(filtered);
+      if (str.length > 5120) { // 5KB
+        return str.substring(0, 5120) + '...[truncated]';
+      }
+      
+      return filtered;
+    } catch (e) {
+      // 无法序列化的对象（如循环引用）
+      return '[Complex or Circular Object]';
+    }
+  }
+
+  /**
+   * 过滤敏感数据
+   * @private
+   */
+  filterSensitiveData(data) {
+    if (!data || typeof data !== 'object') {
+      return data;
+    }
+
+    try {
+      // 深拷贝
+      const filtered = JSON.parse(JSON.stringify(data));
+      
+      // 递归过滤
+      const filter = (obj) => {
+        for (let key in obj) {
+          if (this.sensitiveFields.includes(key)) {
+            obj[key] = '***';
+          } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+            filter(obj[key]);
+          }
+        }
+      };
+      
+      filter(filtered);
+      return filtered;
+    } catch (e) {
+      return data;
+    }
+  }
+
+  /**
+   * 格式化时间戳
+   * @private
+   */
+  formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    const second = String(date.getSeconds()).padStart(2, '0');
+    const ms = String(date.getMilliseconds()).padStart(3, '0');
+    
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}.${ms}`;
+  }
+
+  /**
+   * 获取日志统计信息
+   */
+  getStats() {
+    return this.storage.getStats();
+  }
+
+  /**
+   * 清除所有日志
+   */
+  clearLogs() {
+    this.storage.clear();
+  }
+
+  /**
+   * 获取最近的日志
+   * @param {number} days - 天数
+   */
+  getRecentLogs(days = 7) {
+    return this.storage.getLogs(days);
+  }
+}
+
+// 导出单例
+const logger = new Logger();
+
+module.exports = logger;
+module.exports.Logger = Logger;
+
