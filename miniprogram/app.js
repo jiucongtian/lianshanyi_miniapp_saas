@@ -1,6 +1,5 @@
 // app.js
 import config from './config/index';
-import Mock from './mock/index';
 const eventBus = require('./utils/eventBus');
 const { USER_EVENTS, PROFILE_EVENTS, SYSTEM_EVENTS } = require('./utils/eventTypes');
 const { userManager } = require('./utils/userManager');
@@ -11,10 +10,6 @@ const logger = require('./utils/logger/Logger');
 const { LogCleaner } = require('./utils/logger/LogCleaner');
 const { createModuleLogger } = require('./utils/logger/index');
 const log = createModuleLogger('App');
-
-if (config.useMock) {
-  Mock();
-}
 
 App({
   globalData: {
