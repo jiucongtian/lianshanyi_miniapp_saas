@@ -46,18 +46,25 @@ BaseClass (顶层基类) - miniprogram/common/BaseClass.js
 **文件位置**：`miniprogram/common/BaseClass.js`
 
 **核心功能**：
-- 统一的日志记录（_log、_info、_warn、_error、_debug）
-- 性能监控（_startPerformanceMonitor、_endPerformanceMonitor）
-- 工具方法（_deepClone、_safeJsonParse、_delay、_retryAsync等）
-- 数据验证（_isEmpty、_isValidObject、_isValidArray）
-- 实例管理（getInstanceId、getLifetime、destroy）
+- **统一的日志记录**（集成Logger系统）
+  - _log、_info、_warn、_error、_debug
+  - 自动根据类名推断模块名
+  - 本地存储、敏感信息过滤
+  - 调用栈自动追踪
+- **性能监控**（_startPerformanceMonitor、_endPerformanceMonitor）
+- **工具方法**（_deepClone、_safeJsonParse、_delay、_retryAsync等）
+- **数据验证**（_isEmpty、_isValidObject、_isValidArray）
+- **实例管理**（getInstanceId、getLifetime、destroy）
 
 **设计特点**：
 - 所有内部方法以 `_` 开头
 - 自动获取类名用于日志前缀
 - 自动生成实例ID用于调试
 - 支持性能监控，超过3秒自动警告
-- 调试日志仅在调试模式下输出
+- **集成项目的Logger日志系统**
+  - 自动模块名推断（user、profile、card、network等）
+  - 支持开发/生产模式
+  - 本地存储30天，敏感信息自动过滤
 
 ### 2. BaseService 服务层基类
 
@@ -286,6 +293,10 @@ Bean类的 `_validate()` 方法应该设置 `this._isValidated = true`。
 
 **2025-10-12**
 - 创建BaseClass基类
+- **BaseClass集成Logger日志系统**
+  - 自动根据类名推断日志模块
+  - 所有日志方法调用Logger
+  - 支持手动设置模块名
 - BaseService、BaseController继承BaseClass
 - 创建BaseBean基类
 - UserBean、ProfileBean、BaziBean继承BaseBean
@@ -295,6 +306,7 @@ Bean类的 `_validate()` 方法应该设置 `this._isValidated = true`。
 ## 相关文档
 
 - [BaseClass使用文档](../miniprogram/common/README.md)
+- [Logger日志系统文档](../miniprogram/utils/logger/README.md)
 - [BaseBean使用文档](../miniprogram/beans/README.md)
 - [BaseService文档](../miniprogram/services/README.md)
 - [BaseController文档](../miniprogram/controllers/README.md)

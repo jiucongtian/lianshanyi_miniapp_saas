@@ -30,7 +30,7 @@ class UserService extends BaseService {
       
       return response;
     } catch (error) {
-      console.error('[UserService] getUserInfo 异常:', error);
+      this._error('getUserInfo 异常:', error);
       return ResponseBean.error('获取用户信息失败: ' + error.message, -1);
     }
   }
@@ -48,7 +48,7 @@ class UserService extends BaseService {
       this._logServiceCall('checkQuota', {}, response);
       return response;
     } catch (error) {
-      console.error('[UserService] checkQuota 异常:', error);
+      this._error('checkQuota 异常:', error);
       return ResponseBean.error('检查用户配额失败: ' + error.message, -1);
     }
   }
@@ -84,7 +84,7 @@ class UserService extends BaseService {
       this._logServiceCall('upgradeUserType', params, response);
       return response;
     } catch (error) {
-      console.error('[UserService] upgradeUserType 异常:', error);
+      this._error('upgradeUserType 异常:', error);
       return ResponseBean.error('升级用户类型失败: ' + error.message, -1);
     }
   }
@@ -122,7 +122,7 @@ class UserService extends BaseService {
       
       return response;
     } catch (error) {
-      console.error('[UserService] updateUserInfo 异常:', error);
+      this._error('updateUserInfo 异常:', error);
       return ResponseBean.error('更新用户信息失败: ' + error.message, -1);
     }
   }
@@ -161,7 +161,7 @@ class UserService extends BaseService {
         if (userInfoResponse.success) {
           response.data = userInfoResponse.data; // 使用完整的用户信息
         } else {
-          console.warn('[UserService] 获取用户信息失败，使用基础信息');
+          this._warn('获取用户信息失败，使用基础信息');
           // 如果获取完整信息失败，至少提供基础信息
           response.data = {
             _id: response.data.userId,
@@ -173,7 +173,7 @@ class UserService extends BaseService {
       
       return response;
     } catch (error) {
-      console.error('[UserService] createUser 异常:', error);
+      this._error('createUser 异常:', error);
       return ResponseBean.error('创建用户失败: ' + error.message, -1);
     }
   }
@@ -191,7 +191,7 @@ class UserService extends BaseService {
       this._logServiceCall('checkUserExists', {}, response);
       return response;
     } catch (error) {
-      console.error('[UserService] checkUserExists 异常:', error);
+      this._error('checkUserExists 异常:', error);
       return ResponseBean.error('检查用户是否存在失败: ' + error.message, -1);
     }
   }
@@ -209,7 +209,7 @@ class UserService extends BaseService {
       this._logServiceCall('getUserPermissions', {}, response);
       return response;
     } catch (error) {
-      console.error('[UserService] getUserPermissions 异常:', error);
+      this._error('getUserPermissions 异常:', error);
       return ResponseBean.error('获取用户权限失败: ' + error.message, -1);
     }
   }
@@ -241,7 +241,7 @@ class UserService extends BaseService {
       this._logServiceCall('checkPermission', params, response);
       return response;
     } catch (error) {
-      console.error('[UserService] checkPermission 异常:', error);
+      this._error('checkPermission 异常:', error);
       return ResponseBean.error('检查用户权限失败: ' + error.message, -1);
     }
   }

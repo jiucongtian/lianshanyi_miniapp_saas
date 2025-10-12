@@ -31,7 +31,40 @@ class Logger {
     // 敏感字段列表
     this.sensitiveFields = ['password', 'token', 'openid', 'sessionKey', 'phoneNumber'];
     
+    // 缓存系统信息（避免每次都调用已废弃的API）
+    this.cachedDeviceInfo = this._getCachedDeviceInfo();
+    
     console.log(`[Logger] 初始化完成 - 调试模式: ${this.debugMode}, 控制台输出: ${this.consoleEnabled}`);
+  }
+  
+  /**
+   * 获取并缓存设备信息（使用新API）
+   * @private
+   */
+  _getCachedDeviceInfo() {
+    try {
+      // 使用新的API替代废弃的 wx.getSystemInfoSync
+      const deviceInfo = wx.getDeviceInfo ? wx.getDeviceInfo() : {};
+      const windowInfo = wx.getWindowInfo ? wx.getWindowInfo() : {};
+      const appBaseInfo = wx.getAppBaseInfo ? wx.getAppBaseInfo() : {};
+      
+      return {
+        model: deviceInfo.model || 'unknown',
+        system: deviceInfo.system || 'unknown',
+        platform: deviceInfo.platform || 'unknown',
+        version: appBaseInfo.version || 'unknown',
+        SDKVersion: appBaseInfo.SDKVersion || 'unknown'
+      };
+    } catch (error) {
+      // 如果新API不存在，降级使用空对象
+      return {
+        model: 'unknown',
+        system: 'unknown', 
+        platform: 'unknown',
+        version: 'unknown',
+        SDKVersion: 'unknown'
+      };
+    }
   }
 
   /**
@@ -144,17 +177,26 @@ class Logger {
       ? `${logData.message}:`
       : logData.message;
 
-    // 根据级别选择console方法
+    // 根据级别选择对应的console方法，便于在控制台筛选器中过滤
     switch (level) {
       case LogLevel.DEBUG:
-      case LogLevel.INFO:
+        // 使用console.debug，如果不支持则降级到console.log
         if (logData.data !== undefined) {
-          console.log(prefix, message, logData.data);
+          (console.debug || console.log).call(console, prefix, message, logData.data);
         } else {
-          console.log(prefix, message);
+          (console.debug || console.log).call(console, prefix, message);
+        }
+        break;
+      case LogLevel.INFO:
+        // 使用console.info
+        if (logData.data !== undefined) {
+          console.info(prefix, message, logData.data);
+        } else {
+          console.info(prefix, message);
         }
         break;
       case LogLevel.WARN:
+        // 使用console.warn
         if (logData.data !== undefined) {
           console.warn(prefix, message, logData.data);
         } else {
@@ -162,6 +204,7 @@ class Logger {
         }
         break;
       case LogLevel.ERROR:
+        // 使用console.error
         if (logData.data !== undefined) {
           console.error(prefix, message, logData.data);
         } else {
@@ -177,16 +220,10 @@ class Logger {
    */
   saveToStorage(logData) {
     try {
-      // 添加设备信息
-      const systemInfo = wx.getSystemInfoSync();
+      // 使用缓存的设备信息（避免每次都调用API）
       const storageData = {
         ...logData,
-        deviceInfo: {
-          model: systemInfo.model,
-          system: systemInfo.system,
-          version: systemInfo.version,
-          platform: systemInfo.platform
-        }
+        deviceInfo: this.cachedDeviceInfo
       };
       
       this.storage.save(storageData);

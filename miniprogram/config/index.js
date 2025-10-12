@@ -3,7 +3,7 @@ export const config = {
   useMock: false,
   // 调试模式：开启后不使用缓存，每次都从网络获取八字数据
   // 同时控制日志系统的行为（true=开发模式，false=生产模式）
-  debugMode: false,
+  debugMode: true,
   // 云环境配置
   cloud: {
     envId: 'cloudbase-8g06skyf81a65a87', // 云环境ID

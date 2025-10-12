@@ -81,7 +81,7 @@ class CardController extends BaseController {
    * @param {Object} options - 页面参数
    */
   async initialize(options = {}) {
-    console.log('[CardController] 开始初始化页面，参数:', options);
+    this._log('开始初始化页面，参数:', options);
     
     try {
       // 初始化动画
@@ -96,9 +96,9 @@ class CardController extends BaseController {
       // 等待ProfileManager初始化完成并加载数据
       this._waitForProfileManagerAndLoad();
       
-      console.log('[CardController] 页面初始化完成');
+      this._log('页面初始化完成');
     } catch (error) {
-      console.error('[CardController] 页面初始化失败:', error);
+      this._error('页面初始化失败:', error);
       this._handleError(error, '页面初始化');
     }
   }
@@ -108,7 +108,7 @@ class CardController extends BaseController {
    * @param {Object} profileData - 档案数据
    */
   loadProfileData(profileData) {
-    console.log('[CardController] 开始加载档案数据:', profileData);
+    this._log('开始加载档案数据:', profileData);
     
     try {
       // 确保传入的是ProfileBean实例
@@ -146,9 +146,9 @@ class CardController extends BaseController {
         previewCardDescription: null
       });
       
-      console.log('[CardController] 档案数据加载成功');
+      this._log('档案数据加载成功');
     } catch (error) {
-      console.error('[CardController] 加载档案数据失败:', error);
+      this._error('加载档案数据失败:', error);
       this._showNoDataState();
     }
   }
@@ -158,10 +158,10 @@ class CardController extends BaseController {
    * @param {Object} baziData - 八字数据
    */
   async updateBaziDisplay(baziData) {
-    console.log('[CardController] 更新八字显示，数据:', baziData);
+    this._log('更新八字显示，数据:', baziData);
     
     if (!baziData || !baziData.yearPillar || !baziData.monthPillar || !baziData.dayPillar || !baziData.timePillar) {
-      console.log('[CardController] 八字数据不完整，无法更新显示');
+      this._log('八字数据不完整，无法更新显示');
       return;
     }
 
@@ -185,7 +185,7 @@ class CardController extends BaseController {
       }
     });
     
-    console.log('[CardController] 八字数据已设置，组件将自动加载图片');
+    this._log('八字数据已设置，组件将自动加载图片');
   }
 
 
@@ -195,7 +195,7 @@ class CardController extends BaseController {
    * @param {string} pillar - 柱子名称（year/month/day/time）
    */
   onImageLoadError(pillar) {
-    console.error(`[CardController] ${pillar} 卡牌图片渲染失败`);
+    this._error(`${pillar} 卡牌图片渲染失败`);
   }
 
   /**
@@ -205,27 +205,27 @@ class CardController extends BaseController {
   flipCard(pillar) {
     // 安全获取页面数据
     if (!this.page || !this.page.data) {
-      console.error('[CardController] 页面数据未初始化');
+      this._error('页面数据未初始化');
       return;
     }
     
     const pillarData = this.page.data[`${pillar}Pillar`];
     
-    console.log(`[CardController] 点击${pillar}卡牌`);
+    this._log(`点击${pillar}卡牌`);
     
     // 检查是否有八字数据（天干地支）
     if (!pillarData || !pillarData.heavenlyStem || !pillarData.earthlyBranch) {
-      console.log(`${pillar}卡牌没有八字数据，不进行翻转`);
+      this._log(`${pillar}卡牌没有八字数据，不进行翻转`);
       return;
     }
     
     // 直接调用组件的翻转方法，组件会处理状态和动画
     const card = this.page.selectComponent(`#${pillar}-card`);
     if (card && typeof card.flipToFront === 'function') {
-      console.log(`[CardController] 调用 ${pillar} 组件的翻转动画`);
+      this._log(`调用 ${pillar} 组件的翻转动画`);
       card.flipToFront();
     } else {
-      console.warn(`[CardController] 未找到 ${pillar} 组件或 flipToFront 方法`);
+      this._warn(`未找到 ${pillar} 组件或 flipToFront 方法`);
     }
   }
 
@@ -236,31 +236,31 @@ class CardController extends BaseController {
   previewCard(pillar) {
     // 安全获取页面数据
     if (!this.page || !this.page.data) {
-      console.error('[CardController] 页面数据未初始化');
+      this._error('页面数据未初始化');
       return;
     }
     
     const pillarData = this.page.data[`${pillar}Pillar`];
     
-    console.log('[CardController] 预览卡牌:', pillar);
+    this._log('预览卡牌:', pillar);
     
     // 获取组件实例，从中读取八字图片路径
     const card = this.page.selectComponent(`#${pillar}-card`);
     if (!card) {
-      console.warn('[CardController] 未找到组件实例');
+      this._warn('未找到组件实例');
       return;
     }
     
     // 检查组件是否已翻转（显示正面）
     if (!card.data.isFlipped) {
-      console.log('[CardController] 卡牌未翻转，不允许预览');
+      this._log('卡牌未翻转，不允许预览');
       return;
     }
     
     // 获取八字图片路径
     const baziImagePath = card.data.baziImagePath;
     if (!baziImagePath) {
-      console.warn('[CardController] 未找到八字图片路径');
+      this._warn('未找到八字图片路径');
       return;
     }
     
@@ -268,7 +268,7 @@ class CardController extends BaseController {
     let cardDescription = null;
     if (pillar === 'day' && pillarData) {
       cardDescription = this._getCardDescription(pillarData.heavenlyStem, pillarData.earthlyBranch);
-      console.log('[CardController] 获取到的日柱卡牌描述:', cardDescription);
+      this._log('获取到的日柱卡牌描述:', cardDescription);
     }
     
     this._setData({
@@ -305,7 +305,7 @@ class CardController extends BaseController {
     // 监听档案更新事件（档案属性被修改）
     eventBus.on(PROFILE_EVENTS.PROFILE_UPDATED, this._handleProfileUpdated.bind(this));
     
-    console.log('[CardController] 事件监听器已绑定');
+    this._log('事件监听器已绑定');
   }
 
   /**
@@ -313,7 +313,7 @@ class CardController extends BaseController {
    * @private
    */
   _handleProfileManagerReady() {
-    console.log('[CardController] 收到ProfileManager初始化完成事件');
+    this._log('收到ProfileManager初始化完成事件');
     this._loadCurrentProfile();
   }
 
@@ -323,7 +323,7 @@ class CardController extends BaseController {
    * @private
    */
   _handleSelectProfile(data) {
-    console.log('[CardController] 收到档案选中事件:', data);
+    this._log('收到档案选中事件:', data);
     if (data && data.profileId) {
       // 重新加载当前档案
       this._loadCurrentProfile();
@@ -336,18 +336,18 @@ class CardController extends BaseController {
    * @private
    */
   _handleProfileUpdated(data) {
-    console.log('[CardController] 收到档案更新事件:', data);
+    this._log('收到档案更新事件:', data);
     
     // 如果更新的档案是当前正在显示的档案，强制重新加载
     if (data && data.profileId === this.currentLoadedProfileId) {
-      console.log('[CardController] 当前档案已更新，强制重新加载数据');
+      this._log('当前档案已更新，强制重新加载数据');
       
       // 从 profileManager 获取最新的档案数据
       const updatedProfile = profileManager.getCurrentProfile();
       if (updatedProfile) {
         this.loadProfileData(updatedProfile);
       } else {
-        console.warn('[CardController] 无法获取更新后的档案数据');
+        this._warn('无法获取更新后的档案数据');
       }
     }
   }
@@ -357,11 +357,11 @@ class CardController extends BaseController {
    * @private
    */
   _waitForProfileManagerAndLoad() {
-    console.log('[CardController] 等待ProfileManager初始化完成...');
+    this._log('等待ProfileManager初始化完成...');
     
     // 检查ProfileManager是否已初始化
     if (!profileManager.isReady()) {
-      console.log('[CardController] ProfileManager未初始化，500ms后重试');
+      this._log('ProfileManager未初始化，500ms后重试');
       setTimeout(() => {
         this._waitForProfileManagerAndLoad();
       }, 500);
@@ -379,10 +379,10 @@ class CardController extends BaseController {
   _loadCurrentProfile() {
     const currentProfile = profileManager.getCurrentProfile();
     if (currentProfile) {
-      console.log('[CardController] 从ProfileManager找到当前档案:', currentProfile.profileName);
+      this._log('从ProfileManager找到当前档案:', currentProfile.profileName);
       this.loadProfileData(currentProfile);
     } else {
-      console.log('[CardController] 没有当前档案，显示无数据状态');
+      this._log('没有当前档案，显示无数据状态');
       this._showNoDataState();
     }
   }
@@ -392,7 +392,7 @@ class CardController extends BaseController {
    * @private
    */
   _completeReinitialize() {
-    console.log('[CardController] 开始完全重新初始化卡牌页面数据');
+    this._log('开始完全重新初始化卡牌页面数据');
     
     // 重置所有状态变量（只设置必要字段，组件会自己管理状态）
     this._setData({
@@ -426,7 +426,7 @@ class CardController extends BaseController {
       }
     });
     
-    console.log('[CardController] 完全重新初始化完成，所有数据已重置为初始状态');
+    this._log('完全重新初始化完成，所有数据已重置为初始状态');
   }
 
   /**
@@ -450,7 +450,7 @@ class CardController extends BaseController {
         const baziResult = app.globalData?.baziResult;
         
         if (baziResult && baziResult.timestamp === timestamp) {
-          console.log('[CardController] 检测到标准化八字数据:', baziResult.baziData);
+          this._log('检测到标准化八字数据:', baziResult.baziData);
           
           // 直接使用标准化的八字数据
           if (baziResult.baziData) {
@@ -459,7 +459,7 @@ class CardController extends BaseController {
         }
       }
       
-      console.log('[CardController] 八字页面参数详情:', {
+      this._log('八字页面参数详情:', {
         timestamp,
         formattedTime,
         hasCozeData
@@ -494,7 +494,7 @@ class CardController extends BaseController {
    * @private
    */
   _clearImageData() {
-    console.log('[CardController] 清空图片数据');
+    this._log('清空图片数据');
     
     // 只清空天干地支数据，组件会自动处理状态重置
     this._setData({
@@ -510,7 +510,7 @@ class CardController extends BaseController {
    * @private
    */
   _showNoDataState() {
-    console.log('[CardController] 显示无数据状态');
+    this._log('显示无数据状态');
     
     // 只设置必要的状态字段
     this._setData({
@@ -652,7 +652,7 @@ class CardController extends BaseController {
    * 页面显示时的处理
    */
   onShow() {
-    console.log('[CardController] 页面显示');
+    this._log('页面显示');
     
     // 检查是否需要重新加载数据
     this._checkAndReloadIfNeeded();
@@ -667,7 +667,7 @@ class CardController extends BaseController {
   _checkAndReloadIfNeeded() {
     // 等待ProfileManager初始化
     if (!profileManager.isReady()) {
-      console.log('[CardController] ProfileManager未初始化，等待初始化...');
+      this._log('ProfileManager未初始化，等待初始化...');
       setTimeout(() => {
         this._checkAndReloadIfNeeded();
       }, 500);
@@ -678,7 +678,7 @@ class CardController extends BaseController {
     
     // 如果没有当前档案
     if (!currentProfile) {
-      console.log('[CardController] 没有当前档案');
+      this._log('没有当前档案');
       // 如果之前有数据，清除显示
       if (this.currentLoadedProfileId) {
         this._showNoDataState();
@@ -691,14 +691,14 @@ class CardController extends BaseController {
     
     // 如果档案ID相同，不需要重新加载
     if (this.currentLoadedProfileId === currentProfileId) {
-      console.log('[CardController] 档案未变更，无需重新加载');
+      this._log('档案未变更，无需重新加载');
       return;
     }
     
     // 档案已变更，需要重新加载
-    console.log('[CardController] 档案已变更，重新加载数据');
-    console.log('[CardController] 旧档案ID:', this.currentLoadedProfileId);
-    console.log('[CardController] 新档案ID:', currentProfileId);
+    this._log('档案已变更，重新加载数据');
+    this._log('旧档案ID:', this.currentLoadedProfileId);
+    this._log('新档案ID:', currentProfileId);
     
     // 完全重新初始化所有数据和变量
     this._completeReinitialize();
@@ -711,7 +711,7 @@ class CardController extends BaseController {
    * 页面隐藏时的处理
    */
   onHide() {
-    console.log('[CardController] 页面隐藏');
+    this._log('页面隐藏');
     super.onHide();
   }
 
@@ -719,7 +719,7 @@ class CardController extends BaseController {
    * 页面卸载时的清理
    */
   onUnload() {
-    console.log('[CardController] 页面卸载');
+    this._log('页面卸载');
     
     // 清理事件监听
     eventBus.off(SYSTEM_EVENTS.PROFILE_MANAGER_READY, this._handleProfileManagerReady);

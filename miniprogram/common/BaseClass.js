@@ -2,7 +2,7 @@
  * BaseClass - 所有类的顶层基类
  * 
  * 提供所有类共用的基础功能：
- * - 统一的日志记录（带类名前缀）
+ * - 统一的日志记录（集成Logger系统）
  * - 类名获取和管理
  * - 性能监控
  * - 基础工具方法
@@ -27,6 +27,8 @@
  *         └── ProfileBean
  */
 
+const logger = require('../utils/logger/Logger');
+
 class BaseClass {
   /**
    * 构造函数
@@ -34,6 +36,9 @@ class BaseClass {
   constructor() {
     // 获取类名（用于日志前缀）
     this.className = this.constructor.name;
+    
+    // 根据类名自动推断日志模块名
+    this._logModule = this._inferLogModule();
     
     // 创建时间戳（用于性能追踪）
     this._createdAt = Date.now();
@@ -45,61 +50,132 @@ class BaseClass {
     this._instanceId = this._generateInstanceId();
   }
 
-  // ==================== 日志记录方法 ====================
+  // ==================== 日志模块推断 ====================
 
   /**
-   * 记录普通日志
-   * @param {string} message - 日志消息
-   * @param {...any} args - 其他参数
+   * 根据类名自动推断日志模块名
+   * @returns {string} 模块名
+   * @private
    */
-  _log(message, ...args) {
-    console.log(`[${this.className}]`, message, ...args);
+  _inferLogModule() {
+    const name = this.className.toLowerCase();
+    
+    // 用户相关
+    if (name.includes('user') || name.includes('register') || name.includes('mine')) {
+      return 'user';
+    }
+    
+    // 档案相关
+    if (name.includes('profile') || name.includes('addprofile')) {
+      return 'profile';
+    }
+    
+    // 卡牌相关
+    if (name.includes('card') || name.includes('bazi')) {
+      return 'card';
+    }
+    
+    // 八字相关
+    if (name.includes('bazi')) {
+      return 'bazi';
+    }
+    
+    // 网络相关
+    if (name.includes('service') || name.includes('api')) {
+      return 'network';
+    }
+    
+    // 存储相关
+    if (name.includes('cache') || name.includes('storage')) {
+      return 'storage';
+    }
+    
+    // 页面相关
+    if (name.includes('page')) {
+      return 'page';
+    }
+    
+    // 组件相关
+    if (name.includes('component')) {
+      return 'component';
+    }
+    
+    // Bean相关
+    if (name.includes('bean')) {
+      // Bean类根据具体类型细分
+      if (name.includes('user')) return 'user';
+      if (name.includes('profile')) return 'profile';
+      if (name.includes('bazi')) return 'bazi';
+      return 'system';
+    }
+    
+    // 默认为系统模块
+    return 'system';
   }
 
   /**
-   * 记录信息日志（带时间戳）
-   * @param {string} message - 日志消息
-   * @param {...any} args - 其他参数
+   * 设置日志模块名（子类可以重写）
+   * @param {string} moduleName - 模块名
    */
-  _info(message, ...args) {
-    console.info(`[${this.className}][${this._getTimestamp()}]`, message, ...args);
+  _setLogModule(moduleName) {
+    this._logModule = moduleName;
+  }
+
+  // ==================== 日志记录方法（集成Logger系统） ====================
+
+  /**
+   * 记录普通日志（映射到info级别）
+   * @param {string} message - 日志消息
+   * @param {any} data - 附加数据
+   */
+  _log(message, data = undefined) {
+    logger.info(this._logModule, message, data, this.className);
+  }
+
+  /**
+   * 记录信息日志
+   * @param {string} message - 日志消息
+   * @param {any} data - 附加数据
+   */
+  _info(message, data = undefined) {
+    logger.info(this._logModule, message, data, this.className);
   }
 
   /**
    * 记录警告日志
    * @param {string} message - 警告消息
-   * @param {...any} args - 其他参数
+   * @param {any} data - 附加数据
    */
-  _warn(message, ...args) {
-    console.warn(`[${this.className}]⚠️`, message, ...args);
+  _warn(message, data = undefined) {
+    logger.warn(this._logModule, message, data, this.className);
   }
 
   /**
    * 记录错误日志
    * @param {string} message - 错误消息
-   * @param {Error|any} error - 错误对象
-   * @param {...any} args - 其他参数
+   * @param {Error|any} error - 错误对象或附加数据
+   * @param {...any} extraData - 额外数据（兼容旧API）
    */
-  _error(message, error = null, ...args) {
-    console.error(`[${this.className}]❌`, message, ...args);
-    if (error) {
-      console.error(`[${this.className}]❌ 错误详情:`, error);
-      if (error.stack) {
-        console.error(`[${this.className}]❌ 堆栈:`, error.stack);
-      }
+  _error(message, error = null, ...extraData) {
+    // 合并错误对象和额外数据
+    let errorData = error;
+    if (extraData.length > 0) {
+      errorData = {
+        error: error,
+        extra: extraData
+      };
     }
+    
+    logger.error(this._logModule, message, errorData, this.className);
   }
 
   /**
    * 记录调试日志（仅在调试模式下输出）
    * @param {string} message - 调试消息
-   * @param {...any} args - 其他参数
+   * @param {any} data - 附加数据
    */
-  _debug(message, ...args) {
-    // 可以通过全局配置控制是否输出调试日志
-    if (getApp().globalData?.debugMode) {
-      console.log(`[${this.className}][DEBUG]`, message, ...args);
-    }
+  _debug(message, data = undefined) {
+    logger.debug(this._logModule, message, data, this.className);
   }
 
   /**

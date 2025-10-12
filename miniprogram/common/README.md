@@ -31,19 +31,42 @@ BaseClass (顶层基类)
 
 ### 核心功能
 
-#### 1. 统一日志记录
+#### 1. 统一日志记录（集成Logger系统）
 
-所有继承BaseClass的类都可以使用统一的日志方法，自动带类名前缀：
+BaseClass已经集成了项目的统一日志管理系统（Logger），所有继承BaseClass的类都可以使用统一的日志方法：
 
 ```javascript
 class MyService extends BaseClass {
   doSomething() {
-    this._log('执行操作');         // [MyService] 执行操作
-    this._info('信息日志');         // [MyService][时间戳] 信息日志
-    this._warn('警告信息');         // [MyService]⚠️ 警告信息
-    this._error('错误信息', error); // [MyService]❌ 错误信息
-    this._debug('调试信息');        // [MyService][DEBUG] 调试信息（仅调试模式）
+    this._log('执行操作');         // [INFO] [network] [MyService] 执行操作
+    this._info('信息日志');         // [INFO] [network] [MyService] 信息日志
+    this._warn('警告信息');         // [WARN] [network] [MyService] 警告信息
+    this._error('错误信息', error); // [ERROR] [network] [MyService] 错误信息
+    this._debug('调试信息');        // [DEBUG] [network] [MyService] 调试信息（仅调试模式）
   }
+}
+```
+
+**特点**：
+- 自动根据类名推断日志模块名（user、profile、card、network等）
+- 集成本地存储，按天分组保留30天
+- 自动过滤敏感信息（password、token、openid等）
+- 支持开发/生产模式切换
+- 自动获取调用栈信息（类名、方法名、行号）
+
+**日志模块自动映射**：
+- UserService、UserBean → `user` 模块
+- ProfileService、ProfileController → `profile` 模块
+- CardController → `card` 模块
+- BaziBean → `bazi` 模块
+- BaseService → `network` 模块
+- 其他 → `system` 模块
+
+**手动设置模块名**：
+```javascript
+constructor() {
+  super();
+  this._setLogModule('custom'); // 手动指定模块名
 }
 ```
 
@@ -237,18 +260,35 @@ module.exports = { MyBean };
 
 ### 调试模式
 
-在 `app.js` 的 `globalData` 中设置 `debugMode` 为 `true` 可以启用调试日志：
+BaseClass使用的Logger系统通过配置文件控制调试模式：
 
 ```javascript
-// app.js
-App({
-  globalData: {
-    debugMode: true // 启用调试模式
+// miniprogram/config/index.js
+export const config = {
+  debugMode: true,  // true=开发模式, false=生产模式
+  
+  logger: {
+    development: {
+      console: true,  // 开发模式输出到控制台
+      levels: ['DEBUG', 'INFO', 'WARN', 'ERROR']
+    },
+    production: {
+      console: false,  // 生产模式不输出到控制台
+      levels: ['WARN', 'ERROR']  // 只记录警告和错误
+    }
   }
-});
+};
 ```
 
-启用后，所有 `this._debug()` 的日志都会输出。
+**开发模式（debugMode: true）**：
+- 所有级别日志都会记录
+- 输出到控制台
+- 包含完整时间戳和调用栈信息
+
+**生产模式（debugMode: false）**：
+- 只记录WARN和ERROR
+- 不输出到控制台（仅本地存储）
+- DEBUG和INFO日志直接返回（零开销）
 
 ### 最佳实践
 
@@ -266,8 +306,9 @@ App({
    ```
 
 3. **使用统一的日志方法**
-   - 不要直接使用 `console.log`
-   - 使用 `this._log()`, `this._error()` 等方法
+   - ❌ 不要直接使用 `console.log`、`console.error` 等
+   - ✅ 使用 `this._log()`, `this._error()` 等方法
+   - 自动集成Logger系统的所有功能
 
 4. **利用性能监控追踪关键操作**
    - 对耗时操作使用性能监控
@@ -303,6 +344,7 @@ App({
 
 ## 相关文档
 
+- [Logger日志系统文档](../utils/logger/README.md)
 - [BaseService 文档](../services/README.md)
 - [BaseController 文档](../controllers/README.md)
 - [BaseBean 文档](../beans/README.md)
