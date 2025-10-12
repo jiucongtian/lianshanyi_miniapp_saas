@@ -97,8 +97,8 @@ App({
         // 更新全局用户信息
         this.globalData.userInfo = result.data;
         
-        // 触发用户信息更新事件
-        this.eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, result.data);
+        // 触发用户信息更新事件（静默模式，允许无监听器）
+        this.eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, result.data, { __emitOptions__: true, silent: true });
         
         // 显示欢迎信息
         log.info('autoSaveUser', result.message);
@@ -131,8 +131,8 @@ App({
         // 更新全局数据
         this.globalData.userInfo = result.data;
         
-        // 触发更新事件
-        this.eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, result.data);
+        // 触发更新事件（静默模式，允许无监听器）
+        this.eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, result.data, { __emitOptions__: true, silent: true });
       }
       
       return result;

@@ -1,3 +1,21 @@
+/**
+ * EventBus - 事件总线
+ * 
+ * 提供事件的发布/订阅机制，支持：
+ * - 事件监听（on）和一次性监听（once）
+ * - 事件触发（emit）
+ * - 事件取消（off）
+ * - 静默模式事件（不会在无监听器时产生警告）
+ * 
+ * 使用示例：
+ * 
+ * // 普通事件触发
+ * eventBus.emit('userLogin', userData);
+ * 
+ * // 静默模式事件（允许没有监听器）
+ * eventBus.emit('userInfoUpdated', userData, { __emitOptions__: true, silent: true });
+ */
+
 const { isValidEventName, getEventCategory } = require('./eventTypes');
 const { config } = require('../config/index');
 const { createModuleLogger } = require('./logger/index');
@@ -89,8 +107,18 @@ function createBus() {
      * 触发事件
      * @param {string} event - 事件名称
      * @param {...any} args - 事件参数
+     * @param {Object} options - 选项（最后一个参数如果是普通对象且包含 __silent__ 属性则视为选项）
      */
     emit(event, ...args) {
+      // 检查最后一个参数是否是选项对象
+      let options = {};
+      if (args.length > 0) {
+        const lastArg = args[args.length - 1];
+        if (lastArg && typeof lastArg === 'object' && lastArg.__emitOptions__) {
+          options = args.pop();
+        }
+      }
+      
       // 开发环境下验证事件名称
       if (isDev && !isValidEventName(event)) {
         log.warn('emit', '未知事件名称', { event });
@@ -111,7 +139,8 @@ function createBus() {
           const category = getEventCategory(event);
           log.debug('emit', '触发事件', { event, category: category || '未知分类', argsCount: args.length });
         }
-      } else if (isDev) {
+      } else if (isDev && !options.silent) {
+        // 只有非静默模式才发出警告
         log.warn('emit', '没有监听器监听事件', { event });
       }
     },
