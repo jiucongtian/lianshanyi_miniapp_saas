@@ -108,7 +108,7 @@ class CardController extends BaseController {
    * @param {Object} profileData - 档案数据
    */
   loadProfileData(profileData) {
-    this._log('开始加载档案数据:', profileData);
+    this._logMethod('loadProfileData', '开始加载档案数据:', profileData);
     
     try {
       // 确保传入的是ProfileBean实例
@@ -146,9 +146,9 @@ class CardController extends BaseController {
         previewCardDescription: null
       });
       
-      this._log('档案数据加载成功');
+      this._logMethod('loadProfileData', '档案数据加载成功');
     } catch (error) {
-      this._error('加载档案数据失败:', error);
+      this._errorMethod('loadProfileData', '加载档案数据失败:', error);
       this._showNoDataState();
     }
   }

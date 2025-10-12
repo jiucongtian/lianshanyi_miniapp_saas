@@ -129,7 +129,7 @@ class BaseClass {
    * @param {any} data - 附加数据
    */
   _log(message, data = undefined) {
-    // 不传递 caller 参数，让 Logger 自动获取完整的调用栈信息（包括行号）
+    // 不传递 caller 参数，让 Logger 自动获取完整的调用栈信息
     logger.info(this._logModule, message, data);
   }
 
@@ -177,6 +177,58 @@ class BaseClass {
    */
   _debug(message, data = undefined) {
     logger.debug(this._logModule, message, data);
+  }
+
+  // ==================== 带方法名的日志记录（推荐使用，性能更好） ====================
+
+  /**
+   * 记录带方法名的信息日志（推荐）
+   * 显式传递方法名，避免调用栈解析，性能更好且更稳定
+   * 
+   * @param {string} methodName - 方法名
+   * @param {string} message - 日志消息
+   * @param {any} data - 附加数据
+   * 
+   * @example
+   * this._logMethod('getUserInfo', '开始获取用户信息');
+   * this._logMethod('loadProfile', '档案加载成功', { profileId: 'xxx' });
+   */
+  _logMethod(methodName, message, data = undefined) {
+    const caller = `${this.className}:${methodName}`;
+    logger.info(this._logModule, message, data, caller);
+  }
+
+  /**
+   * 记录带方法名的警告日志
+   * @param {string} methodName - 方法名
+   * @param {string} message - 警告消息
+   * @param {any} data - 附加数据
+   */
+  _warnMethod(methodName, message, data = undefined) {
+    const caller = `${this.className}:${methodName}`;
+    logger.warn(this._logModule, message, data, caller);
+  }
+
+  /**
+   * 记录带方法名的错误日志
+   * @param {string} methodName - 方法名
+   * @param {string} message - 错误消息
+   * @param {any} data - 附加数据
+   */
+  _errorMethod(methodName, message, data = undefined) {
+    const caller = `${this.className}:${methodName}`;
+    logger.error(this._logModule, message, data, caller);
+  }
+
+  /**
+   * 记录带方法名的调试日志
+   * @param {string} methodName - 方法名
+   * @param {string} message - 调试消息
+   * @param {any} data - 附加数据
+   */
+  _debugMethod(methodName, message, data = undefined) {
+    const caller = `${this.className}:${methodName}`;
+    logger.debug(this._logModule, message, data, caller);
   }
 
   /**
