@@ -60,6 +60,68 @@ class UserService {
 
 ## API 文档
 
+### createModuleLogger(moduleName)
+
+**推荐用于非 BaseClass 的场景**，创建模块专属的 logger 实例。
+
+**参数：**
+- `moduleName` (string) - 模块名称
+
+**返回：**
+包含以下方法的对象：
+- `debug(methodName, message, data?)` - 调试日志
+- `info(methodName, message, data?)` - 信息日志
+- `warn(methodName, message, data?)` - 警告日志
+- `error(methodName, message, data?)` - 错误日志
+
+**方法签名与 BaseClass._log 保持一致：**
+```javascript
+log.info(methodName, message, data?)
+```
+
+**使用示例：**
+```javascript
+// 工具函数中使用
+const { createModuleLogger } = require('@logger/');
+const log = createModuleLogger('UserManager');
+
+function updateUserInfo(userId, data) {
+  log.info('updateUserInfo', '开始更新用户信息', { userId });
+  
+  try {
+    // 业务逻辑
+    log.info('updateUserInfo', '更新成功', { userId });
+  } catch (error) {
+    log.error('updateUserInfo', '更新失败', { userId, error: error.message });
+  }
+}
+
+// 页面中使用
+const { createModuleLogger } = require('@logger/');
+const log = createModuleLogger('ProfilePage');
+
+Page({
+  onLoad() {
+    log.info('onLoad', '页面加载');
+  },
+  
+  onButtonTap(e) {
+    const id = e.currentTarget.dataset.id;
+    log.info('onButtonTap', '点击按钮', { id });
+  }
+});
+```
+
+**输出格式：**
+```
+[2025-10-12 17:47:48.340] [INFO] [UserManager] [UserManager:updateUserInfo] 开始更新用户信息
+[2025-10-12 17:47:48.450] [INFO] [ProfilePage] [ProfilePage:onLoad] 页面加载
+```
+
+**更多详情：** 查看 [非类代码日志使用指南](./非类代码日志使用指南.md)
+
+---
+
 ### logger.debug(module, message, data?, caller?)
 
 调试日志，仅在开发模式下打印和存储。

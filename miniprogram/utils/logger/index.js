@@ -17,15 +17,27 @@ const { LogCleaner } = require('./LogCleaner');
  * const { createModuleLogger } = require('@logger/');
  * const log = createModuleLogger('UserManager');
  * 
- * log.info('用户登录成功', { userId: 123 });
- * log.error('用户登录失败', { error: err.message });
+ * log.info('getUserInfo', '用户登录成功', { userId: 123 });
+ * log.error('login', '用户登录失败', { error: err.message });
  */
 function createModuleLogger(moduleName) {
   return {
-    debug: (message, data, caller) => logger.debug(moduleName, message, data, caller),
-    info: (message, data, caller) => logger.info(moduleName, message, data, caller),
-    warn: (message, data, caller) => logger.warn(moduleName, message, data, caller),
-    error: (message, data, caller) => logger.error(moduleName, message, data, caller),
+    debug: (methodName, message, data = undefined) => {
+      const caller = `${moduleName}:${methodName}`;
+      logger.debug(moduleName, message, data, caller);
+    },
+    info: (methodName, message, data = undefined) => {
+      const caller = `${moduleName}:${methodName}`;
+      logger.info(moduleName, message, data, caller);
+    },
+    warn: (methodName, message, data = undefined) => {
+      const caller = `${moduleName}:${methodName}`;
+      logger.warn(moduleName, message, data, caller);
+    },
+    error: (methodName, message, data = undefined) => {
+      const caller = `${moduleName}:${methodName}`;
+      logger.error(moduleName, message, data, caller);
+    },
     
     // 性能追踪方法
     timeStart: (label) => logger.timeStart(label),
