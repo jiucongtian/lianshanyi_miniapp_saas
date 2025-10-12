@@ -246,12 +246,18 @@ class Logger {
       const lines = stack.split('\n');
       
       // 跳过前面的内部调用，找到实际调用者
-      // 通常：Error -> getCallerInfo -> _log -> debug/info/warn/error -> 实际调用者
-      for (let i = 4; i < lines.length; i++) {
+      // 调用链示例：Error -> getCallerInfo -> _log -> info -> BaseClass._info -> BaseBean.method -> UserBean.method
+      // 目标：跳过所有框架层级，返回最顶层的业务代码调用位置
+      for (let i = 2; i < lines.length; i++) {
         const line = lines[i];
         
-        // 跳过 logger 内部调用
-        if (line.includes('Logger.js') || line.includes('logger/')) {
+        // 跳过 Logger 内部调用和所有 Base 类调用（框架层级）
+        if (line.includes('Logger.js') || 
+            line.includes('logger/') || 
+            line.includes('BaseClass.js') ||
+            line.includes('BaseService.js') ||
+            line.includes('BaseController.js') ||
+            line.includes('BaseBean.js')) {
           continue;
         }
         

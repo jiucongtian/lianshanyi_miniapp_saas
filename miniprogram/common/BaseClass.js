@@ -129,7 +129,8 @@ class BaseClass {
    * @param {any} data - 附加数据
    */
   _log(message, data = undefined) {
-    logger.info(this._logModule, message, data, this.className);
+    // 不传递 caller 参数，让 Logger 自动获取完整的调用栈信息（包括行号）
+    logger.info(this._logModule, message, data);
   }
 
   /**
@@ -138,7 +139,7 @@ class BaseClass {
    * @param {any} data - 附加数据
    */
   _info(message, data = undefined) {
-    logger.info(this._logModule, message, data, this.className);
+    logger.info(this._logModule, message, data);
   }
 
   /**
@@ -147,7 +148,7 @@ class BaseClass {
    * @param {any} data - 附加数据
    */
   _warn(message, data = undefined) {
-    logger.warn(this._logModule, message, data, this.className);
+    logger.warn(this._logModule, message, data);
   }
 
   /**
@@ -166,7 +167,7 @@ class BaseClass {
       };
     }
     
-    logger.error(this._logModule, message, errorData, this.className);
+    logger.error(this._logModule, message, errorData);
   }
 
   /**
@@ -175,7 +176,7 @@ class BaseClass {
    * @param {any} data - 附加数据
    */
   _debug(message, data = undefined) {
-    logger.debug(this._logModule, message, data, this.className);
+    logger.debug(this._logModule, message, data);
   }
 
   /**
