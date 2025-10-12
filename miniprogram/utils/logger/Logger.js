@@ -283,9 +283,10 @@ class Logger {
       // 微信小程序的调用栈格式示例：
       // at UserService.getUserInfo (UserService.js:125:10)
       // at Object.getUserInfo (pages/index/index.js:45:20)
+      // at UserService.getUserInfo (weapp:///...UserService.js?t=wechat&s=xxx:24:14)
       
       // 匹配模式1: at ClassName.methodName (file:line:col)
-      let match = line.match(/at\s+(\w+)\.(\w+)\s+\((.+):(\d+):\d+\)/);
+      let match = line.match(/at\s+(\w+)\.(\w+)\s+\(/);
       if (match) {
         const className = match[1];
         const methodName = match[2];
@@ -293,24 +294,30 @@ class Logger {
       }
       
       // 匹配模式2: at Object.methodName (file:line:col)
-      match = line.match(/at\s+Object\.(\w+)\s+\((.+):(\d+):\d+\)/);
+      match = line.match(/at\s+Object\.(\w+)\s+\(/);
       if (match) {
         const methodName = match[1];
         return `Object:${methodName}`;
       }
       
       // 匹配模式3: at methodName (file:line:col)
-      match = line.match(/at\s+(\w+)\s+\((.+):(\d+):\d+\)/);
+      match = line.match(/at\s+(\w+)\s+\(/);
       if (match) {
         const methodName = match[1];
         return methodName;
       }
       
-      // 匹配模式4: at file:line:col（提取文件名）
+      // 匹配模式4: at file:line:col（提取纯文件名，去掉路径和查询参数）
       match = line.match(/at\s+(.+):(\d+):\d+/);
       if (match) {
-        const file = match[1].split('/').pop();
-        return file;
+        let filePath = match[1];
+        // 去掉查询参数
+        filePath = filePath.split('?')[0];
+        // 提取文件名
+        const fileName = filePath.split('/').pop();
+        // 去掉扩展名
+        const fileNameWithoutExt = fileName.replace(/\.(js|ts|jsx|tsx)$/, '');
+        return fileNameWithoutExt;
       }
       
       return null;
