@@ -299,3 +299,4 @@ Bean类的 `_validate()` 方法应该设置 `this._isValidated = true`。
 - [BaseService文档](../miniprogram/services/README.md)
 - [BaseController文档](../miniprogram/controllers/README.md)
 
+
