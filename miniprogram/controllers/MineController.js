@@ -166,7 +166,7 @@ class MineController extends BaseController {
       this._showLoading('清理缓存中...', true);
       
       // 清理图片缓存
-      await imageCacheManager.clearCache();
+      await imageCacheManager.clearAllCache();
       
       // 清理ProfileManager缓存
       profileManager.clearCache();

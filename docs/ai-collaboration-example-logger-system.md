@@ -212,7 +212,7 @@ const LogLevel = {
 
 核心功能：
 - ✅ 按天分组存储（`app_logs_2024_01_15`）
-- ✅ 每天最多 500 条日志
+- ✅ 保留所有日志，通过保留天数控制存储
 - ✅ 提供读取、清空、统计功能
 
 ```javascript
@@ -224,11 +224,6 @@ class LogStorage {
     let logs = wx.getStorageSync(key) || [];
     logs.push(logData);
     
-    // 限制每天日志数量
-    if (logs.length > this.maxLogsPerDay) {
-      logs = logs.slice(-this.maxLogsPerDay);
-    }
-    
     wx.setStorageSync(key, logs);
   }
 }
@@ -236,7 +231,7 @@ class LogStorage {
 
 **设计亮点**：
 - 按天分组，避免单个 key 过大
-- 自动限制数量，防止存储溢出
+- 保留所有日志，通过保留天数控制存储
 - 失败静默处理，不影响主流程
 
 **2.3 实现 LogCleaner.js（日志清理器）**
@@ -372,7 +367,6 @@ export const config = {
   logger: {
     storage: {
       enabled: true,
-      maxLogsPerDay: 500,
       retentionDays: 30,
     },
     development: {

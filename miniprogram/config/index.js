@@ -19,7 +19,6 @@ export const config = {
     // 本地存储配置
     storage: {
       enabled: true,                  // 是否启用本地存储
-      maxLogsPerDay: 500,            // 每天最多存储日志数
       retentionDays: 30,             // 日志保留天数
     },
     // 日志格式配置

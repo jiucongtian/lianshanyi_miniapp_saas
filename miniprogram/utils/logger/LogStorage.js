@@ -5,7 +5,6 @@
 class LogStorage {
   constructor(options = {}) {
     this.storagePrefix = 'app_logs_';
-    this.maxLogsPerDay = options.maxLogsPerDay || 500;
     this.enabled = options.enabled !== false;
   }
 
@@ -22,11 +21,6 @@ class LogStorage {
       
       let logs = wx.getStorageSync(key) || [];
       logs.push(logData);
-      
-      // 限制每天日志数量，保留最新的
-      if (logs.length > this.maxLogsPerDay) {
-        logs = logs.slice(-this.maxLogsPerDay);
-      }
       
       wx.setStorageSync(key, logs);
     } catch (e) {
