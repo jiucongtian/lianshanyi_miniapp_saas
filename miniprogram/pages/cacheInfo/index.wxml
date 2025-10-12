@@ -1,0 +1,87 @@
+<!--pages/cacheInfo/index.wxml-->
+<view class="cache-info-container">
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <view class="content" wx:else>
+    <!-- 图片缓存统计 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">📦 图片缓存</text>
+      </view>
+      <view class="stats-row">
+        <view class="stat-item">
+          <text class="stat-label">缓存数量</text>
+          <text class="stat-value">{{imageCacheCount}} 个</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-label">缓存大小</text>
+          <text class="stat-value">{{imageCacheSize}} MB</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 缓存文件列表 -->
+    <view class="section" wx:if="{{cacheFiles.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">📄 文件列表</text>
+        <text class="section-subtitle">共 {{cacheFiles.length}} 个文件</text>
+      </view>
+      <view class="file-list">
+        <view class="file-item" wx:for="{{cacheFiles}}" wx:key="cloudPath">
+          <view class="file-info">
+            <view class="file-name">{{item.fileName}}</view>
+            <view class="file-meta">
+              <text class="file-size">{{item.fileSize}}</text>
+              <text class="file-time">{{item.cacheTime}}</text>
+            </view>
+          </view>
+          <view class="file-action" bindtap="onCopyPath" data-path="{{item.localPath}}">
+            <text class="action-icon">📋</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 暂无缓存 -->
+    <view class="empty-state" wx:else>
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">暂无缓存文件</text>
+    </view>
+
+    <!-- 本地存储统计 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">💾 本地存储</text>
+      </view>
+      <view class="storage-info">
+        <view class="storage-row">
+          <text class="storage-label">已用空间</text>
+          <text class="storage-value">{{storageCurrentSize}} MB</text>
+        </view>
+        <view class="storage-row">
+          <text class="storage-label">总空间</text>
+          <text class="storage-value">{{storageLimitSize}} MB</text>
+        </view>
+        <view class="storage-row">
+          <text class="storage-label">使用率</text>
+          <text class="storage-value highlight">{{storageUsagePercent}}%</text>
+        </view>
+        <view class="storage-row">
+          <text class="storage-label">存储项数</text>
+          <text class="storage-value">{{storageKeysCount}} 个</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 刷新按钮 -->
+    <view class="refresh-button" bindtap="onRefresh">
+      <text class="refresh-icon">🔄</text>
+      <text class="refresh-text">刷新数据</text>
+    </view>
+  </view>
+</view>
+

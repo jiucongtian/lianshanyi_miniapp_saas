@@ -5,7 +5,8 @@
     "pages/mine/index",
     "pages/addProfile/index",
     "pages/register/index",
-    "pages/agreement/index"
+    "pages/agreement/index",
+    "pages/cacheInfo/index"
   ],
   "usingComponents": {},
   "subpackages": [],

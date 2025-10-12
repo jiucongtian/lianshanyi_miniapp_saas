@@ -202,6 +202,7 @@ class MineController extends BaseController {
     // 所有用户显示相同的菜单项
     const itemList = [
       '编辑用户资料',
+      '查看缓存信息',
       '清理缓存',
       '用户协议'
     ];
@@ -216,9 +217,12 @@ class MineController extends BaseController {
             this.onEditProfile();
             break;
           case 1:
-            this._handleClearCache();
+            this._showCacheInfo();
             break;
           case 2:
+            this._handleClearCache();
+            break;
+          case 3:
             this._showUserAgreement();
             break;
         }
@@ -330,6 +334,15 @@ class MineController extends BaseController {
       this.avatarUrl = userInfo.avatarUrl || '/static/icons/default-avatar.png';
       this._setData({ avatarUrl: this.avatarUrl });
     }
+  }
+
+  /**
+   * 显示缓存信息
+   * @private
+   */
+  _showCacheInfo() {
+    this._log('_showCacheInfo', '跳转到缓存信息页面');
+    this._navigateTo('/pages/cacheInfo/index');
   }
 
   /**
