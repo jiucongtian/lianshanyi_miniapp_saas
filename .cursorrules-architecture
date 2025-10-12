@@ -1,0 +1,579 @@
+# 小程序架构开发规范
+
+## 架构总览
+
+项目采用清晰的分层架构，每层职责明确：
+
+```
+View Layer (pages/)           - UI 渲染和用户交互
+    ↓
+Controller Layer              - 页面逻辑协调
+    ↓  
+Service Layer                 - API 调用
+    ↓
+Bean Layer                    - 数据模型和业务方法
+    ↓
+Cloud Functions               - 云端业务逻辑
+```
+
+**跨层通信：** Manager 层处理跨模块的复杂业务协调
+
+---
+
+## 分层职责规范
+
+### 1. Bean 层 - 业务数据对象
+
+#### ✅ 应该做的事
+
+1. **数据验证和格式化**
+   - 字段存在性检查
+   - 数据类型验证
+   - 提供默认值
+
+2. **业务判断方法**
+   - `canXXX()` - 能否执行某操作（如 `canCreateMore()`, `canUpgrade()`）
+   - `isXXX()` - 状态判断（如 `isGuest()`, `isPremium()`, `isExpired()`）
+   - `hasXXX()` - 是否拥有某属性（如 `hasPermission()`, `hasQuota()`）
+
+3. **数据转换方法**
+   - `toXXX()` - 转换为其他格式（如 `toCardData()`, `toDisplayFormat()`）
+   - `getXXX()` - 获取计算/格式化后的值（如 `getQuotaDisplay()`, `getRemainingQuota()`）
+   - `formatXXX()` - 格式化显示（如 `formatBirthTime()`, `formatDate()`）
+
+#### ❌ 不应该做的事
+
+- ❌ 调用云函数/API
+- ❌ 操作 UI（showToast, navigateTo 等）
+- ❌ 访问全局状态
+- ❌ 发送事件通知
+
+#### 示例
+
+```javascript
+class UserBean extends BaseBean {
+  constructor(data) {
+    super(data);
+    this.userType = this._getField(data, 'userType', 'guest', 'string');
+    this.profileQuota = this._getField(data, 'profileQuota', 3, 'number');
+    this.usedProfiles = this._getField(data, 'usedProfiles', 0, 'number');
+    this._validate();
+  }
+  
+  // ✅ 业务判断方法
+  canCreateMore() {
+    return this.profileQuota === -1 || this.usedProfiles < this.profileQuota;
+  }
+  
+  canUpgrade(targetType) {
+    const order = ['guest', 'normal', 'premium'];
+    return order.indexOf(targetType) > order.indexOf(this.userType);
+  }
+  
+  isGuest() {
+    return this.userType === 'guest';
+  }
+  
+  // ✅ 数据转换方法
+  getQuotaDisplay() {
+    return this.profileQuota === -1 
+      ? '无限制' 
+      : `${this.usedProfiles}/${this.profileQuota}`;
+  }
+  
+  getRemainingQuota() {
+    return this.profileQuota === -1 
+      ? -1 
+      : Math.max(0, this.profileQuota - this.usedProfiles);
+  }
+}
+```
+
+---
+
+### 2. Service 层 - API 调用层
+
+#### ✅ 应该做的事
+
+1. **调用云函数/API**
+   - 使用 `this.callFunction()` 调用云函数
+   - 统一错误处理
+   - 返回 `ResponseBean`
+
+2. **数据转换**
+   - 将云函数返回的数据转换为对应的 Bean
+   - 只在成功时转换
+
+3. **简单缓存**（可选）
+   - 临时数据缓存
+   - 缓存失效处理
+
+#### ❌ 不应该做的事
+
+- ❌ 做业务判断（如配额检查、权限验证）
+- ❌ 操作 UI
+- ❌ 实现复杂的业务逻辑
+- ❌ 方法超过 20 行代码
+
+#### 示例
+
+```javascript
+class UserService extends BaseService {
+  /**
+   * 获取用户信息
+   * @returns {Promise<ResponseBean>}
+   */
+  async getUserInfo() {
+    const response = await this.callFunction('userManagement', {
+      action: 'getUserInfo'
+    });
+    
+    // ✅ 只做数据转换，不做业务判断
+    if (response.isSuccess() && response.data) {
+      response.data = new UserBean(response.data);
+    }
+    
+    return response;
+  }
+  
+  /**
+   * 升级用户类型
+   * ❌ 不在这里检查 canUpgrade
+   * ✅ 在 Controller 中使用 userBean.canUpgrade() 检查
+   */
+  async upgradeUserType(targetUserType, registrationData) {
+    return this.callFunction('userManagement', {
+      action: 'upgradeUserType',
+      data: { targetUserType, registrationData }
+    });
+  }
+}
+```
+
+---
+
+### 3. Controller 层 - 页面逻辑协调
+
+#### ✅ 应该做的事
+
+1. **调用 Service 获取数据**
+2. **使用 Bean 的业务方法做判断**
+3. **处理 UI 交互逻辑**
+4. **更新页面状态**
+5. **显示加载状态和错误提示**
+
+#### ❌ 不应该做的事
+
+- ❌ 直接实现业务规则（使用 Bean 的方法）
+- ❌ 直接访问 Bean 的私有属性进行判断
+- ❌ 调用云函数（通过 Service）
+- ❌ 复制 Bean 中已有的业务逻辑
+
+#### 示例
+
+```javascript
+class ProfileController extends BaseController {
+  async loadUserInfo() {
+    const response = await userService.getUserInfo();
+    
+    if (response.isSuccess()) {
+      const userBean = response.data;
+      
+      // ✅ 使用 Bean 的业务方法
+      this._setData({
+        userInfo: userBean,
+        canCreateMore: userBean.canCreateMore(),
+        quotaDisplay: userBean.getQuotaDisplay(),
+        isGuest: userBean.isGuest()
+      });
+    } else {
+      this._showError('获取用户信息失败：' + response.getError());
+    }
+  }
+  
+  async onAddProfile() {
+    const userBean = this.page.data.userInfo;
+    
+    // ✅ 使用 Bean 的方法做业务判断
+    if (!userBean.canCreateMore()) {
+      this._showError(`配额不足 (${userBean.getQuotaDisplay()})`);
+      
+      if (userBean.isGuest()) {
+        const confirmed = await this._confirm(
+          '提示', 
+          '临时用户最多创建3个档案，是否注册？'
+        );
+        if (confirmed) {
+          this._navigateTo('/pages/register/index');
+        }
+      }
+      return;
+    }
+    
+    // ✅ 通过 Service 调用 API
+    this._navigateTo('/pages/addProfile/index');
+  }
+}
+```
+
+**❌ 反例（不要这样写）：**
+
+```javascript
+class ProfileController extends BaseController {
+  async onAddProfile() {
+    const userInfo = this.page.data.userInfo;
+    
+    // ❌ 不要直接访问属性并手动判断
+    if (userInfo.profileQuota !== -1 && 
+        userInfo.usedProfiles >= userInfo.profileQuota) {
+      
+      // ❌ 不要手动格式化
+      const quotaText = userInfo.profileQuota === -1 
+        ? '无限制' 
+        : `${userInfo.usedProfiles}/${userInfo.profileQuota}`;
+      
+      this._showError(`配额不足 (${quotaText})`);
+      return;
+    }
+  }
+}
+```
+
+---
+
+### 4. Manager 层 - 跨模块业务协调
+
+#### ✅ 应该做的事
+
+1. **处理跨多个 Service 的复杂业务**
+2. **全局状态管理**
+3. **事件协调和通知**
+4. **通过 Service 调用 API**
+5. **使用 Bean 的业务方法**
+
+#### ❌ 不应该做的事
+
+- ❌ 直接调用云函数（应通过 Service）
+- ❌ 直接操作 UI
+- ❌ 实现应该在 Bean 中的业务逻辑
+
+#### 示例
+
+```javascript
+class ProfileManager {
+  constructor() {
+    this.currentProfile = null;
+  }
+  
+  /**
+   * 切换档案（跨模块业务）
+   * ✅ 涉及：Service 调用 + Bean 转换 + 状态管理 + 事件通知
+   */
+  async switchProfile(profileId) {
+    // 1. ✅ 通过 Service 获取数据
+    const response = await profileService.getProfile(profileId);
+    if (!response.isSuccess()) {
+      return response;
+    }
+    
+    // 2. ✅ 转换为 Bean
+    const profileBean = new ProfileBean(response.data);
+    
+    // 3. ✅ 使用 Bean 的业务方法验证
+    if (!profileBean.isValid()) {
+      return ResponseBean.error('档案数据无效');
+    }
+    
+    // 4. ✅ 更新全局状态
+    this.currentProfile = profileBean;
+    wx.setStorageSync('currentProfileId', profileId);
+    
+    // 5. ✅ 发送事件通知
+    eventBus.emit(PROFILE_EVENTS.PROFILE_CHANGED, {
+      profile: profileBean
+    });
+    
+    return ResponseBean.success(profileBean);
+  }
+}
+```
+
+---
+
+## 开发流程规范
+
+### 新增功能开发
+
+1. **分析需求**
+   - 确定涉及哪些层
+   - 是否需要新的 Bean 类
+
+2. **Bean 层开发**（如果需要）
+   - 定义数据结构
+   - 实现数据验证
+   - 添加业务判断方法
+   - 添加数据转换方法
+
+3. **Service 层开发**
+   - 定义 API 调用方法
+   - 确保返回 ResponseBean
+   - 成功时转换为对应的 Bean
+
+4. **Controller 层开发**
+   - 调用 Service 获取数据
+   - 使用 Bean 的业务方法
+   - 处理 UI 交互
+
+5. **测试验证**
+   - 功能测试
+   - 边界情况测试
+   - 错误处理测试
+
+### 代码审查清单
+
+#### Bean 层审查
+
+- [ ] 继承了 BaseBean
+- [ ] 所有字段都通过 `_getField()` 提取
+- [ ] 实现了 `_validate()` 方法
+- [ ] 提供了业务判断方法（`canXXX()`, `isXXX()`）
+- [ ] 提供了数据转换方法（`toXXX()`, `getXXX()`）
+- [ ] 所有方法都有 JSDoc 注释
+- [ ] 没有调用 API 或操作 UI
+
+#### Service 层审查
+
+- [ ] 继承了 BaseService
+- [ ] 只调用云函数/API
+- [ ] 返回 ResponseBean
+- [ ] 成功时转换为对应的 Bean
+- [ ] 没有业务判断逻辑（除了错误处理）
+- [ ] 方法代码行数 < 20 行
+- [ ] 所有方法都有 JSDoc 注释
+
+#### Controller 层审查
+
+- [ ] 继承了 BaseController
+- [ ] 通过 Service 获取数据
+- [ ] 使用 Bean 的业务方法做判断
+- [ ] 不直接访问 Bean 的私有属性
+- [ ] 不直接调用云函数
+- [ ] 有完整的错误处理
+- [ ] 有加载状态提示
+
+---
+
+## 常见问题 FAQ
+
+### Q1: 业务逻辑应该放在哪里？
+
+**A:** 根据复杂度决定：
+
+- **简单判断**（如 `canCreateMore()`）→ Bean 层
+- **单一模块的业务**（如创建档案）→ Controller 层调用 Bean 的方法
+- **跨模块业务**（如切换档案涉及多个 Service）→ Manager 层
+
+### Q2: Service 层可以做数据处理吗？
+
+**A:** 只能做简单的数据转换：
+
+- ✅ 可以：将云函数返回的数据转换为 Bean
+- ✅ 可以：简单的数据映射
+- ❌ 不可以：业务逻辑判断
+- ❌ 不可以：复杂的数据计算
+
+### Q3: Controller 什么时候可以不用 Bean？
+
+**A:** 只有以下情况：
+
+- 纯 UI 交互（如切换 tab）
+- 页面跳转
+- 不涉及业务数据的操作
+
+大部分情况下都应该使用 Bean 的业务方法。
+
+### Q4: 如何判断是否需要创建 Manager？
+
+**A:** 满足以下条件之一：
+
+- 需要协调 2 个以上的 Service
+- 需要管理全局状态
+- 需要发送跨页面的事件通知
+- 业务逻辑在多个 Controller 中重复出现
+
+### Q5: Bean 的方法可以调用其他 Bean 吗？
+
+**A:** 可以，但要注意：
+
+- ✅ 可以：组合其他 Bean（如 ProfileBean 包含 BaziBean）
+- ✅ 可以：调用其他 Bean 的业务方法
+- ❌ 不可以：通过其他 Bean 调用 API
+
+---
+
+## 重构现有代码指南
+
+### 识别需要重构的代码
+
+**Signal 1: Service 中有 if 判断**
+
+```javascript
+// ❌ 需要重构
+async createProfile(profileData) {
+  const user = await this.getUserInfo();
+  if (user.usedProfiles >= user.profileQuota) {  // ← 业务判断
+    return ResponseBean.error('配额不足');
+  }
+  return this.callFunction(...);
+}
+
+// ✅ 重构后
+async createProfile(profileData) {
+  return this.callFunction('profileManagement', {
+    action: 'createProfile',
+    data: profileData
+  });
+}
+```
+
+**Signal 2: Controller 中有复杂的数据处理**
+
+```javascript
+// ❌ 需要重构
+async loadUserInfo() {
+  const response = await userService.getUserInfo();
+  const user = response.data;
+  
+  // ← 手动格式化
+  const quotaText = user.profileQuota === -1 
+    ? '无限制' 
+    : `${user.usedProfiles}/${user.profileQuota}`;
+  
+  this._setData({ quotaText });
+}
+
+// ✅ 重构后
+async loadUserInfo() {
+  const response = await userService.getUserInfo();
+  const userBean = response.data;
+  
+  this._setData({
+    quotaText: userBean.getQuotaDisplay()  // ← 使用 Bean 方法
+  });
+}
+```
+
+**Signal 3: 相同的业务逻辑在多处出现**
+
+```javascript
+// ❌ 在多个 Controller 中重复
+if (user.profileQuota !== -1 && user.usedProfiles >= user.profileQuota) {
+  // ...
+}
+
+// ✅ 提取到 Bean 中
+class UserBean {
+  canCreateMore() {
+    return this.profileQuota === -1 || this.usedProfiles < this.profileQuota;
+  }
+}
+```
+
+### 重构步骤
+
+1. **提取业务方法到 Bean**
+   - 找到重复的判断逻辑
+   - 在 Bean 中创建对应的方法
+   - 添加完整的注释和测试
+
+2. **简化 Service**
+   - 移除业务判断
+   - 只保留 API 调用
+   - 确保返回 Bean
+
+3. **更新 Controller**
+   - 使用 Bean 的方法替代手动判断
+   - 使用 Bean 的方法替代手动格式化
+   - 简化代码逻辑
+
+4. **测试验证**
+   - 功能是否正常
+   - 边界情况是否处理
+   - 日志是否正确
+
+---
+
+## 最佳实践
+
+### 1. Bean 方法命名规范
+
+- `canXXX()` - 返回 boolean，表示能否执行某操作
+- `isXXX()` - 返回 boolean，表示状态判断
+- `hasXXX()` - 返回 boolean，表示是否拥有
+- `getXXX()` - 返回计算或格式化后的值
+- `toXXX()` - 转换为其他格式
+- `formatXXX()` - 格式化显示
+
+### 2. Service 方法规范
+
+- 方法名使用动词开头（get, create, update, delete）
+- 返回值必须是 `Promise<ResponseBean>`
+- 添加完整的 JSDoc 注释
+- 方法代码 < 20 行
+
+### 3. Controller 方法规范
+
+- 初始化方法命名为 `initialize()`
+- 加载数据方法以 `load` 开头
+- 事件处理方法以 `on` 开头
+- 私有方法以 `_` 开头
+
+### 4. 错误处理规范
+
+```javascript
+// ✅ 统一的错误处理
+async loadData() {
+  const response = await service.getData();
+  
+  if (!response.isSuccess()) {
+    this._error('加载数据失败', response.getError());
+    this._showError(response.getError());
+    return;
+  }
+  
+  // 处理成功数据
+  const dataBean = response.getData();
+  // ...
+}
+```
+
+---
+
+## 总结
+
+### 核心原则
+
+1. **职责单一**：每层只做自己的事
+2. **Bean 优先**：业务逻辑优先放在 Bean
+3. **Service 简单**：只做 API 调用
+4. **Controller 协调**：使用 Bean 的方法，不重复实现
+5. **Manager 跨模块**：处理复杂的跨模块业务
+
+### 开发口诀
+
+```
+Bean 判断，Service 调用，Controller 协调，Manager 跨模块
+数据验证在 Bean，API 调用在 Service
+业务判断用 Bean 方法，不要在 Controller 重复实现
+```
+
+### 记住
+
+- ✅ 优先使用现有的 Bean 方法
+- ✅ 发现重复逻辑，立即提取到 Bean
+- ✅ Service 方法保持简短
+- ✅ Controller 使用 Bean 的业务方法
+- ❌ 不要在多处重复相同的业务判断
+- ❌ 不要在 Service 中做业务判断
+- ❌ 不要在 Controller 中直接访问 Bean 的私有属性
+
