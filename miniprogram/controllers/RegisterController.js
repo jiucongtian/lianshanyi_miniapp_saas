@@ -31,7 +31,7 @@ class RegisterController extends BaseController {
    * @param {Object} options - 页面参数
    */
   async initialize(options = {}) {
-    this._log('初始化，参数:', options);
+    this._log('initialize', '初始化，参数:', options);
     
     // 保存来源信息
     this._setData({
@@ -73,7 +73,7 @@ class RegisterController extends BaseController {
         this.validateForm();
       }
     } catch (error) {
-      this._error('加载用户信息失败:', error);
+      this._error('loadUserInfo', '加载用户信息失败:', error);
       this._handleError(error, '加载用户信息');
     }
   }
@@ -84,7 +84,7 @@ class RegisterController extends BaseController {
    */
   onChooseAvatar(e) {
     const { avatarUrl } = e.detail;
-    this._log('用户选择的头像:', avatarUrl);
+    this._log('onChooseAvatar', '用户选择的头像:', avatarUrl);
     
     // 保存临时文件路径，在保存时再上传
     this._setData({
@@ -204,7 +204,7 @@ class RegisterController extends BaseController {
    * @returns {Promise<string>} 云存储文件ID
    */
   async _uploadAvatar(tempFilePath) {
-    this._log('上传头像:', tempFilePath);
+    this._log('_uploadAvatar', '上传头像:', tempFilePath);
     
     this._showLoading('上传头像中...', true);
     
@@ -223,12 +223,12 @@ class RegisterController extends BaseController {
         filePath: tempFilePath
       });
       
-      this._log('头像上传成功:', uploadResult);
+      this._log('_uploadAvatar', '头像上传成功:', uploadResult);
       this._hideLoading();
       
       return uploadResult.fileID;
     } catch (error) {
-      this._error('头像上传失败:', error);
+      this._error('_uploadAvatar', '头像上传失败:', error);
       this._hideLoading();
       throw new Error('头像上传失败');
     }
@@ -245,13 +245,13 @@ class RegisterController extends BaseController {
     }
     
     try {
-      this._log('删除旧头像:', oldAvatarUrl);
+      this._log('_deleteOldAvatar', '删除旧头像:', oldAvatarUrl);
       await wx.cloud.deleteFile({
         fileList: [oldAvatarUrl]
       });
-      this._log('旧头像删除成功');
+      this._log('_deleteOldAvatar', '旧头像删除成功');
     } catch (error) {
-      this._error('删除旧头像失败:', error);
+      this._error('_deleteOldAvatar', '删除旧头像失败:', error);
       // 删除失败不影响主流程，只记录错误
     }
   }
@@ -260,7 +260,7 @@ class RegisterController extends BaseController {
    * 提交注册
    */
   async submitRegister() {
-    this._log('提交注册');
+    this._log('submitRegister', '提交注册');
     
     // 表单验证
     if (!this.data.formValid) {
@@ -300,7 +300,7 @@ class RegisterController extends BaseController {
         phoneNumber: userInfo.phoneNumber.trim() || ''
       };
       
-      this._log('提交数据:', registrationData);
+      this._log('submitRegister', '提交数据:', registrationData);
       
       // 根据source判断是注册还是编辑
       let result;
@@ -336,12 +336,12 @@ class RegisterController extends BaseController {
           this._handleRegistrationSuccess();
         }, 2000);
       } else {
-        this._error('操作失败:', result);
+        this._error('submitRegister', '操作失败:', result);
         const errorMessage = result.error || (source === 'edit' ? '更新失败' : '注册失败');
         this._showError(errorMessage, 3000);
       }
     } catch (error) {
-      this._error('操作过程出错:', error);
+      this._error('submitRegister', '操作过程出错:', error);
       this._setData({ loading: false });
       const errorMessage = this.data.source === 'edit' ? '更新失败，请重试' : '注册失败，请重试';
       this._handleError(error, errorMessage);
@@ -374,7 +374,7 @@ class RegisterController extends BaseController {
           url: returnUrl,
           fail: () => {
             // 如果跳转失败，降级到我的页面
-            this._log('navigateTo 失败，降级到 switchTab');
+            this._log('_handleRegistrationSuccess', 'navigateTo 失败，降级到 switchTab');
             this._switchTab('/pages/mine/index');
           }
         });

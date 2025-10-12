@@ -33,7 +33,7 @@ class ProfileService extends BaseService {
       
       return response;
     } catch (error) {
-      this._error('getProfiles 异常:', error);
+      this._error('getProfiles', 'getProfiles 异常:', error);
       return ResponseBean.error('获取档案列表失败: ' + error.message, -1);
     }
   }
@@ -71,7 +71,7 @@ class ProfileService extends BaseService {
       
       return response;
     } catch (error) {
-      this._error('getProfile 异常:', error);
+      this._error('getProfile', 'getProfile 异常:', error);
       return ResponseBean.error('获取档案详情失败: ' + error.message, -1);
     }
   }
@@ -107,9 +107,9 @@ class ProfileService extends BaseService {
         // 对于createProfile，需要特殊处理，因为返回的是 { profileId, profile }
         if (response.data.profile) {
           // 创建档案时，使用profile字段的数据创建ProfileBean
-          this._log('createProfile 原始profile数据:', response.data.profile);
+          this._log('createProfile', 'createProfile 原始profile数据:', response.data.profile);
           response.data.profile = new ProfileBean(response.data.profile);
-          this._log('createProfile ProfileBean创建完成');
+          this._log('createProfile', 'createProfile ProfileBean创建完成');
         } else {
           // 其他情况，直接转换data
           response.data = new ProfileBean(response.data);
@@ -118,7 +118,7 @@ class ProfileService extends BaseService {
       
       return response;
     } catch (error) {
-      this._error('createProfile 异常:', error);
+      this._error('createProfile', 'createProfile 异常:', error);
       return ResponseBean.error('创建档案失败: ' + error.message, -1);
     }
   }
@@ -160,7 +160,7 @@ class ProfileService extends BaseService {
       
       return response;
     } catch (error) {
-      this._error('updateProfile 异常:', error);
+      this._error('updateProfile', 'updateProfile 异常:', error);
       return ResponseBean.error('更新档案失败: ' + error.message, -1);
     }
   }
@@ -193,7 +193,7 @@ class ProfileService extends BaseService {
       
       return response;
     } catch (error) {
-      this._error('deleteProfile 异常:', error);
+      this._error('deleteProfile', 'deleteProfile 异常:', error);
       return ResponseBean.error('删除档案失败: ' + error.message, -1);
     }
   }
@@ -231,7 +231,7 @@ class ProfileService extends BaseService {
       
       return response;
     } catch (error) {
-      this._error('searchProfile 异常:', error);
+      this._error('searchProfile', 'searchProfile 异常:', error);
       return ResponseBean.error('搜索档案失败: ' + error.message, -1);
     }
   }

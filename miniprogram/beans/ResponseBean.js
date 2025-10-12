@@ -8,8 +8,8 @@ class ResponseBean extends BaseClass {
   constructor(cloudResult) {
     super(); // 调用BaseClass构造函数
     
-    this._debug('构造函数被调用，传入参数:', cloudResult);
-    this._debug('参数类型:', typeof cloudResult);
+    this._debug('constructor', '构造函数被调用，传入参数:', cloudResult);
+    this._debug('constructor', '参数类型:', typeof cloudResult);
     
     this.success = false;
     this.data = null;
@@ -29,11 +29,11 @@ class ResponseBean extends BaseClass {
    * @param {Object} cloudResult - 云函数返回的原始结果
    */
   _parse(cloudResult) {
-    this._debug('_parse 方法开始执行，参数:', cloudResult);
+    this._debug('_parse', '_parse 方法开始执行，参数:', cloudResult);
     
     // 1. 检查云函数调用是否成功
     if (!cloudResult || !cloudResult.result) {
-      this._error('云函数调用失败', null, { cloudResult });
+      this._error('_parse', '云函数调用失败', null, { cloudResult });
       this.error = '云函数调用失败';
       this.code = -1;
       return;
@@ -43,7 +43,7 @@ class ResponseBean extends BaseClass {
     
     // 2. 验证必需字段
     if (typeof result.success !== 'boolean') {
-      this._error('响应格式错误，缺少success字段', null, { result });
+      this._error('_parse', '响应格式错误，缺少success字段', null, { result });
       this.error = '响应格式错误：缺少success字段';
       this.code = -2;
       return;
@@ -58,13 +58,13 @@ class ResponseBean extends BaseClass {
     
     // 4. 记录详细日志
     if (this.success) {
-      this._log('云函数调用成功:', {
+      this._log('_parse', '云函数调用成功:', {
         code: this.code,
         message: this.message,
         hasData: !!this.data
       });
     } else {
-      this._error('云函数调用失败', null, {
+      this._error('_parse', '云函数调用失败', null, {
         code: this.code,
         error: this.error,
         message: this.message

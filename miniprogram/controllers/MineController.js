@@ -51,15 +51,15 @@ class MineController extends BaseController {
    * 初始化页面
    */
   async initialize() {
-    this._log('开始初始化页面');
+    this._log('initialize', '开始初始化页面');
     
     try {
       // 加载用户信息
       await this.loadUserInfo();
       
-      this._log('页面初始化完成');
+      this._log('initialize', '页面初始化完成');
     } catch (error) {
-      this._error('页面初始化失败:', error);
+      this._error('initialize', '页面初始化失败:', error);
       this._handleError(error, '页面初始化');
     }
   }
@@ -68,7 +68,7 @@ class MineController extends BaseController {
    * 加载用户信息
    */
   async loadUserInfo() {
-    this._log('开始加载用户信息');
+    this._log('loadUserInfo', '开始加载用户信息');
     
     try {
       this._setData({ loading: true, error: '' });
@@ -77,7 +77,7 @@ class MineController extends BaseController {
       
       if (result.success) {
         const userInfo = result.data;
-        this._log('获取到用户信息:', userInfo);
+        this._log('loadUserInfo', '获取到用户信息:', userInfo);
         
         // 处理用户信息显示
         this._processUserInfo(userInfo);
@@ -94,16 +94,16 @@ class MineController extends BaseController {
           loading: false
         });
         
-        this._log('用户信息加载成功');
+        this._log('loadUserInfo', '用户信息加载成功');
       } else {
-        this._error('获取用户信息失败:', result.error);
+        this._error('loadUserInfo', '获取用户信息失败:', result.error);
         this._setData({
           error: result.error || '获取用户信息失败',
           loading: false
         });
       }
     } catch (error) {
-      this._error('加载用户信息出错:', error);
+      this._error('loadUserInfo', '加载用户信息出错:', error);
       this._setData({
         error: error.message || '加载失败',
         loading: false
@@ -117,7 +117,7 @@ class MineController extends BaseController {
    * @returns {Promise<boolean>} 是否更新成功
    */
   async updateUserInfo(userData) {
-    this._log('开始更新用户信息:', userData);
+    this._log('updateUserInfo', '开始更新用户信息:', userData);
     
     try {
       this._showLoading('更新中...', true);
@@ -127,7 +127,7 @@ class MineController extends BaseController {
       this._hideLoading();
       
       if (result.success) {
-        this._log('用户信息更新成功');
+        this._log('updateUserInfo', '用户信息更新成功');
         
         // 更新本地用户信息
         this.userInfo = result.data;
@@ -143,12 +143,12 @@ class MineController extends BaseController {
         this._showSuccess('更新成功');
         return true;
       } else {
-        this._error('更新用户信息失败:', result.error);
+        this._error('updateUserInfo', '更新用户信息失败:', result.error);
         this._showError('更新失败：' + (result.error || '未知错误'));
         return false;
       }
     } catch (error) {
-      this._error('更新用户信息异常:', error);
+      this._error('updateUserInfo', '更新用户信息异常:', error);
       this._hideLoading();
       this._handleError(error, '更新用户信息');
       return false;
@@ -160,7 +160,7 @@ class MineController extends BaseController {
    * @returns {Promise<boolean>} 是否清理成功
    */
   async clearCache() {
-    this._log('开始清理缓存');
+    this._log('clearCache', '开始清理缓存');
     
     try {
       this._showLoading('清理缓存中...', true);
@@ -175,18 +175,18 @@ class MineController extends BaseController {
       try {
         wx.removeStorageSync('userDateTime');
         wx.removeStorageSync('editingProfile');
-        this._log('本地存储清理完成');
+        this._log('clearCache', '本地存储清理完成');
       } catch (error) {
-        this._error('清理本地存储失败:', error);
+        this._error('clearCache', '清理本地存储失败:', error);
       }
       
       this._hideLoading();
       this._showSuccess('缓存清理完成');
       
-      this._log('缓存清理成功');
+      this._log('clearCache', '缓存清理成功');
       return true;
     } catch (error) {
-      this._error('清理缓存异常:', error);
+      this._error('clearCache', '清理缓存异常:', error);
       this._hideLoading();
       this._handleError(error, '清理缓存');
       return false;
@@ -197,7 +197,7 @@ class MineController extends BaseController {
    * 显示设置
    */
   showSettings() {
-    this._log('显示设置');
+    this._log('showSettings', '显示设置');
     
     const itemList = [
       '清理缓存',
@@ -232,7 +232,7 @@ class MineController extends BaseController {
    * 跳转到注册页面
    */
   onRegister() {
-    this._log('用户点击注册按钮');
+    this._log('onRegister', '用户点击注册按钮');
     this._navigateTo('/pages/register/index', {
       source: 'mine',
       returnUrl: '/pages/mine/index'
@@ -243,7 +243,7 @@ class MineController extends BaseController {
    * 编辑用户资料
    */
   onEditProfile() {
-    this._log('用户点击编辑资料按钮');
+    this._log('onEditProfile', '用户点击编辑资料按钮');
     this._navigateTo('/pages/register/index', {
       source: 'edit',
       returnUrl: '/pages/mine/index'
@@ -254,7 +254,7 @@ class MineController extends BaseController {
    * 刷新页面数据
    */
   async onRefresh() {
-    this._log('刷新页面数据');
+    this._log('onRefresh', '刷新页面数据');
     await this.loadUserInfo();
     wx.stopPullDownRefresh();
   }
@@ -298,7 +298,7 @@ class MineController extends BaseController {
     try {
       // 检查是否有头像URL
       if (!userInfo.avatarUrl || userInfo.avatarUrl.trim() === '') {
-        this._log('用户未设置头像，使用默认头像');
+        this._log('_processAvatarCache', '用户未设置头像，使用默认头像');
         this.avatarUrl = '/static/icons/default-avatar.png';
         this._setData({ avatarUrl: this.avatarUrl });
         return;
@@ -306,7 +306,7 @@ class MineController extends BaseController {
 
       // 检查是否是云存储路径
       if (userInfo.avatarUrl.startsWith('cloud://')) {
-        this._log('检测到云存储头像，开始缓存处理:', userInfo.avatarUrl);
+        this._log('_processAvatarCache', '检测到云存储头像，开始缓存处理:', userInfo.avatarUrl);
         
         // 使用云端的文件名
         const fileName = userInfo.avatarUrl.split('/').pop() || 'avatar.jpg';
@@ -317,17 +317,17 @@ class MineController extends BaseController {
           fileName
         );
         
-        this._log('头像缓存处理完成:', cachedAvatarPath);
+        this._log('_processAvatarCache', '头像缓存处理完成:', cachedAvatarPath);
         this.avatarUrl = cachedAvatarPath;
         this._setData({ avatarUrl: this.avatarUrl });
       } else {
         // 非云存储路径，直接使用
-        this._log('使用非云存储头像:', userInfo.avatarUrl);
+        this._log('_processAvatarCache', '使用非云存储头像:', userInfo.avatarUrl);
         this.avatarUrl = userInfo.avatarUrl;
         this._setData({ avatarUrl: this.avatarUrl });
       }
     } catch (error) {
-      this._error('头像缓存处理失败:', error);
+      this._error('_processAvatarCache', '头像缓存处理失败:', error);
       // 缓存失败时使用原始路径
       this.avatarUrl = userInfo.avatarUrl || '/static/icons/default-avatar.png';
       this._setData({ avatarUrl: this.avatarUrl });
@@ -437,7 +437,7 @@ class MineController extends BaseController {
    * 页面显示时的处理
    */
   onShow() {
-    this._log('页面显示');
+    this._log('onShow', '页面显示');
     
     // 每次显示页面时刷新用户信息
     this.loadUserInfo();
@@ -449,7 +449,7 @@ class MineController extends BaseController {
    * 页面隐藏时的处理
    */
   onHide() {
-    this._log('页面隐藏');
+    this._log('onHide', '页面隐藏');
     super.onHide();
   }
 
@@ -457,7 +457,7 @@ class MineController extends BaseController {
    * 页面卸载时的清理
    */
   onUnload() {
-    this._log('页面卸载');
+    this._log('onUnload', '页面卸载');
     super.onUnload();
   }
 

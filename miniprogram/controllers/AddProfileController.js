@@ -68,7 +68,7 @@ class AddProfileController extends BaseController {
    * @param {Object} options - 页面参数
    */
   async initialize(options = {}) {
-    this._log('开始初始化页面，参数:', options);
+    this._log('initialize', '开始初始化页面，参数:', options);
     
     try {
       // 判断创建/编辑模式
@@ -88,9 +88,9 @@ class AddProfileController extends BaseController {
       // 验证表单
       this.validateForm();
       
-      this._log('页面初始化完成，模式:', this.pageMode);
+      this._log('initialize', '页面初始化完成，模式:', this.pageMode);
     } catch (error) {
-      this._error('页面初始化失败:', error);
+      this._error('initialize', '页面初始化失败:', error);
       this._handleError(error, '页面初始化');
     }
   }
@@ -100,7 +100,7 @@ class AddProfileController extends BaseController {
    * @returns {boolean} 表单是否有效
    */
   validateForm() {
-    this._log('开始验证表单');
+    this._log('validateForm', '开始验证表单');
     
     let isValid = true;
     let nameError = '';
@@ -128,7 +128,7 @@ class AddProfileController extends BaseController {
       isFormValid: isValid
     });
 
-    this._log('表单验证完成，结果:', isValid);
+    this._log('validateForm', '表单验证完成，结果:', isValid);
     return isValid;
   }
 
@@ -137,7 +137,7 @@ class AddProfileController extends BaseController {
    * @returns {Promise<boolean>} 是否可以创建档案
    */
   async checkQuota() {
-    this._log('开始检查用户配额');
+    this._log('checkQuota', '开始检查用户配额');
     
     try {
       const response = await userService.checkQuota();
@@ -150,15 +150,15 @@ class AddProfileController extends BaseController {
           return false;
         }
         
-        this._log('配额检查通过');
+        this._log('checkQuota', '配额检查通过');
         return true;
       } else {
-        this._error('检查配额失败:', response.error);
+        this._error('checkQuota', '检查配额失败:', response.error);
         this._showError('检查权限失败：' + (response.error || '未知错误'));
         return false;
       }
     } catch (error) {
-      this._error('检查配额异常:', error);
+      this._error('checkQuota', '检查配额异常:', error);
       this._handleError(error, '检查配额');
       return false;
     }
@@ -169,10 +169,10 @@ class AddProfileController extends BaseController {
    * @returns {Promise<Object|null>} 八字计算结果
    */
   async calculateBazi() {
-    this._log('开始计算八字');
+    this._log('calculateBazi', '开始计算八字');
     
     if (!this.birthDate) {
-      this._error('没有出生日期，无法计算八字');
+      this._error('calculateBazi', '没有出生日期，无法计算八字');
       this._showError('请先选择出生时间');
       return null;
     }
@@ -187,21 +187,21 @@ class AddProfileController extends BaseController {
         description: '用户创建的八字档案'
       };
       
-      this._log('准备创建档案，数据:', profileData);
+      this._log('calculateBazi', '准备创建档案，数据:', profileData);
       
       // 调用档案创建服务（服务端会自动计算八字）
       const result = await profileService.createProfile(profileData);
       
       if (result.success) {
-        this._log('档案创建成功，八字计算完成');
+        this._log('calculateBazi', '档案创建成功，八字计算完成');
         return result.data;
       } else {
-        this._error('档案创建失败:', result.error);
+        this._error('calculateBazi', '档案创建失败:', result.error);
         this._showError('计算失败：' + (result.error || '未知错误'));
         return null;
       }
     } catch (error) {
-      this._error('计算八字异常:', error);
+      this._error('calculateBazi', '计算八字异常:', error);
       this._handleError(error, '计算八字');
       return null;
     }
@@ -213,20 +213,20 @@ class AddProfileController extends BaseController {
    * @returns {Promise<Array>} 搜索结果
    */
   async searchExisting(searchData) {
-    this._log('开始搜索已有档案:', searchData);
+    this._log('searchExisting', '开始搜索已有档案:', searchData);
     
     try {
       const response = await profileService.searchProfile(searchData);
       
       if (response.success && response.data) {
-        this._log('搜索完成，找到档案数量:', response.data.profiles.length);
+        this._log('searchExisting', '搜索完成，找到档案数量:', response.data.profiles.length);
         return response.data.profiles;
       } else {
-        this._error('搜索档案失败:', response.error);
+        this._error('searchExisting', '搜索档案失败:', response.error);
         return [];
       }
     } catch (error) {
-      this._error('搜索档案异常:', error);
+      this._error('searchExisting', '搜索档案异常:', error);
       return [];
     }
   }
@@ -236,7 +236,7 @@ class AddProfileController extends BaseController {
    * @returns {Promise<boolean>} 是否保存成功
    */
   async saveProfile() {
-    this._log('开始保存档案');
+    this._log('saveProfile', '开始保存档案');
     
     // 验证表单
     if (!this.validateForm()) {
@@ -265,16 +265,16 @@ class AddProfileController extends BaseController {
       this._hideLoading();
       
       if (result) {
-        this._log('档案保存成功');
+        this._log('saveProfile', '档案保存成功');
         
         // 将新创建的档案添加到ProfileManager
         if (result.profile) {
           profileManager.addProfile(result.profile);
-          this._log('档案已添加到ProfileManager');
+          this._log('saveProfile', '档案已添加到ProfileManager');
           
           // 设置新创建的档案为当前档案
           profileManager.setCurrentProfile(result.profile);
-          this._log('新创建的档案已设置为当前档案');
+          this._log('saveProfile', '新创建的档案已设置为当前档案');
           
           // 设置全局数据中的新添加档案标记
           const app = getApp();
@@ -295,7 +295,7 @@ class AddProfileController extends BaseController {
         return false;
       }
     } catch (error) {
-      this._error('保存档案异常:', error);
+      this._error('saveProfile', '保存档案异常:', error);
       this._hideLoading();
       this._handleError(error, '保存档案');
       return false;
@@ -307,7 +307,7 @@ class AddProfileController extends BaseController {
    * @returns {Promise<boolean>} 是否更新成功
    */
   async updateProfile() {
-    this._log('开始更新档案');
+    this._log('updateProfile', '开始更新档案');
     
     if (!this.editingProfileId) {
       this._showError('档案ID异常，无法更新');
@@ -338,7 +338,7 @@ class AddProfileController extends BaseController {
         isUncertainTime: this.isUncertainTime
       };
       
-      this._log('准备更新档案，数据:', updateData);
+      this._log('updateProfile', '准备更新档案，数据:', updateData);
       
       // 调用档案更新服务
       const result = await profileService.updateProfile(this.editingProfileId, updateData);
@@ -346,29 +346,29 @@ class AddProfileController extends BaseController {
       this._hideLoading();
 
       if (result.success) {
-        this._log('档案更新成功');
+        this._log('updateProfile', '档案更新成功');
         
         // 更新ProfileManager中的档案数据
         profileManager.updateProfile(this.editingProfileId, result.data);
-        this._log('ProfileManager中的档案已更新');
+        this._log('updateProfile', 'ProfileManager中的档案已更新');
         
         // 编辑档案后，将编辑的档案设置为当前档案（提升用户体验）
-        this._log('编辑档案后，将编辑的档案设置为当前档案');
-        this._log('编辑档案ID:', this.editingProfileId);
-        this._log('更新后的档案数据:', result.data);
+        this._log('updateProfile', '编辑档案后，将编辑的档案设置为当前档案');
+        this._log('updateProfile', '编辑档案ID:', this.editingProfileId);
+        this._log('updateProfile', '更新后的档案数据:', result.data);
         
         profileManager.setCurrentProfile(result.data);
-        this._log('编辑的档案已设置为当前档案');
+        this._log('updateProfile', '编辑的档案已设置为当前档案');
         
         // 验证设置是否成功
         const updatedCurrentProfile = profileManager.getCurrentProfile();
-        this._log('验证设置后的当前档案:', updatedCurrentProfile ? updatedCurrentProfile._id : 'null');
+        this._log('updateProfile', '验证设置后的当前档案:', updatedCurrentProfile ? updatedCurrentProfile._id : 'null');
         
         // 清除本地存储的编辑数据
         try {
           wx.removeStorageSync('editingProfile');
         } catch (error) {
-          this._error('清除编辑数据失败:', error);
+          this._error('updateProfile', '清除编辑数据失败:', error);
         }
         
         // 触发档案列表刷新事件
@@ -389,12 +389,12 @@ class AddProfileController extends BaseController {
         
         return true;
       } else {
-        this._error('更新档案失败:', result.error);
+        this._error('updateProfile', '更新档案失败:', result.error);
         this._showError('更新失败：' + (result.error || '未知错误'));
         return false;
       }
     } catch (error) {
-      this._error('更新档案异常:', error);
+      this._error('updateProfile', '更新档案异常:', error);
       this._hideLoading();
       this._handleError(error, '更新档案');
       return false;
@@ -420,7 +420,7 @@ class AddProfileController extends BaseController {
   onGenderSelect(gender) {
     this.formData.gender = gender;
     this._setData({ 'formData.gender': gender });
-    this._log('选择性别:', gender === 1 ? '男' : '女');
+    this._log('onGenderSelect', '选择性别:', gender === 1 ? '男' : '女');
   }
 
   /**
@@ -448,7 +448,7 @@ class AddProfileController extends BaseController {
       isUncertainTime: this.isUncertainTime
     });
     
-    this._log('确认选择时间:', formatedTime);
+    this._log('onTimeConfirm', '确认选择时间:', formatedTime);
     
     // 时间选择后重新验证表单
     this.validateForm();
@@ -463,7 +463,7 @@ class AddProfileController extends BaseController {
     this.isUncertainTime = !this.isUncertainTime;
     this._setData({ isUncertainTime: this.isUncertainTime });
     
-    this._log('切换不确定时辰状态:', this.isUncertainTime);
+    this._log('onUncertainTimeToggle', '切换不确定时辰状态:', this.isUncertainTime);
   }
 
   /**
@@ -471,7 +471,7 @@ class AddProfileController extends BaseController {
    * @returns {Promise<boolean>} 是否提交成功
    */
   async onSubmit() {
-    this._log('开始提交表单');
+    this._log('onSubmit', '开始提交表单');
     
     if (!this.validateForm()) {
       this._showError('请完善必填信息');
@@ -485,7 +485,7 @@ class AddProfileController extends BaseController {
         return await this.saveProfile();
       }
     } catch (error) {
-      this._error('提交表单异常:', error);
+      this._error('onSubmit', '提交表单异常:', error);
       this._handleError(error, '提交表单');
       return false;
     }
@@ -503,7 +503,7 @@ class AddProfileController extends BaseController {
     this.pageMode = isEditMode ? 'edit' : 'create';
     
     this._setData({ pageMode: this.pageMode });
-    this._log('页面模式:', this.pageMode);
+    this._log('_determinePageMode', '页面模式:', this.pageMode);
   }
 
   /**
@@ -565,7 +565,7 @@ class AddProfileController extends BaseController {
       isUncertainTime: false
     });
     
-    this._log('时间选择器初始化完成');
+    this._log('_initializeTimePicker', '时间选择器初始化完成');
   }
 
   /**
@@ -573,12 +573,12 @@ class AddProfileController extends BaseController {
    * @private
    */
   async loadEditingData() {
-    this._log('开始加载编辑数据');
+    this._log('loadEditingData', '开始加载编辑数据');
     
     try {
       const editingProfile = wx.getStorageSync('editingProfile');
       if (editingProfile) {
-        this._log('加载编辑档案数据:', editingProfile);
+        this._log('loadEditingData', '加载编辑档案数据:', editingProfile);
         
         // 设置表单数据
         this.formData = {
@@ -616,16 +616,16 @@ class AddProfileController extends BaseController {
           isUncertainTime: this.isUncertainTime
         });
         
-        this._log('编辑数据加载完成');
+        this._log('loadEditingData', '编辑数据加载完成');
       } else {
-        this._error('未找到要编辑的档案数据');
+        this._error('loadEditingData', '未找到要编辑的档案数据');
         this._showError('档案数据异常');
         setTimeout(() => {
           this._navigateBack();
         }, 1500);
       }
     } catch (error) {
-      this._error('加载编辑数据失败:', error);
+      this._error('loadEditingData', '加载编辑数据失败:', error);
       this._showError('数据读取失败');
       setTimeout(() => {
         this._navigateBack();
@@ -638,20 +638,20 @@ class AddProfileController extends BaseController {
    * @private
    */
   async loadUserInfo() {
-    this._log('开始加载用户信息');
+    this._log('loadUserInfo', '开始加载用户信息');
     
     try {
       const response = await userService.getUserInfo();
       
       if (response.success && response.data) {
         this.userInfo = response.data;
-        this._log('用户信息加载成功');
+        this._log('loadUserInfo', '用户信息加载成功');
       } else {
-        this._error('获取用户信息失败:', response.error);
+        this._error('loadUserInfo', '获取用户信息失败:', response.error);
         // 不显示错误，允许继续操作
       }
     } catch (error) {
-      this._error('加载用户信息异常:', error);
+      this._error('loadUserInfo', '加载用户信息异常:', error);
       // 不显示错误，允许继续操作
     }
   }
@@ -661,14 +661,14 @@ class AddProfileController extends BaseController {
    * @private
    */
   async ensureUserRegistered() {
-    this._log('开始确保用户已注册');
+    this._log('ensureUserRegistered', '开始确保用户已注册');
     
     try {
       const result = await userService.createUser();
-      this._log('用户注册结果:', result.success);
+      this._log('ensureUserRegistered', '用户注册结果:', result.success);
       return result.success;
     } catch (error) {
-      this._error('用户注册失败:', error);
+      this._error('ensureUserRegistered', '用户注册失败:', error);
       return false;
     }
   }
@@ -708,7 +708,7 @@ class AddProfileController extends BaseController {
 
     const hasChanges = nameChanged || genderChanged || uncertainTimeChanged || birthDateChanged;
     
-    this._log('数据变化检查:', {
+    this._log('hasDataChanged', '数据变化检查:', {
       nameChanged,
       genderChanged,
       uncertainTimeChanged,
@@ -822,7 +822,7 @@ class AddProfileController extends BaseController {
    * 页面显示时的处理
    */
   onShow() {
-    this._log('页面显示');
+    this._log('onShow', '页面显示');
     super.onShow();
   }
 
@@ -830,7 +830,7 @@ class AddProfileController extends BaseController {
    * 页面隐藏时的处理
    */
   onHide() {
-    this._log('页面隐藏');
+    this._log('onHide', '页面隐藏');
     super.onHide();
   }
 
@@ -838,7 +838,7 @@ class AddProfileController extends BaseController {
    * 页面卸载时的清理
    */
   onUnload() {
-    this._log('页面卸载');
+    this._log('onUnload', '页面卸载');
     super.onUnload();
   }
 }

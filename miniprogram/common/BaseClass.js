@@ -121,68 +121,10 @@ class BaseClass {
     this._logModule = moduleName;
   }
 
-  // ==================== 日志记录方法（集成Logger系统） ====================
-
-  /**
-   * 记录普通日志（映射到info级别）
-   * @param {string} message - 日志消息
-   * @param {any} data - 附加数据
-   */
-  _log(message, data = undefined) {
-    // 不传递 caller 参数，让 Logger 自动获取完整的调用栈信息
-    logger.info(this._logModule, message, data);
-  }
+  // ==================== 日志记录方法 ====================
 
   /**
    * 记录信息日志
-   * @param {string} message - 日志消息
-   * @param {any} data - 附加数据
-   */
-  _info(message, data = undefined) {
-    logger.info(this._logModule, message, data);
-  }
-
-  /**
-   * 记录警告日志
-   * @param {string} message - 警告消息
-   * @param {any} data - 附加数据
-   */
-  _warn(message, data = undefined) {
-    logger.warn(this._logModule, message, data);
-  }
-
-  /**
-   * 记录错误日志
-   * @param {string} message - 错误消息
-   * @param {Error|any} error - 错误对象或附加数据
-   * @param {...any} extraData - 额外数据（兼容旧API）
-   */
-  _error(message, error = null, ...extraData) {
-    // 合并错误对象和额外数据
-    let errorData = error;
-    if (extraData.length > 0) {
-      errorData = {
-        error: error,
-        extra: extraData
-      };
-    }
-    
-    logger.error(this._logModule, message, errorData);
-  }
-
-  /**
-   * 记录调试日志（仅在调试模式下输出）
-   * @param {string} message - 调试消息
-   * @param {any} data - 附加数据
-   */
-  _debug(message, data = undefined) {
-    logger.debug(this._logModule, message, data);
-  }
-
-  // ==================== 带方法名的日志记录（推荐使用，性能更好） ====================
-
-  /**
-   * 记录带方法名的信息日志（推荐）
    * 显式传递方法名，避免调用栈解析，性能更好且更稳定
    * 
    * @param {string} methodName - 方法名
@@ -190,43 +132,54 @@ class BaseClass {
    * @param {any} data - 附加数据
    * 
    * @example
-   * this._logMethod('getUserInfo', '开始获取用户信息');
-   * this._logMethod('loadProfile', '档案加载成功', { profileId: 'xxx' });
+   * this._log('getUserInfo', '开始获取用户信息');
+   * this._log('loadProfile', '档案加载成功', { profileId: 'xxx' });
    */
-  _logMethod(methodName, message, data = undefined) {
+  _log(methodName, message, data = undefined) {
     const caller = `${this.className}:${methodName}`;
     logger.info(this._logModule, message, data, caller);
   }
 
   /**
-   * 记录带方法名的警告日志
+   * 记录信息日志（_log 的别名）
+   * @param {string} methodName - 方法名
+   * @param {string} message - 日志消息
+   * @param {any} data - 附加数据
+   */
+  _info(methodName, message, data = undefined) {
+    const caller = `${this.className}:${methodName}`;
+    logger.info(this._logModule, message, data, caller);
+  }
+
+  /**
+   * 记录警告日志
    * @param {string} methodName - 方法名
    * @param {string} message - 警告消息
    * @param {any} data - 附加数据
    */
-  _warnMethod(methodName, message, data = undefined) {
+  _warn(methodName, message, data = undefined) {
     const caller = `${this.className}:${methodName}`;
     logger.warn(this._logModule, message, data, caller);
   }
 
   /**
-   * 记录带方法名的错误日志
+   * 记录错误日志
    * @param {string} methodName - 方法名
    * @param {string} message - 错误消息
    * @param {any} data - 附加数据
    */
-  _errorMethod(methodName, message, data = undefined) {
+  _error(methodName, message, data = undefined) {
     const caller = `${this.className}:${methodName}`;
     logger.error(this._logModule, message, data, caller);
   }
 
   /**
-   * 记录带方法名的调试日志
+   * 记录调试日志
    * @param {string} methodName - 方法名
    * @param {string} message - 调试消息
    * @param {any} data - 附加数据
    */
-  _debugMethod(methodName, message, data = undefined) {
+  _debug(methodName, message, data = undefined) {
     const caller = `${this.className}:${methodName}`;
     logger.debug(this._logModule, message, data, caller);
   }

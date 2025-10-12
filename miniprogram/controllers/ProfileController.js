@@ -60,7 +60,7 @@ class ProfileController extends BaseController {
    * 加载用户信息和档案列表
    */
   async initialize() {
-    this._log('开始初始化页面');
+    this._log('initialize', '开始初始化页面');
     
     try {
       // 并行加载用户信息和档案列表
@@ -69,9 +69,9 @@ class ProfileController extends BaseController {
         this.loadProfiles()
       ]);
       
-      this._log('页面初始化完成');
+      this._log('initialize', '页面初始化完成');
     } catch (error) {
-      this._error('页面初始化失败', error);
+      this._error('initialize', '页面初始化失败', error);
       this._handleError(error, '页面初始化');
     }
   }
@@ -81,7 +81,7 @@ class ProfileController extends BaseController {
    * @returns {Promise<void>}
    */
   async loadUserInfo() {
-    this._log('开始加载用户信息');
+    this._log('loadUserInfo', '开始加载用户信息');
     
     try {
       const response = await userService.getUserInfo();
@@ -98,17 +98,17 @@ class ProfileController extends BaseController {
           canCreateMore: this.userInfo.canCreateMore()
         });
         
-        this._log('用户信息加载成功', {
+        this._log('loadUserInfo', '用户信息加载成功', {
           userType: this.userInfo.userType,
           profileQuota: this.userInfo.profileQuota,
           usedProfiles: this.userInfo.usedProfiles
         });
       } else {
-        this._error('获取用户信息失败', null, response.error);
+        this._error('loadUserInfo', '获取用户信息失败', null, response.error);
         this._showError('获取用户信息失败：' + (response.error || '未知错误'));
       }
     } catch (error) {
-      this._error('加载用户信息异常', error);
+      this._error('loadUserInfo', '加载用户信息异常', error);
       this._handleError(error, '加载用户信息');
     }
   }
@@ -122,11 +122,11 @@ class ProfileController extends BaseController {
    */
   async loadProfiles(page = 1, limit = 20, isRefresh = false) {
     if (this.isLoading) {
-      this._log('正在加载中，跳过重复请求');
+      this._log('loadProfiles', '正在加载中，跳过重复请求');
       return;
     }
     
-    this._log('开始加载档案列表', { page, limit });
+    this._log('loadProfiles', '开始加载档案列表', { page, limit });
     
     this.isLoading = true;
     this._setLoading(true, '加载中...');
@@ -163,13 +163,13 @@ class ProfileController extends BaseController {
         // 处理档案选中逻辑
         this._handleProfileSelection();
         
-        this._log('档案列表加载成功', { count: this.profileList.length });
+        this._log('loadProfiles', '档案列表加载成功', { count: this.profileList.length });
       } else {
-        this._error('获取档案列表失败', null, response.error);
+        this._error('loadProfiles', '获取档案列表失败', null, response.error);
         this._showError('获取档案列表失败：' + (response.error || '未知错误'));
       }
     } catch (error) {
-      this._error('加载档案列表异常', error);
+      this._error('loadProfiles', '加载档案列表异常', error);
       this._handleError(error, '加载档案列表');
     } finally {
       this.isLoading = false;
@@ -182,7 +182,7 @@ class ProfileController extends BaseController {
    * @returns {Promise<void>}
    */
   async refreshProfiles() {
-    this._log('开始刷新档案列表');
+    this._log('refreshProfiles', '开始刷新档案列表');
     
     try {
       await this.loadProfiles(1, this.pageSize, true);
@@ -191,7 +191,7 @@ class ProfileController extends BaseController {
       wx.stopPullDownRefresh();
       this._showSuccess('刷新成功');
     } catch (error) {
-      this._error('刷新档案列表失败', error);
+      this._error('refreshProfiles', '刷新档案列表失败', error);
       wx.stopPullDownRefresh();
       this._showError('刷新失败');
     }
@@ -203,16 +203,16 @@ class ProfileController extends BaseController {
    */
   async loadMoreProfiles() {
     if (!this.hasMore || this.isLoading) {
-      this._log('没有更多数据或正在加载中');
+      this._log('loadMoreProfiles', '没有更多数据或正在加载中');
       return;
     }
     
-    this._log('开始加载更多档案', { page: this.currentPage + 1 });
+    this._log('loadMoreProfiles', '开始加载更多档案', { page: this.currentPage + 1 });
     
     try {
       await this.loadProfiles(this.currentPage + 1, this.pageSize, false);
     } catch (error) {
-      this._error('加载更多档案失败', error);
+      this._error('loadMoreProfiles', '加载更多档案失败', error);
       this._showError('加载更多失败');
     }
   }
@@ -223,14 +223,14 @@ class ProfileController extends BaseController {
    * @returns {Promise<void>}
    */
   async selectProfile(profileId) {
-    this._log('选择档案', { profileId });
+    this._log('selectProfile', '选择档案', { profileId });
     
     try {
       // 从ProfileManager获取档案
       const selectedProfile = profileManager.getProfileById(profileId);
       
       if (!selectedProfile) {
-        this._error('未找到档案数据', null, profileId);
+        this._error('selectProfile', '未找到档案数据', null, profileId);
         this._showError('档案数据异常');
         return;
       }
@@ -242,7 +242,7 @@ class ProfileController extends BaseController {
       // 更新页面状态
       this._setData({ currentProfileId: profileId });
       
-      this._log('档案选择成功', { name: selectedProfile.profileName });
+      this._log('selectProfile', '档案选择成功', { name: selectedProfile.profileName });
       
       // 触发档案选中事件
       eventBus.emit(PROFILE_EVENTS.PROFILE_SELECTED, {
@@ -251,7 +251,7 @@ class ProfileController extends BaseController {
       });
       
     } catch (error) {
-      this._error('选择档案失败', error);
+      this._error('selectProfile', '选择档案失败', error);
       this._handleError(error, '选择档案');
     }
   }
@@ -262,7 +262,7 @@ class ProfileController extends BaseController {
    * @returns {Promise<void>}
    */
   async deleteProfile(profileId) {
-    this._log('开始删除档案', { profileId });
+    this._log('deleteProfile', '开始删除档案', { profileId });
     
     try {
       // 显示确认对话框
@@ -277,7 +277,7 @@ class ProfileController extends BaseController {
       );
       
       if (!confirmed) {
-        this._log('用户取消删除操作');
+        this._log('deleteProfile', '用户取消删除操作');
         return;
       }
       
@@ -290,7 +290,7 @@ class ProfileController extends BaseController {
       this._hideLoading();
       
       if (response.success) {
-        this._log('档案删除成功', { profileId });
+        this._log('deleteProfile', '档案删除成功', { profileId });
         
         // 从ProfileManager中移除档案
         profileManager.removeProfile(profileId);
@@ -314,11 +314,11 @@ class ProfileController extends BaseController {
         
         this._showSuccess('删除成功');
       } else {
-        this._error('删除档案失败', null, response.error);
+        this._error('deleteProfile', '删除档案失败', response.error);
         this._showError('删除失败：' + (response.error || '未知错误'));
       }
     } catch (error) {
-      this._error('删除档案异常', error);
+      this._error('deleteProfile', '删除档案异常', error);
       this._hideLoading();
       this._handleError(error, '删除档案');
     }
@@ -329,7 +329,7 @@ class ProfileController extends BaseController {
    */
   showQuotaExceededDialog() {
     if (!this.userInfo) {
-      this._warn('用户信息未加载，无法显示配额对话框');
+      this._warn('showQuotaExceededDialog', '用户信息未加载，无法显示配额对话框');
       return;
     }
     
@@ -373,7 +373,7 @@ class ProfileController extends BaseController {
       return;
     }
     
-    this._log('跳转到添加档案页面');
+    this._log('addProfile', '跳转到添加档案页面');
     this._navigateTo('/pages/addProfile/index');
   }
 
@@ -382,14 +382,14 @@ class ProfileController extends BaseController {
    * @param {string} profileId - 档案ID
    */
   editProfile(profileId) {
-    this._log('编辑档案', { profileId });
+    this._log('editProfile', '编辑档案', { profileId });
     
     try {
       // 从ProfileManager获取档案数据
       const profile = profileManager.getProfileById(profileId);
       
       if (!profile) {
-        this._error('未找到要编辑的档案数据', null, profileId);
+        this._error('editProfile', '未找到要编辑的档案数据', null, profileId);
         this._showError('档案数据异常');
         return;
       }
@@ -397,12 +397,12 @@ class ProfileController extends BaseController {
       // 将档案数据存储到本地存储，供编辑页面使用
       wx.setStorageSync('editingProfile', profile.toObject());
       
-      this._log('档案数据已存储，准备跳转到编辑页面');
+      this._log('editProfile', '档案数据已存储，准备跳转到编辑页面');
       
       this._navigateTo('/pages/addProfile/index', { mode: 'edit' });
       
     } catch (error) {
-      this._error('编辑档案失败', error);
+      this._error('editProfile', '编辑档案失败', error);
       this._handleError(error, '编辑档案');
     }
   }
@@ -430,7 +430,7 @@ class ProfileController extends BaseController {
    * @private
    */
   _handleSelectProfileEvent(data) {
-    this._log('收到档案选中事件', data);
+    this._log('_handleSelectProfileEvent', '收到档案选中事件', data);
     
     if (data && data.profileId) {
       this.pendingSelectProfileId = data.profileId;
@@ -443,7 +443,7 @@ class ProfileController extends BaseController {
    * @private
    */
   _handleProfileListRefreshEvent() {
-    this._log('收到档案列表刷新事件');
+    this._log('_handleProfileListRefreshEvent', '收到档案列表刷新事件');
     
     // 从ProfileManager获取最新数据
     this.profileList = profileManager.getProfileList();
@@ -455,7 +455,7 @@ class ProfileController extends BaseController {
    * @private
    */
   _handleProfileManagerReady() {
-    this._log('ProfileManager初始化完成');
+    this._log('_handleProfileManagerReady', 'ProfileManager初始化完成');
     
     // 如果ProfileManager已初始化，直接加载数据
     if (profileManager.isReady()) {
@@ -468,7 +468,7 @@ class ProfileController extends BaseController {
    * @private
    */
   loadDataFromProfileManager() {
-    this._log('从ProfileManager加载档案数据');
+    this._log('loadDataFromProfileManager', '从ProfileManager加载档案数据');
     
     // 从ProfileManager获取档案列表
     this.profileList = profileManager.getProfileList();
@@ -505,7 +505,7 @@ class ProfileController extends BaseController {
     if (this.pendingSelectProfileId) {
       const pendingProfile = this.profileList.find(profile => profile._id === this.pendingSelectProfileId);
       if (pendingProfile) {
-        this._log('选中待选中的档案', { name: pendingProfile.profileName });
+        this._log('_handleProfileSelection', '选中待选中的档案', { name: pendingProfile.profileName });
         profileManager.setCurrentProfile(pendingProfile);
         this.currentProfileId = pendingProfile._id;
         this.pendingSelectProfileId = null;
@@ -530,7 +530,7 @@ class ProfileController extends BaseController {
       this._autoSelectFirstProfile();
     } else {
       // 如果当前选中的档案存在，确保页面数据正确显示高亮状态
-      this._log('当前选中的档案存在，确保高亮状态正确', { currentProfileId: this.currentProfileId });
+      this._log('_handleProfileSelection', '当前选中的档案存在，确保高亮状态正确', { currentProfileId: this.currentProfileId });
       this._setData({ currentProfileId: this.currentProfileId });
     }
   }
@@ -546,7 +546,7 @@ class ProfileController extends BaseController {
     }
 
     const firstProfile = this.profileList[0];
-    this._log('自动选中第一个档案', { id: firstProfile._id, name: firstProfile.profileName });
+    this._log('_autoSelectFirstProfile', '自动选中第一个档案', { id: firstProfile._id, name: firstProfile.profileName });
     
     // 使用ProfileManager设置当前档案
     profileManager.setCurrentProfile(firstProfile);
@@ -561,7 +561,7 @@ class ProfileController extends BaseController {
    * @private
    */
   _clearCurrentSelection() {
-    this._log('清除当前选中状态');
+    this._log('_clearCurrentSelection', '清除当前选中状态');
     
     // 使用ProfileManager清除当前档案
     profileManager.setCurrentProfile(null);
@@ -578,11 +578,11 @@ class ProfileController extends BaseController {
     if (this.profileList.length > 0) {
       // 如果还有其他档案，自动选中第一个
       this._autoSelectFirstProfile();
-      this._log('删除当前选中档案后，自动选中第一个档案');
+      this._log('_handleDeletedCurrentProfile', '删除当前选中档案后，自动选中第一个档案');
     } else {
       // 如果没有档案了，清除选中状态
       this._clearCurrentSelection();
-      this._log('删除最后一个档案，清除选中状态');
+      this._log('_handleDeletedCurrentProfile', '删除最后一个档案，清除选中状态');
     }
   }
 
@@ -592,7 +592,7 @@ class ProfileController extends BaseController {
    */
   _handleUpgradeAction() {
     if (!this.userInfo) {
-      this._warn('用户信息未加载，无法处理升级操作');
+      this._warn('_handleUpgradeAction', '用户信息未加载，无法处理升级操作');
       return;
     }
     
@@ -635,12 +635,12 @@ class ProfileController extends BaseController {
    * 页面显示时的处理
    */
   onShow() {
-    this._log('页面显示');
+    this._log('onShow', '页面显示');
     
     // 使用ProfileManager获取当前档案ID
     const currentProfile = profileManager.getCurrentProfile();
     this.currentProfileId = currentProfile ? currentProfile._id : null;
-    this._log('从ProfileManager获取当前档案ID', { 
+    this._log('onShow', '从ProfileManager获取当前档案ID', { 
       currentProfileId: this.currentProfileId,
       profileName: currentProfile ? currentProfile.profileName : 'null'
     });
@@ -648,10 +648,10 @@ class ProfileController extends BaseController {
     
     // 检查ProfileManager是否已初始化，避免重复请求
     if (profileManager.isReady()) {
-      this._log('ProfileManager已初始化，直接加载数据');
+      this._log('onShow', 'ProfileManager已初始化，直接加载数据');
       this.loadDataFromProfileManager();
     } else {
-      this._log('ProfileManager未初始化，等待初始化完成');
+      this._log('onShow', 'ProfileManager未初始化，等待初始化完成');
     }
   }
 
@@ -659,7 +659,7 @@ class ProfileController extends BaseController {
    * 页面隐藏时的处理
    */
   onHide() {
-    this._log('页面隐藏');
+    this._log('onHide', '页面隐藏');
     super.onHide();
   }
 
@@ -667,7 +667,7 @@ class ProfileController extends BaseController {
    * 页面卸载时的清理
    */
   onUnload() {
-    this._log('页面卸载');
+    this._log('onUnload', '页面卸载');
     
     // 清理事件监听
     eventBus.off(PROFILE_EVENTS.PROFILE_SELECTED, this._handleSelectProfileEvent);
