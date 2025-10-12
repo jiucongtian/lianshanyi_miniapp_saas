@@ -232,6 +232,15 @@ export const config = {
       maxLogsPerDay: 500,            // 每天最多存储日志数
       retentionDays: 30,             // 日志保留天数
     },
+    // 日志格式配置（控制控制台输出的字段）
+    format: {
+      showDate: true,                // 显示日期（年-月-日）
+      showTime: true,                // 显示时间（时:分:秒.毫秒）
+      showLevel: true,               // 显示日志类型（DEBUG/INFO/WARN/ERROR）
+      showModule: true,              // 显示模块名
+      showClass: true,               // 显示类名
+      showMethod: true,              // 显示方法名
+    },
     // 开发模式配置
     development: {
       console: true,                 // 是否输出到控制台
@@ -245,6 +254,28 @@ export const config = {
   }
 };
 ```
+
+### 日志格式配置说明
+
+通过 `format` 配置项可以灵活控制日志输出的字段，提升日志可读性：
+
+**示例输出格式对比：**
+
+```javascript
+// 完整格式（默认）
+format: { showDate: true, showTime: true, showLevel: true, showModule: true, showClass: true, showMethod: true }
+// 输出：[2024-01-15 10:30:45.123] [INFO] [UserService] [UserService:getUserInfo] 获取用户信息成功
+
+// 简洁格式
+format: { showDate: false, showTime: false, showLevel: true, showModule: true, showClass: false, showMethod: true }
+// 输出：[INFO] [UserService] [getUserInfo] 获取用户信息成功
+
+// 极简格式
+format: { showDate: false, showTime: false, showLevel: true, showModule: false, showClass: false, showMethod: false }
+// 输出：[INFO] 获取用户信息成功
+```
+
+**详细配置指南：** 查看 [日志格式配置指南](./日志格式配置指南.md) 了解更多配置场景和示例。
 
 ### 切换开发/生产模式
 

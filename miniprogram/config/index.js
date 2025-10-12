@@ -22,6 +22,15 @@ export const config = {
       maxLogsPerDay: 500,            // 每天最多存储日志数
       retentionDays: 30,             // 日志保留天数
     },
+    // 日志格式配置
+    format: {
+      showDate: true,                // 显示日期（年-月-日）
+      showTime: true,                // 显示时间（时:分:秒.毫秒）
+      showLevel: false,               // 显示日志类型（DEBUG/INFO/WARN/ERROR）
+      showModule: false,              // 显示模块名
+      showClass: false,               // 显示类名
+      showMethod: false,              // 显示方法名
+    },
     // 开发模式配置（debugMode: true）
     development: {
       console: true,                 // 是否输出到控制台

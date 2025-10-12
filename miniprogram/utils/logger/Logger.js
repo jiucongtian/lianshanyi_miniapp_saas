@@ -28,6 +28,16 @@ class Logger {
     // 允许的日志级别
     this.allowedLevels = this.envConfig.levels || ['WARN', 'ERROR'];
     
+    // 日志格式配置
+    this.formatConfig = loggerConfig.format || {
+      showDate: true,
+      showTime: true,
+      showLevel: true,
+      showModule: true,
+      showClass: true,
+      showMethod: true
+    };
+    
     // 敏感字段列表
     this.sensitiveFields = ['password', 'token', 'openid', 'sessionKey', 'phoneNumber'];
     
@@ -122,15 +132,27 @@ class Logger {
     }
 
     try {
-      // 获取调用者信息
-      const callerInfo = caller || this.getCallerInfo();
+      // 获取调用者信息（如果提供了 caller 字符串，需要解析）
+      let callerInfo;
+      if (caller) {
+        // caller 格式为 "ClassName:methodName" 或 "methodName"
+        const parts = caller.split(':');
+        if (parts.length === 2) {
+          callerInfo = { className: parts[0], methodName: parts[1] };
+        } else {
+          callerInfo = { className: '', methodName: parts[0] };
+        }
+      } else {
+        callerInfo = this.getCallerInfo();
+      }
       
       // 构建日志对象
       const logData = {
         timestamp: Date.now(),
         level: LogLevelNames[level],
         module: module,
-        caller: callerInfo,
+        className: callerInfo.className,
+        methodName: callerInfo.methodName,
         message: message,
         data: this.formatData(data)
       };
@@ -169,9 +191,48 @@ class Logger {
    * @private
    */
   printToConsole(level, logData) {
-    const prefix = this.debugMode 
-      ? `[${this.formatTime(logData.timestamp)}] [${logData.level}] [${logData.module}] [${logData.caller}]`
-      : `[${logData.level}] [${logData.module}] [${logData.caller}]`;
+    // 根据配置动态构建前缀
+    const prefixParts = [];
+    
+    // 日期时间
+    if (this.formatConfig.showDate || this.formatConfig.showTime) {
+      const formattedTime = this.formatTime(logData.timestamp);
+      if (this.formatConfig.showDate && this.formatConfig.showTime) {
+        // 显示完整日期时间
+        prefixParts.push(formattedTime);
+      } else if (this.formatConfig.showDate) {
+        // 仅显示日期部分（年-月-日）
+        prefixParts.push(formattedTime.split(' ')[0]);
+      } else if (this.formatConfig.showTime) {
+        // 仅显示时间部分（时:分:秒.毫秒）
+        prefixParts.push(formattedTime.split(' ')[1]);
+      }
+    }
+    
+    // 日志级别
+    if (this.formatConfig.showLevel) {
+      prefixParts.push(logData.level);
+    }
+    
+    // 模块名
+    if (this.formatConfig.showModule) {
+      prefixParts.push(logData.module);
+    }
+    
+    // 类名和方法名
+    const callerParts = [];
+    if (this.formatConfig.showClass && logData.className) {
+      callerParts.push(logData.className);
+    }
+    if (this.formatConfig.showMethod && logData.methodName) {
+      callerParts.push(logData.methodName);
+    }
+    if (callerParts.length > 0) {
+      prefixParts.push(callerParts.join(':'));
+    }
+    
+    // 构建最终前缀
+    const prefix = prefixParts.map(part => `[${part}]`).join(' ');
     
     const message = logData.data !== undefined 
       ? `${logData.message}:`
@@ -234,14 +295,14 @@ class Logger {
   }
 
   /**
-   * 获取调用者信息（类名:方法名）
+   * 获取调用者信息（类名和方法名）
    * @private
-   * @returns {string} 格式：ClassName:methodName
+   * @returns {Object} 格式：{ className: string, methodName: string }
    */
   getCallerInfo() {
     try {
       const stack = new Error().stack;
-      if (!stack) return 'Unknown';
+      if (!stack) return { className: '', methodName: 'Unknown' };
       
       const lines = stack.split('\n');
       
@@ -268,15 +329,16 @@ class Logger {
         }
       }
       
-      return 'Unknown';
+      return { className: '', methodName: 'Unknown' };
     } catch (e) {
-      return 'Unknown';
+      return { className: '', methodName: 'Unknown' };
     }
   }
 
   /**
    * 解析调用栈行，提取类名、方法名（不包含行号）
    * @private
+   * @returns {Object|null} { className: string, methodName: string } 或 null
    */
   parseStackLine(line) {
     try {
@@ -290,21 +352,21 @@ class Logger {
       if (match) {
         const className = match[1];
         const methodName = match[2];
-        return `${className}:${methodName}`;
+        return { className, methodName };
       }
       
       // 匹配模式2: at Object.methodName (file:line:col)
       match = line.match(/at\s+Object\.(\w+)\s+\(/);
       if (match) {
         const methodName = match[1];
-        return `Object:${methodName}`;
+        return { className: 'Object', methodName };
       }
       
       // 匹配模式3: at methodName (file:line:col)
       match = line.match(/at\s+(\w+)\s+\(/);
       if (match) {
         const methodName = match[1];
-        return methodName;
+        return { className: '', methodName };
       }
       
       // 匹配模式4: at file:line:col（提取纯文件名，去掉路径和查询参数）
@@ -317,7 +379,7 @@ class Logger {
         const fileName = filePath.split('/').pop();
         // 去掉扩展名
         const fileNameWithoutExt = fileName.replace(/\.(js|ts|jsx|tsx)$/, '');
-        return fileNameWithoutExt;
+        return { className: '', methodName: fileNameWithoutExt };
       }
       
       return null;
