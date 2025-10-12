@@ -52,6 +52,41 @@
       <text class="empty-text">暂无缓存文件</text>
     </view>
 
+    <!-- 日志信息 -->
+    <view class="section" wx:if="{{logDays > 0}}">
+      <view class="section-header">
+        <text class="section-title">📝 日志记录</text>
+        <text class="section-subtitle">共 {{logDays}} 天</text>
+      </view>
+      <view class="stats-row">
+        <view class="stat-item log-stat">
+          <text class="stat-label">记录天数</text>
+          <text class="stat-value">{{logDays}} 天</text>
+        </view>
+        <view class="stat-item log-stat">
+          <text class="stat-label">日志总数</text>
+          <text class="stat-value">{{logTotalCount}} 条</text>
+        </view>
+      </view>
+      
+      <view class="log-list">
+        <view class="log-item" wx:for="{{logKeys}}" wx:key="key">
+          <view class="log-info">
+            <view class="log-date">{{item.displayDate}}</view>
+            <view class="log-count">{{item.count}} 条日志</view>
+          </view>
+          <view class="log-actions">
+            <view class="log-action-btn" bindtap="onViewLogs" data-key="{{item.key}}" data-count="{{item.count}}">
+              <text class="action-text">查看</text>
+            </view>
+            <view class="log-action-btn delete" bindtap="onClearDateLogs" data-key="{{item.key}}" data-display-date="{{item.displayDate}}">
+              <text class="action-text">删除</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- 本地存储统计 -->
     <view class="section">
       <view class="section-header">
