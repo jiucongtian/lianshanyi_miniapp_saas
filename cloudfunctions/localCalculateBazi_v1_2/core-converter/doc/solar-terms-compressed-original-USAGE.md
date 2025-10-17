@@ -293,7 +293,7 @@ console.log('✅ 已根据最新天文数据更新');
 
 ```bash
 # 在core-converter目录下
-cd cloudfunctions/v1_2_localCalculateBazi/core-converter
+cd cloudfunctions/localCalculateBazi_v1_2/core-converter
 
 # 运行示例
 node usage-example.js

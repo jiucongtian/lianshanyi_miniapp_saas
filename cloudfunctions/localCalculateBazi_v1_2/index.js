@@ -11,7 +11,7 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   
   try {
-    console.log('=== v1_2_localCalculateBazi 云函数开始执行 ===');
+    console.log('=== localCalculateBazi_v1_2 云函数开始执行 ===');
     console.log('接收到的参数:', event);
     
     // 获取参数
@@ -50,7 +50,7 @@ exports.main = async (event, context) => {
       }
     };
   } catch (error) {
-    console.error('v1_2_localCalculateBazi 执行失败:', error);
+    console.error('localCalculateBazi_v1_2 执行失败:', error);
     console.error('错误堆栈:', error.stack);
     return {
       success: false,

@@ -216,7 +216,7 @@ async function calculateBazi(birthDate) {
     
     // 调用本地计算云函数
     const result = await cloud.callFunction({
-      name: 'v1_2_localCalculateBazi',
+      name: 'localCalculateBazi_v1_2',
       data: {
         year,
         month,
