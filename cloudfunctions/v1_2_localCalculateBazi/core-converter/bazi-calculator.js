@@ -323,49 +323,56 @@ function getPreviousMonth(year, month, day) {
  * 戌时 19:00-20:59
  * 亥时 21:00-22:59
  * 
+ * 计算规则：
+ * 天干编号：1(甲) 2(乙) 3(丙) 4(丁) 5(戊) 6(己) 7(庚) 8(辛) 9(壬) 10(癸)
+ * 地支编号：1(子) 2(丑) 3(寅) 4(卯) 5(辰) 6(巳) 7(午) 8(未) 9(申) 10(酉) 11(戌) 12(亥)
+ * 
+ * 公式：日干编号 × 2 + 时支编号 - 2 = 时干编号
+ * 
  * @param {string} dayGanZhi - 日柱干支
  * @param {number} hour - 小时（0-23）
  * @returns {string} 时柱干支
  */
 function calculateHourGanZhi(dayGanZhi, hour) {
+  // 天干地支数组（索引0对应编号1）
   const Gan = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
   const Zhi = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
 
-  // 根据小时确定地支
-  let zhiIndex;
+  // 步骤1：根据小时确定时支编号（1-12）
+  let zhiNumber;
   if (hour >= 23 || hour < 1) {
-    zhiIndex = 0; // 子时
+    zhiNumber = 1; // 子时
   } else {
-    zhiIndex = Math.floor((hour + 1) / 2);
+    // 丑时(1-2点)=2, 寅时(3-4点)=3, ... 亥时(21-22点)=12
+    zhiNumber = Math.floor((hour + 1) / 2) + 1;
   }
 
-  // 根据日干推算时干（日干起时法）
-  // 甲己日：甲子时开始
-  // 乙庚日：丙子时开始
-  // 丙辛日：戊子时开始
-  // 丁壬日：庚子时开始
-  // 戊癸日：壬子时开始
+  // 步骤2：提取日干，获取日干编号（1-10）
   const dayGan = dayGanZhi.charAt(0);
   const dayGanIndex = Gan.indexOf(dayGan);
+  if (dayGanIndex === -1) {
+    throw new Error(`无效的日干：${dayGan}`);
+  }
+  const dayGanNumber = dayGanIndex + 1; // 转换为编号（1-10）
+
+  // 步骤3：使用公式计算时干编号
+  // 公式：日干编号 × 2 + 时支编号 - 2 = 时干编号
+  let hourGanNumber = dayGanNumber * 2 + zhiNumber - 2;
   
-  // 子时的天干起点
-  const hourGanStart = {
-    0: 0,  // 甲
-    5: 0,  // 己
-    1: 2,  // 乙->丙
-    6: 2,  // 庚->丙
-    2: 4,  // 丙->戊
-    7: 4,  // 辛->戊
-    3: 6,  // 丁->庚
-    8: 6,  // 壬->庚
-    4: 8,  // 戊->壬
-    9: 8   // 癸->壬
-  };
+  // 步骤4：处理天干循环（天干只有10个）
+  // 如果结果 > 10，需要对10取模
+  while (hourGanNumber > 10) {
+    hourGanNumber -= 10;
+  }
+  while (hourGanNumber < 1) {
+    hourGanNumber += 10;
+  }
 
-  const ganStart = hourGanStart[dayGanIndex];
-  const ganIndex = (ganStart + zhiIndex * 2) % 10;
+  // 步骤5：转换回数组索引（编号-1）
+  const hourGanIndex = hourGanNumber - 1;
+  const hourZhiIndex = zhiNumber - 1;
 
-  return Gan[ganIndex] + Zhi[zhiIndex];
+  return Gan[hourGanIndex] + Zhi[hourZhiIndex];
 }
 
 /**
