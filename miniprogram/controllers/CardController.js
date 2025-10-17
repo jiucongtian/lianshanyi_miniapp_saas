@@ -382,7 +382,7 @@ class CardController extends BaseController {
       this._log('_loadCurrentProfile', '从ProfileManager找到当前档案:', currentProfile.profileName);
       this.loadProfileData(currentProfile);
     } else {
-      this._log('_loadCurrentProfile', '没有当前档案，显示无数据状态');
+      this._log('_loadCurrentProfile', '没有可用的档案，显示无数据状态');
       this._showNoDataState();
     }
   }

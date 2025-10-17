@@ -479,16 +479,6 @@ class MineController extends BaseController {
     this.onRefresh();
   }
 
-  /**
-   * 分享功能
-   */
-  onShareAppMessage() {
-    return {
-      title: '生命智慧卡牌',
-      path: '/pages/addProfile/index',
-      imageUrl: ''
-    };
-  }
 }
 
 module.exports = { MineController };

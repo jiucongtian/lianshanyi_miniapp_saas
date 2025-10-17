@@ -78,15 +78,6 @@ Page({
     this.controller.onReachBottom();
   },
 
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-    return {
-      title: '我的牌库',
-      path: '/pages/profile/index'
-    };
-  },
 
   // ==================== 事件处理器 ====================
 

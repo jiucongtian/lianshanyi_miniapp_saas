@@ -125,7 +125,7 @@ Page({
     
     return {
       title: '生命智慧卡牌',
-      path: '/pages/addProfile/index',
+      path: '/pages/card/index',
       imageUrl: '', // 可以设置分享图片
     };
   }

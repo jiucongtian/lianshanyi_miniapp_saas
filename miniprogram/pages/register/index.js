@@ -100,13 +100,4 @@ Page({
     this.controller.skipRegister();
   },
 
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-    return {
-      title: '生命智慧卡牌 - 智慧分析',
-      path: '/pages/profile/index'
-    };
-  }
 })

@@ -188,13 +188,4 @@ Page({
 
   },
 
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-    return {
-      title: '连山易用户协议',
-      path: '/pages/agreement/index'
-    };
-  }
 })
