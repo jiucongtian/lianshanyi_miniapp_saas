@@ -28,6 +28,10 @@ class ImageCacheManager {
     this.fs = wx.getFileSystemManager();
     this.cacheDir = `${wx.env.USER_DATA_PATH}/${this.config.cacheDir}`;
     this.cacheMap = this.loadCacheMap();
+    
+    // 防重复下载的Promise缓存 {cloudPath: Promise}
+    this.downloadingPromises = new Map();
+    
     this.initCacheDir();
   }
 
@@ -129,15 +133,34 @@ class ImageCacheManager {
       return cacheInfo.localPath;
     }
 
-    // 2. 缓存不存在，需要下载
+    // 2. 检查是否正在下载中，避免重复下载
+    if (this.downloadingPromises.has(cloudPath)) {
+      log.debug('getImagePath', '图片正在下载中，等待完成', { fileName });
+      try {
+        const localPath = await this.downloadingPromises.get(cloudPath);
+        return localPath;
+      } catch (error) {
+        log.error('getImagePath', '等待下载失败', { fileName, error: error.message });
+        // 等待失败，返回云存储路径
+        return cloudPath;
+      }
+    }
+
+    // 3. 缓存不存在且未在下载，开始下载
     log.info('getImagePath', '下载并缓存图片', { fileName });
+    const downloadPromise = this.downloadAndCache(cloudPath, fileName);
+    this.downloadingPromises.set(cloudPath, downloadPromise);
+    
     try {
-      const localPath = await this.downloadAndCache(cloudPath, fileName);
+      const localPath = await downloadPromise;
       return localPath;
     } catch (error) {
       log.error('getImagePath', '下载图片失败', { fileName, error: error.message });
       // 下载失败，返回云存储路径，让微信自动处理
       return cloudPath;
+    } finally {
+      // 无论成功还是失败，都要清理下载Promise缓存
+      this.downloadingPromises.delete(cloudPath);
     }
   }
 
