@@ -6,8 +6,8 @@
  * @date 2025-10-16
  */
 
-const calendar = require('./core-converter/js-calendar-converter.cjs');
-const solarTerms = require('./core-converter/solar-terms-compressed-original.js');
+const calendar = require('./js-calendar-converter.cjs');
+const solarTerms = require('./solar-terms-compressed-original.js');
 
 /**
  * 计算生辰八字

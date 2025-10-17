@@ -771,5 +771,215 @@ module.exports = {
     }
     
     return results;
+  },
+  
+  /**
+   * 将Date对象转换为从年初开始的总分钟数
+   * @param {Date} date - 日期对象
+   * @returns {number} 从该年1月1日0时0分开始的总分钟数
+   */
+  dateToMinutesFromYearStart(date) {
+    const year = date.getFullYear();
+    const yearStart = new Date(year, 0, 1, 0, 0, 0, 0);
+    const diffMs = date.getTime() - yearStart.getTime();
+    return Math.floor(diffMs / (60 * 1000));
+  },
+  
+  /**
+   * 将分钟数转换为5位十六进制字符串
+   * @param {number} minutes - 分钟数
+   * @returns {string} 5位十六进制字符串
+   */
+  minutesToHex(minutes) {
+    return minutes.toString(16).padStart(5, '0');
+  },
+  
+  /**
+   * 修改指定年份指定节气的时间
+   * @param {number} year - 年份（1583-2135）
+   * @param {number|string} solarTerm - 节气索引（0-23）或节气名称
+   * @param {Date|Object} newTime - 新的时间，可以是Date对象或包含年月日时分的对象
+   *   格式：{ year: 2000, month: 1, day: 6, hour: 9, minute: 1 }
+   * @returns {boolean} 是否修改成功
+   * 
+   * @example
+   * // 使用Date对象
+   * updateSolarTermTime(2000, 0, new Date(2000, 0, 6, 9, 1));
+   * 
+   * // 使用对象
+   * updateSolarTermTime(2000, '立春', { year: 2000, month: 2, day: 4, hour: 20, minute: 32 });
+   */
+  updateSolarTermTime(year, solarTerm, newTime) {
+    // 验证年份
+    if (year < 1583 || year > 2135) {
+      console.error(`年份超出范围: ${year}，支持范围: 1583-2135`);
+      return false;
+    }
+    
+    // 获取节气索引
+    let solarTermIndex;
+    if (typeof solarTerm === 'number') {
+      solarTermIndex = solarTerm;
+    } else if (typeof solarTerm === 'string') {
+      const names = [
+        '小寒', '大寒', '立春', '雨水', '惊蛰', '春分',
+        '清明', '谷雨', '立夏', '小满', '芒种', '夏至',
+        '小暑', '大暑', '立秋', '处暑', '白露', '秋分',
+        '寒露', '霜降', '立冬', '小雪', '大雪', '冬至'
+      ];
+      solarTermIndex = names.indexOf(solarTerm);
+      if (solarTermIndex === -1) {
+        console.error(`无效的节气名称: ${solarTerm}`);
+        return false;
+      }
+    } else {
+      console.error(`无效的节气参数类型: ${typeof solarTerm}`);
+      return false;
+    }
+    
+    // 验证节气索引
+    if (solarTermIndex < 0 || solarTermIndex > 23) {
+      console.error(`节气索引超出范围: ${solarTermIndex}，有效范围: 0-23`);
+      return false;
+    }
+    
+    // 转换新时间为Date对象
+    let newDate;
+    if (newTime instanceof Date) {
+      newDate = newTime;
+    } else if (typeof newTime === 'object' && newTime.year && newTime.month && newTime.day) {
+      newDate = new Date(
+        newTime.year,
+        newTime.month - 1, // JavaScript月份从0开始
+        newTime.day,
+        newTime.hour || 0,
+        newTime.minute || 0,
+        0,
+        0
+      );
+    } else {
+      console.error('无效的时间参数，需要Date对象或包含year/month/day的对象');
+      return false;
+    }
+    
+    // 验证时间是否在指定年份
+    if (newDate.getFullYear() !== year) {
+      console.error(`时间年份(${newDate.getFullYear()})与指定年份(${year})不匹配`);
+      return false;
+    }
+    
+    // 计算新的分钟数
+    const newMinutes = this.dateToMinutesFromYearStart(newDate);
+    const newHex = this.minutesToHex(newMinutes);
+    
+    // 获取当前年份数据
+    const yearIndex = year - 1583;
+    const oldYearData = solarTermsData[yearIndex];
+    
+    // 替换对应位置的数据
+    const start = solarTermIndex * 5;
+    const newYearData = oldYearData.substring(0, start) + newHex + oldYearData.substring(start + 5);
+    
+    // 更新数组
+    solarTermsData[yearIndex] = newYearData;
+    
+    console.log(`[updateSolarTermTime] 成功更新 ${year}年${this.getSolarTermName(solarTermIndex)}: ${this.getSolarTermTimeString(year, solarTermIndex)}`);
+    return true;
+  },
+  
+  /**
+   * 从原始数据重新生成所有压缩数据
+   * @param {string} originalData - 原始节气数据字符串（从 original_24jieqi.md 读取的内容）
+   * @returns {Array<string>} 新的压缩数据数组
+   * 
+   * @example
+   * const fs = require('fs');
+   * const originalData = fs.readFileSync('original_24jieqi.md', 'utf-8');
+   * const newCompressedData = regenerateFromOriginalData(originalData);
+   */
+  regenerateFromOriginalData(originalData) {
+    const lines = originalData.trim().split('\n');
+    
+    // 第一行是表头，跳过
+    const dataLines = lines.slice(1);
+    
+    const newCompressedData = [];
+    
+    for (let i = 0; i < dataLines.length; i++) {
+      const line = dataLines[i].trim();
+      if (!line) continue;
+      
+      const parts = line.split('\t');
+      if (parts.length !== 24) {
+        console.error(`第${i + 2}行数据格式错误，应有24个节气，实际有${parts.length}个`);
+        continue;
+      }
+      
+      let yearCompressed = '';
+      
+      // 解析每个节气时间
+      for (let j = 0; j < 24; j++) {
+        const timeStr = parts[j]; // 格式: 1583/01/06T02:57
+        const match = timeStr.match(/(\d{4})\/(\d{2})\/(\d{2})T(\d{2}):(\d{2})/);
+        
+        if (!match) {
+          console.error(`第${i + 2}行第${j + 1}个节气时间格式错误: ${timeStr}`);
+          yearCompressed += '00000';
+          continue;
+        }
+        
+        const [, year, month, day, hour, minute] = match;
+        const date = new Date(
+          parseInt(year),
+          parseInt(month) - 1,
+          parseInt(day),
+          parseInt(hour),
+          parseInt(minute),
+          0,
+          0
+        );
+        
+        const minutes = this.dateToMinutesFromYearStart(date);
+        const hex = this.minutesToHex(minutes);
+        yearCompressed += hex;
+      }
+      
+      newCompressedData.push(yearCompressed);
+    }
+    
+    return newCompressedData;
+  },
+  
+  /**
+   * 导出当前压缩数据为JavaScript代码
+   * @returns {string} 完整的JavaScript代码字符串
+   */
+  exportToJavaScript() {
+    let code = `/**
+ * 节气日期压缩表
+ * 数据格式：每5位十六进制数表示一个节气的时间（从年初开始的总分钟数）
+ * 年份范围：${this.startYear}-${this.endYear}年（共${solarTermsData.length}年）
+ * 节气顺序：小寒、大寒、立春、雨水、惊蛰、春分、清明、谷雨、立夏、小满、芒种、夏至、小暑、大暑、立秋、处暑、白露、秋分、寒露、霜降、立冬、小雪、大雪、冬至
+ * 
+ * 数据格式说明：
+ * - 每行代表一年的24个节气数据
+ * - 每5位十六进制数表示一个节气
+ * - 数值含义：从当年1月1日0时0分开始计算的总分钟数
+ * - 例如：01cd1 表示 1月1日0时0分 + 7377分钟 = 1月6日2时57分
+ * - 数据按年份顺序排列，从${this.startYear}年开始
+ * 
+ * @author 自动生成于 ${new Date().toISOString()}
+ */
+
+const solarTermsData = [\n`;
+    
+    for (let i = 0; i < solarTermsData.length; i++) {
+      const year = this.startYear + i;
+      code += `  '${solarTermsData[i]}', // ${year}年\n`;
+    }
+    
+    code += `];\n\nmodule.exports = { solarTermsData };`;
+    
+    return code;
   }
 };
