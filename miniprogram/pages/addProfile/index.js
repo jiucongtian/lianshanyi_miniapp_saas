@@ -35,6 +35,7 @@ Page({
     isFormValid: false, // 表单是否有效
     
     // 时间选择相关
+    calendarType: 'solar', // 日历类型：solar=公历，lunar=农历，默认公历
     dateTimeValue: null, // 初始为空，让用户自己选择
     formatedDateTime: '', // 格式化后的时间显示
     showPicker: false,
@@ -91,6 +92,21 @@ Page({
   onGenderSelect(e) {
     const gender = parseInt(e.currentTarget.dataset.gender);
     this.controller.onGenderSelect(gender);
+  },
+
+  onCalendarTypeSelect(e) {
+    const type = e.currentTarget.dataset.type;
+    log.debug('onCalendarTypeSelect', '选择日历类型', { type });
+    
+    // 只更新日历类型，不清空时间数据
+    this.setData({
+      calendarType: type
+    });
+    
+    // 通知Controller处理日历类型切换
+    if (this.controller) {
+      this.controller.onCalendarTypeChange(type);
+    }
   },
 
   async onSubmit(e) {

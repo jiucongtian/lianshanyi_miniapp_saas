@@ -68,11 +68,37 @@
         <text class="tip-text">不记得具体的时辰信息了</text>
       </view>
       
-      
+      <!-- 日历类型选择器 -->
       <view class="input-group">
-        <view class="input-wrapper" bindtap="onInputTap">
+        <view class="input-label">日历类型</view>
+        <view class="calendar-type-selector">
+          <view 
+            class="type-option {{calendarType === 'solar' ? 'active' : ''}}"
+            bindtap="onCalendarTypeSelect"
+            data-type="solar"
+          >
+            <t-icon name="calendar" size="16" color="{{calendarType === 'solar' ? '#fff' : '#666'}}" />
+            <text class="type-text">公历</text>
+          </view>
+          <view 
+            class="type-option {{calendarType === 'lunar' ? 'active' : ''}}"
+            bindtap="onCalendarTypeSelect"
+            data-type="lunar"
+          >
+            <t-icon name="calendar" size="16" color="{{calendarType === 'lunar' ? '#fff' : '#666'}}" />
+            <text class="type-text">农历</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 时间输入框 -->
+      <view class="input-group">
+        <view class="input-label">
+          {{calendarType === 'solar' ? '公历时间' : '农历时间'}}
+        </view>
+        <view class="input-wrapper {{calendarType === 'lunar' ? 'lunar-input-wrapper' : ''}}" bindtap="onInputTap">
           <view class="time-display {{formatedDateTime ? 'has-value' : ''}}">
-            {{formatedDateTime || '请选择年月日时'}}
+            {{formatedDateTime || (calendarType === 'solar' ? '请选择年月日时' : '请选择农历年月日时')}}
           </view>
           <t-icon name="chevron-right" size="16" color="#999" />
         </view>

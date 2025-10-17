@@ -470,6 +470,90 @@ class AddProfileController extends BaseController {
   }
 
   /**
+   * 处理日历类型切换
+   * @param {string} calendarType - 日历类型：solar=公历，lunar=农历
+   */
+  onCalendarTypeChange(calendarType) {
+    this._log('onCalendarTypeChange', '切换日历类型:', calendarType);
+    
+    // 只更新日历类型，保留已选择的时间数据
+    this._setData({
+      calendarType: calendarType
+    });
+    
+    // 如果有已选择的时间，需要根据新的日历类型重新格式化显示
+    if (this.birthDate && this.formatedDateTime) {
+      this._updateTimeDisplayForCalendarType(calendarType);
+    }
+    
+    // 重新验证表单
+    this.validateForm();
+  }
+
+  /**
+   * 根据日历类型更新时间显示
+   * @param {string} calendarType - 日历类型：solar=公历，lunar=农历
+   * @private
+   */
+  _updateTimeDisplayForCalendarType(calendarType) {
+    if (!this.birthDate) return;
+    
+    const { year, month, day, hour, minute } = this.birthDate;
+    
+    if (calendarType === 'solar') {
+      // 公历显示：直接使用原始数据
+      const timeIndex = this._calculateTimeIndex(hour);
+      const timeName = this.page.data.timeMap[timeIndex];
+      const formatedDateTime = `${year}年${month}月${day}日 ${timeName}`;
+      
+      this._setData({
+        formatedDateTime: formatedDateTime
+      });
+    } else if (calendarType === 'lunar') {
+      // 农历显示：这里暂时显示占位文本，后续可以集成农历转换
+      const formatedDateTime = `农历 ${year}年${month}月${day}日 ${this._getTimeNameByHour(hour)}`;
+      
+      this._setData({
+        formatedDateTime: formatedDateTime
+      });
+    }
+  }
+
+  /**
+   * 根据小时获取时辰名称
+   * @param {number} hour - 小时
+   * @returns {string} 时辰名称
+   * @private
+   */
+  _getTimeNameByHour(hour) {
+    const timeMapObjects = [
+      { name: '子时', start: 23, end: 1 },
+      { name: '丑时', start: 1, end: 3 },
+      { name: '寅时', start: 3, end: 5 },
+      { name: '卯时', start: 5, end: 7 },
+      { name: '辰时', start: 7, end: 9 },
+      { name: '巳时', start: 9, end: 11 },
+      { name: '午时', start: 11, end: 13 },
+      { name: '未时', start: 13, end: 15 },
+      { name: '申时', start: 15, end: 17 },
+      { name: '酉时', start: 17, end: 19 },
+      { name: '戌时', start: 19, end: 21 },
+      { name: '亥时', start: 21, end: 23 }
+    ];
+    
+    for (const time of timeMapObjects) {
+      if (time.name === '子时') {
+        if (hour >= 23 || hour < 1) {
+          return time.name;
+        }
+      } else if (hour >= time.start && hour < time.end) {
+        return time.name;
+      }
+    }
+    return '子时';
+  }
+
+  /**
    * 处理表单提交
    * @returns {Promise<boolean>} 是否提交成功
    */

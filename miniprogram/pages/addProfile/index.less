@@ -229,6 +229,45 @@ page {
         }
       }
       
+      // 日历类型选择器样式
+      .calendar-type-selector {
+        display: flex;
+        gap: 16rpx;
+        
+        .type-option {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20rpx 16rpx;
+          background: #f8f9fa;
+          border-radius: 16rpx;
+          border: 2rpx solid transparent;
+          transition: all 0.3s ease;
+          
+          &.active {
+            background: #0052d9;
+            border-color: #0052d9;
+            transform: scale(0.98);
+          }
+          
+          &:active {
+            transform: scale(0.95);
+          }
+          
+          .type-text {
+            font-size: 28rpx;
+            color: #666;
+            margin-left: 8rpx;
+            font-weight: 500;
+          }
+          
+          &.active .type-text {
+            color: #fff;
+          }
+        }
+      }
+      
       .input-wrapper {
         display: flex;
         align-items: center;
@@ -252,6 +291,26 @@ page {
           
           &.has-value {
             color: #333;
+            font-weight: 500;
+          }
+        }
+      }
+      
+      // 农历时间输入框样式
+      .lunar-input-wrapper {
+        background: #f0f8ff;
+        border: 2rpx solid #e6f3ff;
+        
+        &:active {
+          background: #e6f3ff;
+          border-color: #b3d9ff;
+        }
+        
+        .time-display {
+          color: #666;
+          
+          &.has-value {
+            color: #1890ff;
             font-weight: 500;
           }
         }
