@@ -138,7 +138,7 @@
       <!-- 时辰列 -->
       <picker-view-column>
         <view wx:for="{{timeMap}}" wx:key="index" class="picker-item">
-          {{item.name}}
+          {{item}}
         </view>
       </picker-view-column>
     </picker-view>

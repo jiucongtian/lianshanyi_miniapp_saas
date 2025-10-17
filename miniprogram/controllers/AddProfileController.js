@@ -523,8 +523,8 @@ class AddProfileController extends BaseController {
     const monthRange = Array.from({length: 12}, (_, i) => i + 1);
     const dayRange = Array.from({length: 31}, (_, i) => i + 1);
     
-    // 时辰对照表
-    const timeMap = [
+    // 时辰对照表（对象数组，用于内部计算）
+    const timeMapObjects = [
       { name: '子时(23-01)', range: '23:00-01:00（次日）', start: 23, end: 1 },
       { name: '丑时(01-03)', range: '01:00-03:00', start: 1, end: 3 },
       { name: '寅时(03-05)', range: '03:00-05:00', start: 3, end: 5 },
@@ -539,10 +539,13 @@ class AddProfileController extends BaseController {
       { name: '亥时(21-23)', range: '21:00-23:00', start: 21, end: 23 }
     ];
     
+    // 时辰显示名称数组（用于WXML显示）
+    const timeMap = timeMapObjects.map(item => item.name);
+    
     // 设置默认时间（当前时间）
     const now = new Date();
-    const timeIndex = this._calculateTimeIndex(now.getHours(), timeMap);
-    const timeInfo = timeMap[timeIndex];
+    const timeIndex = this._calculateTimeIndex(now.getHours(), timeMapObjects);
+    const timeInfo = timeMapObjects[timeIndex];
     const formatedDateTime = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${timeInfo.name}`;
     
     this.birthDate = {
@@ -603,8 +606,8 @@ class AddProfileController extends BaseController {
         
         if (this.birthDate) {
           const timeIndex = this._calculateTimeIndex(this.birthDate.hour);
-          const timeInfo = this.page.data.timeMap[timeIndex];
-          this.formatedDateTime = `${this.birthDate.year}年${this.birthDate.month}月${this.birthDate.day}日 ${timeInfo.name}`;
+          const timeName = this.page.data.timeMap[timeIndex];
+          this.formatedDateTime = `${this.birthDate.year}年${this.birthDate.month}月${this.birthDate.day}日 ${timeName}`;
         }
         
         // 更新页面数据
@@ -793,18 +796,31 @@ class AddProfileController extends BaseController {
   /**
    * 根据小时计算对应的时辰索引
    * @param {number} hour - 小时
-   * @param {Array} timeMap - 时辰对照表
+   * @param {Array} timeMapObjects - 时辰对象数组（可选）
    * @returns {number} 时辰索引
    * @private
    */
-  _calculateTimeIndex(hour, timeMap = null) {
-    // 如果没有传入timeMap，尝试从页面数据获取
-    if (!timeMap) {
-      timeMap = this.page.data.timeMap;
+  _calculateTimeIndex(hour, timeMapObjects = null) {
+    // 如果没有传入timeMapObjects，使用默认的时辰对照表
+    if (!timeMapObjects) {
+      timeMapObjects = [
+        { name: '子时(23-01)', start: 23, end: 1 },
+        { name: '丑时(01-03)', start: 1, end: 3 },
+        { name: '寅时(03-05)', start: 3, end: 5 },
+        { name: '卯时(05-07)', start: 5, end: 7 },
+        { name: '辰时(07-09)', start: 7, end: 9 },
+        { name: '巳时(09-11)', start: 9, end: 11 },
+        { name: '午时(11-13)', start: 11, end: 13 },
+        { name: '未时(13-15)', start: 13, end: 15 },
+        { name: '申时(15-17)', start: 15, end: 17 },
+        { name: '酉时(17-19)', start: 17, end: 19 },
+        { name: '戌时(19-21)', start: 19, end: 21 },
+        { name: '亥时(21-23)', start: 21, end: 23 }
+      ];
     }
     
-    for (let i = 0; i < timeMap.length; i++) {
-      const time = timeMap[i];
+    for (let i = 0; i < timeMapObjects.length; i++) {
+      const time = timeMapObjects[i];
       if (time.name.includes('子时')) {
         if (hour >= 23 || hour < 1) {
           return i;

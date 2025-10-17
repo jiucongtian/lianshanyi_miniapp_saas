@@ -3,6 +3,22 @@ const { AddProfileController } = require('../../controllers/AddProfileController
 const { createModuleLogger } = require('../../utils/logger/index');
 const log = createModuleLogger('AddProfilePage');
 
+// 时辰枚举常量 - 统一管理
+const TIME_PERIODS = {
+  ZI: { name: '子时(23-01)', hour: 0, minute: 1 },
+  CHOU: { name: '丑时(01-03)', hour: 2, minute: 1 },
+  YIN: { name: '寅时(03-05)', hour: 4, minute: 1 },
+  MAO: { name: '卯时(05-07)', hour: 6, minute: 1 },
+  CHEN: { name: '辰时(07-09)', hour: 8, minute: 1 },
+  SI: { name: '巳时(09-11)', hour: 10, minute: 1 },
+  WU: { name: '午时(11-13)', hour: 12, minute: 1 },
+  WEI: { name: '未时(13-15)', hour: 14, minute: 1 },
+  SHEN: { name: '申时(15-17)', hour: 16, minute: 1 },
+  YOU: { name: '酉时(17-19)', hour: 18, minute: 1 },
+  XU: { name: '戌时(19-21)', hour: 20, minute: 1 },
+  HAI: { name: '亥时(21-23)', hour: 22, minute: 1 }
+};
+
 Page({
   data: {
     // 页面模式：create=创建，edit=编辑
@@ -27,26 +43,17 @@ Page({
     monthRange: Array.from({length: 12}, (_, i) => i + 1), // 月份范围 1-12
     dayRange: Array.from({length: 31}, (_, i) => i + 1), // 日期范围 1-31
     isUncertainTime: false, // 是否不确定时辰信息
-    // 时辰对照表
-    timeMap: [
-      { name: '子时(23-01)', range: '23:00-01:00（次日）', start: 23, end: 1 },
-      { name: '丑时(01-03)', range: '01:00-03:00', start: 1, end: 3 },
-      { name: '寅时(03-05)', range: '03:00-05:00', start: 3, end: 5 },
-      { name: '卯时(05-07)', range: '05:00-07:00', start: 5, end: 7 },
-      { name: '辰时(07-09)', range: '07:00-09:00', start: 7, end: 9 },
-      { name: '巳时(09-11)', range: '09:00-11:00', start: 9, end: 11 },
-      { name: '午时(11-13)', range: '11:00-13:00', start: 11, end: 13 },
-      { name: '未时(13-15)', range: '13:00-15:00', start: 13, end: 15 },
-      { name: '申时(15-17)', range: '15:00-17:00', start: 15, end: 17 },
-      { name: '酉时(17-19)', range: '17:00-19:00', start: 17, end: 19 },
-      { name: '戌时(19-21)', range: '19:00-21:00', start: 19, end: 21 },
-      { name: '亥时(21-23)', range: '21:00-23:00', start: 21, end: 23 }
-    ],
   },
 
   // 页面生命周期
   onLoad(options) {
     log.info('onLoad', '页面加载', { options });
+    
+    // 初始化时辰显示列表
+    this.setData({
+      timeMap: this.getTimeMapStatic()
+    });
+    
     this.controller = new AddProfileController(this);
     this.controller.initialize(options);
   },
@@ -95,17 +102,19 @@ Page({
 
   // 时间选择器相关方法
   calculateTimeIndex(hour) {
-    for (let i = 0; i < this.data.timeMap.length; i++) {
-      const time = this.data.timeMap[i];
-      if (time.name.includes('子时')) {
-        if (hour >= 23 || hour < 1) {
-          return i;
-        }
-      } else if (hour >= time.start && hour < time.end) {
+    // 根据小时数直接映射到对应的时辰索引
+    const timePeriods = Object.values(TIME_PERIODS);
+    for (let i = 0; i < timePeriods.length; i++) {
+      if (timePeriods[i].hour === hour) {
         return i;
       }
     }
     return 0; // 默认返回子时
+  },
+
+  // 获取时辰显示名称列表
+  getTimeMapStatic() {
+    return Object.values(TIME_PERIODS).map(period => period.name);
   },
 
   calculatePickerValue(year, month, day, timeIndex) {
@@ -178,13 +187,14 @@ Page({
   },
 
   onPickerConfirm() {
-    const { pickerValue, yearRange, monthRange, dayRange, timeMap } = this.data;
+    const { pickerValue, yearRange, monthRange, dayRange } = this.data;
     const [yearIndex, monthIndex, dayIndex, timeIndex] = pickerValue;
     
     const year = yearRange[yearIndex];
     const month = monthRange[monthIndex];
     const day = dayRange[dayIndex];
-    const timeInfo = timeMap[timeIndex];
+    const timePeriods = Object.values(TIME_PERIODS);
+    const timeInfo = timePeriods[timeIndex];
     
     if (!this.validateDate(year, month, day)) {
       Message.error({
@@ -201,8 +211,8 @@ Page({
       year,
       month,
       day,
-      hour: timeInfo.start,
-      minute: 0
+      hour: timeInfo.hour,
+      minute: timeInfo.minute
     };
     
     // 通知Controller处理时间确认
@@ -211,8 +221,8 @@ Page({
         year,
         month,
         day,
-        hour: timeInfo.start,
-        minute: 0,
+        hour: timeInfo.hour,
+        minute: timeInfo.minute,
         formatedTime,
         timeIndex
       });
