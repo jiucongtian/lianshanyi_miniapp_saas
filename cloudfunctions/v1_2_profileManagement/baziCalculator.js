@@ -1,5 +1,5 @@
-// 八字计算模块
-const axios = require('axios')
+// 八字计算模块 - 调用本地计算云函数
+const cloud = require('wx-server-sdk');
 
 /**
  * 计算干支索引（简化版，实际应该使用完整的干支对照表）
@@ -134,85 +134,60 @@ function parseBaziData(cozeResponse) {
 }
 
 /**
- * 调用Coze工作流
- * @param {Object} parameters - 工作流参数
- * @returns {Promise} 返回工作流执行结果
+ * 将本地计算结果转换为标准化的八字数据结构
+ * @param {Object} localResult - 本地计算结果
+ * @returns {Object} 标准化的八字数据结构
  */
-async function callCozeAPI(parameters) {
-  // 硬编码配置（仅个人使用，无泄漏风险）
-  const COZE_CONFIG = {
-    token: 'sat_JBr8tgHf8a8IkpwoFMpNWiioLFdqdAWj9O8HVRZ7DFmYqQf2wKzf92vRqKjQQMdv',
-    baseURL: 'https://api.coze.cn',
-    workflowId: '7544388114807095337'
-  };
-
-  // 验证配置
-  if (!COZE_CONFIG.token) {
-    throw new Error('Coze配置错误：缺少token');
-  }
-  
-  if (!COZE_CONFIG.workflowId) {
-    throw new Error('Coze配置错误：缺少workflowId');
-  }
-
+function convertLocalResultToStandardFormat(localResult) {
   try {
-    const response = await axios({
-      url: `${COZE_CONFIG.baseURL}/v1/workflow/run`,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${COZE_CONFIG.token}`
-      },
-      data: {
-        workflow_id: COZE_CONFIG.workflowId,
-        parameters: parameters
-      },
-      timeout: 25000 // 25秒超时，给云函数留出处理时间
-    });
-
-    console.log('=== Coze API 完整响应 ===');
-    console.log('响应状态:', response.status);
-    console.log('响应头:', response.headers);
-    console.log('响应数据完整结构:', JSON.stringify(response.data, null, 2));
-    console.log('响应数据类型:', typeof response.data);
+    console.log('=== 开始转换本地计算结果 ===');
+    console.log('本地计算结果:', localResult);
     
-    // 检查Coze API是否返回了错误
-    if (response.data.code !== 0) {
-      console.error('Coze API 返回错误:', response.data);
-      
-      // 根据错误码提供更友好的错误信息
-      let friendlyMessage = response.data.msg || '未知错误';
-      
-      if (response.data.code === 4028) {
-        friendlyMessage = '免费配额已用完，请升级到付费计划或稍后再试';
-      } else if (response.data.code === 401) {
-        friendlyMessage = 'API认证失败，请检查token配置';
-      } else if (response.data.code === 429) {
-        friendlyMessage = '请求过于频繁，请稍后再试';
+    if (!localResult.bazi) {
+      throw new Error('本地计算结果缺少bazi字段');
+    }
+    
+    const { bazi } = localResult;
+    
+    // 验证必需字段
+    const requiredFields = ['year', 'month', 'day', 'hour'];
+    for (const field of requiredFields) {
+      if (!bazi[field] || typeof bazi[field] !== 'string' || bazi[field].length !== 2) {
+        throw new Error(`bazi.${field}字段格式错误，期望2个字符的干支字符串`);
       }
-      
-      throw new Error(friendlyMessage);
     }
     
-    return {
-      success: true,
-      data: response.data,
-      parameters
+    // 构建档案格式的八字数据结构
+    const baziData = {
+      year: {
+        gan: bazi.year[0],
+        zhi: bazi.year[1],
+        ganzhiIndex: getGanZhiIndex(bazi.year[0], bazi.year[1])
+      },
+      month: {
+        gan: bazi.month[0],
+        zhi: bazi.month[1],
+        ganzhiIndex: getGanZhiIndex(bazi.month[0], bazi.month[1])
+      },
+      day: {
+        gan: bazi.day[0],
+        zhi: bazi.day[1],
+        ganzhiIndex: getGanZhiIndex(bazi.day[0], bazi.day[1])
+      },
+      hour: {
+        gan: bazi.hour[0],
+        zhi: bazi.hour[1],
+        ganzhiIndex: getGanZhiIndex(bazi.hour[0], bazi.hour[1])
+      }
     };
-  } catch (error) {
-    console.error('Coze API 请求失败:', error);
     
-    // 处理axios错误
-    if (error.response) {
-      // 服务器返回了错误状态码
-      throw new Error(`API请求失败: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`);
-    } else if (error.request) {
-      // 请求已发出但没有收到响应
-      throw new Error('网络请求失败，请检查网络连接');
-    } else {
-      // 其他错误
-      throw new Error(`请求配置错误: ${error.message}`);
-    }
+    console.log('转换后的标准化八字数据:', baziData);
+    return baziData;
+    
+  } catch (error) {
+    console.error('转换本地计算结果失败:', error);
+    console.error('错误堆栈:', error.stack);
+    throw new Error(`本地结果转换失败: ${error.message}`);
   }
 }
 
@@ -223,7 +198,7 @@ async function callCozeAPI(parameters) {
  */
 async function calculateBazi(birthDate) {
   try {
-    console.log('=== 生辰八字计算开始执行 ===');
+    console.log('=== 生辰八字计算开始执行（本地计算云函数） ===');
     console.log('接收到的birthDate:', birthDate);
     
     if (!birthDate) {
@@ -236,49 +211,41 @@ async function calculateBazi(birthDate) {
       throw new Error('birthDate参数不完整，缺少必要字段');
     }
 
-    // 提取时间参数
-    const parameters = extractTimeParams(birthDate);
-    console.log('=== 时间参数提取详情 ===');
-    console.log('输入出生日期（北京时间）:', birthDate);
-    console.log('提取的Coze API参数:', parameters);
-    console.log('=== 开始调用Coze API ===');
+    console.log('=== 调用本地计算云函数 ===');
+    console.log('参数:', { year, month, day, hour, minute });
     
-    // 调用Coze API
-    console.log('开始调用Coze API...');
-    let result;
-    try {
-      result = await callCozeAPI(parameters);
-      console.log('Coze API 调用成功，返回结果:', result);
-    } catch (apiError) {
-      console.error('Coze API 调用失败:', apiError);
-      console.error('API错误堆栈:', apiError.stack);
-      throw apiError; // 重新抛出异常，让外层catch处理
-    }
-    
-    // 解析Coze数据为标准化的八字数据结构
-    console.log('开始解析Coze数据...');
-    let baziData;
-    try {
-      baziData = parseBaziData(result.data);
-      console.log('解析后的八字数据:', baziData);
-      
-      if (!baziData) {
-        console.error('parseBaziData返回了空值');
-        throw new Error('parseBaziData返回了空值');
+    // 调用本地计算云函数
+    const result = await cloud.callFunction({
+      name: 'v1_2_localCalculateBazi',
+      data: {
+        year,
+        month,
+        day,
+        hour,
+        minute
       }
-    } catch (parseError) {
-      console.error('解析八字数据失败:', parseError);
-      console.error('解析错误堆栈:', parseError.stack);
-      throw new Error(`八字数据解析失败: ${parseError.message}`);
+    });
+    
+    console.log('本地计算云函数返回结果:', result);
+    
+    if (!result.result || !result.result.success) {
+      throw new Error(result.result?.error || '本地计算云函数调用失败');
     }
+    
+    const localResult = result.result;
+    console.log('本地计算结果:', localResult);
+    
+    // 将本地计算结果转换为标准化的八字数据结构
+    const baziData = convertLocalResultToStandardFormat(localResult);
+    console.log('转换后的标准化八字数据:', baziData);
     
     console.log('=== 生辰八字计算成功，准备返回结果 ===');
     return {
       success: true,
       data: {
         baziData: baziData,  // 标准化的八字数据
-        rawCozeData: result.data,  // 保留原始coze数据用于调试
-        parameters,
+        rawLocalData: localResult,  // 保留原始本地计算结果用于调试
+        parameters: { year, month, day, hour, minute },
         birthDate: birthDate
       }
     };
@@ -297,8 +264,6 @@ async function calculateBazi(birthDate) {
 
 module.exports = {
   calculateBazi,
-  extractTimeParams,
-  parseBaziData,
-  callCozeAPI,
+  convertLocalResultToStandardFormat,
   getGanZhiIndex
 };

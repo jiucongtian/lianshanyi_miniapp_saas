@@ -1,10 +1,9 @@
 {
   "name": "profileManagement",
-  "version": "1.0.0",
-  "description": "档案管理云函数",
+  "version": "1.2.0",
+  "description": "档案管理云函数 - 使用本地八字计算",
   "main": "index.js",
   "dependencies": {
-    "wx-server-sdk": "~2.6.3",
-    "axios": "^1.6.0"
+    "wx-server-sdk": "~2.6.3"
   }
 }
