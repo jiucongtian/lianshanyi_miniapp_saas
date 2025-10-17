@@ -34,7 +34,7 @@ console.log('2000年立春（简短格式）:', str3);
 // 1.4 获取某年所有节气
 const allTerms = solarTerms.getAllSolarTerms(2000);
 console.log('\n2000年所有节气（前3个）:');
-console.log(allTerms.slice(0, 3));
+console.log(allTerms);
 
 console.log('\n');
 
