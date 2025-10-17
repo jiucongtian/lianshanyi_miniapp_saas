@@ -59,6 +59,9 @@ class AddProfileController extends BaseController {
     
     // 用户信息
     this.userInfo = null;
+    
+    // 绑定事件处理器
+    this._bindEventHandlers();
   }
 
   // ==================== 公共方法 ====================
@@ -648,7 +651,21 @@ class AddProfileController extends BaseController {
       
       if (response.success && response.data) {
         this.userInfo = response.data;
-        this._log('loadUserInfo', '用户信息加载成功');
+        
+        // 更新页面数据，包括配额信息
+        this._setData({
+          userType: this.userInfo.userType,
+          userTypeName: this.userInfo.getDisplayName(),
+          profileQuota: this.userInfo.profileQuota,
+          usedProfiles: this.userInfo.usedProfiles,
+          canCreateMore: this.userInfo.canCreateMore()
+        });
+        
+        this._log('loadUserInfo', '用户信息加载成功', {
+          userType: this.userInfo.userType,
+          profileQuota: this.userInfo.profileQuota,
+          usedProfiles: this.userInfo.usedProfiles
+        });
       } else {
         this._error('loadUserInfo', '获取用户信息失败:', response.error);
         // 不显示错误，允许继续操作
@@ -839,6 +856,10 @@ class AddProfileController extends BaseController {
    */
   onShow() {
     this._log('onShow', '页面显示');
+    
+    // 重新加载用户信息，确保配额数据是最新的
+    this.loadUserInfo();
+    
     super.onShow();
   }
 
@@ -855,7 +876,33 @@ class AddProfileController extends BaseController {
    */
   onUnload() {
     this._log('onUnload', '页面卸载');
+    
+    // 清理事件监听
+    eventBus.off(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._handleProfileListRefreshEvent);
+    
     super.onUnload();
+  }
+
+  // ==================== 私有方法 ====================
+
+  /**
+   * 绑定事件处理器
+   * @private
+   */
+  _bindEventHandlers() {
+    // 监听档案列表刷新事件
+    eventBus.on(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._handleProfileListRefreshEvent.bind(this));
+  }
+
+  /**
+   * 处理档案列表刷新事件
+   * @private
+   */
+  _handleProfileListRefreshEvent() {
+    this._log('_handleProfileListRefreshEvent', '收到档案列表刷新事件，重新加载用户信息');
+    
+    // 重新加载用户信息，更新配额数据
+    this.loadUserInfo();
   }
 }
 

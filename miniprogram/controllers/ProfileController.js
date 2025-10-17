@@ -447,7 +447,23 @@ class ProfileController extends BaseController {
     
     // 从ProfileManager获取最新数据
     this.profileList = profileManager.getProfileList();
-    this._setData({ profileList: this.profileList });
+    
+    // 更新已使用档案数量和配额信息
+    const usedProfiles = this.profileList.length;
+    const profileQuota = this.userInfo ? this.userInfo.profileQuota : 3;
+    const canCreateMore = profileQuota === -1 || usedProfiles < profileQuota;
+    
+    this._setData({ 
+      profileList: this.profileList,
+      usedProfiles: usedProfiles,
+      canCreateMore: canCreateMore
+    });
+    
+    this._log('_handleProfileListRefreshEvent', '档案列表和配额信息已更新', {
+      usedProfiles,
+      profileQuota,
+      canCreateMore
+    });
   }
 
   /**
