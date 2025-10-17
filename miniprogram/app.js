@@ -15,7 +15,7 @@ App({
   globalData: {
     userInfo: null,
     profilesLoaded: false, // 标记档案是否已加载
-    version: '1.1.0', // 客户端版本
+    version: '1.2.0', // 客户端版本
     profileManager: profileManager, // 全局档案管理器
   },
 
