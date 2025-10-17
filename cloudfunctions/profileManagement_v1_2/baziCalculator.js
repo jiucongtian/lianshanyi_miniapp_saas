@@ -181,6 +181,11 @@ function convertLocalResultToStandardFormat(localResult) {
       }
     };
     
+    // 处理农历数据（如果存在）
+    if (localResult.details && localResult.details.lunarDate) {
+      baziData.lunarDate = localResult.details.lunarDate;
+    }
+    
     console.log('转换后的标准化八字数据:', baziData);
     return baziData;
     
@@ -236,7 +241,8 @@ async function calculateBazi(birthDate) {
     console.log('本地计算结果:', localResult);
     
     // 将本地计算结果转换为标准化的八字数据结构
-    const baziData = convertLocalResultToStandardFormat(localResult);
+    // 注意：bazi数据在localResult.data.bazi中
+    const baziData = convertLocalResultToStandardFormat(localResult.data);
     console.log('转换后的标准化八字数据:', baziData);
     
     console.log('=== 生辰八字计算成功，准备返回结果 ===');
