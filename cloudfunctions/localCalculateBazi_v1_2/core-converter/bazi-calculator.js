@@ -100,14 +100,36 @@ function calculateBazi(year, month, day, hour = 0, minute = 0) {
   // 5. 计算时柱
   const hourGanZhi = calculateHourGanZhi(dayGanZhi, hour);
 
-  // 6. 返回完整的八字信息
+  // 6. 返回标准化的八字信息（直接匹配profileManagement需要的格式）
   return {
     success: true,
-    bazi: {
-      year: yearGanZhi,    // 年柱
-      month: monthGanZhi,  // 月柱
-      day: dayGanZhi,      // 日柱
-      hour: hourGanZhi     // 时柱
+    baziData: {
+      year: {
+        gan: yearGanZhi[0],
+        zhi: yearGanZhi[1],
+        ganzhiIndex: getGanZhiIndex(yearGanZhi[0], yearGanZhi[1])
+      },
+      month: {
+        gan: monthGanZhi[0],
+        zhi: monthGanZhi[1],
+        ganzhiIndex: getGanZhiIndex(monthGanZhi[0], monthGanZhi[1])
+      },
+      day: {
+        gan: dayGanZhi[0],
+        zhi: dayGanZhi[1],
+        ganzhiIndex: getGanZhiIndex(dayGanZhi[0], dayGanZhi[1])
+      },
+      hour: {
+        gan: hourGanZhi[0],
+        zhi: hourGanZhi[1],
+        ganzhiIndex: getGanZhiIndex(hourGanZhi[0], hourGanZhi[1])
+      },
+      lunarDate: {
+        year: lunarInfo.lYear,
+        month: lunarInfo.lMonth,
+        day: lunarInfo.lDay,
+        isLeap: lunarInfo.isLeap
+      }
     },
     details: {
       solarDate: {
@@ -116,12 +138,6 @@ function calculateBazi(year, month, day, hour = 0, minute = 0) {
         day: day,
         hour: hour,
         minute: minute
-      },
-      lunarDate: {
-        year: lunarInfo.lYear,
-        month: lunarInfo.lMonth,
-        day: lunarInfo.lDay,
-        isLeap: lunarInfo.isLeap
       },
       corrections: {
         yearCorrected: yearCorrected,
@@ -373,6 +389,27 @@ function calculateHourGanZhi(dayGanZhi, hour) {
   const hourZhiIndex = zhiNumber - 1;
 
   return Gan[hourGanIndex] + Zhi[hourZhiIndex];
+}
+
+/**
+ * 获取干支索引（用于标准化数据格式）
+ * @param {string} gan - 天干
+ * @param {string} zhi - 地支
+ * @returns {number} 干支索引（1-60）
+ */
+function getGanZhiIndex(gan, zhi) {
+  const Gan = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
+  const Zhi = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+  
+  const ganIndex = Gan.indexOf(gan);
+  const zhiIndex = Zhi.indexOf(zhi);
+  
+  if (ganIndex === -1 || zhiIndex === -1) {
+    throw new Error(`无效的干支：${gan}${zhi}`);
+  }
+  
+  // 干支索引计算：天干索引 * 12 + 地支索引 + 1
+  return ganIndex * 12 + zhiIndex + 1;
 }
 
 /**

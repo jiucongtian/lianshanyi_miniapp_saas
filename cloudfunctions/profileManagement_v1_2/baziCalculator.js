@@ -133,68 +133,6 @@ function parseBaziData(cozeResponse) {
   }
 }
 
-/**
- * 将本地计算结果转换为标准化的八字数据结构
- * @param {Object} localResult - 本地计算结果
- * @returns {Object} 标准化的八字数据结构
- */
-function convertLocalResultToStandardFormat(localResult) {
-  try {
-    console.log('=== 开始转换本地计算结果 ===');
-    console.log('本地计算结果:', localResult);
-    
-    if (!localResult.bazi) {
-      throw new Error('本地计算结果缺少bazi字段');
-    }
-    
-    const { bazi } = localResult;
-    
-    // 验证必需字段
-    const requiredFields = ['year', 'month', 'day', 'hour'];
-    for (const field of requiredFields) {
-      if (!bazi[field] || typeof bazi[field] !== 'string' || bazi[field].length !== 2) {
-        throw new Error(`bazi.${field}字段格式错误，期望2个字符的干支字符串`);
-      }
-    }
-    
-    // 构建档案格式的八字数据结构
-    const baziData = {
-      year: {
-        gan: bazi.year[0],
-        zhi: bazi.year[1],
-        ganzhiIndex: getGanZhiIndex(bazi.year[0], bazi.year[1])
-      },
-      month: {
-        gan: bazi.month[0],
-        zhi: bazi.month[1],
-        ganzhiIndex: getGanZhiIndex(bazi.month[0], bazi.month[1])
-      },
-      day: {
-        gan: bazi.day[0],
-        zhi: bazi.day[1],
-        ganzhiIndex: getGanZhiIndex(bazi.day[0], bazi.day[1])
-      },
-      hour: {
-        gan: bazi.hour[0],
-        zhi: bazi.hour[1],
-        ganzhiIndex: getGanZhiIndex(bazi.hour[0], bazi.hour[1])
-      }
-    };
-    
-    // 处理农历数据（如果存在）
-    if (localResult.details && localResult.details.lunarDate) {
-      baziData.lunarDate = localResult.details.lunarDate;
-    }
-    
-    console.log('转换后的标准化八字数据:', baziData);
-    return baziData;
-    
-  } catch (error) {
-    console.error('转换本地计算结果失败:', error);
-    console.error('错误堆栈:', error.stack);
-    throw new Error(`本地结果转换失败: ${error.message}`);
-  }
-}
 
 /**
  * 计算八字数据（主入口函数）
@@ -240,10 +178,10 @@ async function calculateBazi(birthDate) {
     const localResult = result.result;
     console.log('本地计算结果:', localResult);
     
-    // 将本地计算结果转换为标准化的八字数据结构
-    // 注意：bazi数据在localResult.data.bazi中
-    const baziData = convertLocalResultToStandardFormat(localResult.data);
-    console.log('转换后的标准化八字数据:', baziData);
+    // 直接使用本地云函数返回的标准化八字数据
+    // 注意：baziData在localResult.data.baziData中
+    const baziData = localResult.data.baziData;
+    console.log('标准化八字数据:', baziData);
     
     console.log('=== 生辰八字计算成功，准备返回结果 ===');
     return {
@@ -270,6 +208,5 @@ async function calculateBazi(birthDate) {
 
 module.exports = {
   calculateBazi,
-  convertLocalResultToStandardFormat,
   getGanZhiIndex
 };
