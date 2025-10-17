@@ -44,6 +44,12 @@ Page({
     monthRange: Array.from({length: 12}, (_, i) => i + 1), // 月份范围 1-12
     dayRange: Array.from({length: 31}, (_, i) => i + 1), // 日期范围 1-31
     isUncertainTime: false, // 是否不确定时辰信息
+    
+    // 分开存储公历和农历时间
+    solarDateTime: null, // 公历时间数据 {year, month, day, hour, minute}
+    lunarDateTime: null, // 农历时间数据 {year, month, day, hour, minute}
+    solarFormatedDateTime: '', // 公历格式化显示
+    lunarFormatedDateTime: '', // 农历格式化显示
   },
 
   // 页面生命周期
@@ -98,7 +104,7 @@ Page({
     const type = e.currentTarget.dataset.type;
     log.debug('onCalendarTypeSelect', '选择日历类型', { type });
     
-    // 只更新日历类型，不清空时间数据
+    // 更新日历类型
     this.setData({
       calendarType: type
     });
@@ -231,6 +237,21 @@ Page({
       minute: timeInfo.minute
     };
     
+    // 根据当前日历类型存储到对应变量
+    const updateData = {
+      birthDate: birthDate,
+      showPicker: false,
+      isUncertainTime: this.data.isUncertainTime
+    };
+    
+    if (this.data.calendarType === 'solar') {
+      updateData.solarDateTime = birthDate;
+      updateData.solarFormatedDateTime = formatedTime;
+    } else {
+      updateData.lunarDateTime = birthDate;
+      updateData.lunarFormatedDateTime = formatedTime;
+    }
+    
     // 通知Controller处理时间确认
     if (this.controller) {
       this.controller.onTimeConfirm({
@@ -240,16 +261,12 @@ Page({
         hour: timeInfo.hour,
         minute: timeInfo.minute,
         formatedTime,
-        timeIndex
+        timeIndex,
+        calendarType: this.data.calendarType
       });
     }
     
-    this.setData({
-      birthDate: birthDate,
-      formatedDateTime: formatedTime,
-      showPicker: false,
-      isUncertainTime: this.data.isUncertainTime
-    });
+    this.setData(updateData);
   },
 
   onPickerCancel() {

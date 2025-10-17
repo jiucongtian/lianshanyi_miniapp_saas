@@ -97,8 +97,8 @@
           {{calendarType === 'solar' ? '公历时间' : '农历时间'}}
         </view>
         <view class="input-wrapper {{calendarType === 'lunar' ? 'lunar-input-wrapper' : ''}}" bindtap="onInputTap">
-          <view class="time-display {{formatedDateTime ? 'has-value' : ''}}">
-            {{formatedDateTime || (calendarType === 'solar' ? '请选择年月日时' : '请选择农历年月日时')}}
+          <view class="time-display {{(calendarType === 'solar' ? solarFormatedDateTime : lunarFormatedDateTime) ? 'has-value' : ''}}">
+            {{calendarType === 'solar' ? (solarFormatedDateTime || '请选择年月日时') : (lunarFormatedDateTime || '请选择农历年月日时')}}
           </view>
           <t-icon name="chevron-right" size="16" color="#999" />
         </view>
