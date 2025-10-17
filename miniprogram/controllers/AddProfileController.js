@@ -514,9 +514,10 @@ class AddProfileController extends BaseController {
    * @private
    */
   _initializeTimePicker() {
-    // 初始化年份范围（1949-2050）
+    // 初始化年份范围（1949-2100）
+    // 最大支持1901年-2100年
     const startYear = 1949;
-    const endYear = 2050;
+    const endYear = 2100;
     const yearRange = Array.from(
       {length: endYear - startYear + 1}, 
       (_, i) => startYear + i
