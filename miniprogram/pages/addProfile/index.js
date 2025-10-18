@@ -25,11 +25,8 @@ Page({
     showPicker: false,
     isUncertainTime: false, // 是否不确定时辰信息
     
-    // 分开存储公历和农历时间
+    // 只存储公历时间数据
     solarDateTime: null, // 公历时间数据 {year, month, day, hour, minute}
-    lunarDateTime: null, // 农历时间数据 {year, month, day, hour, minute}
-    solarFormatedDateTime: '', // 公历格式化显示
-    lunarFormatedDateTime: '', // 农历格式化显示
   },
 
   // 页面生命周期

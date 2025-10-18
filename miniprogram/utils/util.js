@@ -1,3 +1,5 @@
+const calendar = require('./js-calendar-converter.js');
+
 const formatNumber = (n) => {
   n = n.toString();
   return n[1] ? n : `0${n}`;
@@ -124,6 +126,138 @@ function convertProfileBaziToCardFormat(profileBaziData) {
   };
 }
 
+/**
+ * 将公历时间转换为农历时间
+ * @param {Object} solarDateTime - 公历时间对象 {year, month, day, hour, minute}
+ * @returns {Object|null} 农历时间对象 {year, month, day, hour, minute, isLeapMonth} 或 null
+ */
+const convertSolarToLunar = (solarDateTime) => {
+  if (!solarDateTime || !solarDateTime.year || !solarDateTime.month || !solarDateTime.day) {
+    return null;
+  }
+
+  try {
+    const lunarResult = calendar.solar2lunar(
+      solarDateTime.year,
+      solarDateTime.month,
+      solarDateTime.day
+    );
+
+    if (lunarResult === -1) {
+      console.error('[convertSolarToLunar] 公历日期无效:', solarDateTime);
+      return null;
+    }
+
+    return {
+      year: lunarResult.lYear,
+      month: lunarResult.lMonth,
+      day: lunarResult.lDay,
+      hour: solarDateTime.hour || 0,
+      minute: solarDateTime.minute || 0,
+      isLeapMonth: lunarResult.isLeap
+    };
+  } catch (error) {
+    console.error('[convertSolarToLunar] 转换失败:', error);
+    return null;
+  }
+};
+
+/**
+ * 将农历时间转换为公历时间
+ * @param {Object} lunarDateTime - 农历时间对象 {year, month, day, hour, minute, isLeapMonth}
+ * @returns {Object|null} 公历时间对象 {year, month, day, hour, minute} 或 null
+ */
+const convertLunarToSolar = (lunarDateTime) => {
+  if (!lunarDateTime || !lunarDateTime.year || !lunarDateTime.month || !lunarDateTime.day) {
+    return null;
+  }
+
+  try {
+    const solarResult = calendar.lunar2solar(
+      lunarDateTime.year,
+      lunarDateTime.month,
+      lunarDateTime.day,
+      lunarDateTime.isLeapMonth || false
+    );
+
+    if (solarResult === -1) {
+      console.error('[convertLunarToSolar] 农历日期无效:', lunarDateTime);
+      return null;
+    }
+
+    return {
+      year: solarResult.cYear,
+      month: solarResult.cMonth,
+      day: solarResult.cDay,
+      hour: lunarDateTime.hour || 0,
+      minute: lunarDateTime.minute || 0
+    };
+  } catch (error) {
+    console.error('[convertLunarToSolar] 转换失败:', error);
+    return null;
+  }
+};
+
+/**
+ * 格式化农历时间显示
+ * @param {Object} solarDateTime - 公历时间对象 {year, month, day, hour, minute}
+ * @returns {string} 格式化后的农历时间字符串
+ */
+const formatLunarDateTime = (solarDateTime) => {
+  const lunarDateTime = convertSolarToLunar(solarDateTime);
+  if (!lunarDateTime) {
+    return '';
+  }
+
+  const { year, month, day, hour, minute } = lunarDateTime;
+  
+  // 获取时辰名称
+  const timeName = getTimeNameByHour(hour);
+  
+  // 构建农历时间字符串
+  let lunarTimeStr = `${year}年${month}月${day}日 ${timeName}`;
+  
+  // 如果是闰月，添加闰月标识
+  if (lunarDateTime.isLeapMonth) {
+    lunarTimeStr = `${year}年闰${month}月${day}日 ${timeName}`;
+  }
+  
+  return lunarTimeStr;
+};
+
+/**
+ * 根据小时获取时辰名称
+ * @param {number} hour - 小时
+ * @returns {string} 时辰名称
+ */
+const getTimeNameByHour = (hour) => {
+  const timeMapObjects = [
+    { name: '子时', start: 23, end: 1 },
+    { name: '丑时', start: 1, end: 3 },
+    { name: '寅时', start: 3, end: 5 },
+    { name: '卯时', start: 5, end: 7 },
+    { name: '辰时', start: 7, end: 9 },
+    { name: '巳时', start: 9, end: 11 },
+    { name: '午时', start: 11, end: 13 },
+    { name: '未时', start: 13, end: 15 },
+    { name: '申时', start: 15, end: 17 },
+    { name: '酉时', start: 17, end: 19 },
+    { name: '戌时', start: 19, end: 21 },
+    { name: '亥时', start: 21, end: 23 }
+  ];
+  
+  for (const time of timeMapObjects) {
+    if (time.name === '子时') {
+      if (hour >= 23 || hour < 1) {
+        return time.name;
+      }
+    } else if (hour >= time.start && hour < time.end) {
+      return time.name;
+    }
+  }
+  return '子时';
+};
+
 module.exports = {
   formatTime,
   formatDateTime,
@@ -133,4 +267,7 @@ module.exports = {
   convertProfileBaziToCardFormat,
   extractTimeParams,
   getLocalUrl,
+  convertSolarToLunar,
+  convertLunarToSolar,
+  formatLunarDateTime,
 };
