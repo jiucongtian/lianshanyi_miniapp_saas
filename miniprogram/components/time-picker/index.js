@@ -48,6 +48,7 @@
  */
 
 const { createModuleLogger } = require('../../utils/logger/index');
+const calendar = require('../../utils/js-calendar-converter.js');
 const log = createModuleLogger('TimePickerComponent');
 
 // 时辰枚举常量
@@ -328,6 +329,18 @@ Component({
         return;
       }
       
+      // 进行历法转换
+      const conversionResult = this._convertCalendar(year, month, day, timeInfo.hour, timeInfo.minute);
+      
+      if (!conversionResult.success) {
+        wx.showToast({
+          title: conversionResult.error || '时间转换失败',
+          icon: 'error',
+          duration: 2000
+        });
+        return;
+      }
+      
       // 构建时间数据
       const timeData = {
         year,
@@ -339,7 +352,12 @@ Component({
         timeIndex,
         calendarType: this.data.calendarType,
         isUncertainTime: this.data.internalUncertainTime,
-        isLeapMonth: this.data.calendarType === 'lunar' ? this.data.internalLeapMonth : false
+        isLeapMonth: this.data.calendarType === 'lunar' ? this.data.internalLeapMonth : false,
+        // 添加转换后的时间数据
+        solarDateTime: conversionResult.solarDateTime,
+        lunarDateTime: conversionResult.lunarDateTime,
+        solarFormatedDateTime: conversionResult.solarFormatedDateTime,
+        lunarFormatedDateTime: conversionResult.lunarFormatedDateTime
       };
       
       // 触发确认事件
@@ -403,6 +421,142 @@ Component({
       
       // 触发闰月切换事件
       this.triggerEvent('leap-month-toggle', { isLeapMonth: newState });
+    },
+
+    /**
+     * 历法转换
+     * @param {number} year - 年份
+     * @param {number} month - 月份
+     * @param {number} day - 日期
+     * @param {number} hour - 小时
+     * @param {number} minute - 分钟
+     * @returns {Object} 转换结果
+     * @private
+     */
+    _convertCalendar(year, month, day, hour, minute) {
+      try {
+        log.info('_convertCalendar', '开始历法转换', {
+          inputYear: year,
+          inputMonth: month,
+          inputDay: day,
+          inputHour: hour,
+          inputMinute: minute,
+          calendarType: this.data.calendarType,
+          isLeapMonth: this.data.internalLeapMonth
+        });
+
+        let solarResult, lunarResult;
+        let solarDateTime, lunarDateTime;
+        let solarFormatedDateTime, lunarFormatedDateTime;
+
+        if (this.data.calendarType === 'solar') {
+          // 公历转农历
+          solarResult = calendar.solar2lunar(year, month, day);
+          if (solarResult === -1) {
+            return {
+              success: false,
+              error: '公历日期无效'
+            };
+          }
+
+          // 构建公历时间数据
+          solarDateTime = {
+            year: year,
+            month: month,
+            day: day,
+            hour: hour,
+            minute: minute
+          };
+
+          // 构建农历时间数据
+          lunarDateTime = {
+            year: solarResult.lYear,
+            month: solarResult.lMonth,
+            day: solarResult.lDay,
+            hour: hour,
+            minute: minute,
+            isLeapMonth: solarResult.isLeap || false
+          };
+
+          // 格式化显示
+          solarFormatedDateTime = `${year}年${month}月${day}日 ${this._formatTime(hour, minute)}`;
+          const leapPrefix = solarResult.isLeap ? '闰' : '';
+          lunarFormatedDateTime = `${leapPrefix}${solarResult.IMonthCn}${solarResult.IDayCn} ${this._formatTime(hour, minute)}`;
+
+        } else if (this.data.calendarType === 'lunar') {
+          // 农历转公历
+          lunarResult = calendar.lunar2solar(year, month, day, this.data.internalLeapMonth);
+          if (lunarResult === -1) {
+            return {
+              success: false,
+              error: '农历日期无效'
+            };
+          }
+
+          // 构建农历时间数据
+          lunarDateTime = {
+            year: year,
+            month: month,
+            day: day,
+            hour: hour,
+            minute: minute,
+            isLeapMonth: this.data.internalLeapMonth
+          };
+
+          // 构建公历时间数据
+          solarDateTime = {
+            year: lunarResult.cYear,
+            month: lunarResult.cMonth,
+            day: lunarResult.cDay,
+            hour: hour,
+            minute: minute
+          };
+
+          // 格式化显示
+          const leapPrefix = this.data.internalLeapMonth ? '闰' : '';
+          lunarFormatedDateTime = `${leapPrefix}${year}年${month}月${day}日 ${this._formatTime(hour, minute)}`;
+          solarFormatedDateTime = `${lunarResult.cYear}年${lunarResult.cMonth}月${lunarResult.cDay}日 ${this._formatTime(hour, minute)}`;
+        }
+
+        log.info('_convertCalendar', '历法转换成功', {
+          solarDateTime,
+          lunarDateTime,
+          solarFormatedDateTime,
+          lunarFormatedDateTime
+        });
+
+        return {
+          success: true,
+          solarDateTime,
+          lunarDateTime,
+          solarFormatedDateTime,
+          lunarFormatedDateTime
+        };
+
+      } catch (error) {
+        log.error('_convertCalendar', '历法转换失败', error);
+        return {
+          success: false,
+          error: '时间转换失败，请检查输入'
+        };
+      }
+    },
+
+    /**
+     * 格式化时间显示
+     * @param {number} hour - 小时
+     * @param {number} minute - 分钟
+     * @returns {string} 格式化后的时间字符串
+     * @private
+     */
+    _formatTime(hour, minute) {
+      const timePeriods = Object.values(TIME_PERIODS);
+      for (const period of timePeriods) {
+        if (period.hour === hour) {
+          return period.name;
+        }
+      }
+      return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     },
 
     /**

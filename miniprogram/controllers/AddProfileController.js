@@ -441,9 +441,12 @@ class AddProfileController extends BaseController {
    * @param {Object} timeData - 时间数据
    */
   onTimeConfirm(timeData) {
-    const { year, month, day, hour, minute, formatedTime, timeIndex, calendarType } = timeData;
+    const { 
+      year, month, day, hour, minute, formatedTime, timeIndex, calendarType,
+      solarDateTime, lunarDateTime, solarFormatedDateTime, lunarFormatedDateTime
+    } = timeData;
     
-    // 构建出生日期
+    // 构建出生日期（使用当前选择的日历类型的时间）
     const birthDate = {
       year,
       month,
@@ -452,27 +455,49 @@ class AddProfileController extends BaseController {
       minute: minute || 0
     };
     
-    // 根据日历类型存储到对应变量
-    const updateData = {
-      birthDate: birthDate,
-      isUncertainTime: this.isUncertainTime
-    };
+    // 更新内部状态
+    this.dateTimeValue = birthDate;
+    this.formatedDateTime = formatedTime;
+    this.birthDate = birthDate;
+    this.isUncertainTime = timeData.isUncertainTime || false;
     
-    if (calendarType === 'solar') {
-      this.solarDateTime = birthDate;
-      this.solarFormatedDateTime = formatedTime;
-      updateData.solarDateTime = birthDate;
-      updateData.solarFormatedDateTime = formatedTime;
+    // 存储转换后的公历和农历时间
+    if (solarDateTime && lunarDateTime) {
+      this.solarDateTime = solarDateTime;
+      this.lunarDateTime = lunarDateTime;
+      this.solarFormatedDateTime = solarFormatedDateTime;
+      this.lunarFormatedDateTime = lunarFormatedDateTime;
+      
+      this._log('onTimeConfirm', '历法转换完成', {
+        solarDateTime,
+        lunarDateTime,
+        solarFormatedDateTime,
+        lunarFormatedDateTime
+      });
     } else {
-      this.lunarDateTime = birthDate;
-      this.lunarFormatedDateTime = formatedTime;
-      updateData.lunarDateTime = birthDate;
-      updateData.lunarFormatedDateTime = formatedTime;
+      // 如果没有转换数据，按原逻辑处理
+      if (calendarType === 'solar') {
+        this.solarDateTime = birthDate;
+        this.solarFormatedDateTime = formatedTime;
+      } else if (calendarType === 'lunar') {
+        this.lunarDateTime = birthDate;
+        this.lunarFormatedDateTime = formatedTime;
+      }
     }
     
-    // 更新当前显示的格式化时间
-    this.formatedDateTime = formatedTime;
-    updateData.formatedDateTime = formatedTime;
+    // 更新页面数据
+    const updateData = {
+      formData: {
+        ...this.formData,
+        birthDate: birthDate
+      },
+      formatedDateTime: formatedTime,
+      solarDateTime: this.solarDateTime,
+      lunarDateTime: this.lunarDateTime,
+      solarFormatedDateTime: this.solarFormatedDateTime,
+      lunarFormatedDateTime: this.lunarFormatedDateTime,
+      isUncertainTime: this.isUncertainTime
+    };
     
     // 更新页面数据
     this._setData(updateData);
