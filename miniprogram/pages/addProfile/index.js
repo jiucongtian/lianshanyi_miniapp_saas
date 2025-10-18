@@ -140,8 +140,32 @@ Page({
   },
 
   calculatePickerValue(year, month, day, timeIndex) {
+    const yearIndex = this.data.yearRange.indexOf(year);
+    
+    // 年份超出范围时的处理
+    if (yearIndex === -1) {
+      log.warn('calculatePickerValue', '年份超出范围，使用范围边界值', {
+        year,
+        yearRangeMin: this.data.yearRange[0],
+        yearRangeMax: this.data.yearRange[this.data.yearRange.length - 1]
+      });
+      
+      // 如果年份小于最小值，使用最小值；如果大于最大值，使用最大值
+      const clampedYear = year < this.data.yearRange[0] ? 
+        this.data.yearRange[0] : 
+        this.data.yearRange[this.data.yearRange.length - 1];
+      const clampedYearIndex = this.data.yearRange.indexOf(clampedYear);
+      
+      return [
+        clampedYearIndex,
+        month - 1,
+        day - 1,
+        timeIndex
+      ];
+    }
+    
     return [
-      this.data.yearRange.indexOf(year),
+      yearIndex,
       month - 1,
       day - 1,
       timeIndex
@@ -203,9 +227,24 @@ Page({
 
   validateDate(year, month, day) {
     const testDate = new Date(year, month - 1, day);
-    return testDate.getFullYear() === year && 
-           testDate.getMonth() === month - 1 && 
-           testDate.getDate() === day;
+    const isValid = testDate.getFullYear() === year && 
+                   testDate.getMonth() === month - 1 && 
+                   testDate.getDate() === day;
+    
+    // 添加日期验证的调试日志
+    if (!isValid) {
+      log.warn('validateDate', '日期验证失败', {
+        inputYear: year,
+        inputMonth: month,
+        inputDay: day,
+        testDateYear: testDate.getFullYear(),
+        testDateMonth: testDate.getMonth() + 1,
+        testDateDay: testDate.getDate(),
+        testDateString: testDate.toString()
+      });
+    }
+    
+    return isValid;
   },
 
   onPickerConfirm() {
@@ -218,7 +257,26 @@ Page({
     const timePeriods = Object.values(TIME_PERIODS);
     const timeInfo = timePeriods[timeIndex];
     
+    // 添加关键日志用于调试
+    log.info('onPickerConfirm', '时间选择器确认', {
+      pickerValue,
+      yearIndex, monthIndex, dayIndex, timeIndex,
+      year, month, day,
+      timeInfo: timeInfo ? timeInfo.name : 'undefined',
+      yearRangeLength: yearRange.length,
+      monthRangeLength: monthRange.length,
+      dayRangeLength: dayRange.length
+    });
+    
     if (!this.validateDate(year, month, day)) {
+      log.error('onPickerConfirm', '日期验证失败', {
+        year, month, day,
+        yearIndex, monthIndex, dayIndex,
+        yearRange: yearRange.slice(0, 5), // 只显示前5个年份
+        monthRange,
+        dayRange: dayRange.slice(0, 10) // 只显示前10个日期
+      });
+      
       Message.error({
         context: this,
         offset: [120, 32],
