@@ -24,6 +24,7 @@ Page({
     formatedDateTime: '', // 格式化后的时间显示
     showPicker: false,
     isUncertainTime: false, // 是否不确定时辰信息
+    initialDateTime: null, // 传递给time-picker的初始时间
     
     // 分开存储公历和农历时间
     solarDateTime: null, // 公历时间数据 {year, month, day, hour, minute}
@@ -140,8 +141,38 @@ Page({
 
   onInputTap() {
     log.debug('onInputTap', '点击输入框，打开选择器');
+    
+    // 获取当前时间数据作为初始值
+    let initialDateTime = null;
+    
+    if (this.data.calendarType === 'solar' && this.data.solarDateTime) {
+      // 公历模式，使用公历时间
+      initialDateTime = this.data.solarDateTime;
+    } else if (this.data.calendarType === 'lunar' && this.data.lunarDateTime) {
+      // 农历模式，使用农历时间
+      initialDateTime = this.data.lunarDateTime;
+    } else if (this.data.birthDate) {
+      // 如果当前日历类型没有对应时间，使用birthDate
+      initialDateTime = this.data.birthDate;
+    }
+    
+    // 如果没有时间数据，使用当前系统时间
+    if (!initialDateTime) {
+      const now = new Date();
+      initialDateTime = {
+        year: now.getFullYear(),
+        month: now.getMonth() + 1,
+        day: now.getDate(),
+        hour: now.getHours(),
+        minute: now.getMinutes()
+      };
+    }
+    
+    log.debug('onInputTap', '设置初始时间:', initialDateTime);
+    
     this.setData({
-      showPicker: true
+      showPicker: true,
+      initialDateTime: initialDateTime
     });
   },
 

@@ -704,7 +704,8 @@ class AddProfileController extends BaseController {
       timeMap,
       formatedDateTime,
       birthDate: this.birthDate,
-      isUncertainTime: false
+      isUncertainTime: false,
+      initialDateTime: this.birthDate // 设置初始时间
     });
     
     this._log('_initializeTimePicker', '时间选择器初始化完成');
@@ -765,7 +766,8 @@ class AddProfileController extends BaseController {
           solarDateTime: this.solarDateTime,
           solarFormatedDateTime: this.solarFormatedDateTime,
           lunarDateTime: this.lunarDateTime,
-          lunarFormatedDateTime: this.lunarFormatedDateTime
+          lunarFormatedDateTime: this.lunarFormatedDateTime,
+          initialDateTime: this.birthDate // 设置初始时间
         });
         
         this._log('loadEditingData', '编辑数据加载完成');

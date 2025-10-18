@@ -126,7 +126,7 @@
 <time-picker 
   visible="{{showPicker}}"
   calendarType="{{calendarType}}"
-  initialDateTime="{{birthDate}}"
+  initialDateTime="{{initialDateTime}}"
   isUncertainTime="{{isUncertainTime}}"
   yearRange="{{[1949, 2100]}}"
   bind:confirm="onTimePickerConfirm"
