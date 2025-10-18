@@ -481,7 +481,7 @@ Component({
           // 格式化显示
           solarFormatedDateTime = `${year}年${month}月${day}日 ${this._formatTime(hour, minute)}`;
           const leapPrefix = solarResult.isLeap ? '闰' : '';
-          lunarFormatedDateTime = `${leapPrefix}${solarResult.IMonthCn}${solarResult.IDayCn} ${this._formatTime(hour, minute)}`;
+          lunarFormatedDateTime = `${solarResult.lYear}年${leapPrefix}${solarResult.lMonth}月${solarResult.lDay}日 ${this._formatTime(hour, minute)}`;
 
         } else if (this.data.calendarType === 'lunar') {
           // 农历转公历
@@ -514,7 +514,7 @@ Component({
 
           // 格式化显示
           const leapPrefix = this.data.internalLeapMonth ? '闰' : '';
-          lunarFormatedDateTime = `${leapPrefix}${year}年${month}月${day}日 ${this._formatTime(hour, minute)}`;
+          lunarFormatedDateTime = `${year}年${leapPrefix}${month}月${day}日 ${this._formatTime(hour, minute)}`;
           solarFormatedDateTime = `${lunarResult.cYear}年${lunarResult.cMonth}月${lunarResult.cDay}日 ${this._formatTime(hour, minute)}`;
         }
 

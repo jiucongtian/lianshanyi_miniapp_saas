@@ -91,17 +91,14 @@
         </view>
       </view>
       
-      <!-- 时间输入框 -->
+      <!-- 时间输入框组件 -->
       <view class="input-group">
-        <view class="input-label">
-          {{calendarType === 'solar' ? '公历时间' : '农历时间'}}
-        </view>
-        <view class="input-wrapper {{calendarType === 'lunar' ? 'lunar-input-wrapper' : ''}}" bindtap="onInputTap">
-          <view class="time-display {{(calendarType === 'solar' ? solarFormatedDateTime : lunarFormatedDateTime) ? 'has-value' : ''}}">
-            {{calendarType === 'solar' ? (solarFormatedDateTime || '请选择年月日时') : (lunarFormatedDateTime || '请选择农历年月日时')}}
-          </view>
-          <t-icon name="chevron-right" size="16" color="#999" />
-        </view>
+        <time-input
+          calendarType="{{calendarType}}"
+          solarFormatedDateTime="{{solarFormatedDateTime}}"
+          lunarFormatedDateTime="{{lunarFormatedDateTime}}"
+          bind:tap="onInputTap"
+        />
       </view>
     </view>
   </view>
