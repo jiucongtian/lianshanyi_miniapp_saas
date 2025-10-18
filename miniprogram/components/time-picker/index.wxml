@@ -12,6 +12,17 @@
         />
         <text class="checkbox-label">时辰未知</text>
       </view>
+      
+      <!-- 闰月勾选框（仅农历模式显示） -->
+      <view class="checkbox-wrapper" wx:if="{{calendarType === 'lunar'}}">
+        <checkbox 
+          value="leapMonth"
+          checked="{{internalLeapMonth}}" 
+          bindtap="onLeapMonthToggle"
+          class="leap-month-checkbox"
+        />
+        <text class="checkbox-label">闰月</text>
+      </view>
     </view>
     
     <!-- 选择器头部 -->

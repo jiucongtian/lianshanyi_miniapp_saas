@@ -1,6 +1,13 @@
 /**
  * 时间选择器组件
- * 支持公历/农历时间选择，包含时辰选择功能
+ * 支持公历/农历时间选择，包含时辰选择功能和闰月支持
+ * 
+ * 功能特性：
+ * - 支持公历和农历两种日历类型
+ * - 农历模式下支持闰月选择
+ * - 农历模式下日期范围限制为1-30日
+ * - 公历模式下日期范围限制为1-31日
+ * - 支持时辰选择和不确定时辰标记
  * 
  * 使用方式：
  * ```javascript
@@ -16,11 +23,28 @@
  *   visible="{{showTimePicker}}"
  *   calendarType="{{calendarType}}"
  *   initialDateTime="{{initialDateTime}}"
+ *   isUncertainTime="{{isUncertainTime}}"
+ *   isLeapMonth="{{isLeapMonth}}"
  *   bind:confirm="onTimeConfirm"
  *   bind:cancel="onTimeCancel"
  *   bind:uncertain-time-toggle="onUncertainTimeToggle"
+ *   bind:leap-month-toggle="onLeapMonthToggle"
  * />
  * ```
+ * 
+ * 属性说明：
+ * - visible: 是否显示选择器
+ * - calendarType: 日历类型，'solar'=公历，'lunar'=农历
+ * - initialDateTime: 初始时间数据 {year, month, day, hour, minute, isLeapMonth}
+ * - isUncertainTime: 是否不确定时辰
+ * - isLeapMonth: 是否闰月（仅农历模式有效）
+ * - yearRange: 年份范围 [startYear, endYear]
+ * 
+ * 事件说明：
+ * - confirm: 确认选择，返回 {year, month, day, hour, minute, calendarType, isUncertainTime, isLeapMonth}
+ * - cancel: 取消选择
+ * - uncertain-time-toggle: 不确定时辰状态切换
+ * - leap-month-toggle: 闰月状态切换（仅农历模式）
  */
 
 const { createModuleLogger } = require('../../utils/logger/index');
@@ -57,13 +81,18 @@ Component({
       type: String,
       value: 'solar'
     },
-    // 初始时间数据 {year, month, day, hour, minute}
+    // 初始时间数据 {year, month, day, hour, minute, isLeapMonth}
     initialDateTime: {
       type: Object,
       value: null
     },
     // 是否不确定时辰
     isUncertainTime: {
+      type: Boolean,
+      value: false
+    },
+    // 是否闰月（仅农历模式有效）
+    isLeapMonth: {
       type: Boolean,
       value: false
     },
@@ -89,7 +118,8 @@ Component({
     // 时辰显示名称数组
     timeMap: [],
     // 内部状态
-    internalUncertainTime: false
+    internalUncertainTime: false,
+    internalLeapMonth: false
   },
 
   /**
@@ -125,16 +155,34 @@ Component({
       // 初始化时辰显示列表
       const timeMap = Object.values(TIME_PERIODS).map(period => period.name);
 
+      // 根据日历类型调整日期范围
+      const dayRange = this._getDayRange();
+
       this.setData({
         yearRangeArray,
         timeMap,
-        internalUncertainTime: this.data.isUncertainTime
+        dayRange,
+        internalUncertainTime: this.data.isUncertainTime,
+        internalLeapMonth: this.data.isLeapMonth
       });
 
       log.info('_initializeData', '组件数据初始化完成', {
         yearRange: yearRangeArray.slice(0, 5),
-        timeMapLength: timeMap.length
+        timeMapLength: timeMap.length,
+        calendarType: this.data.calendarType,
+        dayRangeLength: dayRange.length
       });
+    },
+
+    /**
+     * 获取日期范围数组
+     * @returns {Array} 日期范围数组
+     * @private
+     */
+    _getDayRange() {
+      // 农历模式最大30日，公历模式最大31日
+      const maxDays = this.data.calendarType === 'lunar' ? 30 : 31;
+      return Array.from({length: maxDays}, (_, i) => i + 1);
     },
 
     /**
@@ -290,7 +338,8 @@ Component({
         formatedTime: `${year}年${month}月${day}日 ${timeInfo.name}`,
         timeIndex,
         calendarType: this.data.calendarType,
-        isUncertainTime: this.data.internalUncertainTime
+        isUncertainTime: this.data.internalUncertainTime,
+        isLeapMonth: this.data.calendarType === 'lunar' ? this.data.internalLeapMonth : false
       };
       
       // 触发确认事件
@@ -342,6 +391,21 @@ Component({
     },
 
     /**
+     * 处理闰月勾选框点击
+     */
+    onLeapMonthToggle() {
+      const newState = !this.data.internalLeapMonth;
+      this.setData({
+        internalLeapMonth: newState
+      });
+      
+      log.info('onLeapMonthToggle', '切换闰月状态:', newState);
+      
+      // 触发闰月切换事件
+      this.triggerEvent('leap-month-toggle', { isLeapMonth: newState });
+    },
+
+    /**
      * 准备选择器数据
      * @private
      */
@@ -381,6 +445,14 @@ Component({
     
     'initialDateTime': function(initialDateTime) {
       if (initialDateTime && this.data.visible) {
+        this._preparePickerData();
+      }
+    },
+
+    'calendarType': function(calendarType) {
+      // 日历类型变化时重新初始化数据
+      this._initializeData();
+      if (this.data.visible) {
         this._preparePickerData();
       }
     }

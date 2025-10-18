@@ -1,12 +1,15 @@
 # 时间选择器组件 (TimePicker)
 
-一个功能完整的时间选择器组件，支持公历/农历时间选择，包含时辰选择功能。
+一个功能完整的时间选择器组件，支持公历/农历时间选择，包含时辰选择功能和闰月支持。
 
 ## 功能特性
 
 - ✅ 支持年月日时辰选择
 - ✅ 支持不确定时辰选项
 - ✅ 支持公历/农历切换
+- ✅ 农历模式下支持闰月选择
+- ✅ 农历模式下日期范围限制为1-30日
+- ✅ 公历模式下日期范围限制为1-31日
 - ✅ 日期有效性验证
 - ✅ 自定义年份范围
 - ✅ 响应式设计
@@ -33,10 +36,12 @@
   calendarType="{{calendarType}}"
   initialDateTime="{{initialDateTime}}"
   isUncertainTime="{{isUncertainTime}}"
+  isLeapMonth="{{isLeapMonth}}"
   yearRange="{{[1949, 2100]}}"
   bind:confirm="onTimeConfirm"
   bind:cancel="onTimeCancel"
   bind:uncertain-time-toggle="onUncertainTimeToggle"
+  bind:leap-month-toggle="onLeapMonthToggle"
 />
 ```
 
@@ -48,7 +53,8 @@ Page({
     showTimePicker: false,
     calendarType: 'solar',
     initialDateTime: null,
-    isUncertainTime: false
+    isUncertainTime: false,
+    isLeapMonth: false
   },
 
   // 打开时间选择器
@@ -87,6 +93,12 @@ Page({
   onUncertainTimeToggle(e) {
     const { isUncertainTime } = e.detail;
     this.setData({ isUncertainTime });
+  },
+
+  // 处理闰月切换（仅农历模式）
+  onLeapMonthToggle(e) {
+    const { isLeapMonth } = e.detail;
+    this.setData({ isLeapMonth });
   }
 });
 ```
@@ -97,8 +109,9 @@ Page({
 |--------|------|--------|------|
 | visible | Boolean | false | 是否显示选择器 |
 | calendarType | String | 'solar' | 日历类型：solar=公历，lunar=农历 |
-| initialDateTime | Object | null | 初始时间数据 {year, month, day, hour, minute} |
+| initialDateTime | Object | null | 初始时间数据 {year, month, day, hour, minute, isLeapMonth} |
 | isUncertainTime | Boolean | false | 是否不确定时辰 |
+| isLeapMonth | Boolean | false | 是否闰月（仅农历模式有效） |
 | yearRange | Array | [1949, 2100] | 年份范围 [startYear, endYear] |
 
 ## 组件事件
@@ -108,6 +121,7 @@ Page({
 | confirm | 确认选择时间 | timeData: 时间数据对象 |
 | cancel | 取消选择 | 无 |
 | uncertain-time-toggle | 不确定时辰状态切换 | {isUncertainTime: Boolean} |
+| leap-month-toggle | 闰月状态切换（仅农历模式） | {isLeapMonth: Boolean} |
 
 ## 时间数据格式
 
@@ -123,7 +137,8 @@ Page({
   formatedTime: "2023年12月25日 未时(13-15)", // 格式化时间字符串
   timeIndex: 7,         // 时辰索引
   calendarType: "solar", // 日历类型
-  isUncertainTime: false // 是否不确定时辰
+  isUncertainTime: false, // 是否不确定时辰
+  isLeapMonth: false    // 是否闰月（仅农历模式有效）
 }
 ```
 
@@ -150,6 +165,14 @@ Page({
 5. 支持响应式设计，在不同屏幕尺寸下都有良好表现
 
 ## 更新日志
+
+### v1.1.0
+- 新增农历模式支持
+- 新增闰月选择功能
+- 农历模式下日期范围限制为1-30日
+- 公历模式下日期范围限制为1-31日
+- 优化UI布局，支持闰月勾选框
+- 完善组件文档和使用示例
 
 ### v1.0.0
 - 初始版本发布
