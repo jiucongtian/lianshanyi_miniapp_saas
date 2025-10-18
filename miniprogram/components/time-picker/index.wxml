@@ -1,0 +1,54 @@
+<!-- 时间选择器组件 -->
+<t-popup visible="{{visible}}" placement="bottom" bind:visible-change="onPopupClose">
+  <view class="time-picker-container">
+    <!-- 不确定时辰信息勾选框 -->
+    <view class="picker-checkbox-section">
+      <view class="checkbox-wrapper">
+        <checkbox 
+          value="uncertainTime"
+          checked="{{internalUncertainTime}}" 
+          bindtap="onUncertainTimeToggle"
+          class="uncertain-time-checkbox"
+        />
+        <text class="checkbox-label">时辰未知</text>
+      </view>
+    </view>
+    
+    <!-- 选择器头部 -->
+    <view class="picker-header">
+      <view class="picker-btn" bindtap="onCancel">取消</view>
+      <view class="picker-title">选择时辰</view>
+      <view class="picker-btn confirm" bindtap="onConfirm">确定</view>
+    </view>
+    
+    <!-- 选择器主体 -->
+    <picker-view
+      value="{{pickerValue}}"
+      bindchange="onPickerChange"
+      class="picker-view"
+      indicator-class="picker-indicator"
+    >
+      <!-- 年份列 -->
+      <picker-view-column>
+        <view wx:for="{{yearRangeArray}}" wx:key="index" class="picker-item">{{item}}年</view>
+      </picker-view-column>
+      
+      <!-- 月份列 -->
+      <picker-view-column>
+        <view wx:for="{{monthRange}}" wx:key="index" class="picker-item">{{item}}月</view>
+      </picker-view-column>
+      
+      <!-- 日期列 -->
+      <picker-view-column>
+        <view wx:for="{{dayRange}}" wx:key="index" class="picker-item">{{item}}日</view>
+      </picker-view-column>
+      
+      <!-- 时辰列 -->
+      <picker-view-column>
+        <view wx:for="{{timeMap}}" wx:key="index" class="picker-item">
+          {{item}}
+        </view>
+      </picker-view-column>
+    </picker-view>
+  </view>
+</t-popup>

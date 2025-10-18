@@ -122,54 +122,17 @@
   </view>
 </view>
 
-<!-- 自定义时间选择器弹出层 -->
-<t-popup visible="{{showPicker}}" placement="bottom" bind:visible-change="onPickerClose">
-  <view class="custom-picker">
-    <!-- 不确定时辰信息勾选框 -->
-    <view class="picker-checkbox-section">
-      <view class="checkbox-wrapper">
-        <checkbox 
-          value="uncertainTime"
-          checked="{{isUncertainTime}}" 
-          bindtap="onCheckboxTap"
-          class="uncertain-time-checkbox"
-        />
-        <text class="checkbox-label">时辰未知</text>
-      </view>
-    </view>
-    
-    <view class="picker-header">
-      <view class="picker-btn" bindtap="onPickerCancel">取消</view>
-      <view class="picker-title">选择时辰</view>
-      <view class="picker-btn confirm" bindtap="onPickerConfirm">确定</view>
-    </view>
-    <picker-view
-      value="{{pickerValue}}"
-      bindchange="onPickerChange"
-      class="picker-view"
-      indicator-class="picker-indicator"
-    >
-      <!-- 年份列 -->
-      <picker-view-column>
-        <view wx:for="{{yearRange}}" wx:key="index" class="picker-item">{{item}}年</view>
-      </picker-view-column>
-      <!-- 月份列 -->
-      <picker-view-column>
-        <view wx:for="{{monthRange}}" wx:key="index" class="picker-item">{{item}}月</view>
-      </picker-view-column>
-      <!-- 日期列 -->
-      <picker-view-column>
-        <view wx:for="{{dayRange}}" wx:key="index" class="picker-item">{{item}}日</view>
-      </picker-view-column>
-      <!-- 时辰列 -->
-      <picker-view-column>
-        <view wx:for="{{timeMap}}" wx:key="index" class="picker-item">
-          {{item}}
-        </view>
-      </picker-view-column>
-    </picker-view>
-  </view>
-</t-popup>
+<!-- 时间选择器组件 -->
+<time-picker 
+  visible="{{showPicker}}"
+  calendarType="{{calendarType}}"
+  initialDateTime="{{birthDate}}"
+  isUncertainTime="{{isUncertainTime}}"
+  yearRange="{{[1949, 2100]}}"
+  bind:confirm="onTimePickerConfirm"
+  bind:cancel="onTimePickerCancel"
+  bind:uncertain-time-toggle="onTimePickerUncertainToggle"
+/>
 
 <!-- 消息提示 -->
 <t-message id="t-message" />
