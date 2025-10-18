@@ -15,6 +15,7 @@
  */
 
 const { BaseClass } = require('../common/BaseClass');
+const { globalUserManager } = require('../utils/globalUserManager');
 
 class BaseController extends BaseClass {
   /**
@@ -28,6 +29,7 @@ class BaseController extends BaseClass {
     }
     this.page = page;
     this._loadingCount = 0; // 加载计数器，支持嵌套加载
+    this.userInfo = null; // 用户信息缓存
   }
 
   /**
@@ -36,6 +38,54 @@ class BaseController extends BaseClass {
    */
   get data() {
     return this.page ? this.page.data : null;
+  }
+
+  // ==================== 用户信息管理方法 ====================
+
+  /**
+   * 加载用户信息（统一方法，所有控制器都使用此方法）
+   * @param {boolean} forceRefresh - 是否强制刷新，默认false
+   * @returns {Promise<Object|null>} 用户信息对象
+   */
+  async loadUserInfo(forceRefresh = false) {
+    this._log('loadUserInfo', '开始加载用户信息', { forceRefresh });
+    
+    try {
+      const response = await globalUserManager.getUserInfo(forceRefresh);
+      
+      if (response.success && response.data) {
+        this.userInfo = response.data;
+        this._log('loadUserInfo', '用户信息加载成功', {
+          userType: this.userInfo.userType,
+          profileQuota: this.userInfo.profileQuota,
+          usedProfiles: this.userInfo.usedProfiles
+        });
+        return this.userInfo;
+      } else {
+        this._error('loadUserInfo', '获取用户信息失败:', response.error);
+        return null;
+      }
+    } catch (error) {
+      this._error('loadUserInfo', '加载用户信息异常:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 刷新用户信息（业务操作后调用）
+   * @returns {Promise<Object|null>} 用户信息对象
+   */
+  async refreshUserInfo() {
+    this._log('refreshUserInfo', '刷新用户信息');
+    return this.loadUserInfo(true);
+  }
+
+  /**
+   * 获取缓存的用户信息（同步方法）
+   * @returns {Object|null} 缓存的用户信息
+   */
+  getCachedUserInfo() {
+    return this.userInfo;
   }
 
   // ==================== 用户交互提示方法 ====================
@@ -341,8 +391,11 @@ class BaseController extends BaseClass {
    * 页面显示时的处理
    * 子类可以重写此方法
    */
-  onShow() {
-    this._log('页面显示');
+  async onShow() {
+    this._log('onShow', '页面显示');
+    
+    // 自动加载用户信息（优先使用缓存）
+    await this.loadUserInfo();
   }
 
   /**

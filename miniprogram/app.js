@@ -3,6 +3,7 @@ import config from './config/index';
 const eventBus = require('./utils/eventBus');
 const { USER_EVENTS, PROFILE_EVENTS, SYSTEM_EVENTS } = require('./utils/eventTypes');
 const { userManager } = require('./utils/userManager');
+const { globalUserManager } = require('./utils/globalUserManager');
 const { imageCacheManager } = require('./utils/imageCacheManager');
 const { profileService } = require('./services/index');
 const { profileManager } = require('./utils/profileManager');
@@ -84,11 +85,11 @@ App({
     try {
       log.info('autoSaveUser', '开始自动保存用户信息');
       
-      // 使用用户管理器初始化用户
-      const result = await userManager.initUser();
+      // 使用全局用户管理器初始化用户信息
+      const result = await globalUserManager.initialize();
       
       if (result.success) {
-        log.info('autoSaveUser', '用户信息保存成功', { message: result.message });
+        log.info('autoSaveUser', '用户信息初始化成功', { message: result.message });
         
         // 更新全局用户信息
         this.globalData.userInfo = result.data;
@@ -97,9 +98,9 @@ App({
         this.eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, result.data, { __emitOptions__: true, silent: true });
         
         // 显示欢迎信息
-        log.info('autoSaveUser', result.message);
+        log.info('autoSaveUser', result.message || '用户信息初始化成功');
       } else {
-        log.error('autoSaveUser', '用户信息保存失败', { error: result.error });
+        log.error('autoSaveUser', '用户信息初始化失败', { error: result.error });
       }
     } catch (error) {
       log.error('autoSaveUser', '自动保存用户信息出错', { error: error.message });

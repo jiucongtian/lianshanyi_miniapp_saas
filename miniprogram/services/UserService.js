@@ -8,14 +8,24 @@ const { UserBean } = require('../beans/UserBean');
 class UserService extends BaseService {
   constructor() {
     super();
+    this._userInfoCache = null;
+    this._cacheTime = 0;
+    this._cacheDuration = 5000; // 缓存5秒
   }
 
   /**
    * 获取用户信息
+   * @param {boolean} forceRefresh - 是否强制刷新，默认false
    * @returns {Promise<ResponseBean>} 用户信息响应，成功时data为UserBean实例
    */
-  async getUserInfo() {
+  async getUserInfo(forceRefresh = false) {
     try {
+      // 检查缓存
+      if (!forceRefresh && this._userInfoCache && (Date.now() - this._cacheTime) < this._cacheDuration) {
+        this._log('getUserInfo', '使用缓存数据', { cacheAge: Date.now() - this._cacheTime });
+        return this._userInfoCache;
+      }
+      
       const response = await this.callFunction('userManagement', {
         action: 'getUserInfo'
       });
@@ -23,9 +33,11 @@ class UserService extends BaseService {
       // 记录服务调用日志
       this._logServiceCall('getUserInfo', {}, response);
       
-      // 成功时将data转换为UserBean
+      // 成功时将data转换为UserBean并缓存
       if (response.success && response.data) {
         response.data = new UserBean(response.data);
+        this._userInfoCache = response;
+        this._cacheTime = Date.now();
       }
       
       return response;
@@ -33,6 +45,15 @@ class UserService extends BaseService {
       this._error('getUserInfo', 'getUserInfo 异常:', error);
       return ResponseBean.error('获取用户信息失败: ' + error.message, -1);
     }
+  }
+
+  /**
+   * 清除用户信息缓存
+   */
+  clearUserInfoCache() {
+    this._userInfoCache = null;
+    this._cacheTime = 0;
+    this._log('clearUserInfoCache', '用户信息缓存已清除');
   }
 
   /**

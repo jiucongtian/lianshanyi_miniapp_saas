@@ -24,6 +24,7 @@ const { BaseController } = require('./BaseController');
 const { userService } = require('../services/UserService');
 const { profileService } = require('../services/ProfileService');
 const { profileManager } = require('../utils/profileManager');
+const { globalUserManager } = require('../utils/globalUserManager');
 const { ResponseBean } = require('../beans/ResponseBean');
 const eventBus = require('../utils/eventBus');
 const { PROFILE_EVENTS } = require('../utils/eventTypes');
@@ -760,40 +761,29 @@ class AddProfileController extends BaseController {
   }
 
   /**
-   * 加载用户信息
+   * 更新用户信息到页面（AddProfileController特有的处理）
    * @private
    */
-  async loadUserInfo() {
-    this._log('loadUserInfo', '开始加载用户信息');
-    
-    try {
-      const response = await userService.getUserInfo();
-      
-      if (response.success && response.data) {
-        this.userInfo = response.data;
-        
-        // 更新页面数据，包括配额信息
-        this._setData({
-          userType: this.userInfo.userType,
-          userTypeName: this.userInfo.getDisplayName(),
-          profileQuota: this.userInfo.profileQuota,
-          usedProfiles: this.userInfo.usedProfiles,
-          canCreateMore: this.userInfo.canCreateMore()
-        });
-        
-        this._log('loadUserInfo', '用户信息加载成功', {
-          userType: this.userInfo.userType,
-          profileQuota: this.userInfo.profileQuota,
-          usedProfiles: this.userInfo.usedProfiles
-        });
-      } else {
-        this._error('loadUserInfo', '获取用户信息失败:', response.error);
-        // 不显示错误，允许继续操作
-      }
-    } catch (error) {
-      this._error('loadUserInfo', '加载用户信息异常:', error);
-      // 不显示错误，允许继续操作
+  _updateUserInfoToPage() {
+    if (!this.userInfo) {
+      this._log('_updateUserInfoToPage', '用户信息为空，跳过更新');
+      return;
     }
+    
+    // 更新页面数据，包括配额信息
+    this._setData({
+      userType: this.userInfo.userType,
+      userTypeName: this.userInfo.getDisplayName(),
+      profileQuota: this.userInfo.profileQuota,
+      usedProfiles: this.userInfo.usedProfiles,
+      canCreateMore: this.userInfo.canCreateMore()
+    });
+    
+    this._log('_updateUserInfoToPage', '用户信息已更新到页面', {
+      userType: this.userInfo.userType,
+      profileQuota: this.userInfo.profileQuota,
+      usedProfiles: this.userInfo.usedProfiles
+    });
   }
 
   /**
@@ -975,13 +965,14 @@ class AddProfileController extends BaseController {
   /**
    * 页面显示时的处理
    */
-  onShow() {
+  async onShow() {
     this._log('onShow', '页面显示');
     
-    // 重新加载用户信息，确保配额数据是最新的
-    this.loadUserInfo();
+    // 调用父类的onShow，会自动加载用户信息
+    await super.onShow();
     
-    super.onShow();
+    // 更新页面数据（如果需要特殊处理）
+    this._updateUserInfoToPage();
   }
 
   /**

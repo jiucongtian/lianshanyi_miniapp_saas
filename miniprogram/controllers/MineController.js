@@ -22,6 +22,7 @@
 
 const { BaseController } = require('./BaseController');
 const { userService } = require('../services/UserService');
+const { globalUserManager } = require('../utils/globalUserManager');
 const { imageCacheManager } = require('../utils/imageCacheManager');
 const { profileManager } = require('../utils/profileManager');
 
@@ -65,49 +66,34 @@ class MineController extends BaseController {
   }
 
   /**
-   * 加载用户信息
+   * 更新用户信息到页面（MineController特有的处理）
+   * @private
    */
-  async loadUserInfo() {
-    this._log('loadUserInfo', '开始加载用户信息');
+  _updateUserInfoToPage() {
+    if (!this.userInfo) {
+      this._log('_updateUserInfoToPage', '用户信息为空，跳过更新');
+      return;
+    }
     
     try {
-      this._setData({ loading: true, error: '' });
+      // 处理用户信息显示
+      this._processUserInfo(this.userInfo);
       
-      const result = await userService.getUserInfo();
+      // 处理头像缓存
+      this._processAvatarCache(this.userInfo);
       
-      if (result.success) {
-        const userInfo = result.data;
-        this._log('loadUserInfo', '获取到用户信息:', userInfo);
-        
-        // 处理用户信息显示
-        this._processUserInfo(userInfo);
-        
-        // 处理头像缓存
-        await this._processAvatarCache(userInfo);
-        
-        this.userInfo = userInfo;
-        this._setData({
-          userInfo: userInfo,
-          userTypeText: this.userTypeText,
-          genderText: this.genderText,
-          phoneNumberText: this.phoneNumberText,
-          loading: false
-        });
-        
-        this._log('loadUserInfo', '用户信息加载成功');
-      } else {
-        this._error('loadUserInfo', '获取用户信息失败:', result.error);
-        this._setData({
-          error: result.error || '获取用户信息失败',
-          loading: false
-        });
-      }
-    } catch (error) {
-      this._error('loadUserInfo', '加载用户信息出错:', error);
       this._setData({
-        error: error.message || '加载失败',
-        loading: false
+        userInfo: this.userInfo,
+        userTypeText: this.userTypeText,
+        genderText: this.genderText,
+        phoneNumberText: this.phoneNumberText,
+        loading: false,
+        error: ''
       });
+      
+      this._log('_updateUserInfoToPage', '用户信息已更新到页面');
+    } catch (error) {
+      this._error('_updateUserInfoToPage', '更新用户信息到页面失败:', error);
     }
   }
 
@@ -257,7 +243,13 @@ class MineController extends BaseController {
    */
   async onRefresh() {
     this._log('onRefresh', '刷新页面数据');
-    await this.loadUserInfo();
+    
+    // 使用父类的刷新方法
+    await this.refreshUserInfo();
+    
+    // 更新页面数据
+    this._updateUserInfoToPage();
+    
     wx.stopPullDownRefresh();
   }
 
@@ -447,13 +439,14 @@ class MineController extends BaseController {
   /**
    * 页面显示时的处理
    */
-  onShow() {
+  async onShow() {
     this._log('onShow', '页面显示');
     
-    // 每次显示页面时刷新用户信息
-    this.loadUserInfo();
+    // 调用父类的onShow，会自动加载用户信息
+    await super.onShow();
     
-    super.onShow();
+    // 更新页面数据（如果需要特殊处理）
+    this._updateUserInfoToPage();
   }
 
   /**
