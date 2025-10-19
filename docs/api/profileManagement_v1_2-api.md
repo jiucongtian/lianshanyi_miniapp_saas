@@ -18,6 +18,44 @@ POST（云函数调用）
 - deleteProfile: 删除档案（软删除）
 - searchProfile: 搜索档案
 
+### ⭐ 农历日期处理流程
+
+当 `birthDate.isLunar=true` 时，系统会自动进行农历转公历：
+
+```mermaid
+sequenceDiagram
+    participant PM as profileManagement_v1_2
+    participant BC as baziCalculator
+    participant LC as localCalculateBazi_v1_2
+    participant Conv as lunar2solar转换器
+
+    PM->>BC: calculateBazi(birthDate)
+    Note over BC: 检测 isLunar=true
+    BC->>LC: 调用云函数<br/>(year, month, day, hour, minute, isLunar, isLeapMonth)
+    LC->>Conv: lunar2solar(year, month, day, isLeapMonth)
+    Conv-->>LC: 返回公历日期<br/>(solarYear, solarMonth, solarDay)
+    LC->>LC: 使用公历日期计算八字<br/>calculateBazi(solarYear, solarMonth, solarDay, hour, minute)
+    LC-->>BC: 返回八字数据 + 转换信息
+    BC-->>PM: 返回完整结果
+```
+
+**处理逻辑说明**：
+1. `profileManagement_v1_2` 接收带有 `isLunar` 标识的 `birthDate`
+2. 调用 `baziCalculator.calculateBazi()` 进行八字计算
+3. `baziCalculator` 将所有参数（包括 `isLunar` 和 `isLeapMonth`）传递给 `localCalculateBazi_v1_2` 云函数
+4. `localCalculateBazi_v1_2` 检测到农历日期，调用内置的 `lunar2solar` 转换器
+5. 转换为公历后，使用公历日期进行八字计算（因为八字计算必须基于公历）
+6. 返回结果中包含：
+   - 原始输入信息（`inputDate`）
+   - 转换后的公历日期（`converted`，仅农历时存在）
+   - 计算的八字数据（`baziData`）
+
+**技术细节**：
+- 转换器使用 `js-calendar-converter.cjs` 的 `lunar2solar` 方法
+- 支持农历闰月转换（`isLeapMonth` 参数）
+- 公历日期范围：1900-2100 年
+- 转换后的公历日期用于八字计算，确保结果准确
+
 ### 创建档案执行流程（性能优化）
 ```mermaid
 sequenceDiagram
@@ -99,6 +137,7 @@ sequenceDiagram
 
 ### v1.2 更新内容（新增）
 - **农历闰月支持**：新增 `birthDate.isLeapMonth` 字段，支持存储和识别农历闰月
+- **农历自动转换**：⭐ 农历日期自动转换为公历后进行八字计算（由 `localCalculateBazi_v1_2` 云函数处理）
 - **向前兼容**：老数据自动补充默认值，不影响已有档案
 - **完善日历类型**：`birthDate.isLunar` 字段明确标识公历/农历类型
 - **数据完整性**：确保农历档案包含完整的闰月信息

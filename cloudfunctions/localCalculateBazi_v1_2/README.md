@@ -9,6 +9,7 @@
 3. **月柱修正**：根据节气时间自动修正月柱（✨ 使用时辰区间判断）
 4. **时柱计算**：根据日柱和时辰准确计算时柱
 5. **详细信息**：提供公历、农历、修正信息等详细数据
+6. **农历支持**：⭐ 支持农历日期输入，自动转换为公历后计算（支持闰月）
 
 ### ⭐ 重要特性：时辰区间判断
 
@@ -55,12 +56,57 @@
 
 ## 使用方法
 
-### 基本用法
+### 基本用法（云函数调用）
 
 ```javascript
-const { calculateBazi } = require('./bazi-calculator');
+// 公历日期计算
+const result = await wx.cloud.callFunction({
+  name: 'localCalculateBazi_v1_2',
+  data: {
+    year: 2000,
+    month: 5,
+    day: 15,
+    hour: 10,
+    minute: 30,
+    isLunar: false  // 公历
+  }
+});
 
-// 计算生辰八字
+if (result.result.success) {
+  console.log('八字数据:', result.result.data.baziData);
+}
+```
+
+### 农历日期计算（新增）
+
+```javascript
+// 农历日期计算（支持闰月）
+const result = await wx.cloud.callFunction({
+  name: 'localCalculateBazi_v1_2',
+  data: {
+    year: 1990,
+    month: 4,      // 农历四月
+    day: 22,       // 农历廿二
+    hour: 14,
+    minute: 30,
+    isLunar: true,     // 标记为农历
+    isLeapMonth: false // 是否闰月
+  }
+});
+
+if (result.result.success) {
+  console.log('八字数据:', result.result.data.baziData);
+  console.log('转换后的公历:', result.result.data.converted);
+  // 输出: { solarYear: 1990, solarMonth: 5, solarDay: 15 }
+}
+```
+
+### 本地调用（内部使用）
+
+```javascript
+const { calculateBazi } = require('./core-converter/bazi-calculator');
+
+// 计算生辰八字（始终使用公历日期）
 // 参数：年、月、日、时、分
 const result = calculateBazi(2000, 5, 15, 10, 30);
 
@@ -78,14 +124,82 @@ if (result.success) {
 
 ### 返回数据结构
 
+#### 云函数返回结构
+
 ```javascript
 {
   success: true,
-  bazi: {
-    year: '庚辰',    // 年柱
-    month: '辛巳',   // 月柱
-    day: '甲子',     // 日柱
-    hour: '己巳'     // 时柱
+  message: '本地八字计算成功',
+  data: {
+    success: true,
+    baziData: {
+      year: { gan: '庚', zhi: '辰', ganzhiIndex: 17 },
+      month: { gan: '辛', zhi: '巳', ganzhiIndex: 18 },
+      day: { gan: '甲', zhi: '子', ganzhiIndex: 1 },
+      hour: { gan: '己', zhi: '巳', ganzhiIndex: 6 },
+      lunarDate: {
+        year: 1990,
+        month: 4,
+        day: 22,
+        isLeap: false
+      }
+    },
+    details: {
+      solarDate: {
+        year: 1990,
+        month: 5,
+        day: 15,
+        hour: 14,
+        minute: 30
+      },
+      corrections: {
+        yearCorrected: false,
+        monthCorrected: false,
+        lichunTime: '1990年02月04日 03时14分',
+        solarTermInfo: null
+      }
+    },
+    // 输入信息
+    inputDate: {
+      isLunar: true,        // 输入是否为农历
+      isLeapMonth: false,   // 是否闰月
+      originalYear: 1990,   // 原始输入年份
+      originalMonth: 4,     // 原始输入月份
+      originalDay: 22,      // 原始输入日期
+      hour: 14,
+      minute: 30
+    },
+    // 如果是农历，包含转换信息
+    converted: {
+      solarYear: 1990,
+      solarMonth: 5,
+      solarDay: 15
+    }
+  },
+  context: {
+    openid: 'xxx',
+    appid: 'xxx',
+    unionid: 'xxx'
+  }
+}
+```
+
+#### 本地计算返回结构
+
+```javascript
+{
+  success: true,
+  baziData: {
+    year: { gan: '庚', zhi: '辰', ganzhiIndex: 17 },
+    month: { gan: '辛', zhi: '巳', ganzhiIndex: 18 },
+    day: { gan: '甲', zhi: '子', ganzhiIndex: 1 },
+    hour: { gan: '己', zhi: '巳', ganzhiIndex: 6 },
+    lunarDate: {
+      year: 2000,
+      month: 4,
+      day: 13,
+      isLeap: false
+    }
   },
   details: {
     solarDate: {
@@ -94,12 +208,6 @@ if (result.success) {
       day: 15,
       hour: 10,
       minute: 30
-    },
-    lunarDate: {
-      year: 2000,
-      month: 4,
-      day: 13,
-      isLeap: false
     },
     corrections: {
       yearCorrected: false,      // 是否修正了年柱

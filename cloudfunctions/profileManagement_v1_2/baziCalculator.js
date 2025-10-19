@@ -148,16 +148,31 @@ async function calculateBazi(birthDate) {
       throw new Error('缺少必要参数: birthDate');
     }
 
+
+
+
+
+    
     // 验证birthDate参数
-    const { year, month, day, hour, minute = 0 } = birthDate;
+    const { year, month, day, hour, minute = 0, isLunar = false, isLeapMonth = false } = birthDate;
     if (!year || !month || !day || hour === undefined) {
       throw new Error('birthDate参数不完整，缺少必要字段');
     }
 
     console.log('=== 调用本地计算云函数 ===');
-    console.log('参数:', { year, month, day, hour, minute });
+    console.log('参数:', { year, month, day, hour, minute, isLunar, isLeapMonth });
     
-    // 调用本地计算云函数
+    // 判断日期类型
+    if (isLunar) {
+      console.log('检测到农历日期，将由本地计算云函数进行转换');
+      if (isLeapMonth) {
+        console.log('农历日期为闰月');
+      }
+    } else {
+      console.log('使用公历日期进行计算');
+    }
+    
+    // 调用本地计算云函数（支持农历和公历）
     const result = await cloud.callFunction({
       name: 'localCalculateBazi_v1_2',
       data: {
@@ -165,7 +180,9 @@ async function calculateBazi(birthDate) {
         month,
         day,
         hour,
-        minute
+        minute,
+        isLunar,
+        isLeapMonth
       }
     });
     

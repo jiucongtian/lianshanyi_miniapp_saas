@@ -18,18 +18,28 @@ async function callBaziCalculation(birthDate) {
     console.log('=== 开始调用八字计算模块 ===');
     console.log('出生日期信息（北京时间）:', birthDate);
     
-    // 直接传递北京时间参数，避免时区转换
-    const { year, month, day, hour, minute = 0 } = birthDate;
+    // 提取所有参数，包括农历相关字段
+    const { year, month, day, hour, minute = 0, isLunar = false, isLeapMonth = false } = birthDate;
     
-    console.log('直接传递北京时间参数给Coze API:', { year, month, day, hour, minute });
+    console.log('传递参数给八字计算模块:', { 
+      year, 
+      month, 
+      day, 
+      hour, 
+      minute,
+      isLunar,
+      isLeapMonth 
+    });
     
-    // 调用八字计算模块
+    // 调用八字计算模块（支持农历和公历）
     const result = await calculateBazi({
       year,
       month,
       day,
       hour,
-      minute
+      minute,
+      isLunar,
+      isLeapMonth
     });
     
     console.log('八字计算模块返回结果:', result);
@@ -39,8 +49,9 @@ async function callBaziCalculation(birthDate) {
         success: true,
         baziData: result.data.baziData,
         rawCozeData: result.data.rawCozeData,
+        rawLocalData: result.data.rawLocalData, // 保留本地计算结果
         parameters: result.data.parameters,
-        birthDate: { year, month, day, hour, minute }
+        birthDate: { year, month, day, hour, minute, isLunar, isLeapMonth }
       };
     } else {
       throw new Error(result.error || '八字计算失败');
