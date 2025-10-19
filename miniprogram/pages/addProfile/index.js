@@ -93,8 +93,24 @@ Page({
   },
 
   async onSubmit(e) {
-    const success = await this.controller.onSubmit();
-    if (!success) {
+    try {
+      const success = await this.controller.onSubmit();
+      
+      // 按钮状态重置逻辑：
+      // 1. 创建模式成功 -> 立即跳转，不需要重置
+      // 2. 创建模式失败 -> 需要重置
+      // 3. 编辑模式（无论成功/失败/无变化）-> 需要重置（因为有1.5秒延迟或停留在当前页）
+      const shouldResetButton = !success || this.data.pageMode === 'edit';
+      
+      if (shouldResetButton) {
+        // 短暂延迟，确保loading状态已被设置
+        setTimeout(() => {
+          this.resetButtonState();
+        }, 100);
+      }
+    } catch (error) {
+      // 发生异常时也要重置按钮状态
+      log.error('onSubmit', '提交异常:', error);
       this.resetButtonState();
     }
   },
