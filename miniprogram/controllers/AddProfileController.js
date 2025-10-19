@@ -766,9 +766,10 @@ class AddProfileController extends BaseController {
       return '';
     }
 
-    const timeName = this._getTimeNameByHour(hour);
-    const hourStart = Math.floor(hour / 2) * 2 + (hour % 2 === 0 ? 23 : 1);
-    const hourEnd = (hourStart + 2) % 24;
+    const timeInfo = this._getTimeInfoByHour(hour);
+    const timeName = timeInfo.name;
+    const hourStart = timeInfo.start;
+    const hourEnd = timeInfo.end;
     
     if (minute !== undefined && minute !== null) {
       return `${timeName}(${String(hourStart).padStart(2, '0')}-${String(hourEnd).padStart(2, '0')})`;
@@ -778,12 +779,12 @@ class AddProfileController extends BaseController {
   }
 
   /**
-   * 根据小时获取时辰名称
-   * @param {number} hour - 小时
-   * @returns {string} 时辰名称
+   * 根据小时获取时辰信息（包括名称和时间范围）
+   * @param {number} hour - 小时(0-23)
+   * @returns {Object} 时辰信息对象 {name, start, end}
    * @private
    */
-  _getTimeNameByHour(hour) {
+  _getTimeInfoByHour(hour) {
     const timeMapObjects = [
       { name: '子时', start: 23, end: 1 },
       { name: '丑时', start: 1, end: 3 },
@@ -801,14 +802,27 @@ class AddProfileController extends BaseController {
     
     for (const time of timeMapObjects) {
       if (time.name === '子时') {
+        // 子时特殊处理：23点或0点
         if (hour >= 23 || hour < 1) {
-          return time.name;
+          return time;
         }
       } else if (hour >= time.start && hour < time.end) {
-        return time.name;
+        return time;
       }
     }
-    return '子时';
+    
+    // 默认返回子时
+    return timeMapObjects[0];
+  }
+  
+  /**
+   * 根据小时获取时辰名称
+   * @param {number} hour - 小时
+   * @returns {string} 时辰名称
+   * @private
+   */
+  _getTimeNameByHour(hour) {
+    return this._getTimeInfoByHour(hour).name;
   }
 
   /**
@@ -1315,3 +1329,4 @@ class AddProfileController extends BaseController {
 }
 
 module.exports = { AddProfileController };
+
