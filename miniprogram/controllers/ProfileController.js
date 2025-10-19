@@ -414,14 +414,21 @@ class ProfileController extends BaseController {
    * @private
    */
   _bindEventHandlers() {
+    // 保存绑定后的函数引用，以便后续解绑
+    this._boundHandlers = {
+      profileSelected: this._handleSelectProfileEvent.bind(this),
+      profileListRefresh: this._handleProfileListRefreshEvent.bind(this),
+      profileManagerReady: this._handleProfileManagerReady.bind(this)
+    };
+    
     // 监听档案选中事件
-    eventBus.on(PROFILE_EVENTS.PROFILE_SELECTED, this._handleSelectProfileEvent.bind(this));
+    eventBus.on(PROFILE_EVENTS.PROFILE_SELECTED, this._boundHandlers.profileSelected);
     
     // 监听档案列表刷新事件
-    eventBus.on(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._handleProfileListRefreshEvent.bind(this));
+    eventBus.on(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._boundHandlers.profileListRefresh);
     
     // 监听ProfileManager初始化完成事件
-    eventBus.once(SYSTEM_EVENTS.PROFILE_MANAGER_READY, this._handleProfileManagerReady.bind(this));
+    eventBus.once(SYSTEM_EVENTS.PROFILE_MANAGER_READY, this._boundHandlers.profileManagerReady);
   }
 
   /**
@@ -685,9 +692,15 @@ class ProfileController extends BaseController {
   onUnload() {
     this._log('onUnload', '页面卸载');
     
-    // 清理事件监听
-    eventBus.off(PROFILE_EVENTS.PROFILE_SELECTED, this._handleSelectProfileEvent);
-    eventBus.off(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._handleProfileListRefreshEvent);
+    // 清理事件监听（使用保存的绑定函数引用）
+    if (this._boundHandlers) {
+      if (this._boundHandlers.profileSelected) {
+        eventBus.off(PROFILE_EVENTS.PROFILE_SELECTED, this._boundHandlers.profileSelected);
+      }
+      if (this._boundHandlers.profileListRefresh) {
+        eventBus.off(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._boundHandlers.profileListRefresh);
+      }
+    }
     
     super.onUnload();
   }

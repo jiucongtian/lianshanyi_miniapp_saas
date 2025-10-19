@@ -1330,8 +1330,10 @@ class AddProfileController extends BaseController {
   onUnload() {
     this._log('onUnload', '页面卸载');
     
-    // 清理事件监听
-    eventBus.off(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._handleProfileListRefreshEvent);
+    // 清理事件监听（使用保存的绑定函数引用）
+    if (this._boundHandlers && this._boundHandlers.profileListRefresh) {
+      eventBus.off(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._boundHandlers.profileListRefresh);
+    }
     
     super.onUnload();
   }
@@ -1343,8 +1345,13 @@ class AddProfileController extends BaseController {
    * @private
    */
   _bindEventHandlers() {
+    // 保存绑定后的函数引用，以便后续解绑
+    this._boundHandlers = {
+      profileListRefresh: this._handleProfileListRefreshEvent.bind(this)
+    };
+    
     // 监听档案列表刷新事件
-    eventBus.on(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._handleProfileListRefreshEvent.bind(this));
+    eventBus.on(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._boundHandlers.profileListRefresh);
   }
 
   /**

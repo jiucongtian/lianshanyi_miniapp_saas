@@ -296,14 +296,21 @@ class CardController extends BaseController {
    * @private
    */
   _bindEventHandlers() {
+    // 保存绑定后的函数引用，以便后续解绑
+    this._boundHandlers = {
+      profileManagerReady: this._handleProfileManagerReady.bind(this),
+      profileSelected: this._handleSelectProfile.bind(this),
+      profileUpdated: this._handleProfileUpdated.bind(this)
+    };
+    
     // 监听ProfileManager初始化完成事件
-    eventBus.on(SYSTEM_EVENTS.PROFILE_MANAGER_READY, this._handleProfileManagerReady.bind(this));
+    eventBus.on(SYSTEM_EVENTS.PROFILE_MANAGER_READY, this._boundHandlers.profileManagerReady);
     
     // 监听档案选中事件
-    eventBus.on(PROFILE_EVENTS.PROFILE_SELECTED, this._handleSelectProfile.bind(this));
+    eventBus.on(PROFILE_EVENTS.PROFILE_SELECTED, this._boundHandlers.profileSelected);
     
     // 监听档案更新事件（档案属性被修改）
-    eventBus.on(PROFILE_EVENTS.PROFILE_UPDATED, this._handleProfileUpdated.bind(this));
+    eventBus.on(PROFILE_EVENTS.PROFILE_UPDATED, this._boundHandlers.profileUpdated);
     
     this._log('_bindEventHandlers', '事件监听器已绑定');
   }
@@ -721,10 +728,16 @@ class CardController extends BaseController {
   onUnload() {
     this._log('onUnload', '页面卸载');
     
-    // 清理事件监听
-    eventBus.off(SYSTEM_EVENTS.PROFILE_MANAGER_READY, this._handleProfileManagerReady);
-    eventBus.off(PROFILE_EVENTS.PROFILE_SELECTED, this._handleSelectProfile);
-    eventBus.off(PROFILE_EVENTS.PROFILE_UPDATED, this._handleProfileUpdated);
+    // 清理事件监听（使用保存的绑定函数引用）
+    if (this._boundHandlers) {
+      if (this._boundHandlers.profileSelected) {
+        eventBus.off(PROFILE_EVENTS.PROFILE_SELECTED, this._boundHandlers.profileSelected);
+      }
+      if (this._boundHandlers.profileUpdated) {
+        eventBus.off(PROFILE_EVENTS.PROFILE_UPDATED, this._boundHandlers.profileUpdated);
+      }
+      // 注意：once 监听器会自动移除，但为了统一性也可以尝试移除
+    }
     
     super.onUnload();
   }
