@@ -135,10 +135,12 @@
   calendarType="{{calendarType}}"
   initialDateTime="{{initialDateTime}}"
   isUncertainTime="{{isUncertainTime}}"
+  isLeapMonth="{{isLeapMonth}}"
   yearRange="{{[1949, 2100]}}"
   bind:confirm="onTimePickerConfirm"
   bind:cancel="onTimePickerCancel"
   bind:uncertain-time-toggle="onTimePickerUncertainToggle"
+  bind:leap-month-toggle="onLeapMonthToggle"
 />
 
 <!-- 消息提示 -->

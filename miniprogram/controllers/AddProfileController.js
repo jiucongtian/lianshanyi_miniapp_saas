@@ -578,6 +578,21 @@ class AddProfileController extends BaseController {
   }
 
   /**
+   * 处理闰月状态切换
+   * @param {boolean} isLeapMonth - 是否闰月
+   */
+  onLeapMonthToggle(isLeapMonth) {
+    this._log('onLeapMonthToggle', '切换闰月状态:', isLeapMonth);
+    
+    // 更新闰月状态
+    if (this.lunarDateTime) {
+      this.lunarDateTime.isLeapMonth = isLeapMonth;
+    }
+    
+    this._setData({ isLeapMonth: isLeapMonth });
+  }
+
+  /**
    * 处理日历类型切换
    * @param {string} calendarType - 日历类型：solar=公历，lunar=农历
    */

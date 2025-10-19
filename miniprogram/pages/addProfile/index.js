@@ -24,6 +24,7 @@ Page({
     formatedDateTime: '', // 格式化后的时间显示
     showPicker: false,
     isUncertainTime: false, // 是否不确定时辰信息
+    isLeapMonth: false, // 是否闰月（仅农历有效）
     initialDateTime: null, // 传递给time-picker的初始时间
     
     // 分别存储公历和农历时间数据
@@ -126,6 +127,21 @@ Page({
     }
   },
 
+  onLeapMonthToggle(e) {
+    const { isLeapMonth } = e.detail;
+    log.info('onLeapMonthToggle', '切换闰月状态:', isLeapMonth);
+    
+    // 更新页面的闰月状态
+    this.setData({
+      isLeapMonth: isLeapMonth
+    });
+    
+    // 通知Controller处理闰月状态切换
+    if (this.controller) {
+      this.controller.onLeapMonthToggle(isLeapMonth);
+    }
+  },
+
   // 工具方法
   resetButtonState() {
     const buttonComponent = this.selectComponent('#loading-button');
@@ -179,13 +195,16 @@ Page({
     
     // 获取农历时间数据作为初始值
     let initialDateTime = null;
+    let isLeapMonth = false;
     
     if (this.data.lunarDateTime) {
       // 使用已有的农历时间
       initialDateTime = this.data.lunarDateTime;
+      isLeapMonth = this.data.lunarDateTime.isLeapMonth || false;
     } else if (this.data.birthDate) {
       // 使用birthDate
       initialDateTime = this.data.birthDate;
+      isLeapMonth = this.data.birthDate.isLeapMonth || false;
     }
     
     // 如果没有时间数据，使用当前系统时间
@@ -198,14 +217,16 @@ Page({
         hour: now.getHours(),
         minute: now.getMinutes()
       };
+      isLeapMonth = false;
     }
     
-    log.debug('onLunarInputTap', '设置农历初始时间:', initialDateTime);
+    log.debug('onLunarInputTap', '设置农历初始时间:', { initialDateTime, isLeapMonth });
     
     this.setData({
       showPicker: true,
       calendarType: 'lunar',
-      initialDateTime: initialDateTime
+      initialDateTime: initialDateTime,
+      isLeapMonth: isLeapMonth
     });
   },
 
