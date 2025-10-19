@@ -173,22 +173,12 @@ async function createProfile(wxContext, profileData) {
   const now = new Date()
   
   try {
-    // 验证必填字段
+    // 1️⃣ 验证必填字段
     if (!profileData.profileName || !profileData.birthDate) {
       throw new Error('缺少必填字段：档案名称或生日信息')
     }
     
-    // 自动计算八字数据
-    console.log('开始自动计算八字数据...');
-    const baziResult = await callBaziCalculation(profileData.birthDate);
-    
-    if (!baziResult.success || !baziResult.baziData) {
-      throw new Error(`八字计算失败: ${baziResult.error || '未知错误'}`);
-    }
-    
-    console.log('八字计算成功，数据:', baziResult.baziData);
-    
-    // 获取用户信息
+    // 2️⃣ 获取用户信息（优先检查，避免浪费计算资源）
     const userResult = await db.collection('users').where({
       openid: OPENID,
       isActive: true
@@ -201,11 +191,11 @@ async function createProfile(wxContext, profileData) {
     const user = userResult.data[0]
     const userId = user._id
     
-    // 使用新的权限和配额获取方法
+    // 3️⃣ 获取权限和配额配置
     const userPermissions = await getUserPermissionsAndQuota(user)
     const { userType, profileQuota, typeName } = userPermissions
     
-    // 检查档案数量限制（高级用户无限制）
+    // 4️⃣ 检查档案数量限制（在计算八字之前检查，避免浪费资源）
     if (profileQuota !== -1) {
       const existingProfileCount = await db.collection('profiles').where({
         openid: OPENID,
@@ -232,6 +222,16 @@ async function createProfile(wxContext, profileData) {
         }
       }
     }
+    
+    // 5️⃣ 配额检查通过后，才开始计算八字（耗时操作）
+    console.log('配额检查通过，开始计算八字数据...');
+    const baziResult = await callBaziCalculation(profileData.birthDate);
+    
+    if (!baziResult.success || !baziResult.baziData) {
+      throw new Error(`八字计算失败: ${baziResult.error || '未知错误'}`);
+    }
+    
+    console.log('八字计算成功，数据:', baziResult.baziData);
     
     // 创建档案文档
     const profileDoc = {

@@ -18,6 +18,83 @@ POST（云函数调用）
 - deleteProfile: 删除档案（软删除）
 - searchProfile: 搜索档案
 
+### 创建档案执行流程（性能优化）
+```mermaid
+sequenceDiagram
+    participant C as 客户端
+    participant CF as 云函数
+    participant DB as 数据库
+    participant BC as 八字计算
+
+    C->>CF: createProfile请求
+    Note over CF: 1️⃣ 验证必填字段
+    CF->>DB: 2️⃣ 获取用户信息
+    DB-->>CF: 返回用户数据
+    CF->>DB: 3️⃣ 查询档案数量
+    DB-->>CF: 返回数量
+    Note over CF: 4️⃣ 检查配额
+    
+    alt 配额不足
+        CF-->>C: 立即返回错误（避免浪费资源）
+    else 配额充足
+        CF->>BC: 5️⃣ 调用八字计算
+        BC-->>CF: 返回八字数据
+        CF->>DB: 6️⃣ 保存档案
+        DB-->>CF: 保存成功
+        CF-->>C: 返回完整档案
+    end
+```
+
+**执行顺序说明**：
+1. 先验证字段完整性
+2. 获取用户信息和权限配置
+3. 检查档案配额（**优先检查**）
+4. 配额检查通过后，才执行耗时的八字计算
+5. 保存档案数据（birthDate + baziData 同步保存）
+
+**性能优化点**：
+- ⚡ 配额不足时立即返回，不浪费计算资源
+- ⚡ 八字计算是耗时操作，放在配额检查之后执行
+- ⚡ 减少用户等待时间，提升体验
+
+### 更新档案执行流程
+```mermaid
+sequenceDiagram
+    participant C as 客户端
+    participant CF as 云函数
+    participant DB as 数据库
+    participant BC as 八字计算
+
+    C->>CF: updateProfile请求
+    Note over CF: 1️⃣ 检查 birthDate 是否更新
+    
+    alt birthDate 有更新
+        CF->>BC: 2️⃣ 重新计算八字
+        BC-->>CF: 返回新的八字数据
+        Note over CF: 3️⃣ 构建更新文档<br/>(birthDate + baziData)
+    else birthDate 没有更新
+        Note over CF: 3️⃣ 只更新其他字段
+    end
+    
+    CF->>DB: 4️⃣ 执行数据库更新
+    DB-->>CF: 更新成功
+    CF->>DB: 5️⃣ 查询更新后的档案
+    DB-->>CF: 返回完整数据
+    CF-->>C: 返回完整档案
+```
+
+**更新流程说明**：
+1. 检测 `birthDate` 是否变更
+2. **条件计算**：只有 `birthDate` 变化时才重新计算八字
+3. 构建更新文档（确保 `birthDate` 和 `baziData` 同步）
+4. 执行数据库更新操作
+5. 查询并返回更新后的完整档案数据
+
+**数据一致性保证**：
+- ✅ `birthDate` 和 `baziData` 总是同步更新
+- ✅ 八字数据与出生日期保持一致
+- ✅ 避免不必要的重复计算
+
 ## 版本更新说明
 
 ### v1.2 更新内容（新增）
