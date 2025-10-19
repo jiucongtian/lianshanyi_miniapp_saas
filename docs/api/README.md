@@ -12,6 +12,7 @@
 | 用户管理 | [userManagement-api.md](./userManagement-api.md) | ✅ 已完成 | 用户注册、信息获取和更新功能 |
 | 档案管理 | [profileManagement-api.md](./profileManagement-api.md) | ✅ 已完成 | 八字档案的增删改查功能 |
 | 档案管理 v1.1 | [profileManagement_v1_1-api.md](./profileManagement_v1_1-api.md) | ✅ 已完成 | 档案管理增强版，集成八字计算功能 |
+| 档案管理 v1.2 | [profileManagement_v1_2-api.md](./profileManagement_v1_2-api.md) | ✅ 已完成 | 支持公历/农历和农历闰月标记 |
 
 ### 待添加接口
 
@@ -82,6 +83,7 @@ docs/api/
 ├── userManagement-api.md       # 用户管理云函数接口
 ├── profileManagement-api.md    # 档案管理云函数接口
 ├── profileManagement_v1_1-api.md # 档案管理云函数接口v1.1（集成八字计算）
+├── profileManagement_v1_2-api.md # 档案管理云函数接口v1.2（支持农历闰月）
 ├── userClassification-api.md   # 用户分类接口
 └── [future-api].md             # 未来的其他接口文档
 ```
@@ -99,4 +101,4 @@ docs/api/
 
 ---
 
-*最后更新时间：2025年9月*
+*最后更新时间：2025年10月*

@@ -15,12 +15,13 @@
 | openid | string | 是 | 索引 | 微信用户openid，用于快速查询 |
 | profileName | string | 是 | - | 档案名称，用户自定义 |
 | birthDate | object | 是 | - | 生日信息对象 |
-| birthDate.year | number | 是 | - | 出生年份(公历) |
-| birthDate.month | number | 是 | - | 出生月份(公历，1-12) |
-| birthDate.day | number | 是 | - | 出生日期(公历，1-31) |
+| birthDate.year | number | 是 | - | 出生年份 |
+| birthDate.month | number | 是 | - | 出生月份(1-12) |
+| birthDate.day | number | 是 | - | 出生日期(1-31) |
 | birthDate.hour | number | 是 | - | 出生时辰(0-23) |
 | birthDate.minute | number | 否 | - | 出生分钟(0-59)，默认0 |
-| birthDate.isLunar | boolean | 否 | - | 是否为农历，默认false |
+| birthDate.isLunar | boolean | 否 | - | 是否为农历，默认false(公历) |
+| birthDate.isLeapMonth | boolean | 否 | - | 农历时是否闰月，默认false(仅isLunar=true时有效) |
 | baziData | object | 是 | - | 生辰八字数据对象 |
 | baziData.year | object | 是 | - | 年柱 |
 | baziData.year.gan | string | 是 | - | 年干 |
@@ -64,7 +65,8 @@
     "day": 15,
     "hour": 14,
     "minute": 30,
-    "isLunar": false
+    "isLunar": false,
+    "isLeapMonth": false
   },
   "baziData": {
     "year": {
@@ -133,6 +135,12 @@
 3. **时间戳管理**: createTime在创建时设置，updateTime在每次更新时自动更新
 4. **软删除**: 使用isActive字段进行软删除，保留历史数据
 5. **数据冗余**: openid字段冗余存储，避免频繁关联查询users表
+6. **日历类型兼容**: 
+   - 默认为公历 (isLunar=false)
+   - 农历档案需标记 isLunar=true
+   - 农历闰月需标记 isLeapMonth=true (仅农历时有效)
+   - 老数据未设置 isLunar 字段时，默认视为公历
+7. **向前兼容**: 新增字段均设置了默认值，不影响已有档案的正常使用
 
 ## 扩展性考虑
 

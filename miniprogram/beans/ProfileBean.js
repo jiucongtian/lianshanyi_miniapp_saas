@@ -22,7 +22,8 @@ class ProfileBean extends BaseBean {
       day: this._getField(birthDateData, 'day', 0, 'number'),
       hour: this._getField(birthDateData, 'hour', 0, 'number'),
       minute: this._getField(birthDateData, 'minute', 0, 'number'),
-      isLunar: this._getField(birthDateData, 'isLunar', false, 'boolean')
+      isLunar: this._getField(birthDateData, 'isLunar', false, 'boolean'),
+      isLeapMonth: this._getField(birthDateData, 'isLeapMonth', false, 'boolean')
     };
     
     // 处理嵌套的baziData对象
@@ -170,9 +171,15 @@ class ProfileBean extends BaseBean {
       return '未知';
     }
     
-    const { year, month, day, hour, minute } = this.birthDate;
+    const { year, month, day, hour, minute, isLunar, isLeapMonth } = this.birthDate;
     const minuteStr = `:${minute.toString().padStart(2, '0')}`;
     const hourStr = ` ${hour.toString().padStart(2, '0')}${minuteStr}`;
+    
+    // 如果是农历，添加农历标记和闰月标记
+    if (isLunar) {
+      const leapPrefix = isLeapMonth ? '闰' : '';
+      return `农历 ${year}年${leapPrefix}${month}月${day}日${hourStr}`;
+    }
     
     return `${year}年${month}月${day}日${hourStr}`;
   }

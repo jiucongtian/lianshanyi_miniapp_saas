@@ -444,7 +444,8 @@ class AddProfileController extends BaseController {
   onTimeConfirm(timeData) {
     const { 
       year, month, day, hour, minute, formatedTime, timeIndex, calendarType,
-      solarDateTime, lunarDateTime, solarFormatedDateTime, lunarFormatedDateTime
+      solarDateTime, lunarDateTime, solarFormatedDateTime, lunarFormatedDateTime,
+      isLeapMonth
     } = timeData;
     
     // 构建出生日期（使用当前选择的日历类型的时间）
@@ -453,7 +454,9 @@ class AddProfileController extends BaseController {
       month,
       day,
       hour,
-      minute: minute || 0
+      minute: minute || 0,
+      isLunar: calendarType === 'lunar',
+      isLeapMonth: (calendarType === 'lunar' && isLeapMonth) || false
     };
     
     // 更新内部状态
@@ -615,6 +618,7 @@ class AddProfileController extends BaseController {
         day: lunarResult.lDay,
         hour: hour || 0,
         minute: minute || 0,
+        isLunar: true,
         isLeapMonth: lunarResult.isLeap || false
       };
 
@@ -667,7 +671,9 @@ class AddProfileController extends BaseController {
         month: solarResult.cMonth,
         day: solarResult.cDay,
         hour: hour || 0,
-        minute: minute || 0
+        minute: minute || 0,
+        isLunar: false,
+        isLeapMonth: false
       };
 
       // 格式化公历时间显示
