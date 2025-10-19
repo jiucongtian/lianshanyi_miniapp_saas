@@ -28,6 +28,7 @@ const { globalUserManager } = require('../utils/globalUserManager');
 const { ResponseBean } = require('../beans/ResponseBean');
 const eventBus = require('../utils/eventBus');
 const { PROFILE_EVENTS } = require('../utils/eventTypes');
+const calendar = require('../utils/js-calendar-converter');
 
 class AddProfileController extends BaseController {
   /**
@@ -54,8 +55,11 @@ class AddProfileController extends BaseController {
     this.birthDate = null;
     this.isUncertainTime = false;
     
-    // 只存储公历时间数据
+    // 分开存储公历和农历时间
     this.solarDateTime = null;
+    this.lunarDateTime = null;
+    this.solarFormatedDateTime = '';
+    this.lunarFormatedDateTime = '';
     
     // 表单验证状态
     this.nameError = '';
@@ -124,8 +128,8 @@ class AddProfileController extends BaseController {
       isValid = false;
     }
 
-    // 验证出生信息 - 需要选择公历时间
-    if (!this.solarDateTime) {
+    // 验证出生信息 - 至少需要选择一种日历类型的时间
+    if (!this.solarDateTime && !this.lunarDateTime) {
       isValid = false;
     }
 
@@ -178,8 +182,8 @@ class AddProfileController extends BaseController {
   async calculateBazi() {
     this._log('calculateBazi', '开始计算八字');
     
-    // 使用公历时间
-    const birthDate = this.solarDateTime;
+    // 优先使用公历时间，如果没有则使用农历时间
+    const birthDate = this.solarDateTime || this.lunarDateTime;
     if (!birthDate) {
       this._error('calculateBazi', '没有出生日期，无法计算八字');
       this._showError('请先选择出生时间');
@@ -339,8 +343,8 @@ class AddProfileController extends BaseController {
     this._showLoading('更新档案中...', true);
 
     try {
-      // 构建更新数据 - 使用公历时间
-      const birthDate = this.solarDateTime;
+      // 构建更新数据 - 优先使用公历时间，如果没有则使用农历时间
+      const birthDate = this.solarDateTime || this.lunarDateTime;
       const updateData = {
         profileName: this.formData.name.trim(),
         birthDate: birthDate,
@@ -440,7 +444,8 @@ class AddProfileController extends BaseController {
   onTimeConfirm(timeData) {
     const { 
       year, month, day, hour, minute, formatedTime, timeIndex, calendarType,
-      solarDateTime, lunarDateTime, solarFormatedDateTime, lunarFormatedDateTime
+      solarDateTime, lunarDateTime, solarFormatedDateTime, lunarFormatedDateTime,
+      isLeapMonth
     } = timeData;
     
     // 构建出生日期（使用当前选择的日历类型的时间）
@@ -449,41 +454,40 @@ class AddProfileController extends BaseController {
       month,
       day,
       hour,
-      minute: minute || 0
+      minute: minute || 0,
+      isLunar: calendarType === 'lunar',
+      isLeapMonth: (calendarType === 'lunar' && isLeapMonth) || false
     };
     
     // 更新内部状态
     this.dateTimeValue = birthDate;
+    this.formatedDateTime = formatedTime;
     this.birthDate = birthDate;
     this.isUncertainTime = timeData.isUncertainTime || false;
     
-    // 存储公历时间数据
-    if (calendarType === 'solar') {
-      // 公历选择，直接存储
-      this.solarDateTime = birthDate;
-      this._log('onTimeConfirm', '使用公历时间:', birthDate);
-    } else if (calendarType === 'lunar') {
-      // 农历选择，需要转换为公历存储
-      if (solarDateTime) {
-        // 使用时间选择器组件转换后的公历时间
-        this.solarDateTime = solarDateTime;
-        this._log('onTimeConfirm', '使用转换后的公历时间:', solarDateTime);
-      } else {
-        // 如果没有转换数据，手动转换农历为公历
-        const { convertLunarToSolar } = require('../utils/util');
-        const solarDateTime = convertLunarToSolar(birthDate);
-        if (solarDateTime) {
-          this.solarDateTime = solarDateTime;
-          this._log('onTimeConfirm', '农历转公历成功:', solarDateTime);
-        } else {
-          this._log('onTimeConfirm', '农历转公历失败，使用原始时间');
-          this.solarDateTime = birthDate;
-        }
+    // 存储转换后的公历和农历时间
+    if (solarDateTime && lunarDateTime) {
+      this.solarDateTime = solarDateTime;
+      this.lunarDateTime = lunarDateTime;
+      this.solarFormatedDateTime = solarFormatedDateTime;
+      this.lunarFormatedDateTime = lunarFormatedDateTime;
+      
+      this._log('onTimeConfirm', '历法转换完成', {
+        solarDateTime,
+        lunarDateTime,
+        solarFormatedDateTime,
+        lunarFormatedDateTime
+      });
+    } else {
+      // 如果没有转换数据，按原逻辑处理
+      if (calendarType === 'solar') {
+        this.solarDateTime = birthDate;
+        this.solarFormatedDateTime = formatedTime;
+      } else if (calendarType === 'lunar') {
+        this.lunarDateTime = birthDate;
+        this.lunarFormatedDateTime = formatedTime;
       }
     }
-    
-    // 根据当前日历类型更新显示时间
-    this._updateTimeDisplayForCalendarType(calendarType);
     
     // 更新页面数据
     const updateData = {
@@ -491,7 +495,11 @@ class AddProfileController extends BaseController {
         ...this.formData,
         birthDate: birthDate
       },
+      formatedDateTime: formatedTime,
       solarDateTime: this.solarDateTime,
+      lunarDateTime: this.lunarDateTime,
+      solarFormatedDateTime: this.solarFormatedDateTime,
+      lunarFormatedDateTime: this.lunarFormatedDateTime,
       isUncertainTime: this.isUncertainTime
     };
     
@@ -541,30 +549,180 @@ class AddProfileController extends BaseController {
    * @private
    */
   _updateTimeDisplayForCalendarType(calendarType) {
+    if (calendarType === 'solar') {
+      // 切换到公历显示
+      if (this.solarDateTime && this.solarFormatedDateTime) {
+        // 已有公历时间，直接显示
+        this._setData({
+          formatedDateTime: this.solarFormatedDateTime,
+          solarFormatedDateTime: this.solarFormatedDateTime,
+          lunarFormatedDateTime: this.lunarFormatedDateTime
+        });
+      } else if (this.lunarDateTime && !this.solarDateTime) {
+        // 没有公历时间，但有农历时间，进行农历转公历
+        this._log('_updateTimeDisplayForCalendarType', '检测到缺少公历时间，进行农历转公历');
+        this._convertLunarToSolar();
+      } else {
+        // 都没有时间数据
+        this._setData({
+          formatedDateTime: ''
+        });
+      }
+    } else if (calendarType === 'lunar') {
+      // 切换到农历显示
+      if (this.lunarDateTime && this.lunarFormatedDateTime) {
+        // 已有农历时间，直接显示
+        this._setData({
+          formatedDateTime: this.lunarFormatedDateTime,
+          solarFormatedDateTime: this.solarFormatedDateTime,
+          lunarFormatedDateTime: this.lunarFormatedDateTime
+        });
+      } else if (this.solarDateTime && !this.lunarDateTime) {
+        // 没有农历时间，但有公历时间，进行公历转农历
+        this._log('_updateTimeDisplayForCalendarType', '检测到缺少农历时间，进行公历转农历');
+        this._convertSolarToLunar();
+      } else {
+        // 都没有时间数据
+        this._setData({
+          formatedDateTime: ''
+        });
+      }
+    }
+  }
+
+  /**
+   * 公历转农历
+   * @private
+   */
+  _convertSolarToLunar() {
     if (!this.solarDateTime) {
-      this._setData({
-        formatedDateTime: ''
-      });
+      this._log('_convertSolarToLunar', '没有公历时间数据，跳过转换');
       return;
     }
 
-    if (calendarType === 'solar') {
-      // 显示公历时间
-      const timeName = this._getTimeNameByHour(this.solarDateTime.hour);
-      const formatedTime = `${this.solarDateTime.year}年${this.solarDateTime.month}月${this.solarDateTime.day}日 ${timeName}`;
+    try {
+      const { year, month, day, hour, minute } = this.solarDateTime;
       
-      this._setData({
-        formatedDateTime: formatedTime
-      });
-    } else if (calendarType === 'lunar') {
-      // 显示农历时间（动态转换）
-      const { formatLunarDateTime } = require('../utils/util');
-      const lunarFormatedTime = formatLunarDateTime(this.solarDateTime);
+      // 调用转换库
+      const lunarResult = calendar.solar2lunar(year, month, day);
       
+      if (lunarResult === -1) {
+        this._log('_convertSolarToLunar', '公历日期无效', { year, month, day });
+        return;
+      }
+
+      // 构建农历时间数据
+      this.lunarDateTime = {
+        year: lunarResult.lYear,
+        month: lunarResult.lMonth,
+        day: lunarResult.lDay,
+        hour: hour || 0,
+        minute: minute || 0,
+        isLunar: true,
+        isLeapMonth: lunarResult.isLeap || false
+      };
+
+      // 格式化农历时间显示
+      const leapPrefix = lunarResult.isLeap ? '闰' : '';
+      const timeStr = this._formatTimeStr(hour, minute);
+      this.lunarFormatedDateTime = `${lunarResult.lYear}年${leapPrefix}${lunarResult.lMonth}月${lunarResult.lDay}日 ${timeStr}`;
+
+      // 更新页面数据
       this._setData({
-        formatedDateTime: lunarFormatedTime
+        lunarDateTime: this.lunarDateTime,
+        lunarFormatedDateTime: this.lunarFormatedDateTime,
+        formatedDateTime: this.lunarFormatedDateTime
       });
+
+      this._log('_convertSolarToLunar', '公历转农历成功', {
+        solar: this.solarDateTime,
+        lunar: this.lunarDateTime,
+        formatted: this.lunarFormatedDateTime
+      });
+    } catch (error) {
+      this._log('_convertSolarToLunar', '公历转农历失败', error);
     }
+  }
+
+  /**
+   * 农历转公历
+   * @private
+   */
+  _convertLunarToSolar() {
+    if (!this.lunarDateTime) {
+      this._log('_convertLunarToSolar', '没有农历时间数据，跳过转换');
+      return;
+    }
+
+    try {
+      const { year, month, day, hour, minute, isLeapMonth } = this.lunarDateTime;
+      
+      // 调用转换库
+      const solarResult = calendar.lunar2solar(year, month, day, isLeapMonth || false);
+      
+      if (solarResult === -1) {
+        this._log('_convertLunarToSolar', '农历日期无效', { year, month, day, isLeapMonth });
+        return;
+      }
+
+      // 构建公历时间数据
+      this.solarDateTime = {
+        year: solarResult.cYear,
+        month: solarResult.cMonth,
+        day: solarResult.cDay,
+        hour: hour || 0,
+        minute: minute || 0,
+        isLunar: false,
+        isLeapMonth: false
+      };
+
+      // 格式化公历时间显示
+      const timeStr = this._formatTimeStr(hour, minute);
+      this.solarFormatedDateTime = `${solarResult.cYear}年${solarResult.cMonth}月${solarResult.cDay}日 ${timeStr}`;
+
+      // 同时确保农历格式化字符串使用统一格式（lunar2solar返回的结果包含lMonth和lDay）
+      const leapPrefix = isLeapMonth ? '闰' : '';
+      this.lunarFormatedDateTime = `${year}年${leapPrefix}${month}月${day}日 ${timeStr}`;
+
+      // 更新页面数据
+      this._setData({
+        solarDateTime: this.solarDateTime,
+        solarFormatedDateTime: this.solarFormatedDateTime,
+        lunarFormatedDateTime: this.lunarFormatedDateTime,
+        formatedDateTime: this.solarFormatedDateTime
+      });
+
+      this._log('_convertLunarToSolar', '农历转公历成功', {
+        lunar: this.lunarDateTime,
+        solar: this.solarDateTime,
+        formatted: this.solarFormatedDateTime
+      });
+    } catch (error) {
+      this._log('_convertLunarToSolar', '农历转公历失败', error);
+    }
+  }
+
+  /**
+   * 格式化时间字符串
+   * @param {number} hour - 小时
+   * @param {number} minute - 分钟
+   * @returns {string} 格式化的时间字符串
+   * @private
+   */
+  _formatTimeStr(hour, minute) {
+    if (hour === undefined || hour === null) {
+      return '';
+    }
+
+    const timeName = this._getTimeNameByHour(hour);
+    const hourStart = Math.floor(hour / 2) * 2 + (hour % 2 === 0 ? 23 : 1);
+    const hourEnd = (hourStart + 2) % 24;
+    
+    if (minute !== undefined && minute !== null) {
+      return `${timeName}(${String(hourStart).padStart(2, '0')}-${String(hourEnd).padStart(2, '0')})`;
+    }
+    
+    return timeName;
   }
 
   /**
@@ -701,7 +859,8 @@ class AddProfileController extends BaseController {
       timeMap,
       formatedDateTime,
       birthDate: this.birthDate,
-      isUncertainTime: false
+      isUncertainTime: false,
+      initialDateTime: this.birthDate // 设置初始时间
     });
     
     this._log('_initializeTimePicker', '时间选择器初始化完成');
@@ -741,11 +900,15 @@ class AddProfileController extends BaseController {
         this.isUncertainTime = editingProfile.isUncertainTime || false;
         
         if (this.birthDate) {
-          // 假设编辑的档案是公历时间
-          this.solarDateTime = this.birthDate;
+          const timeIndex = this._calculateTimeIndex(this.birthDate.hour);
+          const timeName = this.page.data.timeMap[timeIndex];
+          const formatedTime = `${this.birthDate.year}年${this.birthDate.month}月${this.birthDate.day}日 ${timeName}`;
           
-          // 根据当前日历类型更新显示时间
-          this._updateTimeDisplayForCalendarType(this.page.data.calendarType);
+          // 根据档案中的时间类型设置对应的时间变量
+          // 这里假设编辑的档案是公历时间，实际项目中可能需要根据档案数据判断
+          this.solarDateTime = this.birthDate;
+          this.solarFormatedDateTime = formatedTime;
+          this.formatedDateTime = formatedTime;
         }
         
         // 更新页面数据
@@ -753,8 +916,13 @@ class AddProfileController extends BaseController {
           formData: this.formData,
           editingProfileId: this.editingProfileId,
           birthDate: this.birthDate,
+          formatedDateTime: this.formatedDateTime,
           isUncertainTime: this.isUncertainTime,
-          solarDateTime: this.solarDateTime
+          solarDateTime: this.solarDateTime,
+          solarFormatedDateTime: this.solarFormatedDateTime,
+          lunarDateTime: this.lunarDateTime,
+          lunarFormatedDateTime: this.lunarFormatedDateTime,
+          initialDateTime: this.birthDate // 设置初始时间
         });
         
         this._log('loadEditingData', '编辑数据加载完成');
@@ -840,7 +1008,7 @@ class AddProfileController extends BaseController {
     const uncertainTimeChanged = original.isUncertainTime !== current.isUncertainTime;
     
     let birthDateChanged = false;
-    const currentBirthDate = this.solarDateTime;
+    const currentBirthDate = this.solarDateTime || this.lunarDateTime;
     if (original.birthDate && currentBirthDate) {
       birthDateChanged = original.birthDate.year !== currentBirthDate.year ||
                         original.birthDate.month !== currentBirthDate.month ||

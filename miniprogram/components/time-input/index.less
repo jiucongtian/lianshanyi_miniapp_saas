@@ -1,0 +1,60 @@
+/* 时间输入框组件样式 */
+.time-input-container {
+  .input-label {
+    font-size: 28rpx;
+    color: #666;
+    margin-bottom: 16rpx;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+  }
+  
+  .input-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24rpx 20rpx;
+    background: #f8f9fa;
+    border-radius: 16rpx;
+    border: 2rpx solid transparent;
+    transition: all 0.3s ease;
+    
+    &:active {
+      background: #f0f1f5;
+      border-color: #0052d9;
+      transform: scale(0.98);
+    }
+    
+    .time-display {
+      font-size: 30rpx;
+      color: #999;
+      transition: color 0.3s ease;
+      
+      &.has-value {
+        color: #333;
+        font-weight: 500;
+      }
+    }
+  }
+  
+  // 农历时间输入框样式
+  .lunar-input-wrapper {
+    background: #f0f8ff;
+    border: 2rpx solid #e6f3ff;
+    
+    &:active {
+      background: #e6f3ff;
+      border-color: #b3d9ff;
+    }
+    
+    .time-display {
+      color: #666;
+      
+      &.has-value {
+        color: #1890ff;
+        font-weight: 500;
+      }
+    }
+  }
+}
+

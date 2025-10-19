@@ -244,7 +244,8 @@ async function createProfile(wxContext, profileData) {
         day: profileData.birthDate.day,
         hour: profileData.birthDate.hour,
         minute: profileData.birthDate.minute || 0,
-        isLunar: profileData.birthDate.isLunar || false
+        isLunar: profileData.birthDate.isLunar || false,
+        isLeapMonth: profileData.birthDate.isLeapMonth || false // 农历闰月标记
       },
       baziData: baziResult.baziData, // 使用计算出的八字数据
       gender: profileData.gender || 0,
@@ -392,7 +393,13 @@ async function updateProfile(wxContext, updateData) {
     const updateDoc = {
       updateTime: now,
       ...(profileData.profileName && { profileName: profileData.profileName }),
-      ...(profileData.birthDate && { birthDate: profileData.birthDate }),
+      ...(profileData.birthDate && { 
+        birthDate: {
+          ...profileData.birthDate,
+          isLunar: profileData.birthDate.isLunar || false,
+          isLeapMonth: profileData.birthDate.isLeapMonth || false
+        }
+      }),
       ...(baziData && { baziData: baziData }), // 使用重新计算的八字数据
       ...(profileData.gender !== undefined && { gender: profileData.gender }),
       ...(profileData.isUncertainTime !== undefined && { isUncertainTime: profileData.isUncertainTime }),
