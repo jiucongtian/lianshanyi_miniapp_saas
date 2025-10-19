@@ -49,6 +49,7 @@
 
 const { createModuleLogger } = require('../../utils/logger/index');
 const calendar = require('../../utils/js-calendar-converter.js');
+const { formatLunarDateTime } = require('../../utils/lunarFormatter.js');
 const log = createModuleLogger('TimePickerComponent');
 
 // 时辰枚举常量
@@ -66,6 +67,111 @@ const TIME_PERIODS = {
   XU: { name: '戌时(19-21)', hour: 20, minute: 1 },
   HAI: { name: '亥时(21-23)', hour: 22, minute: 1 }
 };
+
+// 农历月份映射（从1开始，索引0为占位）
+const LUNAR_MONTHS = [
+  null,
+  { name: '正月', value: 1 },
+  { name: '二月', value: 2 },
+  { name: '三月', value: 3 },
+  { name: '四月', value: 4 },
+  { name: '五月', value: 5 },
+  { name: '六月', value: 6 },
+  { name: '七月', value: 7 },
+  { name: '八月', value: 8 },
+  { name: '九月', value: 9 },
+  { name: '十月', value: 10 },
+  { name: '冬月', value: 11 },
+  { name: '腊月', value: 12 }
+];
+
+// 公历月份映射（从1开始，索引0为占位）
+const SOLAR_MONTHS = [
+  null,
+  { name: '1月', value: 1 },
+  { name: '2月', value: 2 },
+  { name: '3月', value: 3 },
+  { name: '4月', value: 4 },
+  { name: '5月', value: 5 },
+  { name: '6月', value: 6 },
+  { name: '7月', value: 7 },
+  { name: '8月', value: 8 },
+  { name: '9月', value: 9 },
+  { name: '10月', value: 10 },
+  { name: '11月', value: 11 },
+  { name: '12月', value: 12 }
+];
+
+// 农历日期映射（从1开始，索引0为占位）
+const LUNAR_DAYS = [
+  null,
+  { name: '初一', value: 1 },
+  { name: '初二', value: 2 },
+  { name: '初三', value: 3 },
+  { name: '初四', value: 4 },
+  { name: '初五', value: 5 },
+  { name: '初六', value: 6 },
+  { name: '初七', value: 7 },
+  { name: '初八', value: 8 },
+  { name: '初九', value: 9 },
+  { name: '初十', value: 10 },
+  { name: '十一', value: 11 },
+  { name: '十二', value: 12 },
+  { name: '十三', value: 13 },
+  { name: '十四', value: 14 },
+  { name: '十五', value: 15 },
+  { name: '十六', value: 16 },
+  { name: '十七', value: 17 },
+  { name: '十八', value: 18 },
+  { name: '十九', value: 19 },
+  { name: '二十', value: 20 },
+  { name: '廿一', value: 21 },
+  { name: '廿二', value: 22 },
+  { name: '廿三', value: 23 },
+  { name: '廿四', value: 24 },
+  { name: '廿五', value: 25 },
+  { name: '廿六', value: 26 },
+  { name: '廿七', value: 27 },
+  { name: '廿八', value: 28 },
+  { name: '廿九', value: 29 },
+  { name: '三十', value: 30 }
+];
+
+// 公历日期映射（从1开始，索引0为占位）
+const SOLAR_DAYS = [
+  null,
+  { name: '1日', value: 1 },
+  { name: '2日', value: 2 },
+  { name: '3日', value: 3 },
+  { name: '4日', value: 4 },
+  { name: '5日', value: 5 },
+  { name: '6日', value: 6 },
+  { name: '7日', value: 7 },
+  { name: '8日', value: 8 },
+  { name: '9日', value: 9 },
+  { name: '10日', value: 10 },
+  { name: '11日', value: 11 },
+  { name: '12日', value: 12 },
+  { name: '13日', value: 13 },
+  { name: '14日', value: 14 },
+  { name: '15日', value: 15 },
+  { name: '16日', value: 16 },
+  { name: '17日', value: 17 },
+  { name: '18日', value: 18 },
+  { name: '19日', value: 19 },
+  { name: '20日', value: 20 },
+  { name: '21日', value: 21 },
+  { name: '22日', value: 22 },
+  { name: '23日', value: 23 },
+  { name: '24日', value: 24 },
+  { name: '25日', value: 25 },
+  { name: '26日', value: 26 },
+  { name: '27日', value: 27 },
+  { name: '28日', value: 28 },
+  { name: '29日', value: 29 },
+  { name: '30日', value: 30 },
+  { name: '31日', value: 31 }
+];
 
 Component({
   /**
@@ -110,12 +216,12 @@ Component({
   data: {
     // 选择器当前选中的值 [年, 月, 日, 时辰]
     pickerValue: [0, 0, 0, 0],
-    // 年份范围数组
+    // 年份范围数组（直接显示年份数字）
     yearRangeArray: [],
-    // 月份范围数组
-    monthRange: Array.from({length: 12}, (_, i) => i + 1),
-    // 日期范围数组
-    dayRange: Array.from({length: 31}, (_, i) => i + 1),
+    // 月份显示名称数组（根据历法类型动态生成）
+    monthMap: [],
+    // 日期显示名称数组（根据历法类型动态生成）
+    dayMap: [],
     // 时辰显示名称数组
     timeMap: [],
     // 内部状态
@@ -156,13 +262,14 @@ Component({
       // 初始化时辰显示列表
       const timeMap = Object.values(TIME_PERIODS).map(period => period.name);
 
-      // 根据日历类型调整日期范围
-      const dayRange = this._getDayRange();
+      // 根据历法类型生成月份和日期显示列表
+      const { monthMap, dayMap } = this._getMonthDayMaps();
 
       this.setData({
         yearRangeArray,
+        monthMap,
+        dayMap,
         timeMap,
-        dayRange,
         internalUncertainTime: this.data.isUncertainTime,
         internalLeapMonth: this.data.isLeapMonth
       });
@@ -171,19 +278,73 @@ Component({
         yearRange: yearRangeArray.slice(0, 5),
         timeMapLength: timeMap.length,
         calendarType: this.data.calendarType,
-        dayRangeLength: dayRange.length
+        monthMapLength: monthMap.length,
+        dayMapLength: dayMap.length
       });
     },
 
     /**
-     * 获取日期范围数组
-     * @returns {Array} 日期范围数组
+     * 根据历法类型获取月份和日期映射数组
+     * @returns {Object} { monthMap, dayMap }
      * @private
      */
-    _getDayRange() {
-      // 农历模式最大30日，公历模式最大31日
-      const maxDays = this.data.calendarType === 'lunar' ? 30 : 31;
-      return Array.from({length: maxDays}, (_, i) => i + 1);
+    _getMonthDayMaps() {
+      if (this.data.calendarType === 'lunar') {
+        // 农历模式：使用农历月份和日期
+        const monthMap = LUNAR_MONTHS.slice(1).map(item => item.name); // ['正月', '二月', ...]
+        const dayMap = LUNAR_DAYS.slice(1, 31).map(item => item.name); // ['初一', '初二', ..., '三十'] (最多30天)
+        return { monthMap, dayMap };
+      } else {
+        // 公历模式：使用公历月份和日期
+        const monthMap = SOLAR_MONTHS.slice(1).map(item => item.name); // ['1月', '2月', ...]
+        const dayMap = SOLAR_DAYS.slice(1).map(item => item.name); // ['1日', '2日', ..., '31日']
+        return { monthMap, dayMap };
+      }
+    },
+
+    /**
+     * 根据索引获取月份数值
+     * @param {number} monthIndex - 月份索引
+     * @returns {number} 月份数值
+     * @private
+     */
+    _getMonthValue(monthIndex) {
+      if (this.data.calendarType === 'lunar') {
+        return LUNAR_MONTHS[monthIndex + 1].value;
+      } else {
+        return SOLAR_MONTHS[monthIndex + 1].value;
+      }
+    },
+
+    /**
+     * 根据索引获取日期数值
+     * @param {number} dayIndex - 日期索引
+     * @returns {number} 日期数值
+     * @private
+     */
+    _getDayValue(dayIndex) {
+      if (this.data.calendarType === 'lunar') {
+        return LUNAR_DAYS[dayIndex + 1].value;
+      } else {
+        return SOLAR_DAYS[dayIndex + 1].value;
+      }
+    },
+
+    /**
+     * 格式化选中的时间
+     * @param {number} year - 年份
+     * @param {number} month - 月份
+     * @param {number} day - 日期
+     * @param {string} timeName - 时辰名称
+     * @returns {string} 格式化后的时间字符串
+     * @private
+     */
+    _formatSelectedTime(year, month, day, timeName) {
+      if (this.data.calendarType === 'lunar') {
+        return formatLunarDateTime(year, month, day, timeName, this.data.internalLeapMonth);
+      } else {
+        return `${year}年${month}月${day}日 ${timeName}`;
+      }
     },
 
     /**
@@ -303,12 +464,13 @@ Component({
      * 处理确认选择
      */
     onConfirm() {
-      const { pickerValue, yearRangeArray, monthRange, dayRange } = this.data;
+      const { pickerValue, yearRangeArray } = this.data;
       const [yearIndex, monthIndex, dayIndex, timeIndex] = pickerValue;
       
+      // 通过索引获取实际值
       const year = yearRangeArray[yearIndex];
-      const month = monthRange[monthIndex];
-      const day = dayRange[dayIndex];
+      const month = this._getMonthValue(monthIndex);
+      const day = this._getDayValue(dayIndex);
       const timePeriods = Object.values(TIME_PERIODS);
       const timeInfo = timePeriods[timeIndex];
       
@@ -348,7 +510,7 @@ Component({
         day,
         hour: timeInfo.hour,
         minute: timeInfo.minute,
-        formatedTime: `${year}年${month}月${day}日 ${timeInfo.name}`,
+        formatedTime: this._formatSelectedTime(year, month, day, timeInfo.name),
         timeIndex,
         calendarType: this.data.calendarType,
         isUncertainTime: this.data.internalUncertainTime,
@@ -480,8 +642,13 @@ Component({
 
           // 格式化显示
           solarFormatedDateTime = `${year}年${month}月${day}日 ${this._formatTime(hour, minute)}`;
-          const leapPrefix = solarResult.isLeap ? '闰' : '';
-          lunarFormatedDateTime = `${solarResult.lYear}年${leapPrefix}${solarResult.lMonth}月${solarResult.lDay}日 ${this._formatTime(hour, minute)}`;
+          lunarFormatedDateTime = formatLunarDateTime(
+            solarResult.lYear, 
+            solarResult.lMonth, 
+            solarResult.lDay, 
+            this._formatTime(hour, minute),
+            solarResult.isLeap || false
+          );
 
         } else if (this.data.calendarType === 'lunar') {
           // 农历转公历
@@ -513,8 +680,13 @@ Component({
           };
 
           // 格式化显示
-          const leapPrefix = this.data.internalLeapMonth ? '闰' : '';
-          lunarFormatedDateTime = `${year}年${leapPrefix}${month}月${day}日 ${this._formatTime(hour, minute)}`;
+          lunarFormatedDateTime = formatLunarDateTime(
+            year, 
+            month, 
+            day, 
+            this._formatTime(hour, minute),
+            this.data.internalLeapMonth
+          );
           solarFormatedDateTime = `${lunarResult.cYear}年${lunarResult.cMonth}月${lunarResult.cDay}日 ${this._formatTime(hour, minute)}`;
         }
 

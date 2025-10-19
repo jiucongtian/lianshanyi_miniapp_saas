@@ -28,6 +28,7 @@ const { globalUserManager } = require('../utils/globalUserManager');
 const { ResponseBean } = require('../beans/ResponseBean');
 const eventBus = require('../utils/eventBus');
 const { PROFILE_EVENTS } = require('../utils/eventTypes');
+const { formatLunarDateTime } = require('../utils/lunarFormatter');
 const calendar = require('../utils/js-calendar-converter');
 
 class AddProfileController extends BaseController {
@@ -675,9 +676,14 @@ class AddProfileController extends BaseController {
       };
 
       // 格式化农历时间显示
-      const leapPrefix = lunarResult.isLeap ? '闰' : '';
       const timeStr = this._formatTimeStr(hour, minute);
-      this.lunarFormatedDateTime = `${lunarResult.lYear}年${leapPrefix}${lunarResult.lMonth}月${lunarResult.lDay}日 ${timeStr}`;
+      this.lunarFormatedDateTime = formatLunarDateTime(
+        lunarResult.lYear,
+        lunarResult.lMonth,
+        lunarResult.lDay,
+        timeStr,
+        lunarResult.isLeap || false
+      );
 
       // 更新页面数据
       this._setData({
@@ -733,8 +739,13 @@ class AddProfileController extends BaseController {
       this.solarFormatedDateTime = `${solarResult.cYear}年${solarResult.cMonth}月${solarResult.cDay}日 ${timeStr}`;
 
       // 同时确保农历格式化字符串使用统一格式（lunar2solar返回的结果包含lMonth和lDay）
-      const leapPrefix = isLeapMonth ? '闰' : '';
-      this.lunarFormatedDateTime = `${year}年${leapPrefix}${month}月${day}日 ${timeStr}`;
+      this.lunarFormatedDateTime = formatLunarDateTime(
+        year,
+        month,
+        day,
+        timeStr,
+        isLeapMonth
+      );
 
       // 更新页面数据
       this._setData({
@@ -986,8 +997,13 @@ class AddProfileController extends BaseController {
               minute: this.birthDate.minute || 0,
               isLeapMonth: this.birthDate.isLeapMonth || false
             };
-            const leapPrefix = this.birthDate.isLeapMonth ? '闰' : '';
-            this.lunarFormatedDateTime = `${this.birthDate.year}年${leapPrefix}${this.birthDate.month}月${this.birthDate.day}日 ${timeName}`;
+            this.lunarFormatedDateTime = formatLunarDateTime(
+              this.birthDate.year,
+              this.birthDate.month,
+              this.birthDate.day,
+              timeName,
+              this.birthDate.isLeapMonth || false
+            );
             this.formatedDateTime = this.lunarFormatedDateTime;
             
             this._log('loadEditingData', '加载农历档案', {

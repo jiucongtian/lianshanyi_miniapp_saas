@@ -46,12 +46,12 @@
       
       <!-- 月份列 -->
       <picker-view-column>
-        <view wx:for="{{monthRange}}" wx:key="index" class="picker-item">{{item}}月</view>
+        <view wx:for="{{monthMap}}" wx:key="index" class="picker-item">{{item}}</view>
       </picker-view-column>
       
       <!-- 日期列 -->
       <picker-view-column>
-        <view wx:for="{{dayRange}}" wx:key="index" class="picker-item">{{item}}日</view>
+        <view wx:for="{{dayMap}}" wx:key="index" class="picker-item">{{item}}</view>
       </picker-view-column>
       
       <!-- 时辰列 -->

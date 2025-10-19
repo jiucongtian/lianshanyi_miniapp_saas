@@ -129,16 +129,21 @@ Page({
 
 ```javascript
 {
-  year: 2023,           // 年份
-  month: 12,            // 月份
-  day: 25,              // 日期
+  year: 2023,           // 年份（数值）
+  month: 12,            // 月份（数值）
+  day: 25,              // 日期（数值）
   hour: 14,             // 小时（时辰对应的小时）
   minute: 1,            // 分钟
-  formatedTime: "2023年12月25日 未时(13-15)", // 格式化时间字符串
+  formatedTime: "2023年12月25日 未时(13-15)",  // 格式化时间字符串（公历）
+                // 或 "2023年十一月廿三 未时(13-15)"（农历）
   timeIndex: 7,         // 时辰索引
-  calendarType: "solar", // 日历类型
+  calendarType: "solar", // 日历类型（solar=公历，lunar=农历）
   isUncertainTime: false, // 是否不确定时辰
-  isLeapMonth: false    // 是否闰月（仅农历模式有效）
+  isLeapMonth: false,   // 是否闰月（仅农历模式有效）
+  solarDateTime: {...}, // 公历时间对象
+  lunarDateTime: {...}, // 农历时间对象
+  solarFormatedDateTime: "2023年12月25日 未时(13-15)", // 公历格式化时间
+  lunarFormatedDateTime: "2023年十一月廿三 未时(13-15)" // 农历格式化时间
 }
 ```
 
@@ -165,6 +170,16 @@ Page({
 5. 支持响应式设计，在不同屏幕尺寸下都有良好表现
 
 ## 更新日志
+
+### v1.2.0
+- 重构年月日为统一的映射表模式，与时辰实现保持一致
+- 新增公历和农历的专属显示文案
+- 农历月份显示为"正月、二月...腊月"
+- 农历日期显示为"初一、初二...三十"
+- 公历月份显示为"1月、2月...12月"
+- 公历日期显示为"1日、2日...31日"
+- 优化代码架构，提高可维护性和可扩展性
+- 详见 [MAPPING_REFACTORING.md](./MAPPING_REFACTORING.md)
 
 ### v1.1.0
 - 新增农历模式支持
