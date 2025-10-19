@@ -91,13 +91,23 @@
         </view>
       </view>
       
-      <!-- 时间输入框组件 -->
-      <view class="input-group">
+      <!-- 时间输入框组件 - 公历 -->
+      <view class="input-group" wx:if="{{calendarType === 'solar'}}">
         <time-input
-          calendarType="{{calendarType}}"
+          calendarType="solar"
           solarFormatedDateTime="{{solarFormatedDateTime}}"
+          lunarFormatedDateTime=""
+          bind:tap="onSolarInputTap"
+        />
+      </view>
+
+      <!-- 时间输入框组件 - 农历 -->
+      <view class="input-group" wx:else>
+        <time-input
+          calendarType="lunar"
+          solarFormatedDateTime=""
           lunarFormatedDateTime="{{lunarFormatedDateTime}}"
-          bind:tap="onInputTap"
+          bind:tap="onLunarInputTap"
         />
       </view>
     </view>

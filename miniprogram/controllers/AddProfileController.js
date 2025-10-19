@@ -182,8 +182,26 @@ class AddProfileController extends BaseController {
   async calculateBazi() {
     this._log('calculateBazi', '开始计算八字');
     
-    // 优先使用公历时间，如果没有则使用农历时间
-    const birthDate = this.solarDateTime || this.lunarDateTime;
+    // 获取当前选择的日历类型
+    const calendarType = this.page.data.calendarType;
+    this._log('calculateBazi', '当前日历类型:', calendarType);
+    
+    // 根据日历类型选择对应的时间数据
+    let birthDate = null;
+    let isLunar = false;
+    
+    if (calendarType === 'lunar') {
+      // 用户选择农历
+      birthDate = this.lunarDateTime;
+      isLunar = true;
+      this._log('calculateBazi', '使用农历时间');
+    } else {
+      // 用户选择公历（默认）
+      birthDate = this.solarDateTime;
+      isLunar = false;
+      this._log('calculateBazi', '使用公历时间');
+    }
+    
     if (!birthDate) {
       this._error('calculateBazi', '没有出生日期，无法计算八字');
       this._showError('请先选择出生时间');
@@ -191,10 +209,14 @@ class AddProfileController extends BaseController {
     }
 
     try {
-      // 构建档案数据
+      // 构建档案数据，设置 isLunar 标记
       const profileData = {
         profileName: this.formData.name.trim(),
-        birthDate: birthDate,
+        birthDate: {
+          ...birthDate,
+          isLunar: isLunar,
+          isLeapMonth: isLunar ? (birthDate.isLeapMonth || false) : false
+        },
         gender: this.formData.gender,
         isUncertainTime: this.isUncertainTime,
         description: '用户创建的八字档案'
@@ -343,11 +365,41 @@ class AddProfileController extends BaseController {
     this._showLoading('更新档案中...', true);
 
     try {
-      // 构建更新数据 - 优先使用公历时间，如果没有则使用农历时间
-      const birthDate = this.solarDateTime || this.lunarDateTime;
+      // 获取当前选择的日历类型
+      const calendarType = this.page.data.calendarType;
+      this._log('updateProfile', '当前日历类型:', calendarType);
+      
+      // 根据日历类型选择对应的时间数据
+      let birthDate = null;
+      let isLunar = false;
+      
+      if (calendarType === 'lunar') {
+        // 用户选择农历
+        birthDate = this.lunarDateTime;
+        isLunar = true;
+        this._log('updateProfile', '使用农历时间');
+      } else {
+        // 用户选择公历（默认）
+        birthDate = this.solarDateTime;
+        isLunar = false;
+        this._log('updateProfile', '使用公历时间');
+      }
+      
+      if (!birthDate) {
+        this._error('updateProfile', '没有出生日期，无法更新档案');
+        this._showError('请先选择出生时间');
+        this._hideLoading();
+        return false;
+      }
+      
+      // 构建更新数据，设置 isLunar 标记
       const updateData = {
         profileName: this.formData.name.trim(),
-        birthDate: birthDate,
+        birthDate: {
+          ...birthDate,
+          isLunar: isLunar,
+          isLeapMonth: isLunar ? (birthDate.isLeapMonth || false) : false
+        },
         gender: this.formData.gender,
         isUncertainTime: this.isUncertainTime
       };
@@ -899,16 +951,53 @@ class AddProfileController extends BaseController {
         this.birthDate = editingProfile.birthDate;
         this.isUncertainTime = editingProfile.isUncertainTime || false;
         
+        // 根据档案中的日历类型设置对应的时间变量和日历类型
+        let calendarType = 'solar'; // 默认公历
+        
         if (this.birthDate) {
           const timeIndex = this._calculateTimeIndex(this.birthDate.hour);
           const timeName = this.page.data.timeMap[timeIndex];
-          const formatedTime = `${this.birthDate.year}年${this.birthDate.month}月${this.birthDate.day}日 ${timeName}`;
           
-          // 根据档案中的时间类型设置对应的时间变量
-          // 这里假设编辑的档案是公历时间，实际项目中可能需要根据档案数据判断
-          this.solarDateTime = this.birthDate;
-          this.solarFormatedDateTime = formatedTime;
-          this.formatedDateTime = formatedTime;
+          // 判断档案保存的日历类型
+          const isLunar = this.birthDate.isLunar || false;
+          
+          if (isLunar) {
+            // 档案是农历时间
+            calendarType = 'lunar';
+            this.lunarDateTime = {
+              year: this.birthDate.year,
+              month: this.birthDate.month,
+              day: this.birthDate.day,
+              hour: this.birthDate.hour,
+              minute: this.birthDate.minute || 0,
+              isLeapMonth: this.birthDate.isLeapMonth || false
+            };
+            const leapPrefix = this.birthDate.isLeapMonth ? '闰' : '';
+            this.lunarFormatedDateTime = `${this.birthDate.year}年${leapPrefix}${this.birthDate.month}月${this.birthDate.day}日 ${timeName}`;
+            this.formatedDateTime = this.lunarFormatedDateTime;
+            
+            this._log('loadEditingData', '加载农历档案', {
+              lunarDateTime: this.lunarDateTime,
+              lunarFormatedDateTime: this.lunarFormatedDateTime
+            });
+          } else {
+            // 档案是公历时间
+            calendarType = 'solar';
+            this.solarDateTime = {
+              year: this.birthDate.year,
+              month: this.birthDate.month,
+              day: this.birthDate.day,
+              hour: this.birthDate.hour,
+              minute: this.birthDate.minute || 0
+            };
+            this.solarFormatedDateTime = `${this.birthDate.year}年${this.birthDate.month}月${this.birthDate.day}日 ${timeName}`;
+            this.formatedDateTime = this.solarFormatedDateTime;
+            
+            this._log('loadEditingData', '加载公历档案', {
+              solarDateTime: this.solarDateTime,
+              solarFormatedDateTime: this.solarFormatedDateTime
+            });
+          }
         }
         
         // 更新页面数据
@@ -916,6 +1005,7 @@ class AddProfileController extends BaseController {
           formData: this.formData,
           editingProfileId: this.editingProfileId,
           birthDate: this.birthDate,
+          calendarType: calendarType, // 设置日历类型
           formatedDateTime: this.formatedDateTime,
           isUncertainTime: this.isUncertainTime,
           solarDateTime: this.solarDateTime,
@@ -1007,6 +1097,13 @@ class AddProfileController extends BaseController {
     const genderChanged = original.gender !== current.gender;
     const uncertainTimeChanged = original.isUncertainTime !== current.isUncertainTime;
     
+    // 检查日历类型是否变化
+    const currentCalendarType = this.page.data.calendarType;
+    const currentIsLunar = currentCalendarType === 'lunar';
+    const originalIsLunar = original.birthDate ? (original.birthDate.isLunar || false) : false;
+    const calendarTypeChanged = originalIsLunar !== currentIsLunar;
+    
+    // 检查出生日期是否变化
     let birthDateChanged = false;
     const currentBirthDate = this.solarDateTime || this.lunarDateTime;
     if (original.birthDate && currentBirthDate) {
@@ -1015,6 +1112,20 @@ class AddProfileController extends BaseController {
                         original.birthDate.day !== currentBirthDate.day ||
                         original.birthDate.hour !== currentBirthDate.hour ||
                         original.birthDate.minute !== currentBirthDate.minute;
+      
+      // 如果日历类型变化了，也算作日期变化
+      if (calendarTypeChanged) {
+        birthDateChanged = true;
+      }
+      
+      // 如果是农历，还需要检查闰月标记是否变化
+      if (currentIsLunar && !birthDateChanged) {
+        const originalIsLeapMonth = original.birthDate.isLeapMonth || false;
+        const currentIsLeapMonth = currentBirthDate.isLeapMonth || false;
+        if (originalIsLeapMonth !== currentIsLeapMonth) {
+          birthDateChanged = true;
+        }
+      }
     } else if (original.birthDate !== currentBirthDate) {
       birthDateChanged = true;
     }
@@ -1025,8 +1136,11 @@ class AddProfileController extends BaseController {
       nameChanged,
       genderChanged,
       uncertainTimeChanged,
+      calendarTypeChanged,
       birthDateChanged,
-      hasChanges
+      hasChanges,
+      originalIsLunar,
+      currentIsLunar
     });
 
     return hasChanges;

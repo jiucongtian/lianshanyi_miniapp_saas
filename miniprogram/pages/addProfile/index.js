@@ -26,8 +26,11 @@ Page({
     isUncertainTime: false, // 是否不确定时辰信息
     initialDateTime: null, // 传递给time-picker的初始时间
     
-    // 只存储公历时间数据
+    // 分别存储公历和农历时间数据
     solarDateTime: null, // 公历时间数据 {year, month, day, hour, minute}
+    lunarDateTime: null, // 农历时间数据 {year, month, day, hour, minute, isLeapMonth}
+    solarFormatedDateTime: '', // 公历格式化时间显示
+    lunarFormatedDateTime: '', // 农历格式化时间显示
   },
 
   // 页面生命周期
@@ -136,20 +139,17 @@ Page({
     wx.navigateBack();
   },
 
-  onInputTap() {
-    log.debug('onInputTap', '点击输入框，打开选择器');
+  onSolarInputTap() {
+    log.debug('onSolarInputTap', '点击公历输入框，打开选择器');
     
-    // 获取当前时间数据作为初始值
+    // 获取公历时间数据作为初始值
     let initialDateTime = null;
     
-    if (this.data.calendarType === 'solar' && this.data.solarDateTime) {
-      // 公历模式，使用公历时间
+    if (this.data.solarDateTime) {
+      // 使用已有的公历时间
       initialDateTime = this.data.solarDateTime;
-    } else if (this.data.calendarType === 'lunar' && this.data.lunarDateTime) {
-      // 农历模式，使用农历时间
-      initialDateTime = this.data.lunarDateTime;
     } else if (this.data.birthDate) {
-      // 如果当前日历类型没有对应时间，使用birthDate
+      // 使用birthDate（通常是公历时间）
       initialDateTime = this.data.birthDate;
     }
     
@@ -165,10 +165,46 @@ Page({
       };
     }
     
-    log.debug('onInputTap', '设置初始时间:', initialDateTime);
+    log.debug('onSolarInputTap', '设置公历初始时间:', initialDateTime);
     
     this.setData({
       showPicker: true,
+      calendarType: 'solar',
+      initialDateTime: initialDateTime
+    });
+  },
+
+  onLunarInputTap() {
+    log.debug('onLunarInputTap', '点击农历输入框，打开选择器');
+    
+    // 获取农历时间数据作为初始值
+    let initialDateTime = null;
+    
+    if (this.data.lunarDateTime) {
+      // 使用已有的农历时间
+      initialDateTime = this.data.lunarDateTime;
+    } else if (this.data.birthDate) {
+      // 使用birthDate
+      initialDateTime = this.data.birthDate;
+    }
+    
+    // 如果没有时间数据，使用当前系统时间
+    if (!initialDateTime) {
+      const now = new Date();
+      initialDateTime = {
+        year: now.getFullYear(),
+        month: now.getMonth() + 1,
+        day: now.getDate(),
+        hour: now.getHours(),
+        minute: now.getMinutes()
+      };
+    }
+    
+    log.debug('onLunarInputTap', '设置农历初始时间:', initialDateTime);
+    
+    this.setData({
+      showPicker: true,
+      calendarType: 'lunar',
       initialDateTime: initialDateTime
     });
   },
