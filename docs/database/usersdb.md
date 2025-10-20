@@ -25,6 +25,7 @@
 | upgradeTime | date | 否 | - | 用户升级时间（升级为高级用户的时间） |
 | usedProfiles | number | 否 | - | 已使用档案数量，默认0 |
 | isActive | boolean | 否 | - | 用户是否活跃状态，默认true |
+| adminRole | string | 否 | 索引 | 管理员角色枚举(none/admin/super_admin)，默认none |
 
 ## 数据示例
 
@@ -44,7 +45,8 @@
   "registrationTime": null,
   "upgradeTime": null,
   "usedProfiles": 0,
-  "isActive": true
+  "isActive": true,
+  "adminRole": "none"
 }
 ```
 
@@ -54,6 +56,7 @@
 - `openid`: **唯一索引**，用于快速查找用户，**必须设置以防止重复用户记录**
 - `unionid`: 普通索引，用于跨应用用户识别
 - `userTypeCode`: 普通索引，用于按用户类型查询和统计
+- `adminRole`: 普通索引，用于快速筛选管理员用户
 
 ### 查询优化
 - 通过openid查询用户是最常用的查询方式，设置为唯一索引
@@ -96,11 +99,30 @@
 
 用户类型的详细权限和配额信息请参考 `user_types` 表文档。用户表只存储用户类型代码，具体的权限配置通过关联查询获取。
 
+## 管理员权限说明
+
+### 权限维度（二维矩阵）
+用户类型（userTypeCode）和管理员角色（adminRole）是两个相互独立的维度：
+- 用户类型维度：`userTypeCode ∈ { guest, normal, premium }`
+- 管理员角色维度：`adminRole ∈ { none, admin, super_admin }`
+
+### 管理员角色枚举
+- `none`：普通用户（默认）
+- `admin`：普通管理员
+- `super_admin`：超级管理员
+
+### 权限规则
+- 业务功能与配额由 userTypeCode 决定
+- 后台可见性/管理员菜单由 adminRole 决定
+- 管理员也是用户，始终同时拥有一个 userTypeCode 与一个 adminRole
+
 ## 扩展性考虑
 
 1. **用户权限系统**: 基于userTypeCode关联user_types表实现权限控制
-2. **用户偏好设置**: 可添加preferences对象字段存储用户个性化设置
-3. **统计数据**: 可添加profileCount、lastActiveTime等统计字段
-4. **第三方集成**: unionid字段为后续跨平台集成预留
-5. **级别升级机制**: 可添加levelUpgradeTime、upgradeReason等字段记录级别变更历史
-6. **用户行为分析**: 可添加behaviorData字段记录用户行为数据用于个性化推荐
+2. **管理员权限系统**: 基于adminRole实现后台管理功能权限控制
+3. **用户偏好设置**: 可添加preferences对象字段存储用户个性化设置
+4. **统计数据**: 可添加profileCount、lastActiveTime等统计字段
+5. **第三方集成**: unionid字段为后续跨平台集成预留
+6. **级别升级机制**: 可添加levelUpgradeTime、upgradeReason等字段记录级别变更历史
+7. **用户行为分析**: 可添加behaviorData字段记录用户行为数据用于个性化推荐
+8. **管理员角色扩展**: 可添加更多管理员角色如content_admin、data_admin等

@@ -25,6 +25,9 @@ class UserBean extends BaseBean {
     this.usedProfiles = this._getField(this.data, 'usedProfiles', 0, 'number');
     this.isActive = this.data.isActive !== undefined ? this.data.isActive : true;
     
+    // 管理员角色字段
+    this.adminRole = this._getField(this.data, 'adminRole', 'none', 'string');
+    
     // 用户类型相关字段（从static_user_types表获取）
     this.typeName = this._getField(this.data, 'typeName', '', 'string');
     this.displayName = this._getField(this.data, 'displayName', '', 'string');
@@ -63,6 +66,12 @@ class UserBean extends BaseBean {
     // 验证性别
     if (this.gender !== 0 && this.gender !== 1 && this.gender !== 2) {
       this._addValidationError('gender', `无效的性别值: ${this.gender}`);
+    }
+    
+    // 验证管理员角色
+    const validAdminRoles = ['none', 'admin', 'super_admin'];
+    if (!validAdminRoles.includes(this.adminRole)) {
+      this._addValidationError('adminRole', `无效的管理员角色: ${this.adminRole}`);
     }
     
     // 标记为已验证
@@ -232,6 +241,46 @@ class UserBean extends BaseBean {
   }
   
   /**
+   * 检查是否为管理员（任何级别）
+   * @returns {boolean} 是否为管理员
+   */
+  isAdmin() {
+    return this.adminRole === 'admin' || this.adminRole === 'super_admin';
+  }
+  
+  /**
+   * 检查是否为超级管理员
+   * @returns {boolean} 是否为超级管理员
+   */
+  isSuperAdmin() {
+    return this.adminRole === 'super_admin';
+  }
+  
+  /**
+   * 检查是否为普通管理员
+   * @returns {boolean} 是否为普通管理员
+   */
+  isNormalAdmin() {
+    return this.adminRole === 'admin';
+  }
+  
+  /**
+   * 获取管理员角色显示名称
+   * @returns {string} 管理员角色显示名称
+   */
+  getAdminRoleName() {
+    switch (this.adminRole) {
+      case 'super_admin':
+        return '超级管理员';
+      case 'admin':
+        return '普通管理员';
+      case 'none':
+      default:
+        return '普通用户';
+    }
+  }
+  
+  /**
    * 获取用户状态描述
    * @returns {string} 状态描述
    */
@@ -261,7 +310,8 @@ class UserBean extends BaseBean {
       usedProfiles: this.usedProfiles,
       canCreateMore: this.canCreateMore,
       remainingQuota: this.remainingQuota,
-      isActive: this.isActive
+      isActive: this.isActive,
+      adminRole: this.adminRole
     };
   }
   
