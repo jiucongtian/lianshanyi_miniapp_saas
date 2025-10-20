@@ -3,8 +3,8 @@
  * 统一管理ProfileBean实例和数组，供各个页面调用
  */
 
-const { ProfileBean } = require('../beans/ProfileBean');
-const { createModuleLogger } = require('./logger/index');
+const { ProfileBean } = require('../../beans/ProfileBean');
+const { createModuleLogger } = require('../logger/index');
 const log = createModuleLogger('ProfileManager');
 
 class ProfileManager {

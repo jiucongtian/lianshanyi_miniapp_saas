@@ -1,7 +1,7 @@
 /**
  * 缓存信息页面
  */
-const { imageCacheManager } = require('../../utils/imageCacheManager');
+const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
 const { logger } = require('../../utils/logger/index');
 const { createModuleLogger } = require('../../utils/logger/index');
 const log = createModuleLogger('CacheInfoPage');

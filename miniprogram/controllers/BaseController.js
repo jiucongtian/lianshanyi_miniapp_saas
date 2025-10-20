@@ -15,7 +15,7 @@
  */
 
 const { BaseClass } = require('../common/BaseClass');
-const { globalUserManager } = require('../utils/globalUserManager');
+const { globalUserManager } = require('../utils/manager/globalUserManager');
 
 class BaseController extends BaseClass {
   /**

@@ -4,9 +4,9 @@
  * 注意：此模块已重构为使用Service层
  */
 
-const { userService } = require('../services/index');
+const { userService } = require('../../services/index');
 const { permissionManager } = require('./permissionManager');
-const { createModuleLogger } = require('./logger/index');
+const { createModuleLogger } = require('../logger/index');
 const log = createModuleLogger('UserManager');
 
 /**

@@ -2,7 +2,7 @@
  * 通用图片缓存管理器
  * 支持不同类型的图片缓存（头像、卡牌等）
  */
-const { createModuleLogger } = require('./logger/index');
+const { createModuleLogger } = require('../logger/index');
 const log = createModuleLogger('ImageCache');
 
 /**

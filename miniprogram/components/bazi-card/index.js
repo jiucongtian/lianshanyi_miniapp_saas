@@ -4,7 +4,7 @@
  */
 
 // 引入工具类
-const { imageCacheManager } = require('../../utils/imageCacheManager');
+const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
 const { getBaziImageById, getBaziImageByPinyin } = require('../../utils/baziImageMap');
 const { createModuleLogger } = require('../../utils/logger/index');
 const log = createModuleLogger('BaziCard');

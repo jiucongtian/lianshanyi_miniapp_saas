@@ -23,8 +23,8 @@
 const { BaseController } = require('./BaseController');
 const { userService } = require('../services/UserService');
 const { profileService } = require('../services/ProfileService');
-const { profileManager } = require('../utils/profileManager');
-const { globalUserManager } = require('../utils/globalUserManager');
+const { profileManager } = require('../utils/manager/profileManager');
+const { globalUserManager } = require('../utils/manager/globalUserManager');
 const { ResponseBean } = require('../beans/ResponseBean');
 const eventBus = require('../utils/eventBus');
 const { PROFILE_EVENTS } = require('../utils/eventTypes');

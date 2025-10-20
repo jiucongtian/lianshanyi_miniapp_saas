@@ -23,7 +23,7 @@
 const { BaseController } = require('./BaseController');
 const { userService } = require('../services/UserService');
 const { profileService } = require('../services/ProfileService');
-const { profileManager } = require('../utils/profileManager');
+const { profileManager } = require('../utils/manager/profileManager');
 const eventBus = require('../utils/eventBus');
 const { PROFILE_EVENTS, SYSTEM_EVENTS } = require('../utils/eventTypes');
 

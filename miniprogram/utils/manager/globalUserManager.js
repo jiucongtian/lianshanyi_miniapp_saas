@@ -9,9 +9,9 @@
  * 4. 避免重复请求，提高性能
  */
 
-const { userService } = require('../services/UserService');
-const { createModuleLogger } = require('./logger/index');
-const eventBus = require('./eventBus');
+const { userService } = require('../../services/UserService');
+const { createModuleLogger } = require('../logger/index');
+const eventBus = require('../eventBus');
 // 不再需要导入USER_EVENTS，因为不再发送用户信息更新事件
 
 const log = createModuleLogger('GlobalUserManager');

@@ -21,8 +21,8 @@
  */
 
 const { BaseController } = require('./BaseController');
-const { profileManager } = require('../utils/profileManager');
-const { imageCacheManager } = require('../utils/imageCacheManager');
+const { profileManager } = require('../utils/manager/profileManager');
+const { imageCacheManager } = require('../utils/manager/imageCacheManager');
 const { getBaziImageById, getBaziImageByPinyin } = require('../utils/baziImageMap');
 const eventBus = require('../utils/eventBus');
 const { PROFILE_EVENTS, SYSTEM_EVENTS } = require('../utils/eventTypes');

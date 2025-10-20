@@ -11,8 +11,8 @@
 
 const { BaseController } = require('./BaseController');
 const { userService } = require('../services/UserService');
-const { userManager } = require('../utils/userManager');
-const { permissionManager, USER_TYPES } = require('../utils/permissionManager');
+const { userManager } = require('../utils/manager/userManager');
+const { permissionManager, USER_TYPES } = require('../utils/manager/permissionManager');
 
 class RegisterController extends BaseController {
   constructor(page) {

@@ -2,7 +2,7 @@
  * 版本管理器
  * 负责管理客户端版本和云函数版本的映射关系
  */
-const { createModuleLogger } = require('./logger/index');
+const { createModuleLogger } = require('../logger/index');
 const log = createModuleLogger('VersionManager');
 
 class VersionManager {

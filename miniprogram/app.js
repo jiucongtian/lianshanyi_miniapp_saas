@@ -1,12 +1,12 @@
 // app.js
-import config from './config/index';
+import config from './config/index.js';
 const eventBus = require('./utils/eventBus');
 const { PROFILE_EVENTS, SYSTEM_EVENTS } = require('./utils/eventTypes');
-const { userManager } = require('./utils/userManager');
-const { globalUserManager } = require('./utils/globalUserManager');
-const { imageCacheManager } = require('./utils/imageCacheManager');
+const { userManager } = require('./utils/manager/userManager');
+const { globalUserManager } = require('./utils/manager/globalUserManager');
+const { imageCacheManager } = require('./utils/manager/imageCacheManager');
 const { profileService } = require('./services/index');
-const { profileManager } = require('./utils/profileManager');
+const { profileManager } = require('./utils/manager/profileManager');
 const logger = require('./utils/logger/Logger');
 const { LogCleaner } = require('./utils/logger/LogCleaner');
 const { createModuleLogger } = require('./utils/logger/index');

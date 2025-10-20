@@ -22,9 +22,9 @@
 
 const { BaseController } = require('./BaseController');
 const { userService } = require('../services/UserService');
-const { globalUserManager } = require('../utils/globalUserManager');
-const { imageCacheManager } = require('../utils/imageCacheManager');
-const { profileManager } = require('../utils/profileManager');
+const { globalUserManager } = require('../utils/manager/globalUserManager');
+const { imageCacheManager } = require('../utils/manager/imageCacheManager');
+const { profileManager } = require('../utils/manager/profileManager');
 
 class MineController extends BaseController {
   /**

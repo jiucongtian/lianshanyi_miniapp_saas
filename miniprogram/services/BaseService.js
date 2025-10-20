@@ -5,7 +5,7 @@
  */
 const { BaseClass } = require('../common/BaseClass');
 const { ResponseBean } = require('../beans/ResponseBean');
-const { VersionManager } = require('../utils/versionManager');
+const { VersionManager } = require('../utils/manager/versionManager');
 
 class BaseService extends BaseClass {
   constructor() {
