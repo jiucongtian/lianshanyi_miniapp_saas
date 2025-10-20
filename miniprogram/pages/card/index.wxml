@@ -65,7 +65,7 @@
       <!-- 时柱 - 使用组件 -->
       <bazi-card
         id="time-card"
-        title="亲子关系卡"
+        title="自我关系卡"
         pillar-name="time"
         heavenly-stem="{{timePillar.heavenlyStem}}"
         earthly-branch="{{timePillar.earthlyBranch}}"
