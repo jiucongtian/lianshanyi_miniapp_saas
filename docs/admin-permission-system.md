@@ -149,10 +149,7 @@ class AdminPermissionChecker {
 // 在现有返回数据基础上新增
 {
   // ... 现有字段
-  adminRole: user.adminRole || 'none',
-  isAdmin: AdminPermissionChecker.isAdmin(user.adminRole),
-  isSuperAdmin: AdminPermissionChecker.isSuperAdmin(user.adminRole),
-  isNormalAdmin: AdminPermissionChecker.isNormalAdmin(user.adminRole)
+  adminRole: user.adminRole || 'none'
 }
 ```
 
@@ -204,10 +201,10 @@ Page({
     if (response.success) {
       const userInfo = response.data
       
-      // 根据管理员权限显示菜单
+      // 根据管理员权限显示菜单（adminRole !== 'none' 才显示）
       const adminMenus = this.data.adminMenus.map(menu => ({
         ...menu,
-        show: userInfo.isAdmin // 只有管理员才能看到
+        show: userInfo.adminRole !== 'none'
       }))
       
       this.setData({
@@ -243,7 +240,7 @@ Page({
   </view>
   
   <!-- 管理员菜单（仅管理员可见） -->
-  <view wx:if="{{userInfo.isAdmin}}" class="admin-section">
+  <view wx:if="{{userInfo.adminRole !== 'none'}}" class="admin-section">
     <view class="section-title admin-title">管理员功能</view>
     
     <view 
@@ -266,7 +263,7 @@ Page({
 ### 5.1 访问控制
 
 1. **菜单级隔离**：管理员菜单只对管理员用户可见
-2. **权限验证**：通过 `isAdmin` 字段控制菜单显示
+2. **权限验证**：通过 `adminRole !== 'none'` 控制菜单显示
 3. **数据隔离**：管理员权限独立于普通用户权限
 
 ### 5.2 角色管理
