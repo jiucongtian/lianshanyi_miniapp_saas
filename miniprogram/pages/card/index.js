@@ -118,6 +118,18 @@ Page({
     });
   },
 
+  // 图片加载成功（预览图片的 load 事件）
+  onImageLoad: function(e) {
+    log.debug('onImageLoad', '预览图片加载成功');
+    // 预览图片加载成功，可以在这里添加一些逻辑
+  },
+
+  // 图片加载失败（预览图片的 error 事件）
+  onImageError: function(e) {
+    log.error('onImageError', '预览图片加载失败');
+    // 预览图片加载失败，可以在这里添加一些逻辑
+  },
+
   // 分享功能 - 激活右上角分享按钮
   onShareAppMessage: function() {
     const { yearPillar, monthPillar, dayPillar, timePillar } = this.data;
