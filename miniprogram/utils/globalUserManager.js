@@ -12,7 +12,7 @@
 const { userService } = require('../services/UserService');
 const { createModuleLogger } = require('./logger/index');
 const eventBus = require('./eventBus');
-const { USER_EVENTS } = require('./eventTypes');
+// 不再需要导入USER_EVENTS，因为不再发送用户信息更新事件
 
 const log = createModuleLogger('GlobalUserManager');
 
@@ -132,8 +132,7 @@ class GlobalUserManager {
         this.isInitialized = true;
         this.lastUpdateTime = Date.now();
 
-        // 触发用户信息更新事件
-        eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, this.userInfo);
+        // 用户信息更新完成，无需发送事件（当前无监听器）
 
         log.info('_loadUserInfo', '用户信息加载成功', {
           source,

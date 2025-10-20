@@ -486,6 +486,7 @@ class ProfileController extends BaseController {
     }
   }
 
+
   /**
    * 从ProfileManager加载数据
    * @private

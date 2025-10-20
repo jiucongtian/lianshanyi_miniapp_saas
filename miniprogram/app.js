@@ -1,7 +1,7 @@
 // app.js
 import config from './config/index';
 const eventBus = require('./utils/eventBus');
-const { USER_EVENTS, PROFILE_EVENTS, SYSTEM_EVENTS } = require('./utils/eventTypes');
+const { PROFILE_EVENTS, SYSTEM_EVENTS } = require('./utils/eventTypes');
 const { userManager } = require('./utils/userManager');
 const { globalUserManager } = require('./utils/globalUserManager');
 const { imageCacheManager } = require('./utils/imageCacheManager');
@@ -94,8 +94,7 @@ App({
         // 更新全局用户信息
         this.globalData.userInfo = result.data;
         
-        // 触发用户信息更新事件（静默模式，允许无监听器）
-        this.eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, result.data, { __emitOptions__: true, silent: true });
+        // 用户信息更新完成，无需发送事件（当前无监听器）
         
         // 显示欢迎信息
         log.info('autoSaveUser', result.message || '用户信息初始化成功');
@@ -128,8 +127,7 @@ App({
         // 更新全局数据
         this.globalData.userInfo = result.data;
         
-        // 触发更新事件（静默模式，允许无监听器）
-        this.eventBus.emit(USER_EVENTS.USER_INFO_UPDATED, result.data, { __emitOptions__: true, silent: true });
+        // 用户信息更新完成，无需发送事件（当前无监听器）
       }
       
       return result;
