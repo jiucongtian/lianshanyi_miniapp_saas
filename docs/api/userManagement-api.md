@@ -88,7 +88,15 @@ POST（云函数调用）
     "nickName": "张三",
     "avatarUrl": "https://thirdwx.qlogo.cn/mmopen/xxxxx",
     "gender": 1,
-,
+    "userType": "normal",
+    "typeName": "探索者",
+    "displayName": "探索者",
+    "profileQuota": 50,
+    "usedProfiles": 5,
+    "permissions": ["view", "create"],
+    "canCreateMore": true,
+    "remainingQuota": 45,
+    "adminRole": "none",
     "createTime": "2023-09-14T08:00:00.000Z",
     "updateTime": "2023-09-14T08:00:00.000Z",
     "lastLoginTime": "2023-09-14T08:00:00.000Z",
@@ -96,6 +104,31 @@ POST（云函数调用）
   }
 }
 ```
+
+#### 返回字段说明
+| 字段名 | 类型 | 说明 |
+|-----|---|---|
+| success | boolean | 是否成功 |
+| data | object | 用户信息对象 |
+| data._id | string | 用户ID |
+| data.openid | string | 微信openid |
+| data.unionid | string | 微信unionid |
+| data.nickName | string | 用户昵称 |
+| data.avatarUrl | string | 用户头像URL |
+| data.gender | number | 用户性别(0:未知,1:男,2:女) |
+| data.userType | string | 用户类型(guest/normal/premium) |
+| data.typeName | string | 用户类型名称 |
+| data.displayName | string | 用户类型显示名称 |
+| data.profileQuota | number | 档案配额(-1表示无限制) |
+| data.usedProfiles | number | 已使用档案数 |
+| data.permissions | array | 用户权限列表 |
+| data.canCreateMore | boolean | 是否可以创建更多档案 |
+| data.remainingQuota | number | 剩余配额(-1表示无限制) |
+| data.adminRole | string | 管理员角色(none/admin/super_admin) |
+| data.createTime | string | 创建时间 |
+| data.updateTime | string | 更新时间 |
+| data.lastLoginTime | string | 最后登录时间 |
+| data.isActive | boolean | 是否活跃 |
 
 ### 3. 更新用户信息
 
@@ -393,16 +426,30 @@ const statsResult = await wx.cloud.callFunction({
 });
 ```
 
-## 用户级别说明
-- **normal**: 普通用户，新注册用户的默认级别
-- **primary**: 初阶用户，具有额外权限的用户
-- **internal**: 内部用户，具有最高权限的用户
+## 用户类型说明
+- **guest**: 临时用户，未注册的用户，功能受限
+- **normal**: 探索者，已注册的普通用户，享受基础功能
+- **premium**: 高级用户，付费用户，享受全部功能
+
+## 管理员角色说明
+- **none**: 普通用户（默认），无管理后台访问权限
+- **admin**: 普通管理员，可访问管理后台基础功能
+- **super_admin**: 超级管理员，可访问管理后台所有功能
+
+## 权限维度说明
+用户类型（userType）和管理员角色（adminRole）是两个独立维度：
+- **用户类型** 决定业务功能和配额（档案数量等）
+- **管理员角色** 决定管理后台访问权限
+- 两者可任意组合，互不影响
 
 ## 注意事项
 1. 所有操作都基于微信小程序的openid进行用户识别
 2. createUser操作具有幂等性，如果用户已存在则更新信息
 3. 用户信息支持软删除，通过isActive字段控制
-4. 首次调用会自动创建用户记录，默认级别为"normal"
+4. 首次调用会自动创建用户记录，默认用户类型为"guest"，管理员角色为"none"
 5. 时间字段自动维护，无需手动设置
 6. updateUserLevel功能需要管理员权限，实际使用时应添加权限验证
-7. 用户级别只能是：normal、primary、internal 中的一个
+7. 用户类型只能是：guest、normal、premium 中的一个
+8. 管理员角色只能是：none、admin、super_admin 中的一个
+9. 管理员角色只能通过数据库直接设置，不提供云函数接口进行角色变更
+10. getUserInfo 返回的数据中，adminRole 字段默认为 'none'（普通用户）

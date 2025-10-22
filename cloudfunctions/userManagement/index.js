@@ -247,7 +247,8 @@ async function createUser(wxContext, userData = {}) {
         registrationTime: null,
         upgradeTime: null,
         usedProfiles: 0,
-        isActive: true
+        isActive: true,
+        adminRole: 'none' // 新用户默认为普通用户（非管理员）
         // 不再存储 profileQuota 和 permissions，统一从 static_user_types 表获取
       }
       
@@ -345,7 +346,8 @@ async function getUserInfo(wxContext) {
         ...userPermissions,
         usedProfiles: profileCount.total,
         canCreateMore: userPermissions.profileQuota === -1 || profileCount.total < userPermissions.profileQuota,
-        remainingQuota: userPermissions.profileQuota === -1 ? -1 : Math.max(0, userPermissions.profileQuota - profileCount.total)
+        remainingQuota: userPermissions.profileQuota === -1 ? -1 : Math.max(0, userPermissions.profileQuota - profileCount.total),
+        adminRole: user.adminRole || 'none' // 添加管理员角色字段
       }
     }
   } catch (error) {

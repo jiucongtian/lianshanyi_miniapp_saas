@@ -17,7 +17,10 @@ Page({
     userTypeText: '',
     genderText: '',
     phoneNumberText: '',
-    avatarUrl: ''
+    avatarUrl: '',
+    adminMenus: [],
+    isAdmin: false,
+    adminRoleName: '普通用户'
   },
 
   /**
@@ -90,6 +93,18 @@ Page({
   onSettingsTap() {
     if (this.controller) {
       this.controller.showSettings();
+    }
+  },
+
+  /**
+   * 管理员菜单点击事件
+   */
+  onAdminMenuTap(e) {
+    const menuId = e.currentTarget.dataset.id;
+    log.info('onAdminMenuTap', '管理员菜单点击:', menuId);
+    
+    if (this.controller) {
+      this.controller.onAdminMenuTap(menuId);
     }
   }
 })

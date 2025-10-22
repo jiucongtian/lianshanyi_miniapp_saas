@@ -25,6 +25,7 @@ const { userService } = require('../services/UserService');
 const { globalUserManager } = require('../utils/manager/globalUserManager');
 const { imageCacheManager } = require('../utils/manager/imageCacheManager');
 const { profileManager } = require('../utils/manager/profileManager');
+const { AdminPermissionChecker } = require('../utils/AdminPermissionChecker');
 
 class MineController extends BaseController {
   /**
@@ -44,6 +45,34 @@ class MineController extends BaseController {
     // 页面状态
     this.loading = true;
     this.error = '';
+    
+    // 管理员菜单配置
+    this.adminMenus = [
+      {
+        id: 'admin_dashboard',
+        title: '管理后台',
+        icon: 'dashboard',
+        show: false
+      },
+      {
+        id: 'admin_users',
+        title: '用户管理',
+        icon: 'user',
+        show: false
+      },
+      {
+        id: 'admin_profiles',
+        title: '档案管理',
+        icon: 'folder',
+        show: false
+      },
+      {
+        id: 'admin_statistics',
+        title: '数据统计',
+        icon: 'chart',
+        show: false
+      }
+    ];
   }
 
   // ==================== 公共方法 ====================
@@ -82,11 +111,17 @@ class MineController extends BaseController {
       // 处理头像缓存
       this._processAvatarCache(this.userInfo);
       
+      // 处理管理员菜单显示
+      this._updateAdminMenus(this.userInfo);
+      
       this._setData({
         userInfo: this.userInfo,
         userTypeText: this.userTypeText,
         genderText: this.genderText,
         phoneNumberText: this.phoneNumberText,
+        adminMenus: this.adminMenus,
+        isAdmin: this.userInfo.isAdmin(),
+        adminRoleName: this.userInfo.getAdminRoleName(),
         loading: false,
         error: ''
       });
@@ -239,6 +274,31 @@ class MineController extends BaseController {
   }
 
   /**
+   * 处理管理员菜单点击事件
+   * @param {string} menuId - 菜单ID
+   */
+  onAdminMenuTap(menuId) {
+    this._log('onAdminMenuTap', '管理员菜单点击:', menuId);
+    
+    // 检查权限
+    if (!this.userInfo || !this.userInfo.isAdmin()) {
+      this._showError('无权限访问管理功能');
+      return;
+    }
+    
+    // 暂时显示提示，后续实现具体功能
+    const menu = this.adminMenus.find(m => m.id === menuId);
+    const menuTitle = menu ? menu.title : menuId;
+    
+    wx.showModal({
+      title: '功能开发中',
+      content: `${menuTitle}功能正在开发中，敬请期待。`,
+      showCancel: false,
+      confirmText: '知道了'
+    });
+  }
+
+  /**
    * 刷新页面数据
    */
   async onRefresh() {
@@ -375,6 +435,33 @@ class MineController extends BaseController {
     this._navigateTo('/pages/agreement/index', {
       type: 'user'
     });
+  }
+
+  /**
+   * 更新管理员菜单显示状态
+   * @param {Object} userInfo - 用户信息
+   * @private
+   */
+  _updateAdminMenus(userInfo) {
+    if (!userInfo) {
+      this._log('_updateAdminMenus', '用户信息为空，隐藏所有管理员菜单');
+      this.adminMenus = this.adminMenus.map(menu => ({
+        ...menu,
+        show: false
+      }));
+      return;
+    }
+    
+    // 检查是否为管理员（任何级别的管理员都显示菜单）
+    const isAdmin = AdminPermissionChecker.isAdmin(userInfo.adminRole);
+    
+    this._log('_updateAdminMenus', `用户管理员角色: ${userInfo.adminRole}, 是否为管理员: ${isAdmin}`);
+    
+    // 根据管理员权限显示菜单
+    this.adminMenus = this.adminMenus.map(menu => ({
+      ...menu,
+      show: isAdmin
+    }));
   }
 
   /**
