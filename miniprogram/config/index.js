@@ -26,8 +26,8 @@ export const config = {
       showTime: true,                // 显示时间（时:分:秒.毫秒）
       showLevel: false,               // 显示日志类型（DEBUG/INFO/WARN/ERROR）
       showModule: false,              // 显示模块名
-      showClass: false,               // 显示类名
-      showMethod: false,              // 显示方法名
+      showClass: true,               // 显示类名
+      showMethod: true,              // 显示方法名
     },
     // 开发模式配置（debugMode: true）
     development: {
