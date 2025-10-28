@@ -2,8 +2,8 @@
 import config from './config/index.js';
 const eventBus = require('./utils/eventBus');
 const { PROFILE_EVENTS, SYSTEM_EVENTS } = require('./utils/eventTypes');
-const { userManager } = require('./utils/manager/userManager');
 const { globalUserManager } = require('./utils/manager/globalUserManager');
+const { userService } = require('./services/UserService');
 const { imageCacheManager } = require('./utils/manager/imageCacheManager');
 const { profileService } = require('./services/index');
 const { profileManager } = require('./utils/manager/profileManager');
@@ -111,7 +111,7 @@ App({
    * @returns {Object|null} 当前用户信息
    */
   getCurrentUser() {
-    return userManager.getCurrentUser() || this.globalData.userInfo;
+    return globalUserManager.getCachedUserInfo() || this.globalData.userInfo;
   },
 
   /**
@@ -121,11 +121,14 @@ App({
    */
   async updateUserInfo(updateData) {
     try {
-      const result = await userManager.updateUserInfo(updateData);
+      const result = await userService.updateUserInfo(updateData);
       
       if (result.success) {
-        // 更新全局数据
-        this.globalData.userInfo = result.data;
+        // 刷新 globalUserManager 缓存
+        await globalUserManager.refreshUserInfo();
+        
+        // 更新全局数据（从 globalUserManager 获取最新数据）
+        this.globalData.userInfo = globalUserManager.getCachedUserInfo();
         
         // 用户信息更新完成，无需发送事件（当前无监听器）
       }
