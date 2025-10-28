@@ -15,15 +15,15 @@
       />
     </view>
     <view class="user-info">
-      <text class="user-name">{{userInfo.nickName || '未设置昵称'}}</text>
+      <text class="user-name">{{userInfo ? (userInfo.nickName || '未设置昵称') : '未注册用户'}}</text>
       <text class="user-level">{{userTypeText}}</text>
     </view>
   </view>
 
   <!-- 操作按钮区域 -->
   <view class="action-section">
-    <!-- 临时用户显示注册按钮 -->
-    <view class="action-card" wx:if="{{userInfo.userType === 'guest'}}">
+    <!-- 未注册用户或临时用户显示注册按钮 -->
+    <view class="action-card" wx:if="{{!userInfo || userInfo.userType === 'guest'}}">
       <view class="action-header">
         <text class="action-title">升级账户</text>
         <text class="action-subtitle">注册后解锁更多功能</text>

@@ -125,7 +125,29 @@ class GlobalUserManager {
     log.info('_loadUserInfo', '开始加载用户信息', { source });
 
     try {
-      const response = await userService.getUserInfo(true); // 强制刷新
+      let response = await userService.getUserInfo(true); // 强制刷新
+
+      // 如果用户不存在，自动创建用户（guest级别）
+      if (!response.success && response.error && response.error.includes('用户不存在')) {
+        log.info('_loadUserInfo', '用户不存在，自动创建guest用户', { source });
+        
+        // 调用createUser创建新用户（云端会自动创建guest级别用户）
+        const createResult = await userService.createUser({});
+        
+        if (createResult.success) {
+          log.info('_loadUserInfo', '用户创建成功，重新获取用户信息', { source });
+          
+          // 用户创建成功后，createUser已经返回了完整的用户信息
+          response = createResult;
+          response.data.isNewUser = true; // 标记为新用户
+        } else {
+          log.error('_loadUserInfo', '自动创建用户失败', { source, error: createResult.error });
+          return {
+            success: false,
+            error: createResult.error || '创建用户失败'
+          };
+        }
+      }
 
       if (response.success && response.data) {
         this.userInfo = response.data;
@@ -138,12 +160,14 @@ class GlobalUserManager {
           source,
           userType: this.userInfo.userType,
           profileQuota: this.userInfo.profileQuota,
-          usedProfiles: this.userInfo.usedProfiles
+          usedProfiles: this.userInfo.usedProfiles,
+          isNewUser: this.userInfo.isNewUser || false
         });
 
         return {
           success: true,
-          data: this.userInfo
+          data: this.userInfo,
+          message: this.userInfo.isNewUser ? '欢迎新用户！' : '欢迎回来！'
         };
       } else {
         log.error('_loadUserInfo', '用户信息加载失败', { source, error: response.error });
