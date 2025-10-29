@@ -11,7 +11,7 @@
 
 const { BaseController } = require('./BaseController');
 const { userService } = require('../services/UserService');
-const { userManager } = require('../utils/manager/userManager');
+const { globalUserManager } = require('../utils/manager/globalUserManager');
 const { permissionManager, USER_TYPES } = require('../utils/manager/permissionManager');
 
 class RegisterController extends BaseController {
@@ -56,25 +56,44 @@ class RegisterController extends BaseController {
    */
   async loadUserInfo() {
     try {
-      const currentUser = userManager.getCurrentUser();
-      if (currentUser) {
-        const userInfo = {
-          nickName: currentUser.nickName || '',
-          avatarUrl: currentUser.avatarUrl || '',
-          gender: currentUser.gender || 0,
-          phoneNumber: currentUser.phoneNumber || ''
-        };
-        
-        this._setData({
-          userInfo: userInfo,
-          originalUserInfo: JSON.parse(JSON.stringify(userInfo)) // 深拷贝保存原始数据
-        });
-        
-        this.validateForm();
+      // 使用 globalUserManager 获取用户信息
+      const currentUser = globalUserManager.getCachedUserInfo();
+      
+      // 如果缓存中没有，尝试等待初始化完成
+      if (!currentUser) {
+        this._log('loadUserInfo', '缓存中无用户信息，等待初始化');
+        const result = await globalUserManager.getUserInfo();
+        if (result.success && result.data) {
+          this._loadUserInfoData(result.data);
+        }
+      } else {
+        this._loadUserInfoData(currentUser);
       }
     } catch (error) {
       this._error('loadUserInfo', '加载用户信息失败:', error);
       this._handleError(error, '加载用户信息');
+    }
+  }
+  
+  /**
+   * 加载用户信息数据到页面
+   * @param {Object} currentUser - 用户信息
+   */
+  _loadUserInfoData(currentUser) {
+    if (currentUser) {
+      const userInfo = {
+        nickName: currentUser.nickName || '',
+        avatarUrl: currentUser.avatarUrl || '',
+        gender: currentUser.gender || 0,
+        phoneNumber: currentUser.phoneNumber || ''
+      };
+      
+      this._setData({
+        userInfo: userInfo,
+        originalUserInfo: JSON.parse(JSON.stringify(userInfo)) // 深拷贝保存原始数据
+      });
+      
+      this.validateForm();
     }
   }
 
@@ -209,28 +228,65 @@ class RegisterController extends BaseController {
     this._showLoading('上传头像中...', true);
     
     try {
-      // 从当前用户信息中获取openid
-      const currentUser = userManager.getCurrentUser();
+      // 从 globalUserManager 获取用户信息
+      let currentUser = globalUserManager.getCachedUserInfo();
+      this._log('_uploadAvatar', '当前用户信息:', currentUser);
+      
+      // 如果缓存中没有，尝试获取
+      if (!currentUser) {
+        this._log('_uploadAvatar', '缓存中无用户信息，重新获取');
+        const result = await globalUserManager.getUserInfo();
+        if (result.success && result.data) {
+          currentUser = result.data;
+          this._log('_uploadAvatar', '重新获取的用户信息:', currentUser);
+        }
+      }
+      
       if (!currentUser || !currentUser.openid) {
+        this._error('_uploadAvatar', '用户信息无效', { currentUser });
         throw new Error('无法获取用户身份信息');
       }
       
       // 使用openid-时间戳格式作为文件名，避免覆盖问题
       const cloudPath = `avatars/${currentUser.openid}-${Date.now()}.jpg`;
+      this._log('_uploadAvatar', '准备上传到云路径:', cloudPath);
       
-      const uploadResult = await wx.cloud.uploadFile({
+      // 检查文件路径是否有效
+      if (!tempFilePath) {
+        this._error('_uploadAvatar', '临时文件路径为空');
+        throw new Error('临时文件路径无效');
+      }
+      
+      const uploadParams = {
         cloudPath: cloudPath,
         filePath: tempFilePath
-      });
+      };
+      this._log('_uploadAvatar', '上传参数:', uploadParams);
       
-      this._log('_uploadAvatar', '头像上传成功:', uploadResult);
+      const uploadResult = await wx.cloud.uploadFile(uploadParams);
+      
+      this._log('_uploadAvatar', '头像上传成功，完整结果:', uploadResult);
       this._hideLoading();
+      
+      if (!uploadResult.fileID) {
+        this._error('_uploadAvatar', '上传成功但未返回fileID:', uploadResult);
+        throw new Error('头像上传失败：未获取到文件ID');
+      }
       
       return uploadResult.fileID;
     } catch (error) {
-      this._error('_uploadAvatar', '头像上传失败:', error);
+      this._error('_uploadAvatar', '头像上传失败，错误类型:', typeof error);
+      this._error('_uploadAvatar', '错误对象:', error);
+      this._error('_uploadAvatar', '错误消息:', error.message);
+      this._error('_uploadAvatar', '错误代码:', error.errCode || error.code);
+      this._error('_uploadAvatar', '错误详情:', error.errMsg || error.message);
+      this._error('_uploadAvatar', '完整错误对象JSON:', JSON.stringify(error));
+      
       this._hideLoading();
-      throw new Error('头像上传失败');
+      
+      // 构造更详细的错误消息
+      const errorMsg = error.errMsg || error.message || '头像上传失败';
+      throw new Error(errorMsg);
     }
   }
 
@@ -306,10 +362,15 @@ class RegisterController extends BaseController {
       let result;
       if (source === 'edit') {
         // 编辑模式：更新用户信息
-        result = await userManager.updateUserInfo(registrationData);
+        result = await userService.updateUserInfo(registrationData);
       } else {
         // 注册模式：升级用户类型为普通用户
-        result = await userManager.upgradeUserType(USER_TYPES.NORMAL, registrationData);
+        result = await userService.upgradeUserType(USER_TYPES.NORMAL, registrationData);
+      }
+      
+      // 如果操作成功，刷新 globalUserManager 的用户信息
+      if (result.success) {
+        await globalUserManager.refreshUserInfo();
       }
       
       this._setData({ loading: false });

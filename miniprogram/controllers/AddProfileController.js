@@ -1083,7 +1083,17 @@ class AddProfileController extends BaseController {
    */
   _updateUserInfoToPage() {
     if (!this.userInfo) {
-      this._log('_updateUserInfoToPage', '用户信息为空，跳过更新');
+      this._log('_updateUserInfoToPage', '用户信息为空，设置默认值');
+      
+      // 理论上不应该走到这里，因为globalUserManager会自动创建用户
+      // 但为了容错，还是提供默认值
+      this._setData({
+        userType: 'guest',
+        userTypeName: '临时用户',
+        profileQuota: 3,
+        usedProfiles: 0,
+        canCreateMore: true
+      });
       return;
     }
     

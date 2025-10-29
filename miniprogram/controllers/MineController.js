@@ -55,12 +55,20 @@ class MineController extends BaseController {
     this._log('initialize', '开始初始化页面');
     
     try {
+      // 设置加载状态
+      this._setData({ loading: true, error: '' });
+      
       // 加载用户信息
       await this.loadUserInfo();
+      
+      // 更新页面显示
+      this._updateUserInfoToPage();
       
       this._log('initialize', '页面初始化完成');
     } catch (error) {
       this._error('initialize', '页面初始化失败:', error);
+      // 确保加载状态被清除
+      this._setData({ loading: false });
       this._handleError(error, '页面初始化');
     }
   }
@@ -71,7 +79,19 @@ class MineController extends BaseController {
    */
   _updateUserInfoToPage() {
     if (!this.userInfo) {
-      this._log('_updateUserInfoToPage', '用户信息为空，跳过更新');
+      this._log('_updateUserInfoToPage', '用户信息为空，显示默认状态');
+      
+      // 理论上不应该走到这里，因为globalUserManager会自动创建用户
+      // 但为了容错，还是提供默认显示
+      this._setData({
+        userInfo: null,
+        userTypeText: '临时用户',
+        genderText: '未知',
+        phoneNumberText: '未设置',
+        avatarUrl: '/static/icons/default-avatar.png',
+        loading: false,
+        error: ''
+      });
       return;
     }
     
@@ -94,6 +114,8 @@ class MineController extends BaseController {
       this._log('_updateUserInfoToPage', '用户信息已更新到页面');
     } catch (error) {
       this._error('_updateUserInfoToPage', '更新用户信息到页面失败:', error);
+      // 即使出错，也要清除加载状态
+      this._setData({ loading: false });
     }
   }
 
