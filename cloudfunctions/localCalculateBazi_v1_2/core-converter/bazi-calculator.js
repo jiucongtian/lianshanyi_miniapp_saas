@@ -31,6 +31,16 @@ function calculateBazi(year, month, day, hour = 0, minute = 0) {
 
   // 2. 获取基础干支信息
   let yearGanZhi = lunarInfo.gzYear;   // 年柱
+
+  //避免当春节在立春后面的时候，立春到春节之间这几天到年柱还没切换到下一年的情况，此时是应该切换到下一年的
+  const middleMonthLunar = calendar.solar2lunar(year, 5, 16);
+  if (middleMonthLunar !== -1) {
+    yearGanZhi = middleMonthLunar.gzYear;
+  }
+
+
+
+
   let monthGanZhi = lunarInfo.gzMonth; // 月柱
   const dayGanZhi = lunarInfo.gzDay;   // 日柱
 
