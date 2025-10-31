@@ -239,6 +239,55 @@
       }
     }
   }
+  
+  /* 微信小店入口 */
+  .store-section {
+    margin-top: 24rpx;
+    
+    .store-card {
+      background: #fff;
+      border-radius: 16rpx;
+      padding: 32rpx;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      
+      &:active {
+        transform: scale(0.98);
+        box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+      }
+      
+      .store-icon {
+        font-size: 56rpx;
+        margin-right: 24rpx;
+      }
+      
+      .store-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        
+        .store-title {
+          font-size: 32rpx;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 8rpx;
+        }
+        
+        .store-desc {
+          font-size: 24rpx;
+          color: #999;
+        }
+      }
+      
+      .store-arrow {
+        font-size: 48rpx;
+        color: #ccc;
+        font-weight: 300;
+      }
+    }
+  }
 }
 
 /* 加载状态 */

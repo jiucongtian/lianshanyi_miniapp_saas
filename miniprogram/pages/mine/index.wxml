@@ -56,6 +56,18 @@
         <text class="detail-value">{{phoneNumberText}}</text>
       </view>
     </view>
+    
+    <!-- 微信小店入口 -->
+    <view class="store-section">
+      <view class="store-card" bindtap="onStoreTap">
+        <view class="store-icon">🏪</view>
+        <view class="store-info">
+          <text class="store-title">微信小店</text>
+          <text class="store-desc">浏览和购买商品</text>
+        </view>
+        <view class="store-arrow">›</view>
+      </view>
+    </view>
   </view>
 
   <!-- 加载状态 -->

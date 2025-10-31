@@ -13,6 +13,14 @@ export const config = {
     // 卡牌图片云存储路径
     cardImagesPath: 'cards', // 云存储中卡牌图片的文件夹路径
   },
+  // 微信小店配置
+  store: {
+    // 小店 appid，从 [小店后台](https://store.weixin.qq.com/shop/setting/home) - 店铺管理 - 基础信息 - 账号信息 - 微信小店ID 获取
+    appid: 'wx25a1da5e0a978940', // 请在此处填写您的小店 appid
+    // 商品 ID 列表，从 [小店后台](https://store.weixin.qq.com/shop/goods/list) - 商品管理 - 商品列表 - 规格/编码 获取
+    // 也可以通过 API 获取商品列表：https://developers.weixin.qq.com/doc/store/API/product/get.html
+    productIds: [10000319374901,10000319244356], // 例如：['product-id-1', 'product-id-2']
+  },
   // 日志配置
   logger: {
     // 本地存储配置
@@ -44,3 +52,6 @@ export const config = {
 
 // 同时提供默认导出以兼容现有代码
 export default config;
+
+// 同时提供 CommonJS 导出以兼容 require
+module.exports = { config, default: config };
