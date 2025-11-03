@@ -1,0 +1,1946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小程序页面结构优化 - 方案演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .demo-container {
+            max-width: 375px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 方案选择器 */
+        .scheme-selector {
+            display: flex;
+            background: #667eea;
+            padding: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .scheme-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .scheme-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .scheme-btn.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        /* 手机框架 */
+        .phone-frame {
+            width: 100%;
+            height: 667px;
+            background: #000;
+            padding: 2px;
+            position: relative;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 方案视图容器 */
+        .scheme-views-container {
+            width: 100%;
+            height: calc(100% - 20px);
+            position: absolute;
+            top: 20px;
+            left: 0;
+            overflow: hidden;
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            height: 20px;
+            background: #000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            color: white;
+            font-size: 12px;
+        }
+
+        /* 导航栏 */
+        .nav-bar {
+            height: 44px;
+            background: white;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+
+        .nav-title {
+            flex: 1;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 500;
+        }
+
+        .nav-btn {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        /* 页面内容 */
+        .page-content {
+            height: calc(100% - 64px - 50px);
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* TabBar */
+        .tab-bar {
+            height: 50px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: color 0.3s;
+            color: #999;
+        }
+
+        .tab-item.active {
+            color: #667eea;
+        }
+
+        .tab-icon {
+            font-size: 20px;
+            margin-bottom: 2px;
+        }
+
+        .tab-text {
+            font-size: 11px;
+        }
+
+        /* 方案视图 */
+        .scheme-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .scheme-view.active {
+            display: block;
+        }
+
+        /* 页面样式 */
+        .page {
+            display: none;
+            padding: 15px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* 卡牌页面 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .card-item {
+            aspect-ratio: 3/4;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .card-item:hover {
+            transform: scale(1.05);
+        }
+
+        /* 牌库页面 */
+        .profile-list {
+            margin-top: 15px;
+        }
+
+        .profile-item {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .profile-info h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .profile-info p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* 我的页面 */
+        .user-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            padding: 20px;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .user-card h2 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .user-card p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .menu-list {
+            background: white;
+        }
+
+        .menu-group {
+            margin-bottom: 15px;
+        }
+
+        .menu-group-title {
+            font-size: 12px;
+            color: #999;
+            padding: 0 15px 8px;
+        }
+
+        .menu-item {
+            background: white;
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .menu-item:active {
+            background: #f5f5f5;
+        }
+
+        .menu-item-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-item-icon {
+            font-size: 20px;
+        }
+
+        /* 抽屉 */
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 85%;
+            height: 100%;
+            background: white;
+            z-index: 1000;
+            transition: right 0.3s;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .drawer.show {
+            right: 0;
+        }
+
+        .drawer-header {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .drawer-close {
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .drawer-title {
+            flex: 1;
+            text-align: center;
+            font-size: 17px;
+        }
+
+        .drawer-content {
+            padding: 15px;
+            height: calc(100% - 44px);
+            overflow-y: auto;
+        }
+
+        .drawer-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .drawer-mask.show {
+            display: block;
+        }
+
+        /* 弹窗 */
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 85%;
+            max-width: 400px;
+            max-height: 80%;
+            background: white;
+            border-radius: 8px;
+            z-index: 1001;
+            display: none;
+            overflow: hidden;
+        }
+
+        .popup.show {
+            display: block;
+            animation: popupShow 0.3s forwards;
+        }
+
+        @keyframes popupShow {
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .popup-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .popup-title {
+            font-size: 17px;
+            font-weight: 500;
+        }
+
+        .popup-close {
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .popup-content {
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* 方案对比视图 */
+        .scheme-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .comparison-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 2px solid transparent;
+        }
+
+        .comparison-item.active {
+            border-color: #667eea;
+        }
+
+        .comparison-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .comparison-stats {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* 说明文字 */
+        .description {
+            background: white;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #666;
+        }
+
+        .description h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .highlight {
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .form-actions .btn {
+            flex: 1;
+            padding: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <!-- 方案选择器 -->
+        <div class="scheme-selector">
+            <button class="scheme-btn active" onclick="showScheme('current', this)">当前方案</button>
+            <button class="scheme-btn" onclick="showScheme('scheme1', this)">方案一：抽屉整合</button>
+            <button class="scheme-btn" onclick="showScheme('scheme2', this)">方案二：Tab扩展</button>
+            <button class="scheme-btn" onclick="showScheme('scheme3', this)">方案三：分级导航</button>
+            <button class="scheme-btn" onclick="showScheme('scheme4', this)">方案四：混合优化</button>
+            <button class="scheme-btn" onclick="showScheme('scheme5', this)">方案五：牌库抽屉</button>
+        </div>
+
+        <!-- 手机框架 -->
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <!-- 状态栏 -->
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span>📶 🔋</span>
+                </div>
+
+                <!-- 方案视图容器 -->
+                <div class="scheme-views-container">
+                    <!-- 当前方案 -->
+                    <div id="current-scheme" class="scheme-view active">
+                    <div class="nav-bar">
+                        <div class="nav-title">当前方案</div>
+                    </div>
+                    <div class="page-content">
+                        <div style="padding: 15px;">
+                            <h3>TabBar页面（3个）</h3>
+                            <div style="margin: 15px 0;">
+                                <div style="background: #f0f0f0; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                                    <strong>1. 卡牌页面</strong>
+                                    <p style="font-size: 12px; color: #666; margin-top: 5px;">展示八字卡牌</p>
+                                </div>
+                                <div style="background: #f0f0f0; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                                    <strong>2. 牌库页面</strong>
+                                    <p style="font-size: 12px; color: #666; margin-top: 5px;">管理档案列表</p>
+                                </div>
+                                <div style="background: #f0f0f0; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                                    <strong>3. 我的页面</strong>
+                                    <p style="font-size: 12px; color: #666; margin-top: 5px;">个人中心</p>
+                                </div>
+                            </div>
+                            <h3 style="margin-top: 20px;">独立页面（5个）</h3>
+                            <div style="margin: 15px 0;">
+                                <div style="background: #ffe0e0; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                                    <strong>添加档案</strong> → 跳转新页面
+                                </div>
+                                <div style="background: #ffe0e0; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                                    <strong>注册/编辑</strong> → 跳转新页面
+                                </div>
+                                <div style="background: #ffe0e0; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                                    <strong>协议</strong> → 跳转新页面
+                                </div>
+                                <div style="background: #ffe0e0; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                                    <strong>缓存信息</strong> → 跳转新页面
+                                </div>
+                                <div style="background: #ffe0e0; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                                    <strong>商店</strong> → 跳转新页面
+                                </div>
+                            </div>
+                            <div style="background: #e3f2fd; padding: 15px; border-radius: 4px; margin-top: 20px;">
+                                <strong>总计：8个页面</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-bar">
+                        <div class="tab-item active" onclick="switchTab(this, '卡牌')">
+                            <div class="tab-icon">🃏</div>
+                            <div class="tab-text">卡牌</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTab(this, '牌库')">
+                            <div class="tab-icon">📚</div>
+                            <div class="tab-text">牌库</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTab(this, '我的')">
+                            <div class="tab-icon">👤</div>
+                            <div class="tab-text">我的</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 方案一：抽屉整合 -->
+                <div id="scheme1" class="scheme-view">
+                    <!-- 卡牌页面 -->
+                    <div id="scheme1-card" class="page active">
+                        <div class="nav-bar">
+                            <div class="nav-title">卡牌</div>
+                        </div>
+                        <div class="page-content">
+                            <div style="padding: 15px;">
+                                <div class="card-grid">
+                                    <div class="card-item">年</div>
+                                    <div class="card-item">月</div>
+                                    <div class="card-item">日</div>
+                                    <div class="card-item">时</div>
+                                </div>
+                                <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
+                                    点击卡牌查看详情
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 牌库页面 -->
+                    <div id="scheme1-profile" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">牌库</div>
+                        </div>
+                        <div class="page-content">
+                            <div class="profile-list">
+                                <div class="profile-item" onclick="showDrawer('scheme1-edit')">
+                                    <div class="profile-info">
+                                        <h3>张三 - 男</h3>
+                                        <p>1990年1月1日 子时</p>
+                                    </div>
+                                    <div class="profile-actions">
+                                        <button class="btn btn-edit">编辑</button>
+                                    </div>
+                                </div>
+                                <div class="profile-item" onclick="showDrawer('scheme1-edit')">
+                                    <div class="profile-info">
+                                        <h3>李四 - 女</h3>
+                                        <p>1992年5月15日 午时</p>
+                                    </div>
+                                    <div class="profile-actions">
+                                        <button class="btn btn-edit">编辑</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="fab" onclick="showDrawer('scheme1-add')">+</div>
+                    </div>
+
+                    <!-- 我的页面 -->
+                    <div id="scheme1-mine" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">我的</div>
+                        </div>
+                        <div class="page-content">
+                            <div class="user-card">
+                                <h2>张三</h2>
+                                <p>探索者 | 已创建 2/50 个档案</p>
+                            </div>
+                            <div class="menu-list">
+                                <div class="menu-group">
+                                    <div class="menu-group-title">设置</div>
+                                    <div class="menu-item" onclick="showPopup('scheme1-settings')">
+                                        <div class="menu-item-left">
+                                            <span class="menu-item-icon">⚙️</span>
+                                            <span>设置</span>
+                                        </div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-bar">
+                        <div class="tab-item active" onclick="switchTabScheme1(this, 'card')">
+                            <div class="tab-icon">🃏</div>
+                            <div class="tab-text">卡牌</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTabScheme1(this, 'profile')">
+                            <div class="tab-icon">📚</div>
+                            <div class="tab-text">牌库</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTabScheme1(this, 'mine')">
+                            <div class="tab-icon">👤</div>
+                            <div class="tab-text">我的</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 抽屉：编辑档案 -->
+                    <div class="drawer" id="drawer-scheme1-edit">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">编辑档案</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="form-group">
+                                <label class="form-label">姓名</label>
+                                <input class="form-input" type="text" value="张三" placeholder="请输入姓名">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">性别</label>
+                                <input class="form-input" type="text" value="男" placeholder="请选择性别">
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-primary" onclick="hideDrawer()">保存</button>
+                                <button class="btn btn-edit" onclick="hideDrawer()">取消</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 抽屉：添加档案 -->
+                    <div class="drawer" id="drawer-scheme1-add">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">添加档案</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="form-group">
+                                <label class="form-label">姓名</label>
+                                <input class="form-input" type="text" placeholder="请输入姓名">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">性别</label>
+                                <input class="form-input" type="text" placeholder="请选择性别">
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-primary" onclick="hideDrawer()">保存</button>
+                                <button class="btn btn-edit" onclick="hideDrawer()">取消</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 弹窗：设置 -->
+                    <div class="popup" id="popup-scheme1-settings">
+                        <div class="popup-header">
+                            <div class="popup-title">设置</div>
+                            <span class="popup-close" onclick="hidePopup('scheme1-settings')">✕</span>
+                        </div>
+                        <div class="popup-content">
+                            <div style="font-size: 14px; color: #666;">
+                                <p>设置功能演示</p>
+                                <p style="margin-top: 10px; font-size: 12px;">这里可以添加各种设置选项</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="drawer-mask" onclick="hideDrawer()"></div>
+                </div>
+
+                <!-- 方案二：Tab扩展 -->
+                <div id="scheme2" class="scheme-view">
+                    <!-- 卡牌页面 -->
+                    <div id="scheme2-card" class="page active">
+                        <div class="nav-bar">
+                            <div class="nav-title">卡牌</div>
+                        </div>
+                        <div class="page-content">
+                            <div style="padding: 15px;">
+                                <div class="card-grid">
+                                    <div class="card-item">年</div>
+                                    <div class="card-item">月</div>
+                                    <div class="card-item">日</div>
+                                    <div class="card-item">时</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 牌库页面 -->
+                    <div id="scheme2-profile" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">牌库</div>
+                        </div>
+                        <div class="page-content">
+                            <div class="profile-list">
+                                <div class="profile-item">
+                                    <div class="profile-info">
+                                        <h3>张三 - 男</h3>
+                                        <p>1990年1月1日 子时</p>
+                                    </div>
+                                </div>
+                                <div class="profile-item">
+                                    <div class="profile-info">
+                                        <h3>李四 - 女</h3>
+                                        <p>1992年5月15日 午时</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 发现页面 -->
+                    <div id="scheme2-discover" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">发现</div>
+                        </div>
+                        <div class="page-content">
+                            <div style="padding: 15px;">
+                                <div style="background: #667eea; color: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; cursor: pointer;" onclick="alert('商店功能')">
+                                    <h3>🎁 商店</h3>
+                                    <p style="margin-top: 10px; opacity: 0.9;">探索更多功能</p>
+                                </div>
+                                <div style="background: #f0f0f0; padding: 15px; border-radius: 8px;">
+                                    <h4 style="margin-bottom: 10px;">推荐内容</h4>
+                                    <p style="font-size: 12px; color: #666;">未来扩展功能区域</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 我的页面 -->
+                    <div id="scheme2-mine" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">我的</div>
+                        </div>
+                        <div class="page-content">
+                            <div class="user-card">
+                                <h2>张三</h2>
+                                <p>探索者 | 已创建 2/50 个档案</p>
+                            </div>
+                            <div class="menu-list">
+                                <div class="menu-group">
+                                    <div class="menu-group-title">设置</div>
+                                    <div class="menu-item">
+                                        <div class="menu-item-left">
+                                            <span class="menu-item-icon">⚙️</span>
+                                            <span>设置</span>
+                                        </div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-bar">
+                        <div class="tab-item active" onclick="switchTabScheme2(this, 'card')">
+                            <div class="tab-icon">🃏</div>
+                            <div class="tab-text">卡牌</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTabScheme2(this, 'profile')">
+                            <div class="tab-icon">📚</div>
+                            <div class="tab-text">牌库</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTabScheme2(this, 'discover')">
+                            <div class="tab-icon">🔍</div>
+                            <div class="tab-text">发现</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTabScheme2(this, 'mine')">
+                            <div class="tab-icon">👤</div>
+                            <div class="tab-text">我的</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 方案三：分级导航 -->
+                <div id="scheme3" class="scheme-view">
+                    <!-- 首页（卡牌） -->
+                    <div id="scheme3-home" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">首页</div>
+                        </div>
+                        <div class="page-content">
+                            <div style="padding: 15px;">
+                                <div class="card-grid">
+                                    <div class="card-item">年</div>
+                                    <div class="card-item">月</div>
+                                    <div class="card-item">日</div>
+                                    <div class="card-item">时</div>
+                                </div>
+                                <div style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+                                    <p style="font-size: 12px; color: #666;">点击用户信息卡片可查看档案</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 我的页面 -->
+                    <div id="scheme3-mine" class="page active">
+                        <div class="nav-bar">
+                            <div class="nav-title">我的</div>
+                            <div class="nav-btn" onclick="showPopup('scheme3-settings')">⚙️</div>
+                        </div>
+                        <div class="page-content">
+                            <div class="user-card" onclick="showDrawer('scheme3-profile-list')" style="cursor: pointer;">
+                                <h2>张三</h2>
+                                <p>探索者 | 已创建 2/50 个档案</p>
+                                <p style="margin-top: 10px; font-size: 12px; opacity: 0.8;">点击查看档案</p>
+                            </div>
+                            <div class="menu-list">
+                                <div class="menu-group">
+                                    <div class="menu-group-title">档案管理</div>
+                                    <div class="menu-item" onclick="showDrawer('scheme3-profile-list')">
+                                        <div class="menu-item-left">
+                                            <span class="menu-item-icon">📚</span>
+                                            <span>我的档案</span>
+                                        </div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                                <div class="menu-group">
+                                    <div class="menu-group-title">设置与帮助</div>
+                                    <div class="menu-item" onclick="showPopup('scheme3-cache')">
+                                        <div class="menu-item-left">
+                                            <span class="menu-item-icon">💾</span>
+                                            <span>缓存管理</span>
+                                        </div>
+                                        <span>></span>
+                                    </div>
+                                    <div class="menu-item" onclick="showPopup('scheme3-agreement')">
+                                        <div class="menu-item-left">
+                                            <span class="menu-item-icon">📄</span>
+                                            <span>用户协议</span>
+                                        </div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                                <div class="menu-group">
+                                    <div class="menu-group-title">其他</div>
+                                    <div class="menu-item" onclick="alert('商店功能')">
+                                        <div class="menu-item-left">
+                                            <span class="menu-item-icon">🛒</span>
+                                            <span>商店</span>
+                                        </div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-bar">
+                        <div class="tab-item" onclick="switchTabScheme3(this, 'home')">
+                            <div class="tab-icon">🃏</div>
+                            <div class="tab-text">首页</div>
+                        </div>
+                        <div class="tab-item active" onclick="switchTabScheme3(this, 'mine')">
+                            <div class="tab-icon">👤</div>
+                            <div class="tab-text">我的</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 抽屉：档案列表 -->
+                    <div class="drawer" id="drawer-scheme3-profile-list">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">我的档案</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="profile-item">
+                                <div class="profile-info">
+                                    <h3>张三 - 男</h3>
+                                    <p>1990年1月1日 子时</p>
+                                </div>
+                            </div>
+                            <div class="profile-item">
+                                <div class="profile-info">
+                                    <h3>李四 - 女</h3>
+                                    <p>1992年5月15日 午时</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 弹窗：设置 -->
+                    <div class="popup" id="popup-scheme3-settings">
+                        <div class="popup-header">
+                            <div class="popup-title">设置</div>
+                            <span class="popup-close" onclick="hidePopup('scheme3-settings')">✕</span>
+                        </div>
+                        <div class="popup-content">
+                            <div class="menu-item" onclick="hidePopup('scheme3-settings'); showPopup('scheme3-cache');">
+                                <div class="menu-item-left">
+                                    <span class="menu-item-icon">💾</span>
+                                    <span>缓存管理</span>
+                                </div>
+                                <span>></span>
+                            </div>
+                            <div class="menu-item" onclick="hidePopup('scheme3-settings'); showPopup('scheme3-agreement');">
+                                <div class="menu-item-left">
+                                    <span class="menu-item-icon">📄</span>
+                                    <span>用户协议</span>
+                                </div>
+                                <span>></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 弹窗：缓存管理 -->
+                    <div class="popup" id="popup-scheme3-cache">
+                        <div class="popup-header">
+                            <div class="popup-title">缓存管理</div>
+                            <span class="popup-close" onclick="hidePopup('scheme3-cache')">✕</span>
+                        </div>
+                        <div class="popup-content">
+                            <div style="margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>图片缓存</span>
+                                    <span style="color: #667eea;">12.5 MB</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>数据缓存</span>
+                                    <span style="color: #667eea;">2.3 MB</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" style="width: 100%;" onclick="alert('缓存已清理')">清理缓存</button>
+                        </div>
+                    </div>
+
+                    <!-- 弹窗：用户协议 -->
+                    <div class="popup" id="popup-scheme3-agreement">
+                        <div class="popup-header">
+                            <div class="popup-title">用户协议</div>
+                            <span class="popup-close" onclick="hidePopup('scheme3-agreement')">✕</span>
+                        </div>
+                        <div class="popup-content">
+                            <div style="font-size: 14px; line-height: 1.6;">
+                                <p style="margin-bottom: 10px;"><strong>1. 服务条款</strong></p>
+                                <p style="margin-bottom: 10px; color: #666;">欢迎使用生命智慧卡牌小程序...</p>
+                                <p style="margin-bottom: 10px;"><strong>2. 隐私保护</strong></p>
+                                <p style="margin-bottom: 10px; color: #666;">我们重视您的隐私保护...</p>
+                                <p style="margin-bottom: 10px;"><strong>3. 使用规范</strong></p>
+                                <p style="color: #666;">请遵守相关法律法规...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="drawer-mask" onclick="hideDrawer()"></div>
+                </div>
+
+                <!-- 方案四：混合优化（推荐） -->
+                <div id="scheme4" class="scheme-view">
+                    <!-- 卡牌页面 -->
+                    <div id="page-card" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">卡牌</div>
+                        </div>
+                        <div class="page-content">
+                            <div style="padding: 15px;">
+                                <div style="margin-bottom: 15px; text-align: center;">
+                                    <div style="font-size: 14px; color: #666; margin-bottom: 10px;">当前档案：张三</div>
+                                    <div class="card-grid">
+                                        <div class="card-item" onclick="alert('年柱卡牌详情')">年</div>
+                                        <div class="card-item" onclick="alert('月柱卡牌详情')">月</div>
+                                        <div class="card-item" onclick="alert('日柱卡牌详情')">日</div>
+                                        <div class="card-item" onclick="alert('时柱卡牌详情')">时</div>
+                                    </div>
+                                </div>
+                                <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                                    <p style="font-size: 12px; color: #666; text-align: center;">
+                                        点击卡牌查看详情<br/>
+                                        从牌库页面选择档案可查看对应的卡牌
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 牌库页面 -->
+                    <div id="page-profile" class="page active">
+                        <div class="nav-bar">
+                            <div class="nav-title">牌库</div>
+                        </div>
+                        <div class="page-content">
+                            <div class="profile-list">
+                                <div class="profile-item" onclick="switchPage('card')">
+                                    <div class="profile-info">
+                                        <h3>张三 - 男</h3>
+                                        <p>1990年1月1日 子时</p>
+                                    </div>
+                                    <div class="profile-actions">
+                                        <button class="btn btn-edit" onclick="event.stopPropagation(); showDrawer('edit-profile');">编辑</button>
+                                    </div>
+                                </div>
+                                <div class="profile-item" onclick="switchPage('card')">
+                                    <div class="profile-info">
+                                        <h3>李四 - 女</h3>
+                                        <p>1992年5月15日 午时</p>
+                                    </div>
+                                    <div class="profile-actions">
+                                        <button class="btn btn-edit" onclick="event.stopPropagation(); showDrawer('edit-profile');">编辑</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="fab" onclick="showDrawer('scheme4-add')">+</div>
+                    </div>
+
+                    <!-- 我的页面 -->
+                    <div id="page-mine" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">我的</div>
+                            <div class="nav-btn" onclick="showPopup('settings-menu')">⚙️</div>
+                        </div>
+                        <div class="page-content">
+                            <div class="user-card" onclick="showDrawer('edit-user')">
+                                <h2>张三</h2>
+                                <p>探索者 | 已创建 2/50 个档案</p>
+                                <p style="margin-top: 10px; font-size: 12px; opacity: 0.8;">点击编辑资料</p>
+                            </div>
+                            <div class="menu-list">
+                                <div class="menu-group">
+                                    <div class="menu-group-title">功能</div>
+                                    <div class="menu-item" onclick="switchPage('profile')">
+                                        <div class="menu-item-left">
+                                            <span class="menu-item-icon">📚</span>
+                                            <span>我的档案</span>
+                                        </div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                                <div class="menu-group">
+                                    <div class="menu-group-title">其他</div>
+                                    <div class="menu-item" onclick="switchPage('store')">
+                                        <div class="menu-item-left">
+                                            <span class="menu-item-icon">🛒</span>
+                                            <span>商店</span>
+                                        </div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TabBar -->
+                    <div class="tab-bar">
+                        <div class="tab-item" onclick="switchTab(this, '卡牌')">
+                            <div class="tab-icon">🃏</div>
+                            <div class="tab-text">卡牌</div>
+                        </div>
+                        <div class="tab-item active" onclick="switchTab(this, '牌库')">
+                            <div class="tab-icon">📚</div>
+                            <div class="tab-text">牌库</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTab(this, '我的')">
+                            <div class="tab-icon">👤</div>
+                            <div class="tab-text">我的</div>
+                        </div>
+                    </div>
+
+                    <!-- 抽屉：编辑档案 -->
+                    <div class="drawer" id="drawer-edit-profile">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">编辑档案</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="form-group">
+                                <label class="form-label">姓名</label>
+                                <input class="form-input" type="text" value="张三" placeholder="请输入姓名">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">性别</label>
+                                <input class="form-input" type="text" value="男" placeholder="请选择性别">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">出生日期</label>
+                                <input class="form-input" type="text" value="1990-01-01" placeholder="请选择日期">
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-primary" onclick="hideDrawer()">保存</button>
+                                <button class="btn btn-edit" onclick="hideDrawer()">取消</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 抽屉：添加档案 -->
+                    <div class="drawer" id="drawer-scheme4-add">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">添加档案</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="form-group">
+                                <label class="form-label">姓名</label>
+                                <input class="form-input" type="text" placeholder="请输入姓名">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">性别</label>
+                                <input class="form-input" type="text" placeholder="请选择性别">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">出生日期</label>
+                                <input class="form-input" type="text" placeholder="请选择日期">
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-primary" onclick="hideDrawer()">保存</button>
+                                <button class="btn btn-edit" onclick="hideDrawer()">取消</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 抽屉：编辑用户 -->
+                    <div class="drawer" id="drawer-edit-user">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">编辑资料</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="form-group">
+                                <label class="form-label">昵称</label>
+                                <input class="form-input" type="text" value="张三" placeholder="请输入昵称">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">手机号</label>
+                                <input class="form-input" type="text" value="138****8888" placeholder="请输入手机号">
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-primary" onclick="hideDrawer()">保存</button>
+                                <button class="btn btn-edit" onclick="hideDrawer()">取消</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="drawer-mask" onclick="hideDrawer()"></div>
+
+                    <!-- 弹窗：设置菜单 -->
+                    <div class="popup" id="popup-settings-menu">
+                        <div class="popup-header">
+                            <div class="popup-title">设置</div>
+                            <span class="popup-close" onclick="hidePopup('settings-menu')">✕</span>
+                        </div>
+                        <div class="popup-content">
+                            <div class="menu-item" onclick="hidePopup('settings-menu'); showPopup('cache');">
+                                <div class="menu-item-left">
+                                    <span class="menu-item-icon">💾</span>
+                                    <span>缓存管理</span>
+                                </div>
+                                <span>></span>
+                            </div>
+                            <div class="menu-item" onclick="hidePopup('settings-menu'); showPopup('agreement');">
+                                <div class="menu-item-left">
+                                    <span class="menu-item-icon">📄</span>
+                                    <span>用户协议</span>
+                                </div>
+                                <span>></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 弹窗：缓存信息 -->
+                    <div class="popup" id="popup-cache">
+                        <div class="popup-header">
+                            <div class="popup-title">缓存管理</div>
+                            <span class="popup-close" onclick="hidePopup('cache')">✕</span>
+                        </div>
+                        <div class="popup-content">
+                            <div style="margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>图片缓存</span>
+                                    <span style="color: #667eea;">12.5 MB</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>数据缓存</span>
+                                    <span style="color: #667eea;">2.3 MB</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" style="width: 100%;">清理缓存</button>
+                        </div>
+                    </div>
+
+                    <!-- 弹窗：协议 -->
+                    <div class="popup" id="popup-agreement">
+                        <div class="popup-header">
+                            <div class="popup-title">用户协议</div>
+                            <span class="popup-close" onclick="hidePopup('agreement')">✕</span>
+                        </div>
+                        <div class="popup-content">
+                            <div style="font-size: 14px; line-height: 1.6;">
+                                <p style="margin-bottom: 10px;"><strong>1. 服务条款</strong></p>
+                                <p style="margin-bottom: 10px; color: #666;">欢迎使用生命智慧卡牌小程序...</p>
+                                <p style="margin-bottom: 10px;"><strong>2. 隐私保护</strong></p>
+                                <p style="margin-bottom: 10px; color: #666;">我们重视您的隐私保护...</p>
+                                <p style="margin-bottom: 10px;"><strong>3. 使用规范</strong></p>
+                                <p style="color: #666;">请遵守相关法律法规...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 方案五：牌库抽屉 -->
+                <div id="scheme5" class="scheme-view">
+                    <!-- 卡牌页面 -->
+                    <div id="scheme5-card" class="page active">
+                        <div class="nav-bar">
+                            <div class="nav-title">卡牌</div>
+                            <div class="nav-btn" onclick="showDrawer('scheme5-profile-list')" style="cursor: pointer;">📚</div>
+                        </div>
+                        <div class="page-content">
+                            <div style="padding: 15px;">
+                                <div style="margin-bottom: 15px; text-align: center;">
+                                    <div style="font-size: 14px; color: #666; margin-bottom: 10px;">当前档案：张三</div>
+                                    <div class="card-grid">
+                                        <div class="card-item" onclick="alert('年柱卡牌详情')">年</div>
+                                        <div class="card-item" onclick="alert('月柱卡牌详情')">月</div>
+                                        <div class="card-item" onclick="alert('日柱卡牌详情')">日</div>
+                                        <div class="card-item" onclick="alert('时柱卡牌详情')">时</div>
+                                    </div>
+                                </div>
+                                <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center;">
+                                    <p style="font-size: 12px; color: #666;">
+                                        点击卡牌查看详情<br/>
+                                        点击右上角 📚 查看牌库列表
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 我的页面 -->
+                    <div id="scheme5-mine" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">我的</div>
+                            <div class="nav-btn" onclick="showPopup('scheme5-settings-menu')">⚙️</div>
+                        </div>
+                        <div class="page-content">
+                            <div class="user-card" onclick="showDrawer('scheme5-edit-user')">
+                                <h2>张三</h2>
+                                <p>探索者 | 已创建 2/50 个档案</p>
+                                <p style="margin-top: 10px; font-size: 12px; opacity: 0.8;">点击编辑资料</p>
+                            </div>
+                            
+                            <!-- 商店入口卡片 -->
+                            <div style="margin: 15px; margin-top: 0; margin-bottom: 15px;">
+                                <div onclick="alert('进入商店')" style="
+                                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                    border-radius: 8px;
+                                    padding: 18px 20px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: space-between;
+                                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                                    cursor: pointer;
+                                    transition: transform 0.2s;
+                                " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="
+                                            width: 48px;
+                                            height: 48px;
+                                            background: rgba(255, 255, 255, 0.2);
+                                            border-radius: 12px;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            font-size: 24px;
+                                        ">🛒</div>
+                                        <div>
+                                            <div style="color: white; font-size: 16px; font-weight: 500; margin-bottom: 4px;">商店</div>
+                                            <div style="color: rgba(255, 255, 255, 0.9); font-size: 12px;">探索更多功能与服务</div>
+                                        </div>
+                                    </div>
+                                    <div style="color: white; font-size: 18px;">></div>
+                                </div>
+                            </div>
+
+                            <div class="menu-list">
+                                <div class="menu-group">
+                                    <div class="menu-group-title">功能</div>
+                                    <div class="menu-item" onclick="switchTabScheme5(null, 'card')">
+                                        <div class="menu-item-left">
+                                            <span class="menu-item-icon">🃏</span>
+                                            <span>查看卡牌</span>
+                                        </div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                                <div class="menu-group">
+                                    <div class="menu-group-title">其他</div>
+                                    <div class="menu-item" onclick="alert('商店功能')">
+                                        <div class="menu-item-left">
+                                            <span class="menu-item-icon">🛒</span>
+                                            <span>商店</span>
+                                        </div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TabBar -->
+                    <div class="tab-bar">
+                        <div class="tab-item active" onclick="switchTabScheme5(this, 'card')">
+                            <div class="tab-icon">🃏</div>
+                            <div class="tab-text">卡牌</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTabScheme5(this, 'mine')">
+                            <div class="tab-icon">👤</div>
+                            <div class="tab-text">我的</div>
+                        </div>
+                    </div>
+
+                    <!-- 抽屉：牌库列表 -->
+                    <div class="drawer" id="drawer-scheme5-profile-list">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">我的牌库</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="profile-list">
+                                <div class="profile-item" onclick="hideDrawer(); switchTabScheme5(null, 'card');">
+                                    <div class="profile-info">
+                                        <h3>张三 - 男</h3>
+                                        <p>1990年1月1日 子时</p>
+                                    </div>
+                                    <div class="profile-actions">
+                                        <button class="btn btn-edit" onclick="event.stopPropagation(); showDrawer('scheme5-edit-profile');">编辑</button>
+                                    </div>
+                                </div>
+                                <div class="profile-item" onclick="hideDrawer(); switchTabScheme5(null, 'card');">
+                                    <div class="profile-info">
+                                        <h3>李四 - 女</h3>
+                                        <p>1992年5月15日 午时</p>
+                                    </div>
+                                    <div class="profile-actions">
+                                        <button class="btn btn-edit" onclick="event.stopPropagation(); showDrawer('scheme5-edit-profile');">编辑</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="padding: 15px;">
+                                <button class="btn btn-primary" style="width: 100%;" onclick="showDrawer('scheme5-add-profile')">+ 添加档案</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 抽屉：编辑档案 -->
+                    <div class="drawer" id="drawer-scheme5-edit-profile">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">编辑档案</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="form-group">
+                                <label class="form-label">姓名</label>
+                                <input class="form-input" type="text" value="张三" placeholder="请输入姓名">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">性别</label>
+                                <input class="form-input" type="text" value="男" placeholder="请选择性别">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">出生日期</label>
+                                <input class="form-input" type="text" value="1990-01-01" placeholder="请选择日期">
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-primary" onclick="hideDrawer()">保存</button>
+                                <button class="btn btn-edit" onclick="hideDrawer()">取消</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 抽屉：添加档案 -->
+                    <div class="drawer" id="drawer-scheme5-add-profile">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">添加档案</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="form-group">
+                                <label class="form-label">姓名</label>
+                                <input class="form-input" type="text" placeholder="请输入姓名">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">性别</label>
+                                <input class="form-input" type="text" placeholder="请选择性别">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">出生日期</label>
+                                <input class="form-input" type="text" placeholder="请选择日期">
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-primary" onclick="hideDrawer()">保存</button>
+                                <button class="btn btn-edit" onclick="hideDrawer()">取消</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 抽屉：编辑用户 -->
+                    <div class="drawer" id="drawer-scheme5-edit-user">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">编辑资料</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="form-group">
+                                <label class="form-label">昵称</label>
+                                <input class="form-input" type="text" value="张三" placeholder="请输入昵称">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">手机号</label>
+                                <input class="form-input" type="text" value="138****8888" placeholder="请输入手机号">
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-primary" onclick="hideDrawer()">保存</button>
+                                <button class="btn btn-edit" onclick="hideDrawer()">取消</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 弹窗：设置菜单 -->
+                    <div class="popup" id="popup-scheme5-settings-menu">
+                        <div class="popup-header">
+                            <div class="popup-title">设置</div>
+                            <span class="popup-close" onclick="hidePopup('scheme5-settings-menu')">✕</span>
+                        </div>
+                        <div class="popup-content">
+                            <div class="menu-item" onclick="hidePopup('scheme5-settings-menu'); showPopup('scheme5-cache');">
+                                <div class="menu-item-left">
+                                    <span class="menu-item-icon">💾</span>
+                                    <span>缓存管理</span>
+                                </div>
+                                <span>></span>
+                            </div>
+                            <div class="menu-item" onclick="hidePopup('scheme5-settings-menu'); showPopup('scheme5-agreement');">
+                                <div class="menu-item-left">
+                                    <span class="menu-item-icon">📄</span>
+                                    <span>用户协议</span>
+                                </div>
+                                <span>></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 弹窗：缓存信息 -->
+                    <div class="popup" id="popup-scheme5-cache">
+                        <div class="popup-header">
+                            <div class="popup-title">缓存管理</div>
+                            <span class="popup-close" onclick="hidePopup('scheme5-cache')">✕</span>
+                        </div>
+                        <div class="popup-content">
+                            <div style="margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>图片缓存</span>
+                                    <span style="color: #667eea;">12.5 MB</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                    <span>数据缓存</span>
+                                    <span style="color: #667eea;">2.3 MB</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" style="width: 100%;" onclick="alert('缓存已清理')">清理缓存</button>
+                        </div>
+                    </div>
+
+                    <!-- 弹窗：协议 -->
+                    <div class="popup" id="popup-scheme5-agreement">
+                        <div class="popup-header">
+                            <div class="popup-title">用户协议</div>
+                            <span class="popup-close" onclick="hidePopup('scheme5-agreement')">✕</span>
+                        </div>
+                        <div class="popup-content">
+                            <div style="font-size: 14px; line-height: 1.6;">
+                                <p style="margin-bottom: 10px;"><strong>1. 服务条款</strong></p>
+                                <p style="margin-bottom: 10px; color: #666;">欢迎使用生命智慧卡牌小程序...</p>
+                                <p style="margin-bottom: 10px;"><strong>2. 隐私保护</strong></p>
+                                <p style="margin-bottom: 10px; color: #666;">我们重视您的隐私保护...</p>
+                                <p style="margin-bottom: 10px;"><strong>3. 使用规范</strong></p>
+                                <p style="color: #666;">请遵守相关法律法规...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="drawer-mask" onclick="hideDrawer()"></div>
+                </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 说明 -->
+        <div class="description">
+            <h3>💡 操作说明</h3>
+            <p>• 点击上方按钮切换不同方案查看效果</p>
+            <p>• <span class="highlight">方案四（混合优化）</span>可以交互：点击"编辑"按钮查看抽屉效果，点击设置按钮查看弹窗效果</p>
+            <p>• <span class="highlight">方案五（牌库抽屉）</span>：牌库整合为抽屉，只有2个Tab，点击卡牌页面右上角📚图标打开牌库</p>
+            <p>• 方案对比：<strong>当前方案</strong>有8个页面，<strong>方案四</strong>减少到3个TabBar + 3个独立页面，<strong>方案五</strong>只有2个TabBar + 2个独立页面</p>
+        </div>
+    </div>
+
+    <script>
+        // 切换方案
+        function showScheme(schemeId, btnElement) {
+            // 隐藏所有方案
+            document.querySelectorAll('.scheme-view').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // 显示选中的方案
+            const schemeMap = {
+                'current': 'current-scheme',
+                'scheme1': 'scheme1',
+                'scheme2': 'scheme2',
+                'scheme3': 'scheme3',
+                'scheme4': 'scheme4',
+                'scheme5': 'scheme5'
+            };
+            
+            const targetId = schemeMap[schemeId];
+            if (targetId) {
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.classList.add('active');
+                }
+            }
+            
+            // 更新按钮状态
+            document.querySelectorAll('.scheme-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (btnElement) {
+                btnElement.classList.add('active');
+            }
+        }
+
+        // 显示抽屉
+        function showDrawer(drawerId) {
+            // 查找当前激活的方案视图中的抽屉
+            const activeScheme = document.querySelector('.scheme-view.active');
+            if (!activeScheme) return;
+            
+            const drawer = activeScheme.querySelector(`#drawer-${drawerId}`);
+            if (!drawer) return;
+            
+            // 找到或创建遮罩
+            let mask = activeScheme.querySelector('.drawer-mask');
+            if (!mask) {
+                mask = document.createElement('div');
+                mask.className = 'drawer-mask';
+                mask.onclick = hideDrawer;
+                activeScheme.appendChild(mask);
+            }
+            
+            drawer.classList.add('show');
+            mask.classList.add('show');
+        }
+
+        // 隐藏抽屉
+        function hideDrawer() {
+            document.querySelectorAll('.drawer').forEach(el => {
+                el.classList.remove('show');
+            });
+            document.querySelectorAll('.drawer-mask').forEach(el => {
+                el.classList.remove('show');
+            });
+        }
+
+        // 显示弹窗
+        function showPopup(popupId) {
+            // 查找当前激活的方案视图中的弹窗
+            const activeScheme = document.querySelector('.scheme-view.active');
+            if (!activeScheme) return;
+            
+            const popup = activeScheme.querySelector(`#popup-${popupId}`);
+            if (!popup) return;
+            
+            popup.classList.add('show');
+            
+            // 显示遮罩
+            const phoneScreen = document.querySelector('.phone-screen');
+            let mask = phoneScreen.querySelector('.drawer-mask:not(.scheme-view .drawer-mask)');
+            if (!mask) {
+                mask = document.createElement('div');
+                mask.className = 'drawer-mask show';
+                phoneScreen.appendChild(mask);
+            } else {
+                mask.classList.add('show');
+            }
+            mask.onclick = () => hidePopup(popupId);
+        }
+
+        // 隐藏弹窗
+        function hidePopup(popupId) {
+            // 查找当前激活的方案视图中的弹窗
+            const activeScheme = document.querySelector('.scheme-view.active');
+            if (activeScheme) {
+                const popup = activeScheme.querySelector(`#popup-${popupId}`);
+                if (popup) {
+                    popup.classList.remove('show');
+                }
+            }
+            
+            // 移除弹窗遮罩（保留抽屉遮罩）
+            const phoneScreen = document.querySelector('.phone-screen');
+            const masks = phoneScreen.querySelectorAll('.drawer-mask');
+            masks.forEach(mask => {
+                // 如果遮罩不在scheme-view内部，说明是弹窗遮罩
+                if (!mask.closest('.scheme-view')) {
+                    mask.remove();
+                }
+            });
+        }
+
+        // 方案一：切换Tab和页面
+        function switchTabScheme1(clickedElement, pageId) {
+            const scheme1 = document.getElementById('scheme1');
+            if (!scheme1 || !scheme1.classList.contains('active')) return;
+            
+            // 切换Tab状态
+            const tabBar = clickedElement.closest('.tab-bar');
+            tabBar.querySelectorAll('.tab-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            clickedElement.classList.add('active');
+            
+            // 切换页面
+            scheme1.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            const pageMap = {
+                'card': 'scheme1-card',
+                'profile': 'scheme1-profile',
+                'mine': 'scheme1-mine'
+            };
+            
+            const targetPage = scheme1.querySelector('#' + pageMap[pageId]);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+        }
+
+        // 方案二：切换Tab和页面
+        function switchTabScheme2(clickedElement, pageId) {
+            const scheme2 = document.getElementById('scheme2');
+            if (!scheme2 || !scheme2.classList.contains('active')) return;
+            
+            // 切换Tab状态
+            const tabBar = clickedElement.closest('.tab-bar');
+            tabBar.querySelectorAll('.tab-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            clickedElement.classList.add('active');
+            
+            // 切换页面
+            scheme2.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            const pageMap = {
+                'card': 'scheme2-card',
+                'profile': 'scheme2-profile',
+                'discover': 'scheme2-discover',
+                'mine': 'scheme2-mine'
+            };
+            
+            const targetPage = scheme2.querySelector('#' + pageMap[pageId]);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+        }
+
+        // 方案三：切换Tab和页面
+        function switchTabScheme3(clickedElement, pageId) {
+            const scheme3 = document.getElementById('scheme3');
+            if (!scheme3 || !scheme3.classList.contains('active')) return;
+            
+            // 切换Tab状态
+            const tabBar = clickedElement.closest('.tab-bar');
+            tabBar.querySelectorAll('.tab-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            clickedElement.classList.add('active');
+            
+            // 切换页面
+            scheme3.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            const pageMap = {
+                'home': 'scheme3-home',
+                'mine': 'scheme3-mine'
+            };
+            
+            const targetPage = scheme3.querySelector('#' + pageMap[pageId]);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+        }
+
+        // 方案五：切换Tab和页面
+        function switchTabScheme5(clickedElement, pageId) {
+            const scheme5 = document.getElementById('scheme5');
+            if (!scheme5 || !scheme5.classList.contains('active')) return;
+            
+            // 切换Tab状态（如果提供了clickedElement）
+            if (clickedElement) {
+                const tabBar = clickedElement.closest('.tab-bar');
+                if (tabBar) {
+                    tabBar.querySelectorAll('.tab-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    clickedElement.classList.add('active');
+                }
+            } else {
+                // 如果没有提供clickedElement，根据pageId更新Tab状态
+                const tabBar = scheme5.querySelector('.tab-bar');
+                if (tabBar) {
+                    const tabItems = tabBar.querySelectorAll('.tab-item');
+                    tabItems.forEach((item, index) => {
+                        item.classList.remove('active');
+                        if (pageId === 'card' && index === 0) {
+                            item.classList.add('active');
+                        } else if (pageId === 'mine' && index === 1) {
+                            item.classList.add('active');
+                        }
+                    });
+                }
+            }
+            
+            // 切换页面
+            scheme5.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            const pageMap = {
+                'card': 'scheme5-card',
+                'mine': 'scheme5-mine'
+            };
+            
+            const targetPage = scheme5.querySelector('#' + pageMap[pageId]);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+        }
+
+        // 切换Tab（通用函数，用于所有方案 - 保留兼容性）
+        function switchTab(clickedElement, tabName) {
+            // 找到当前TabBar中的所有tab-item
+            const tabBar = clickedElement.closest('.tab-bar');
+            if (!tabBar) return;
+            
+            // 移除所有active状态
+            tabBar.querySelectorAll('.tab-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 给点击的tab添加active状态
+            clickedElement.classList.add('active');
+            
+            // 如果是方案四，还需要切换页面
+            const schemeView = clickedElement.closest('.scheme-view');
+            if (schemeView && schemeView.id === 'scheme4') {
+                // 方案四有实际的页面切换
+                if (tabName === '卡牌') {
+                    switchPage('card');
+                } else if (tabName === '牌库') {
+                    switchPage('profile');
+                } else if (tabName === '我的') {
+                    switchPage('mine');
+                }
+            }
+        }
+
+        // 切换页面（方案四）
+        function switchPage(pageId) {
+            // 只处理方案四中的页面切换
+            const scheme4 = document.getElementById('scheme4');
+            if (!scheme4 || !scheme4.classList.contains('active')) {
+                return; // 如果方案四没有激活，不处理
+            }
+            
+            scheme4.querySelectorAll('.page').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            const pageMap = {
+                'card': 'page-card',
+                'profile': 'page-profile',
+                'mine': 'page-mine',
+                'add-profile': 'page-profile',
+                'store': 'page-profile'
+            };
+            
+            const targetId = pageMap[pageId];
+            if (targetId) {
+                const targetPage = scheme4.querySelector('#' + targetId);
+                if (targetPage) {
+                    targetPage.classList.add('active');
+                }
+            }
+            
+            // 更新TabBar状态（只更新方案四的TabBar）
+            const scheme4TabBar = scheme4.querySelector('.tab-bar');
+            if (scheme4TabBar) {
+                const tabItems = scheme4TabBar.querySelectorAll('.tab-item');
+                tabItems.forEach((item, index) => {
+                    item.classList.remove('active');
+                    if (pageId === 'card' && index === 0) {
+                        item.classList.add('active');
+                    } else if (pageId === 'profile' && index === 1) {
+                        item.classList.add('active');
+                    } else if (pageId === 'mine' && index === 2) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+        }
+
+        // 点击遮罩关闭弹窗
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('drawer-mask')) {
+                // 检查是否有显示的弹窗
+                const visiblePopups = document.querySelectorAll('.popup.show');
+                if (visiblePopups.length > 0) {
+                    visiblePopups.forEach(popup => {
+                        popup.classList.remove('show');
+                    });
+                    e.target.remove();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
