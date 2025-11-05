@@ -1311,8 +1311,54 @@
 
                 <!-- 方案五：牌库抽屉 -->
                 <div id="scheme5" class="scheme-view">
+                    <!-- 首页 -->
+                    <div id="scheme5-home" class="page active">
+                        <div class="nav-bar">
+                            <div class="nav-title">首页</div>
+                        </div>
+                        <div class="page-content">
+                            <div style="padding: 15px;">
+                                <!-- 智慧洞见 -->
+                                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; padding: 20px; margin-bottom: 15px; color: white; cursor: pointer;" onclick="alert('智慧洞见')">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                                        <div style="font-size: 24px;">💡</div>
+                                        <h3 style="font-size: 18px; margin: 0;">智慧洞见</h3>
+                                    </div>
+                                    <p style="font-size: 14px; opacity: 0.9; margin: 0;">深度洞察，启迪人生</p>
+                                </div>
+
+                                <!-- 智慧愈言 -->
+                                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 8px; padding: 20px; margin-bottom: 15px; color: white; cursor: pointer;" onclick="alert('智慧愈言')">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                                        <div style="font-size: 24px;">❤️</div>
+                                        <h3 style="font-size: 18px; margin: 0;">智慧愈言</h3>
+                                    </div>
+                                    <p style="font-size: 14px; opacity: 0.9; margin: 0;">温暖治愈，抚慰心灵</p>
+                                </div>
+
+                                <!-- 智慧答案 -->
+                                <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 8px; padding: 20px; margin-bottom: 15px; color: white; cursor: pointer;" onclick="alert('智慧答案')">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                                        <div style="font-size: 24px;">🔮</div>
+                                        <h3 style="font-size: 18px; margin: 0;">智慧答案</h3>
+                                    </div>
+                                    <p style="font-size: 14px; opacity: 0.9; margin: 0;">解答疑惑，指引方向</p>
+                                </div>
+
+                                <!-- 日报 -->
+                                <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 8px; padding: 20px; margin-bottom: 15px; color: white; cursor: pointer;" onclick="alert('日报')">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                                        <div style="font-size: 24px;">📰</div>
+                                        <h3 style="font-size: 18px; margin: 0;">日报</h3>
+                                    </div>
+                                    <p style="font-size: 14px; opacity: 0.9; margin: 0;">每日更新，持续成长</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 卡牌页面 -->
-                    <div id="scheme5-card" class="page active">
+                    <div id="scheme5-card" class="page">
                         <div class="nav-bar">
                             <div class="nav-title">卡牌</div>
                             <div class="nav-btn" onclick="showDrawer('scheme5-profile-list')" style="cursor: pointer;">📚</div>
@@ -1411,7 +1457,11 @@
 
                     <!-- TabBar -->
                     <div class="tab-bar">
-                        <div class="tab-item active" onclick="switchTabScheme5(this, 'card')">
+                        <div class="tab-item active" onclick="switchTabScheme5(this, 'home')">
+                            <div class="tab-icon">🏠</div>
+                            <div class="tab-text">首页</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTabScheme5(this, 'card')">
                             <div class="tab-icon">🃏</div>
                             <div class="tab-text">卡牌</div>
                         </div>
@@ -1603,8 +1653,8 @@
             <h3>💡 操作说明</h3>
             <p>• 点击上方按钮切换不同方案查看效果</p>
             <p>• <span class="highlight">方案四（混合优化）</span>可以交互：点击"编辑"按钮查看抽屉效果，点击设置按钮查看弹窗效果</p>
-            <p>• <span class="highlight">方案五（牌库抽屉）</span>：牌库整合为抽屉，只有2个Tab，点击卡牌页面右上角📚图标打开牌库</p>
-            <p>• 方案对比：<strong>当前方案</strong>有8个页面，<strong>方案四</strong>减少到3个TabBar + 3个独立页面，<strong>方案五</strong>只有2个TabBar + 2个独立页面</p>
+            <p>• <span class="highlight">方案五（牌库抽屉）</span>：牌库整合为抽屉，有3个Tab（首页、卡牌、我的），点击卡牌页面右上角📚图标打开牌库</p>
+            <p>• 方案对比：<strong>当前方案</strong>有8个页面，<strong>方案四</strong>减少到3个TabBar + 3个独立页面，<strong>方案五</strong>有3个TabBar + 2个独立页面</p>
         </div>
     </div>
 
@@ -1829,9 +1879,11 @@
                     const tabItems = tabBar.querySelectorAll('.tab-item');
                     tabItems.forEach((item, index) => {
                         item.classList.remove('active');
-                        if (pageId === 'card' && index === 0) {
+                        if (pageId === 'home' && index === 0) {
                             item.classList.add('active');
-                        } else if (pageId === 'mine' && index === 1) {
+                        } else if (pageId === 'card' && index === 1) {
+                            item.classList.add('active');
+                        } else if (pageId === 'mine' && index === 2) {
                             item.classList.add('active');
                         }
                     });
@@ -1844,6 +1896,7 @@
             });
             
             const pageMap = {
+                'home': 'scheme5-home',
                 'card': 'scheme5-card',
                 'mine': 'scheme5-mine'
             };
