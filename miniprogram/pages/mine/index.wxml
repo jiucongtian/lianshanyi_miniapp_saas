@@ -62,8 +62,7 @@
       <view class="store-card" bindtap="onStoreTap">
         <view class="store-icon">🏪</view>
         <view class="store-info">
-          <text class="store-title">微信小店</text>
-          <text class="store-desc">浏览和购买商品</text>
+          <text class="store-title">身心游小店</text>
         </view>
         <view class="store-arrow">›</view>
       </view>
