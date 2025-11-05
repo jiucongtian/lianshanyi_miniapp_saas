@@ -1,5 +1,5 @@
 /**
- * 微信小店页面
+ * 身心游小店页面
  */
 const { createModuleLogger } = require('../../utils/logger/index');
 const { config } = require('../../config/index');
