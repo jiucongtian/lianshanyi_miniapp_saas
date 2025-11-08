@@ -321,6 +321,14 @@ class MineController extends BaseController {
   }
 
   /**
+   * 跳转到微信小店
+   */
+  onStoreTap() {
+    this._log('onStoreTap', '用户点击微信小店入口');
+    this._navigateTo('/pages/store/index');
+  }
+
+  /**
    * 刷新页面数据
    */
   async onRefresh() {

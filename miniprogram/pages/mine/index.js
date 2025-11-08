@@ -106,5 +106,14 @@ Page({
     if (this.controller) {
       this.controller.onAdminMenuTap(menuId);
     }
+  },
+
+  /**
+   * 点击微信小店入口
+   */
+  onStoreTap() {
+    if (this.controller) {
+      this.controller.onStoreTap();
+    }
   }
 })
