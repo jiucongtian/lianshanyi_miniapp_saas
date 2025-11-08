@@ -79,7 +79,7 @@
   overflow-y: auto;
 }
 
-/* 圆形图形容器 */
+/* 转圈动画容器 */
 .mandala-container {
   width: 100%;
   display: flex;
@@ -97,6 +97,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 抽卡区域容器 */
+.card-draw-container {
+  width: 100%;
+  height: 400rpx;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 20rpx;
+  overflow: hidden;
 }
 
 /* 光晕效果 */
@@ -134,7 +147,7 @@
   transform-origin: center;
 }
 
-/* 圆环标记点 - 纯装饰性点，无文字内容 */
+/* 圆环标记点 */
 .ring-mark {
   position: absolute;
   top: 0;
@@ -265,8 +278,7 @@
   transform: translate(-50%, -50%);
 }
 
-/* 天干围绕中心旋转的动画 - 每个天干从不同角度开始，精确计算确保均匀分布 */
-/* 10个天干，每个间隔36度，从18度开始偏移，使分布更均匀 */
+/* 天干围绕中心旋转的动画 */
 @keyframes tianganOrbit1 {
   0% { transform: rotate(18deg) translateX(70rpx) rotate(-18deg); }
   100% { transform: rotate(378deg) translateX(70rpx) rotate(-378deg); }
@@ -317,7 +329,7 @@
   100% { transform: rotate(702deg) translateX(70rpx) rotate(-702deg); }
 }
 
-/* 为每个天干设置不同的动画，均匀分布在圆周上（每个间隔36度） */
+/* 为每个天干设置不同的动画 */
 .tiangan-item:nth-child(1) {
   animation: tianganOrbit1 53s linear infinite;
 }
@@ -378,20 +390,122 @@
   }
 }
 
-/* 卡片摆动动画 */
-@keyframes cardSway {
-  0%, 100% {
-    transform: translate(-50%, -50%) rotate(15deg);
-  }
-  25% {
-    transform: translate(-50%, -50%) rotate(20deg);
-  }
-  50% {
-    transform: translate(-50%, -50%) rotate(15deg);
-  }
-  75% {
-    transform: translate(-50%, -50%) rotate(10deg);
-  }
+/* 选中框 */
+.selected-frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 200rpx;
+  height: 280rpx;
+  border: 4rpx solid #d4af37;
+  border-radius: 16rpx;
+  box-shadow: 
+    0 0 20rpx rgba(212, 175, 55, 0.6),
+    inset 0 0 20rpx rgba(212, 175, 55, 0.2);
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* 卡牌滚动容器 */
+.cards-scroll-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  z-index: 15;
+}
+
+.cards-scroll {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  will-change: transform;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+/* 卡牌项 */
+.card-item {
+  width: 200rpx;
+  height: 280rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  perspective: 1000rpx;
+}
+
+.card-item.selected {
+  z-index: 5;
+}
+
+/* 卡牌内部容器（用于翻转） */
+.card-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease-in-out;
+}
+
+.card-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+/* 卡牌背面 */
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
+}
+
+.card-back-image {
+  width: 100%;
+  height: 100%;
+}
+
+/* 卡牌正面 */
+.card-front {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
+  border: 2rpx solid #d4af37;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.card-number {
+  font-size: 48rpx;
+  color: #d4af37;
+  font-weight: 700;
+  margin-bottom: 20rpx;
+  text-shadow: 0 0 10rpx rgba(212, 175, 55, 0.8);
+}
+
+.card-text {
+  font-size: 28rpx;
+  color: #ffffff;
+  line-height: 1.6;
+  word-break: break-all;
 }
 
 /* 文字内容 */

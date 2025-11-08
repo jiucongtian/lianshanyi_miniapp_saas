@@ -15,7 +15,7 @@
 
   <!-- 主内容区域 -->
   <view class="main-content">
-    <!-- 中央圆形图形 -->
+    <!-- 转圈动画区域 -->
     <view class="mandala-container">
       <view class="mandala">
         <!-- 最外层实心圆环 -->
@@ -50,6 +50,33 @@
         </view>
         <!-- 光晕效果 -->
         <view class="glow-effect"></view>
+      </view>
+    </view>
+    
+    <!-- 抽卡区域 -->
+    <view class="card-draw-container">
+      <!-- 选中框 -->
+      <view class="selected-frame"></view>
+      
+      <!-- 卡牌滚动容器 -->
+      <view class="cards-scroll-wrapper">
+        <view class="cards-scroll" style="transform: translateX({{scrollOffset}}rpx); transition: transform {{transitionDuration}}ms {{transitionTiming}};">
+          <view class="card-item {{cardIndex === selectedIndex ? 'selected' : ''}}" wx:for="{{cardList}}" wx:key="id" wx:for-index="cardIndex">
+            <view class="card-inner {{cardIndex === selectedIndex && isFlipped ? 'flipped' : ''}}">
+              <!-- 卡牌背面 -->
+              <view class="card-back">
+                <image class="card-back-image" src="/static/card-back.jpg" mode="aspectFit"></image>
+              </view>
+              <!-- 卡牌正面 -->
+              <view class="card-front">
+                <view class="card-content">
+                  <text class="card-number">{{answerNumber}}</text>
+                  <text class="card-text">{{question}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
 
