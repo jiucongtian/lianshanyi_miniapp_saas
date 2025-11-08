@@ -1,0 +1,473 @@
+.page-container {
+  min-height: 100vh;
+  background-color: #000000;
+  position: relative;
+  overflow: hidden;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 顶部导航栏 */
+.navbar {
+  position: relative;
+  z-index: 100;
+  padding-top: env(safe-area-inset-top);
+  background-color: #000000;
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 32rpx;
+}
+
+.navbar-left {
+  width: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.back-icon {
+  font-size: 56rpx;
+  color: #ffffff;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.navbar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 32rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.navbar-right {
+  width: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 24rpx;
+}
+
+.icon-dot,
+.icon-circle {
+  font-size: 32rpx;
+  color: #ffffff;
+}
+
+/* 主内容区域 */
+.main-content {
+  margin: 40rpx 32rpx;
+  padding: 60rpx 40rpx;
+  border: 2rpx solid #d4af37;
+  border-radius: 24rpx;
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 40rpx rgba(212, 175, 55, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 圆形图形容器 */
+.mandala-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 60rpx;
+  height: 400rpx;
+}
+
+.mandala {
+  position: relative;
+  width: 400rpx;
+  height: 400rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 光晕效果 */
+.glow-effect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420rpx;
+  height: 420rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+  animation: glowPulse 9s ease-in-out infinite;
+  z-index: 0;
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  box-sizing: border-box;
+  transform-origin: center;
+}
+
+/* 圆环标记点 - 纯装饰性点，无文字内容 */
+.ring-mark {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform-origin: 0 50%;
+  width: 0;
+  height: 0;
+}
+
+.mark-dot {
+  position: absolute;
+  width: 16rpx;
+  height: 16rpx;
+  background-color: #d4af37;
+  border-radius: 50%;
+  box-shadow: 0 0 12rpx rgba(212, 175, 55, 0.9);
+}
+
+.mark-dot-small {
+  width: 14rpx;
+  height: 14rpx;
+}
+
+/* 最外层实心圆环 - 顺时针慢速旋转 */
+.ring-outer-1 {
+  width: 400rpx;
+  height: 400rpx;
+  border: 3rpx solid #d4af37;
+  animation: rotateClockwise 60s linear infinite;
+}
+
+.ring-outer-1 .ring-mark {
+  margin-left: -8rpx;
+  margin-top: -8rpx;
+}
+
+.ring-outer-1 .mark-dot {
+  top: 0;
+  left: 0;
+}
+
+/* 第二层虚线圆环 - 逆时针中速旋转 */
+.ring-outer-2 {
+  width: 340rpx;
+  height: 340rpx;
+  border: 2rpx dashed #d4af37;
+  animation: rotateCounterClockwise 53s linear infinite;
+}
+
+.ring-outer-2 .ring-mark {
+  margin-left: -7rpx;
+  margin-top: -7rpx;
+}
+
+.ring-outer-2 .mark-dot {
+  top: 0;
+  left: 0;
+}
+
+/* 第三层实心圆环 - 顺时针快速旋转 */
+.ring-outer-3 {
+  width: 280rpx;
+  height: 280rpx;
+  border: 2rpx solid #d4af37;
+  animation: rotateClockwise 45s linear infinite;
+}
+
+.ring-outer-3 .ring-mark {
+  margin-left: -8rpx;
+  margin-top: -8rpx;
+}
+
+.ring-outer-3 .mark-dot {
+  top: 0;
+  left: 0;
+}
+
+/* 第四层虚线圆环 - 逆时针慢速旋转 */
+.ring-outer-4 {
+  width: 220rpx;
+  height: 220rpx;
+  border: 2rpx dashed #d4af37;
+  animation: rotateCounterClockwise 57s linear infinite;
+}
+
+.ring-outer-4 .ring-mark {
+  margin-left: -7rpx;
+  margin-top: -7rpx;
+}
+
+.ring-outer-4 .mark-dot {
+  top: 0;
+  left: 0;
+}
+
+/* 天干转圈容器 */
+.tiangan-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200rpx;
+  height: 200rpx;
+  z-index: 10;
+  transform-origin: center;
+}
+
+/* 天干文字项 - 每个围绕中心自转 */
+.tiangan-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+
+.tiangan-text {
+  position: absolute;
+  font-size: 24rpx;
+  color: #d4af37;
+  font-weight: 600;
+  text-shadow: 
+    0 0 8rpx rgba(212, 175, 55, 0.8),
+    0 0 16rpx rgba(212, 175, 55, 0.6);
+  white-space: nowrap;
+  display: block;
+  transform: translate(-50%, -50%);
+}
+
+/* 天干围绕中心旋转的动画 - 每个天干从不同角度开始，精确计算确保均匀分布 */
+/* 10个天干，每个间隔36度，从18度开始偏移，使分布更均匀 */
+@keyframes tianganOrbit1 {
+  0% { transform: rotate(18deg) translateX(70rpx) rotate(-18deg); }
+  100% { transform: rotate(378deg) translateX(70rpx) rotate(-378deg); }
+}
+
+@keyframes tianganOrbit2 {
+  0% { transform: rotate(54deg) translateX(70rpx) rotate(-54deg); }
+  100% { transform: rotate(414deg) translateX(70rpx) rotate(-414deg); }
+}
+
+@keyframes tianganOrbit3 {
+  0% { transform: rotate(90deg) translateX(70rpx) rotate(-90deg); }
+  100% { transform: rotate(450deg) translateX(70rpx) rotate(-450deg); }
+}
+
+@keyframes tianganOrbit4 {
+  0% { transform: rotate(126deg) translateX(70rpx) rotate(-126deg); }
+  100% { transform: rotate(486deg) translateX(70rpx) rotate(-486deg); }
+}
+
+@keyframes tianganOrbit5 {
+  0% { transform: rotate(162deg) translateX(70rpx) rotate(-162deg); }
+  100% { transform: rotate(522deg) translateX(70rpx) rotate(-522deg); }
+}
+
+@keyframes tianganOrbit6 {
+  0% { transform: rotate(198deg) translateX(70rpx) rotate(-198deg); }
+  100% { transform: rotate(558deg) translateX(70rpx) rotate(-558deg); }
+}
+
+@keyframes tianganOrbit7 {
+  0% { transform: rotate(234deg) translateX(70rpx) rotate(-234deg); }
+  100% { transform: rotate(594deg) translateX(70rpx) rotate(-594deg); }
+}
+
+@keyframes tianganOrbit8 {
+  0% { transform: rotate(270deg) translateX(70rpx) rotate(-270deg); }
+  100% { transform: rotate(630deg) translateX(70rpx) rotate(-630deg); }
+}
+
+@keyframes tianganOrbit9 {
+  0% { transform: rotate(306deg) translateX(70rpx) rotate(-306deg); }
+  100% { transform: rotate(666deg) translateX(70rpx) rotate(-666deg); }
+}
+
+@keyframes tianganOrbit10 {
+  0% { transform: rotate(342deg) translateX(70rpx) rotate(-342deg); }
+  100% { transform: rotate(702deg) translateX(70rpx) rotate(-702deg); }
+}
+
+/* 为每个天干设置不同的动画，均匀分布在圆周上（每个间隔36度） */
+.tiangan-item:nth-child(1) {
+  animation: tianganOrbit1 53s linear infinite;
+}
+
+.tiangan-item:nth-child(2) {
+  animation: tianganOrbit2 53s linear infinite;
+}
+
+.tiangan-item:nth-child(3) {
+  animation: tianganOrbit3 53s linear infinite;
+}
+
+.tiangan-item:nth-child(4) {
+  animation: tianganOrbit4 53s linear infinite;
+}
+
+.tiangan-item:nth-child(5) {
+  animation: tianganOrbit5 53s linear infinite;
+}
+
+.tiangan-item:nth-child(6) {
+  animation: tianganOrbit6 53s linear infinite;
+}
+
+.tiangan-item:nth-child(7) {
+  animation: tianganOrbit7 53s linear infinite;
+}
+
+.tiangan-item:nth-child(8) {
+  animation: tianganOrbit8 53s linear infinite;
+}
+
+.tiangan-item:nth-child(9) {
+  animation: tianganOrbit9 53s linear infinite;
+}
+
+.tiangan-item:nth-child(10) {
+  animation: tianganOrbit10 53s linear infinite;
+}
+
+/* 顺时针旋转动画 */
+@keyframes rotateClockwise {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* 逆时针旋转动画 */
+@keyframes rotateCounterClockwise {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+/* 卡片摆动动画 */
+@keyframes cardSway {
+  0%, 100% {
+    transform: translate(-50%, -50%) rotate(15deg);
+  }
+  25% {
+    transform: translate(-50%, -50%) rotate(20deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(15deg);
+  }
+  75% {
+    transform: translate(-50%, -50%) rotate(10deg);
+  }
+}
+
+/* 文字内容 */
+.text-content {
+  text-align: center;
+  margin-bottom: 60rpx;
+  width: 100%;
+}
+
+.text-line-1 {
+  font-size: 48rpx;
+  color: #ffffff;
+  font-weight: 500;
+  margin-bottom: 24rpx;
+  letter-spacing: 2rpx;
+}
+
+.text-line-2 {
+  font-size: 48rpx;
+  color: #ffffff;
+  font-weight: 500;
+  margin-bottom: 16rpx;
+  letter-spacing: 2rpx;
+}
+
+.text-english {
+  font-size: 24rpx;
+  color: #ffffff;
+  opacity: 0.8;
+  letter-spacing: 1rpx;
+}
+
+/* 按钮容器 */
+.button-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+  margin-bottom: 40rpx;
+}
+
+/* 主按钮 - 紫色到粉色渐变 */
+.btn-primary {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(90deg, #9b59b6, #e91e63);
+  border-radius: 16rpx;
+  border: none;
+  color: #ffffff;
+  font-size: 32rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(155, 89, 182, 0.4);
+}
+
+.btn-primary::after {
+  border: none;
+}
+
+/* 次要按钮 - 金色边框 */
+.btn-secondary {
+  width: 100%;
+  height: 88rpx;
+  background: transparent;
+  border: 2rpx solid #d4af37;
+  border-radius: 16rpx;
+  color: #ffffff;
+  font-size: 32rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-secondary::after {
+  border: none;
+}
+
+/* 底部编号 */
+.footer-number {
+  font-size: 24rpx;
+  color: #d4af37;
+  text-align: center;
+  letter-spacing: 1rpx;
+}

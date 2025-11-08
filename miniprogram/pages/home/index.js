@@ -48,7 +48,7 @@ Page({
    * 寻找答案按钮点击事件
    */
   onFindAnswer() {
-    const { isSearching } = this.data;
+    const { isSearching, question } = this.data;
 
     if (isSearching) {
       return;
@@ -60,43 +60,27 @@ Page({
 
     // 模拟寻找答案的过程
     setTimeout(() => {
-      this.showAnswer();
-      this.setData({
-        isSearching: false
+      // 跳转到答案页面
+      const questionParam = question ? encodeURIComponent(question) : '';
+      wx.navigateTo({
+        url: `/pages/answer/index${questionParam ? '?question=' + questionParam : ''}`,
+        success: () => {
+          console.log('[HomePage] 跳转到答案页面');
+        },
+        fail: (err) => {
+          console.error('[HomePage] 跳转失败:', err);
+          wx.showToast({
+            title: '跳转失败',
+            icon: 'none'
+          });
+        },
+        complete: () => {
+          this.setData({
+            isSearching: false
+          });
+        }
       });
     }, 2000);
-  },
-
-  /**
-   * 显示答案
-   */
-  showAnswer() {
-    const answers = [
-      '跟随你的内心，答案就在那里。',
-      '现在还不是时候，耐心等待。',
-      '勇敢地迈出第一步，你会看到希望。',
-      '相信自己的直觉，它不会欺骗你。',
-      '放下顾虑，去做你想做的事。',
-      '时机很重要，现在正是时候。',
-      '保持冷静，答案会自然浮现。',
-      '你的内心已经知道答案了。'
-    ];
-
-    const randomAnswer = answers[Math.floor(Math.random() * answers.length)];
-
-    wx.showModal({
-      title: '答案',
-      content: randomAnswer,
-      showCancel: false,
-      confirmText: '知道了',
-      confirmColor: '#d4af37',
-      success: (res) => {
-        if (res.confirm) {
-          // 可以在这里添加其他逻辑，比如记录问题等
-          console.log('[HomePage] 用户查看了答案:', this.data.question);
-        }
-      }
-    });
   },
 
   /**

@@ -8,7 +8,8 @@
     "pages/register/index",
     "pages/agreement/index",
     "pages/cacheInfo/index",
-    "pages/store/index"
+    "pages/store/index",
+    "pages/answer/index"
   ],
   "usingComponents": {},
   "subpackages": [],

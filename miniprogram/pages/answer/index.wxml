@@ -1,0 +1,73 @@
+<view class="page-container">
+  <!-- 顶部导航栏 -->
+  <view class="navbar">
+    <view class="navbar-content">
+      <view class="navbar-left" bindtap="onBack">
+        <text class="back-icon">‹</text>
+      </view>
+      <view class="navbar-title">答案之书电子版</view>
+      <view class="navbar-right">
+        <text class="icon-dot">⋯</text>
+        <text class="icon-circle">○</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 主内容区域 -->
+  <view class="main-content">
+    <!-- 中央圆形图形 -->
+    <view class="mandala-container">
+      <view class="mandala">
+        <!-- 最外层实心圆环 -->
+        <view class="ring ring-outer-1">
+          <view class="ring-mark">
+            <view class="mark-dot"></view>
+          </view>
+        </view>
+        <!-- 第二层虚线圆环 -->
+        <view class="ring ring-outer-2">
+          <view class="ring-mark">
+            <view class="mark-dot mark-dot-small"></view>
+          </view>
+        </view>
+        <!-- 第三层实心圆环 -->
+        <view class="ring ring-outer-3">
+          <view class="ring-mark">
+            <view class="mark-dot"></view>
+          </view>
+        </view>
+        <!-- 第四层虚线圆环 -->
+        <view class="ring ring-outer-4">
+          <view class="ring-mark">
+            <view class="mark-dot mark-dot-small"></view>
+          </view>
+        </view>
+        <!-- 最内层：天干自转 -->
+        <view class="tiangan-container">
+          <view class="tiangan-item" wx:for="{{tianGanIndices}}" wx:key="index">
+            <text class="tiangan-text">{{tianGan[index]}}</text>
+          </view>
+        </view>
+        <!-- 光晕效果 -->
+        <view class="glow-effect"></view>
+      </view>
+    </view>
+
+    <!-- 文字内容 -->
+    <view class="text-content">
+      <view class="text-line-1">带着你顽皮的好奇心</view>
+      <view class="text-line-2">去探索它</view>
+      <view class="text-english">Explore It With Playful Curiosity</view>
+    </view>
+
+    <!-- 按钮区域 -->
+    <view class="button-container">
+      <button class="btn-primary" bindtap="onAnalyzeAnswer">答案解析</button>
+      <button class="btn-secondary" bindtap="onAskAgain">再问一次</button>
+    </view>
+
+    <!-- 底部编号 -->
+    <view class="footer-number">No.{{answerNumber}}</view>
+  </view>
+</view>
+
