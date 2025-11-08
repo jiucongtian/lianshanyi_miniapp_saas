@@ -53,21 +53,11 @@
       </view>
     </view>
 
-    <!-- 文字内容 -->
-    <view class="text-content">
-      <view class="text-line-1">带着你顽皮的好奇心</view>
-      <view class="text-line-2">去探索它</view>
-      <view class="text-english">Explore It With Playful Curiosity</view>
-    </view>
-
     <!-- 按钮区域 -->
     <view class="button-container">
-      <button class="btn-primary" bindtap="onAnalyzeAnswer">答案解析</button>
+      <button class="btn-primary" bindtap="onAnalyzeAnswer">抽卡</button>
       <button class="btn-secondary" bindtap="onAskAgain">再问一次</button>
     </view>
-
-    <!-- 底部编号 -->
-    <view class="footer-number">No.{{answerNumber}}</view>
   </view>
 </view>
 
