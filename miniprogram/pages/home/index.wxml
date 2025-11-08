@@ -1,0 +1,96 @@
+<view class="page-container">
+  <!-- 顶部标题 -->
+  <view class="header">
+    <view class="header-icons">
+      <view class="icon-dot">⋯</view>
+      <view class="icon-circle">○</view>
+    </view>
+  </view>
+
+  <!-- 主内容卡片 -->
+  <view class="main-card">
+    <!-- 卡片标题 -->
+    <view class="card-title">
+      <text class="title-main">《智慧洞见》</text>
+      <text class="title-sub">The book of answer</text>
+    </view>
+
+    <!-- 圆形装饰图案 -->
+    <view class="mandala-container">
+      <view class="mandala">
+        <!-- 最外层 -->
+        <view class="ring ring-outer-1">
+          <view class="pattern pattern-v" wx:for="{{outerPatterns}}" wx:key="index" style="transform: rotate({{index * 10}}deg);"></view>
+        </view>
+        <!-- 第三层 -->
+        <view class="ring ring-outer-2">
+          <view class="pattern pattern-v" wx:for="{{outerPatterns}}" wx:key="index" style="transform: rotate({{index * 10}}deg);"></view>
+        </view>
+        <!-- 第二层 -->
+        <view class="ring ring-middle">
+          <view class="pattern pattern-heart" wx:for="{{middlePatterns}}" wx:key="index" style="transform: rotate({{index * 22.5}}deg);"></view>
+        </view>
+        <!-- 最内层星形 -->
+        <view class="ring ring-inner">
+          <view class="pattern pattern-star"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 提示文字 -->
+    <view class="instruction-text">心中默念,思考你的问题:</view>
+    <!-- 示例问题滚动 -->
+    <view class="example-question-container">
+      <swiper 
+        class="example-question-swiper" 
+        vertical="true" 
+        autoplay="true" 
+        interval="6000"
+        duration="1000"
+        circular="true"
+        indicator-dots="false"
+        bindchange="onQuestionSwiperChange"
+      >
+        <swiper-item wx:for="{{exampleQuestions}}" wx:key="index" class="swiper-item">
+          <view class="example-question">{{item}}</view>
+        </swiper-item>
+      </swiper>
+    </view>
+    <view class="prompt-text">命运已翻开书页,你准备好提问了吗?</view>
+
+    <!-- 输入框 -->
+    <view class="input-container">
+      <input 
+        class="question-input" 
+        placeholder="说出你的问题" 
+        value="{{question}}"
+        bindinput="onQuestionInput"
+        confirm-type="done"
+      />
+    </view>
+
+    <!-- 按钮 -->
+    <view class="button-container">
+      <button class="find-answer-btn" bindtap="onFindAnswer" disabled="{{isSearching}}">
+        <text wx:if="{{!isSearching}}">寻找答案</text>
+        <text wx:else>寻找中...</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 底部提示文字 -->
+  <view class="footer-text">人生总会有很多疑问,你需要这本《智慧洞见》</view>
+
+  <!-- 背景装饰 -->
+  <view class="bg-decoration">
+    <view class="star-trail trail-1"></view>
+    <view class="star-trail trail-2"></view>
+    <view class="star-trail trail-3"></view>
+    <view class="star-trail trail-4"></view>
+    <view class="star-trail trail-5"></view>
+    <view class="star-trail trail-6"></view>
+    <view class="star-trail trail-7"></view>
+    <view class="star-trail trail-8"></view>
+  </view>
+</view>
+

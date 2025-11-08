@@ -1,5 +1,6 @@
 {
   "pages": [
+    "pages/home/index",
     "pages/card/index",
     "pages/profile/index", 
     "pages/mine/index",
@@ -23,6 +24,12 @@
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页",
+        "iconPath": "static/icons/card.png",
+        "selectedIconPath": "static/icons/card-active.png"
+      },
       {
         "pagePath": "pages/card/index",
         "text": "卡牌",
