@@ -6,10 +6,7 @@
         <text class="back-icon">‹</text>
       </view>
       <view class="navbar-title">答案之书电子版</view>
-      <view class="navbar-right">
-        <text class="icon-dot">⋯</text>
-        <text class="icon-circle">○</text>
-      </view>
+      <view class="navbar-right"></view>
     </view>
   </view>
 
