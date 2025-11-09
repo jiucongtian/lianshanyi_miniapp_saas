@@ -50,8 +50,14 @@ Page({
     const cardWidth = 200; // 每张卡牌的宽度（rpx）
     const cardGap = 20; // 卡牌间距（rpx）
     const totalCardWidth = cardWidth + cardGap; // 每张卡牌占用的总宽度（220rpx）
-    const screenWidth = 750; // 屏幕宽度（rpx）
-    const centerX = screenWidth / 2; // 屏幕中心X坐标（375rpx）
+    
+    // 计算实际容器宽度（考虑main-content的padding）
+    // main-content: margin 32rpx, padding 50rpx
+    const screenWidth = 750;
+    const mainContentMargin = 32 * 2; // 左右各32rpx
+    const mainContentPadding = 50 * 2; // 左右各50rpx
+    const containerWidth = screenWidth - mainContentMargin - mainContentPadding; // 586rpx
+    const centerX = containerWidth / 2; // 293rpx
     
     // 初始状态：让索引2的卡牌居中
     // 这样屏幕上显示索引1、2、3的三张卡牌
@@ -64,7 +70,7 @@ Page({
       cardWidth,
       cardGap,
       totalCardWidth,
-      screenWidth,
+      containerWidth,
       centerX,
       nextCardId: 10 // 下一个要创建的卡牌ID
     };
@@ -77,8 +83,11 @@ Page({
     });
     
     console.log('[_initCardList] 初始化完成');
+    console.log('  容器宽度:', containerWidth);
+    console.log('  中心X坐标:', centerX);
     console.log('  卡牌数量:', cardList.length);
     console.log('  初始选中索引:', initialSelectedIndex);
+    console.log('  选中卡牌中心X:', selectedCardCenterX);
     console.log('  初始偏移量:', initialOffset);
   },
 
@@ -186,6 +195,8 @@ Page({
       
       console.log('  调整后卡牌数量:', newCardList.length);
       console.log('  新选中索引:', newSelectedIndex);
+      console.log('  新选中卡牌中心X:', newSelectedCardCenterX);
+      console.log('  容器中心X:', centerX);
       console.log('  新偏移量:', newScrollOffset);
       
       // 瞬间完成队列调整（用户看不到）
