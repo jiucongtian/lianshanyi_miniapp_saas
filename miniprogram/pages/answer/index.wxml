@@ -61,7 +61,7 @@
       <!-- 卡牌滚动容器 -->
       <view class="cards-scroll-wrapper">
         <view class="cards-scroll" style="transform: translateX({{scrollOffset}}rpx); transition: transform {{transitionDuration}}ms {{transitionTiming}};">
-          <view class="card-item {{cardIndex === selectedIndex ? 'selected' : ''}}" wx:for="{{cardList}}" wx:key="id" wx:for-index="cardIndex">
+          <view class="card-item {{cardIndex === selectedIndex ? 'selected' : ''}}" wx:for="{{cardList}}" wx:key="key" wx:for-index="cardIndex">
             <view class="card-inner {{cardIndex === selectedIndex && isFlipped ? 'flipped' : ''}}">
               <!-- 卡牌背面 -->
               <view class="card-back">
