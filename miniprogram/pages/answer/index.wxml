@@ -1,15 +1,6 @@
-<view class="page-container">
-  <!-- 顶部导航栏 -->
-  <view class="navbar">
-    <view class="navbar-content">
-      <view class="navbar-left" bindtap="onBack">
-        <text class="back-icon">‹</text>
-      </view>
-      <view class="navbar-title">答案之书电子版</view>
-      <view class="navbar-right"></view>
-    </view>
-  </view>
+<t-navbar title="答案之书电子版" left-arrow bind:go-back="goBack" />
 
+<view class="page-container">
   <!-- 主内容区域 -->
   <view class="main-content">
     <!-- 转圈动画区域 -->

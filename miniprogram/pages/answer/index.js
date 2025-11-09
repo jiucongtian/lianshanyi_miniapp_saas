@@ -46,10 +46,10 @@ Page({
       key: `card_${i}` // 用于wx:key
     }));
     
-    // 卡牌尺寸配置
-    const cardWidth = 200; // 每张卡牌的宽度（rpx）
-    const cardGap = 20; // 卡牌间距（rpx）
-    const totalCardWidth = cardWidth + cardGap; // 每张卡牌占用的总宽度（220rpx）
+    // 卡牌尺寸配置（放大30%）
+    const cardWidth = 260; // 每张卡牌的宽度（rpx）- 原200 * 1.3
+    const cardGap = 26; // 卡牌间距（rpx）- 原20 * 1.3
+    const totalCardWidth = cardWidth + cardGap; // 每张卡牌占用的总宽度（286rpx）
     
     // 计算实际容器宽度（考虑main-content的padding）
     // main-content: margin 32rpx, padding 50rpx
@@ -96,9 +96,9 @@ Page({
   },
 
   /**
-   * 返回按钮点击事件
+   * 返回按钮点击事件（TDesign navbar回调）
    */
-  onBack() {
+  goBack() {
     wx.navigateBack();
   },
 

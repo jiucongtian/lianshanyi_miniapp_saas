@@ -1,11 +1,20 @@
+page {
+  height: 100vh;
+  overflow: hidden;
+  background-color: #000000;
+}
+
 .page-container {
-  min-height: 100vh;
+  height: 100vh;
   background-color: #000000;
   position: relative;
   overflow: hidden;
   padding: 0 32rpx;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: calc(env(safe-area-inset-bottom) + 112rpx);
+  padding-bottom: 40rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 /* 顶部标题 */
@@ -13,9 +22,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 40rpx 0 32rpx;
+  padding: 16rpx 0;
   position: relative;
   z-index: 10;
+  flex-shrink: 0;
 }
 
 .app-title {
@@ -51,31 +61,36 @@
   background: rgba(0, 0, 0, 0.8);
   border: 2rpx solid #d4af37;
   border-radius: 24rpx;
-  padding: 48rpx 40rpx;
-  margin: 32rpx 0;
+  padding: 40rpx 32rpx;
+  margin: 20rpx 0;
   position: relative;
   z-index: 10;
   box-shadow: 0 0 40rpx rgba(212, 175, 55, 0.3);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* 卡片标题 */
 .card-title {
   text-align: center;
-  margin-bottom: 48rpx;
+  margin-bottom: 32rpx;
+  flex-shrink: 0;
 }
 
 .title-main {
   display: block;
-  font-size: 56rpx;
+  font-size: 48rpx;
   font-weight: bold;
   color: #ffffff;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
   letter-spacing: 4rpx;
 }
 
 .title-sub {
   display: block;
-  font-size: 28rpx;
+  font-size: 24rpx;
   color: #ffffff;
   opacity: 0.8;
   letter-spacing: 2rpx;
@@ -86,14 +101,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 48rpx 0;
-  height: 400rpx;
+  margin: 24rpx 0;
+  height: 300rpx;
+  flex-shrink: 0;
 }
 
 .mandala {
   position: relative;
-  width: 400rpx;
-  height: 400rpx;
+  width: 300rpx;
+  height: 300rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -108,25 +124,25 @@
 
 /* 最外层 */
 .ring-outer-1 {
-  width: 400rpx;
-  height: 400rpx;
+  width: 300rpx;
+  height: 300rpx;
 }
 
 .ring-outer-2 {
-  width: 340rpx;
-  height: 340rpx;
+  width: 255rpx;
+  height: 255rpx;
 }
 
 /* 中间层 */
 .ring-middle {
-  width: 240rpx;
-  height: 240rpx;
+  width: 180rpx;
+  height: 180rpx;
 }
 
 /* 最内层 */
 .ring-inner {
-  width: 120rpx;
-  height: 120rpx;
+  width: 90rpx;
+  height: 90rpx;
 }
 
 /* 图案样式 */
@@ -183,23 +199,25 @@
 
 /* 提示文字 */
 .instruction-text {
-  font-size: 32rpx;
+  font-size: 28rpx;
   color: #ffffff;
   text-align: center;
-  margin: 32rpx 0 16rpx;
+  margin: 20rpx 0 12rpx;
   letter-spacing: 2rpx;
+  flex-shrink: 0;
 }
 
 /* 示例问题滚动容器 */
 .example-question-container {
-  height: 60rpx;
-  margin: 16rpx 0 24rpx;
+  height: 50rpx;
+  margin: 12rpx 0 16rpx;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .example-question-swiper {
   width: 100%;
-  height: 60rpx !important;
+  height: 50rpx !important;
 }
 
 .example-question-swiper .swiper-item {
@@ -223,17 +241,19 @@
 }
 
 .prompt-text {
-  font-size: 28rpx;
+  font-size: 24rpx;
   color: #ffffff;
   text-align: center;
-  margin-bottom: 48rpx;
+  margin-bottom: 24rpx;
   opacity: 0.8;
   letter-spacing: 1rpx;
+  flex-shrink: 0;
 }
 
 /* 输入框容器 */
 .input-container {
-  margin: 32rpx 0;
+  margin: 20rpx 0;
+  flex-shrink: 0;
 }
 
 .question-input {
@@ -253,7 +273,8 @@
 
 /* 按钮容器 */
 .button-container {
-  margin: 48rpx 0 32rpx;
+  margin: 24rpx 0 16rpx;
+  flex-shrink: 0;
 }
 
 .find-answer-btn {
@@ -308,13 +329,14 @@
 /* 底部提示文字 */
 .footer-text {
   text-align: center;
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #ffffff;
   opacity: 0.6;
-  margin-top: 32rpx;
+  margin-top: 16rpx;
   letter-spacing: 1rpx;
   position: relative;
   z-index: 10;
+  flex-shrink: 0;
 }
 
 /* 背景装饰 */
