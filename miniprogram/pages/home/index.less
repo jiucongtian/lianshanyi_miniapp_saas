@@ -59,9 +59,9 @@ page {
 /* 主内容卡片 */
 .main-card {
   background: rgba(0, 0, 0, 0.8);
-  border: 2rpx solid #d4af37;
+  border: 4rpx solid #d4af37;
   border-radius: 24rpx;
-  padding: 80rpx 32rpx;
+  padding: 80rpx 52rpx;
   margin: 100rpx 0;
   position: relative;
   z-index: 10;
@@ -213,19 +213,32 @@ page {
   margin: 12rpx 0 16rpx;
   overflow: hidden;
   flex-shrink: 0;
+  position: relative;
 }
 
 .example-question-swiper {
   width: 100%;
-  height: 50rpx !important;
+  height: 50rpx;
+  overflow: hidden;
+  position: relative;
+  /* 禁用触摸事件 */
+  pointer-events: none;
 }
 
-.example-question-swiper .swiper-item {
+.example-question-wrapper {
+  display: flex;
+  flex-direction: column;
+  /* 15个问题，每个停留6秒，滚动0.3秒，每个周期6.3秒，总共94.5秒 */
+  animation: scrollQuestions 94.5s linear infinite;
+  will-change: transform;
+}
+
+.example-question-item {
+  height: 50rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 60rpx !important;
-  width: 100%;
+  flex-shrink: 0;
 }
 
 .example-question {
@@ -234,10 +247,135 @@ page {
   text-align: center;
   opacity: 0.95;
   font-style: normal;
-  line-height: 60rpx;
+  line-height: 50rpx;
   width: 100%;
   font-weight: 400;
   text-shadow: 0 0 8rpx rgba(212, 175, 55, 0.5);
+}
+
+/* 无限循环滚动动画 - 停留+滚动效果 */
+/* 每个问题停留6秒，滚动0.3秒，15个问题，总时间94.5秒 */
+@keyframes scrollQuestions {
+  /* 第1条：停留 0% - 6.35% */
+  0%, 6.35% {
+    transform: translateY(0);
+  }
+  /* 滚动到第2条 6.67% */
+  6.67% {
+    transform: translateY(-50rpx);
+  }
+  /* 第2条：停留 6.67% - 13.02% */
+  6.67%, 13.02% {
+    transform: translateY(-50rpx);
+  }
+  /* 滚动到第3条 13.33% */
+  13.33% {
+    transform: translateY(-100rpx);
+  }
+  /* 第3条：停留 13.33% - 19.68% */
+  13.33%, 19.68% {
+    transform: translateY(-100rpx);
+  }
+  /* 滚动到第4条 20% */
+  20% {
+    transform: translateY(-150rpx);
+  }
+  /* 第4条：停留 20% - 26.35% */
+  20%, 26.35% {
+    transform: translateY(-150rpx);
+  }
+  /* 滚动到第5条 26.67% */
+  26.67% {
+    transform: translateY(-200rpx);
+  }
+  /* 第5条：停留 26.67% - 33.02% */
+  26.67%, 33.02% {
+    transform: translateY(-200rpx);
+  }
+  /* 滚动到第6条 33.33% */
+  33.33% {
+    transform: translateY(-250rpx);
+  }
+  /* 第6条：停留 33.33% - 39.68% */
+  33.33%, 39.68% {
+    transform: translateY(-250rpx);
+  }
+  /* 滚动到第7条 40% */
+  40% {
+    transform: translateY(-300rpx);
+  }
+  /* 第7条：停留 40% - 46.35% */
+  40%, 46.35% {
+    transform: translateY(-300rpx);
+  }
+  /* 滚动到第8条 46.67% */
+  46.67% {
+    transform: translateY(-350rpx);
+  }
+  /* 第8条：停留 46.67% - 53.02% */
+  46.67%, 53.02% {
+    transform: translateY(-350rpx);
+  }
+  /* 滚动到第9条 53.33% */
+  53.33% {
+    transform: translateY(-400rpx);
+  }
+  /* 第9条：停留 53.33% - 59.68% */
+  53.33%, 59.68% {
+    transform: translateY(-400rpx);
+  }
+  /* 滚动到第10条 60% */
+  60% {
+    transform: translateY(-450rpx);
+  }
+  /* 第10条：停留 60% - 66.35% */
+  60%, 66.35% {
+    transform: translateY(-450rpx);
+  }
+  /* 滚动到第11条 66.67% */
+  66.67% {
+    transform: translateY(-500rpx);
+  }
+  /* 第11条：停留 66.67% - 73.02% */
+  66.67%, 73.02% {
+    transform: translateY(-500rpx);
+  }
+  /* 滚动到第12条 73.33% */
+  73.33% {
+    transform: translateY(-550rpx);
+  }
+  /* 第12条：停留 73.33% - 79.68% */
+  73.33%, 79.68% {
+    transform: translateY(-550rpx);
+  }
+  /* 滚动到第13条 80% */
+  80% {
+    transform: translateY(-600rpx);
+  }
+  /* 第13条：停留 80% - 86.35% */
+  80%, 86.35% {
+    transform: translateY(-600rpx);
+  }
+  /* 滚动到第14条 86.67% */
+  86.67% {
+    transform: translateY(-650rpx);
+  }
+  /* 第14条：停留 86.67% - 93.02% */
+  86.67%, 93.02% {
+    transform: translateY(-650rpx);
+  }
+  /* 滚动到第15条 93.33% */
+  93.33% {
+    transform: translateY(-700rpx);
+  }
+  /* 第15条：停留 93.33% - 99.68% */
+  93.33%, 99.68% {
+    transform: translateY(-700rpx);
+  }
+  /* 滚动到第16条（复制的第1条，用于无缝循环）100% */
+  100% {
+    transform: translateY(-750rpx);
+  }
 }
 
 .prompt-text {

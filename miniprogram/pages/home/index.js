@@ -22,8 +22,7 @@ Page({
       '我应该接受这个挑战吗?',
       '我应该结束这段关系吗?',
       '我应该相信我的直觉吗?'
-    ],
-    currentQuestionIndex: 0
+    ]
   },
 
   onLoad(options) {
@@ -83,15 +82,6 @@ Page({
     }, 2000);
   },
 
-  /**
-   * 示例问题滚动切换事件
-   */
-  onQuestionSwiperChange(e) {
-    const current = e.detail.current;
-    this.setData({
-      currentQuestionIndex: current
-    });
-  },
 
   /**
    * 下拉刷新

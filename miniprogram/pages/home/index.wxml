@@ -37,20 +37,17 @@
     <view class="instruction-text">心中默念,思考你的问题:</view>
     <!-- 示例问题滚动 -->
     <view class="example-question-container">
-      <swiper 
-        class="example-question-swiper" 
-        vertical="true" 
-        autoplay="true" 
-        interval="6000"
-        duration="1000"
-        circular="true"
-        indicator-dots="false"
-        bindchange="onQuestionSwiperChange"
-      >
-        <swiper-item wx:for="{{exampleQuestions}}" wx:key="index" class="swiper-item">
-          <view class="example-question">{{item}}</view>
-        </swiper-item>
-      </swiper>
+      <view class="example-question-swiper">
+        <view class="example-question-wrapper">
+          <view wx:for="{{exampleQuestions}}" wx:key="index" class="example-question-item">
+            <view class="example-question">{{item}}</view>
+          </view>
+          <!-- 复制第一项用于无缝循环 -->
+          <view class="example-question-item">
+            <view class="example-question">{{exampleQuestions[0]}}</view>
+          </view>
+        </view>
+      </view>
     </view>
     <view class="prompt-text">命运已翻开书页,你准备好提问了吗?</view>
 
@@ -73,9 +70,6 @@
       </button>
     </view>
   </view>
-
-  <!-- 底部提示文字 -->
-  <view class="footer-text">人生总会有很多疑问,你需要这本《智慧洞见》</view>
 
   <!-- 背景装饰 -->
   <view class="bg-decoration">
