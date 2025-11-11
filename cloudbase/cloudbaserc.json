@@ -42,6 +42,12 @@
       "timeout": 10,
       "runtime": "Nodejs16.13",
       "memorySize": 256
+    },
+    {
+      "name": "cozeFunctions_v1_3",
+      "timeout": 30,
+      "runtime": "Nodejs16.13",
+      "memorySize": 512
     }
   ]
 }
