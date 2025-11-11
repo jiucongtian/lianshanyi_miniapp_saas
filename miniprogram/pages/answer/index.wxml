@@ -1,4 +1,4 @@
-<t-navbar title="答案之书电子版" left-arrow bind:go-back="goBack" />
+<t-navbar title="智慧洞见" left-arrow bind:go-back="goBack" />
 
 <view class="page-container">
   <!-- 主内容区域 -->
