@@ -1,12 +1,12 @@
 page {
   height: 100vh;
   overflow: hidden;
-  background-color: #000000;
+  background: linear-gradient(180deg, #2d1a2e 0%, #3d1f3e 50%, #4d1f4e 100%);
 }
 
 .page-container {
   height: 100vh;
-  background-color: #000000;
+  background: linear-gradient(180deg, #2d1a2e 0%, #3d1f3e 50%, #4d1f4e 100%);
   position: relative;
   overflow: hidden;
   padding: 0 32rpx;
@@ -59,13 +59,13 @@ page {
 /* 主内容卡片 */
 .main-card {
   background: rgba(0, 0, 0, 0.8);
-  border: 4rpx solid #d4af37;
+  border: 4rpx solid #c896b4;
   border-radius: 24rpx;
   padding: 80rpx 52rpx;
   margin: 100rpx 0;
   position: relative;
   z-index: 10;
-  box-shadow: 0 0 40rpx rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 40rpx rgba(200, 150, 180, 0.3);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -157,7 +157,7 @@ page {
 .pattern-v {
   width: 8rpx;
   height: 20rpx;
-  background: linear-gradient(to bottom, #d4af37, transparent);
+  background: linear-gradient(to bottom, #c896b4, transparent);
   clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
   margin-left: -4rpx;
   top: 0;
@@ -167,7 +167,7 @@ page {
 .pattern-heart {
   width: 16rpx;
   height: 16rpx;
-  background: #d4af37;
+  background: #c896b4;
   border-radius: 50% 50% 50% 0;
   margin-left: -8rpx;
   margin-top: -8rpx;
@@ -243,14 +243,14 @@ page {
 
 .example-question {
   font-size: 28rpx;
-  color: #d4af37;
+  color: #c896b4;
   text-align: center;
   opacity: 0.95;
   font-style: normal;
   line-height: 50rpx;
   width: 100%;
   font-weight: 400;
-  text-shadow: 0 0 8rpx rgba(212, 175, 55, 0.5);
+  text-shadow: 0 0 8rpx rgba(200, 150, 180, 0.5);
 }
 
 /* 无限循环滚动动画 - 停留+滚动效果 */
@@ -418,7 +418,7 @@ page {
 .find-answer-btn {
   width: 100%;
   height: 88rpx;
-  background: linear-gradient(135deg, #d4af37, #f4d03f);
+  background: linear-gradient(135deg, #854C65 0%, #A06B7F 100%);
   border-radius: 16rpx;
   border: none;
   color: #ffffff;
@@ -428,7 +428,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(212, 175, 55, 0.4);
+  box-shadow: 0 8rpx 24rpx rgba(133, 76, 101, 0.4);
   transition: all 0.3s;
   /* 呼吸动画 */
   animation: breathe 4s ease-in-out infinite;
@@ -441,7 +441,7 @@ page {
 }
 
 .find-answer-btn[disabled] {
-  background: rgba(212, 175, 55, 0.5);
+  background: rgba(133, 76, 101, 0.5);
   color: rgba(255, 255, 255, 0.6);
   box-shadow: none;
   /* 禁用时停止呼吸动画 */
@@ -452,15 +452,15 @@ page {
 @keyframes breathe {
   0% {
     transform: scale(1);
-    box-shadow: 0 8rpx 24rpx rgba(212, 175, 55, 0.4);
+    box-shadow: 0 8rpx 24rpx rgba(133, 76, 101, 0.4);
   }
   50% {
     transform: scale(1.05);
-    box-shadow: 0 12rpx 32rpx rgba(212, 175, 55, 0.6);
+    box-shadow: 0 12rpx 32rpx rgba(133, 76, 101, 0.6);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 8rpx 24rpx rgba(212, 175, 55, 0.4);
+    box-shadow: 0 8rpx 24rpx rgba(133, 76, 101, 0.4);
   }
 }
 

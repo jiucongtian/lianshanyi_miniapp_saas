@@ -1,10 +1,10 @@
 page {
-  background-color: #000000;
+  background: linear-gradient(180deg, #2d1a2e 0%, #3d1f3e 50%, #4d1f4e 100%);
 }
 
 .page-container {
   min-height: calc(80vh);
-  background-color: #000000;
+  background: linear-gradient(180deg, #2d1a2e 0%, #3d1f3e 50%, #4d1f4e 100%);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -15,10 +15,10 @@ page {
   flex: 1;
   margin: 20rpx 32rpx;
   padding: 30rpx 50rpx;
-  border: 2rpx solid #d4af37;
+  border: 2rpx solid #c896b4;
   border-radius: 24rpx;
   background: rgba(0, 0, 0, 0.8);
-  box-shadow: 0 0 40rpx rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 40rpx rgba(200, 150, 180, 0.3);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -67,7 +67,7 @@ page {
   width: 315rpx;
   height: 315rpx;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(200, 150, 180, 0.15) 0%, transparent 70%);
   animation: glowPulse 9s ease-in-out infinite;
   z-index: 0;
 }
@@ -107,9 +107,9 @@ page {
   position: absolute;
   width: 16rpx;
   height: 16rpx;
-  background-color: #d4af37;
+  background-color: #c896b4;
   border-radius: 50%;
-  box-shadow: 0 0 12rpx rgba(212, 175, 55, 0.9);
+  box-shadow: 0 0 12rpx rgba(200, 150, 180, 0.9);
 }
 
 .mark-dot-small {
@@ -121,7 +121,7 @@ page {
 .ring-outer-1 {
   width: 300rpx;
   height: 300rpx;
-  border: 3rpx solid #d4af37;
+  border: 3rpx solid #c896b4;
   animation: rotateClockwise 60s linear infinite;
 }
 
@@ -139,7 +139,7 @@ page {
 .ring-outer-2 {
   width: 255rpx;
   height: 255rpx;
-  border: 2rpx dashed #d4af37;
+  border: 2rpx dashed #c896b4;
   animation: rotateCounterClockwise 53s linear infinite;
 }
 
@@ -157,7 +157,7 @@ page {
 .ring-outer-3 {
   width: 210rpx;
   height: 210rpx;
-  border: 2rpx solid #d4af37;
+  border: 2rpx solid #c896b4;
   animation: rotateClockwise 45s linear infinite;
 }
 
@@ -175,7 +175,7 @@ page {
 .ring-outer-4 {
   width: 165rpx;
   height: 165rpx;
-  border: 2rpx dashed #d4af37;
+  border: 2rpx dashed #c896b4;
   animation: rotateCounterClockwise 57s linear infinite;
 }
 
@@ -214,11 +214,11 @@ page {
 .tiangan-text {
   position: absolute;
   font-size: 24rpx;
-  color: #d4af37;
+  color: #c896b4;
   font-weight: 600;
   text-shadow: 
-    0 0 8rpx rgba(212, 175, 55, 0.8),
-    0 0 16rpx rgba(212, 175, 55, 0.6);
+    0 0 8rpx rgba(200, 150, 180, 0.8),
+    0 0 16rpx rgba(200, 150, 180, 0.6);
   white-space: nowrap;
   display: block;
   transform: translate(-50%, -50%);
@@ -344,11 +344,11 @@ page {
   transform: translate(-50%, -50%);
   width: 260rpx;
   height: 364rpx;
-  border: 4rpx solid #d4af37;
+  border: 4rpx solid #c896b4;
   border-radius: 16rpx;
   box-shadow: 
-    0 0 20rpx rgba(212, 175, 55, 0.6),
-    inset 0 0 20rpx rgba(212, 175, 55, 0.2);
+    0 0 20rpx rgba(200, 150, 180, 0.6),
+    inset 0 0 20rpx rgba(200, 150, 180, 0.2);
   z-index: 20;
   pointer-events: none;
 }
@@ -434,7 +434,7 @@ page {
   justify-content: center;
   padding: 20rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3);
-  border: 2rpx solid #d4af37;
+  border: 2rpx solid #c896b4;
   box-sizing: border-box;
 }
 
@@ -448,10 +448,10 @@ page {
 
 .card-number {
   font-size: 62rpx;
-  color: #d4af37;
+  color: #c896b4;
   font-weight: 700;
   margin-bottom: 26rpx;
-  text-shadow: 0 0 10rpx rgba(212, 175, 55, 0.8);
+  text-shadow: 0 0 10rpx rgba(200, 150, 180, 0.8);
 }
 
 .card-text {
@@ -500,11 +500,11 @@ page {
   flex-shrink: 0;
 }
 
-/* 主按钮 - 紫色到粉色渐变 */
+/* 主按钮 - 达姆森色系渐变 */
 .btn-primary {
   width: 100%;
   height: 88rpx;
-  background: linear-gradient(90deg, #9b59b6, #e91e63);
+  background: linear-gradient(135deg, #854C65 0%, #A06B7F 100%);
   border-radius: 16rpx;
   border: none;
   color: #ffffff;
@@ -513,19 +513,19 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(155, 89, 182, 0.4);
+  box-shadow: 0 8rpx 24rpx rgba(133, 76, 101, 0.4);
 }
 
 .btn-primary::after {
   border: none;
 }
 
-/* 次要按钮 - 金色边框 */
+/* 次要按钮 - 达姆森色系边框 */
 .btn-secondary {
   width: 100%;
   height: 88rpx;
   background: transparent;
-  border: 2rpx solid #d4af37;
+  border: 2rpx solid #c896b4;
   border-radius: 16rpx;
   color: #ffffff;
   font-size: 32rpx;
@@ -542,7 +542,7 @@ page {
 /* 底部编号 */
 .footer-number {
   font-size: 24rpx;
-  color: #d4af37;
+  color: #c896b4;
   text-align: center;
   letter-spacing: 1rpx;
 }
@@ -552,14 +552,14 @@ page {
   margin-top: 40rpx;
   padding: 30rpx;
   background: rgba(255, 255, 255, 0.05);
-  border: 1rpx solid rgba(212, 175, 55, 0.3);
+  border: 1rpx solid rgba(200, 150, 180, 0.3);
   border-radius: 16rpx;
   backdrop-filter: blur(10rpx);
 }
 
 .input-label {
   font-size: 28rpx;
-  color: #d4af37;
+  color: #c896b4;
   margin-bottom: 20rpx;
   font-weight: 500;
 }
@@ -569,7 +569,7 @@ page {
   min-height: 120rpx;
   padding: 20rpx;
   background: rgba(0, 0, 0, 0.3);
-  border: 1rpx solid rgba(212, 175, 55, 0.2);
+  border: 1rpx solid rgba(200, 150, 180, 0.2);
   border-radius: 12rpx;
   color: #ffffff;
   font-size: 28rpx;
@@ -584,15 +584,15 @@ page {
 .ai-result-container {
   margin-top: 40rpx;
   padding: 30rpx;
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
-  border: 1rpx solid rgba(212, 175, 55, 0.4);
+  background: linear-gradient(135deg, rgba(200, 150, 180, 0.1) 0%, rgba(160, 107, 127, 0.05) 100%);
+  border: 1rpx solid rgba(200, 150, 180, 0.4);
   border-radius: 16rpx;
   backdrop-filter: blur(10rpx);
 }
 
 .result-title {
   font-size: 32rpx;
-  color: #d4af37;
+  color: #c896b4;
   margin-bottom: 20rpx;
   font-weight: 600;
   text-align: center;
