@@ -44,7 +44,7 @@
     <!-- 抽卡区域 -->
     <view class="card-draw-container">
       <!-- 选中框 -->
-      <view class="selected-frame"></view>
+      <!-- <view class="selected-frame"></view> >
       
       <!-- 卡牌滚动容器 -->
       <view class="cards-scroll-wrapper">
