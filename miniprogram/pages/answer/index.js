@@ -299,6 +299,19 @@ Page({
       if (result.result && result.result.success) {
         const data = result.result.data;
         
+        // 提取并打印 debug_url 和 usage（用于分析）
+        if (data.debug_url) {
+          log.info('onAIInterpret', 'Coze工作流调试链接', { debug_url: data.debug_url });
+        }
+        
+        if (data.usage) {
+          log.info('onAIInterpret', 'Coze工作流Token使用情况', {
+            token_count: data.usage.token_count,
+            output_count: data.usage.output_count,
+            input_count: data.usage.input_count
+          });
+        }
+        
         // 提取AI解读结果
         let interpretation = '';
         if (data.data) {
