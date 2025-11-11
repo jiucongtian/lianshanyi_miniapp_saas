@@ -84,7 +84,7 @@
     <!-- AI解读结果显示 -->
     <view class="ai-result-container" wx:if="{{aiInterpretation}}">
       <view class="result-title">AI解读结果</view>
-      <view class="result-content">{{aiInterpretation}}</view>
+      <text class="result-content">{{aiInterpretation}}</text>
     </view>
 
     <!-- 按钮区域 -->

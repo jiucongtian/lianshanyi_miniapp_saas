@@ -315,8 +315,32 @@ Page({
         // 提取AI解读结果
         let interpretation = '';
         if (data.data) {
-          // 尝试从不同的字段提取解读结果
-          interpretation = data.data.output || data.data.result || data.data.text || JSON.stringify(data.data);
+          try {
+            // data.data 是一个 JSON 字符串，需要先解析
+            const parsedData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+            
+            // 从解析后的对象中提取 data 字段（这是实际的解读内容）
+            if (parsedData && parsedData.data) {
+              interpretation = parsedData.data;
+              
+              // 处理转义字符：JSON.parse 后，\\n 会变成 \n（反斜杠+n字符），需要转换为真正的换行符
+              // 注意：先处理转义序列，最后处理双反斜杠，避免转义序列被误处理
+              interpretation = interpretation
+                .replace(/\\n/g, '\n')            // 换行符
+                .replace(/\\"/g, '"')             // 双引号
+                .replace(/\\'/g, "'")             // 单引号
+                .replace(/\\t/g, '\t')            // 制表符
+                .replace(/\\r/g, '\r')            // 回车符
+                .replace(/\\\\/g, '\\');          // 最后处理双反斜杠（保留单个反斜杠）
+            } else {
+              // 如果解析后没有 data 字段，尝试其他字段
+              interpretation = parsedData.output || parsedData.result || parsedData.text || JSON.stringify(parsedData);
+            }
+          } catch (parseError) {
+            log.error('onAIInterpret', '解析返回数据失败', { error: parseError.message, rawData: data.data });
+            // 如果解析失败，尝试直接使用原始数据
+            interpretation = typeof data.data === 'string' ? data.data : JSON.stringify(data.data);
+          }
         }
         
         this.setData({
