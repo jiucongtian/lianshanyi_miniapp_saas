@@ -1,0 +1,11 @@
+{
+  "name": "cozeFunctions_v1_3",
+  "version": "1.0.0",
+  "description": "Coze工作流调用云函数 v1.3",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "axios": "^0.27.2"
+  }
+}
+
