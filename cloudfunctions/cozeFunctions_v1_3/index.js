@@ -9,19 +9,28 @@ cloud.init({
 // Coze API 配置常量
 const COZE_CONFIG = {
   token: 'sat_JBr8tgHf8a8IkpwoFMpNWiioLFdqdAWj9O8HVRZ7DFmYqQf2wKzf92vRqKjQQMdv',
-  baseURL: 'https://api.coze.cn',
-  defaultWorkflowId: '7565131575660003366'  // 抽卡牌工作流
+  baseURL: 'https://api.coze.cn'
 }
+
+// 工作流类型枚举映射
+const WORKFLOW_TYPES = {
+  DRAW_CARD: '7565131575660003366',        // 抽卡牌工作流
+  GEN_BAZI: '7544388114807095337',         // 生成八字工作流
+  // 后续可以在这里添加更多工作流
+  // WORKFLOW_NAME: 'workflow_id',
+}
+
+// 默认工作流类型
+const DEFAULT_WORKFLOW_TYPE = 'DRAW_CARD'
 
 /**
  * 调用Coze工作流
  * @param {Object} parameters - 工作流参数
- * @param {string} workflowId - 工作流ID（可选，如果不传则使用默认值）
+ * @param {string} workflowId - 工作流ID
  * @returns {Promise} 返回工作流执行结果
  */
-async function callCozeAPI(parameters, workflowId = null) {
-  // 使用传入的 workflowId 或默认值
-  const finalWorkflowId = workflowId || COZE_CONFIG.defaultWorkflowId;
+async function callCozeAPI(parameters, workflowId) {
+  const finalWorkflowId = workflowId;
   
   // 检查必需的参数
   if (!COZE_CONFIG.token) {
@@ -100,58 +109,66 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   
   try {
-    console.log('=== cozeFunctions_v1_3 抽卡牌调用开始 ===');
+    console.log('=== cozeFunctions_v1_3 调用开始 ===');
     console.log('接收到的参数:', JSON.stringify(event, null, 2));
     
-    const { bazi_name, question, workflowId } = event;
+    const { workflowType, parameters } = event;
     
     // 验证必需参数
-    if (!bazi_name) {
+    if (!parameters) {
       return {
         success: false,
-        error: '缺少必要参数: bazi_name (八字组合名)',
+        error: '缺少必要参数: parameters',
         timestamp: new Date().getTime()
       };
     }
     
-    // 构建 Coze 工作流参数
-    const cozeParameters = {
-      bazi_name: bazi_name,
-      question: question || ''  // 问题可以为空
-    };
+    // 确定工作流类型，使用传入的类型或默认类型
+    const finalWorkflowType = workflowType || DEFAULT_WORKFLOW_TYPE;
     
-    console.log('八字组合名:', bazi_name);
-    console.log('咨询问题:', question || '(无)');
-    console.log('WorkflowId:', workflowId || COZE_CONFIG.defaultWorkflowId);
+    // 根据工作流类型获取对应的 workflowId
+    const workflowId = WORKFLOW_TYPES[finalWorkflowType];
+    
+    if (!workflowId) {
+      return {
+        success: false,
+        error: `不支持的工作流类型: ${finalWorkflowType}。支持的类型: ${Object.keys(WORKFLOW_TYPES).join(', ')}`,
+        timestamp: new Date().getTime()
+      };
+    }
+    
+    console.log('工作流类型:', finalWorkflowType);
+    console.log('工作流ID:', workflowId);
+    console.log('传入参数:', JSON.stringify(parameters, null, 2));
     
     // 调用 Coze API
-    const result = await callCozeAPI(cozeParameters, workflowId);
+    const result = await callCozeAPI(parameters, workflowId);
     console.log('Coze API 调用成功');
     
     // 构建返回结果
     const response = {
       success: true,
       data: result.data,              // 原始 Coze 响应数据
-      workflowId: result.workflowId,
-      bazi_name: bazi_name,
-      question: question || null,
+      workflowType: finalWorkflowType,
+      workflowId: workflowId,
+      parameters: parameters,
       openid: wxContext.OPENID,
       appid: wxContext.APPID,
       unionid: wxContext.UNIONID,
       timestamp: new Date().getTime()
     };
     
-    console.log('=== cozeFunctions_v1_3 抽卡牌调用成功 ===');
+    console.log('=== cozeFunctions_v1_3 调用成功 ===');
     return response;
     
   } catch (error) {
-    console.error('=== cozeFunctions_v1_3 抽卡牌调用失败 ===');
+    console.error('=== cozeFunctions_v1_3 调用失败 ===');
     console.error('错误信息:', error.message);
     console.error('错误堆栈:', error.stack);
     
     return {
       success: false,
-      error: error.message || '抽卡牌失败',
+      error: error.message || 'Coze工作流调用失败',
       code: error.code,
       timestamp: new Date().getTime()
     };
