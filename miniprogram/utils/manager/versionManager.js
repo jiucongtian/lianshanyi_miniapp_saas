@@ -24,7 +24,14 @@ class VersionManager {
     '1.2.0': {
       calculateBazi: 'v1_1',
       userManagement: 'v1_0',
-      profileManagement: 'v1_2'
+      profileManagement: 'v1_2',
+      cozeFunctions: 'v1_3'
+    },
+    '1.3.0': {
+      calculateBazi: 'v1_1',
+      userManagement: 'v1_0',
+      profileManagement: 'v1_2',
+      cozeFunctions: 'v1_3'
     }
   };
   

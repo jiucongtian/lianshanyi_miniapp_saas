@@ -1,7 +1,14 @@
+const { VersionManager } = require('../../utils/manager/versionManager');
+const { createModuleLogger } = require('../../utils/logger/index');
+const log = createModuleLogger('AnswerPage');
+
 Page({
   data: {
     answerNumber: 188, // 答案编号
     question: '', // 用户的问题
+    ganzhiInput: '', // 干支输入框
+    aiInterpretation: '', // AI解读结果
+    isInterpreting: false, // 是否正在解读
     // 转圈动画相关数据
     tianGan: ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'],
     tianGanIndices: Array.from({ length: 10 }, (_, i) => i), // 天干索引数组
@@ -221,12 +228,137 @@ Page({
   },
 
   /**
-   * 再问一次按钮点击事件
+   * 干支输入框变化事件
    */
-  onAskAgain() {
-    console.log('[AnswerPage] 点击再问一次');
-    // 返回首页
-    wx.navigateBack();
+  onGanzhiInput(e) {
+    this.setData({
+      ganzhiInput: e.detail.value
+    });
+  },
+
+  /**
+   * AI解读按钮点击事件
+   */
+  async onAIInterpret() {
+    log.info('onAIInterpret', '点击AI解读');
+    
+    // 验证输入
+    if (!this.data.ganzhiInput || this.data.ganzhiInput.trim() === '') {
+      wx.showToast({
+        title: '请输入干支文字',
+        icon: 'none',
+        duration: 2000
+      });
+      return;
+    }
+    
+    // 如果正在解读，忽略点击
+    if (this.data.isInterpreting) {
+      log.warn('onAIInterpret', '正在解读中，忽略点击');
+      return;
+    }
+    
+    // 显示加载提示
+    wx.showLoading({
+      title: 'AI解读中...',
+      mask: true
+    });
+    
+    // 标记开始解读
+    this.setData({
+      isInterpreting: true
+    });
+    
+    try {
+      // 通过版本管理器获取云函数名称
+      const functionName = VersionManager.getFunctionName('cozeFunctions');
+      log.info('onAIInterpret', '调用云函数', { 
+        functionName, 
+        bazi_name: this.data.ganzhiInput,
+        question: this.data.question 
+      });
+      
+      // 调用云函数
+      const result = await wx.cloud.callFunction({
+        name: functionName,
+        data: {
+          workflowType: 'DRAW_CARD', // 使用抽卡工作流，如需专门的解读工作流请修改此处
+          parameters: {
+            bazi_name: this.data.ganzhiInput, // DRAW_CARD工作流需要bazi_name参数
+            question: this.data.question || '' // question为可选参数
+          }
+        }
+      });
+      
+      log.info('onAIInterpret', '云函数调用结果', result);
+      
+      // 隐藏加载提示
+      wx.hideLoading();
+      
+      // 处理返回结果
+      if (result.result && result.result.success) {
+        const data = result.result.data;
+        
+        // 提取AI解读结果
+        let interpretation = '';
+        if (data.data) {
+          // 尝试从不同的字段提取解读结果
+          interpretation = data.data.output || data.data.result || data.data.text || JSON.stringify(data.data);
+        }
+        
+        this.setData({
+          aiInterpretation: interpretation
+        });
+        
+        log.info('onAIInterpret', 'AI解读成功', { interpretation });
+        
+        wx.showToast({
+          title: '解读成功',
+          icon: 'success',
+          duration: 2000
+        });
+      } else {
+        const errorMsg = result.result?.error || '解读失败，请重试';
+        log.error('onAIInterpret', '云函数返回失败', { error: errorMsg });
+        
+        wx.showToast({
+          title: errorMsg,
+          icon: 'none',
+          duration: 2000
+        });
+      }
+    } catch (error) {
+      log.error('onAIInterpret', '调用云函数失败', { error: error.message });
+      
+      wx.hideLoading();
+      
+      // 处理超时错误
+      let errorMessage = '网络错误，请重试';
+      if (error.message && error.message.includes('timeout')) {
+        errorMessage = 'AI解读需要较长时间，请稍后再试或检查云函数配置';
+      } else if (error.message && error.message.includes('FUNCTIONS_TIME_LIMIT_EXCEEDED')) {
+        errorMessage = '请求超时，请检查云函数超时配置（建议30秒）';
+      } else if (error.message) {
+        // 提取更友好的错误信息
+        const errorStr = error.message.toString();
+        if (errorStr.includes('errCode')) {
+          errorMessage = '服务暂时不可用，请稍后再试';
+        } else {
+          errorMessage = error.message.length > 30 ? '请求失败，请重试' : error.message;
+        }
+      }
+      
+      wx.showToast({
+        title: errorMessage,
+        icon: 'none',
+        duration: 3000
+      });
+    } finally {
+      // 结束解读状态
+      this.setData({
+        isInterpreting: false
+      });
+    }
   }
 });
 

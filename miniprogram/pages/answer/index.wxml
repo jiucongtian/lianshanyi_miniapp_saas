@@ -68,10 +68,31 @@
       </view>
     </view>
 
+    <!-- 干支输入区域 -->
+    <view class="ganzhi-input-container">
+      <view class="input-label">干支文字</view>
+      <textarea 
+        class="ganzhi-textarea"
+        placeholder="请输入要解读的干支文字"
+        value="{{ganzhiInput}}"
+        bindinput="onGanzhiInput"
+        maxlength="200"
+        auto-height
+      />
+    </view>
+
+    <!-- AI解读结果显示 -->
+    <view class="ai-result-container" wx:if="{{aiInterpretation}}">
+      <view class="result-title">AI解读结果</view>
+      <view class="result-content">{{aiInterpretation}}</view>
+    </view>
+
     <!-- 按钮区域 -->
     <view class="button-container">
       <button class="btn-primary" bindtap="onAnalyzeAnswer">抽卡</button>
-      <button class="btn-secondary" bindtap="onAskAgain">再问一次</button>
+      <button class="btn-secondary" bindtap="onAIInterpret" disabled="{{isInterpreting}}">
+        {{isInterpreting ? '解读中...' : 'AI解读'}}
+      </button>
     </view>
   </view>
 </view>
