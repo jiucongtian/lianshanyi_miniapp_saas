@@ -58,14 +58,17 @@ page {
 
 /* 主内容卡片 */
 .main-card {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(45, 26, 46, 0.85);
+  backdrop-filter: blur(20rpx);
   border: 4rpx solid #c896b4;
   border-radius: 24rpx;
   padding: 80rpx 52rpx;
   margin: 100rpx 0;
   position: relative;
   z-index: 10;
-  box-shadow: 0 0 40rpx rgba(200, 150, 180, 0.3);
+  box-shadow: 
+    0 0 40rpx rgba(200, 150, 180, 0.3),
+    inset 0 0 60rpx rgba(133, 76, 101, 0.1);
   flex: 1;
   display: flex;
   flex-direction: column;
