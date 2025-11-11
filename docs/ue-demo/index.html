@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小程序页面结构优化 - 方案五演示</title>
+    <title>小程序页面结构优化 - 多方案演示</title>
     <style>
         * {
             margin: 0;
@@ -102,6 +102,7 @@
             position: relative;
         }
 
+
         /* TabBar */
         .tab-bar {
             height: 50px;
@@ -153,9 +154,9 @@
         /* 页面样式 */
         .page {
             display: none;
-            padding: 15px;
             height: 100%;
-            overflow-y: auto;
+            overflow: hidden;
+            position: relative;
         }
 
         .page.active {
@@ -475,6 +476,385 @@
             flex: 1;
             padding: 12px;
         }
+
+        /* 智慧洞见页面样式 */
+        .wisdom-home {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            height: calc(100% - 50px);
+            position: relative;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .wisdom-home::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 255, 150, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 60%, rgba(255, 0, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(255, 215, 0, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .wisdom-header {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .wisdom-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        .wisdom-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
+        }
+
+        .wisdom-decorations {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 30px 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .decoration-circle {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d4af37;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+        }
+
+        .decoration-star {
+            font-size: 24px;
+            color: white;
+            margin: 0 12px;
+        }
+
+        .wisdom-prompt {
+            text-align: center;
+            color: white;
+            font-size: 16px;
+            margin: 30px 0 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .wisdom-example {
+            text-align: center;
+            color: #d4af37;
+            font-size: 16px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .wisdom-hint {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .wisdom-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .wisdom-input::placeholder {
+            color: #999;
+        }
+
+        .wisdom-button {
+            width: 100%;
+            background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .wisdom-button:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+        }
+
+        .wisdom-status-bar {
+            position: absolute;
+            top: 0;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            z-index: 2;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        .status-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* 方案切换器 */
+        .scheme-switcher {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10000;
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .scheme-switch-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .scheme-switch-btn.active {
+            background: #667eea;
+            color: white;
+            font-weight: 500;
+        }
+
+        /* 方案一：原方案（紫色系） */
+        .scheme-original .tab-item.active {
+            color: #667eea;
+        }
+
+        .scheme-original .wisdom-home {
+            background: #000000;
+        }
+
+        .scheme-original .wisdom-home::before {
+            background: none;
+        }
+
+        .scheme-original .card-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .scheme-original .btn-primary {
+            background: #667eea;
+        }
+
+        .scheme-original .user-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .scheme-original .fab {
+            background: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .scheme-original .highlight {
+            color: #667eea;
+        }
+
+        /* 方案二：Damson（达姆森）色系 - 深紫红色 */
+        .scheme-damson .tab-item.active {
+            color: #854C65;
+        }
+
+        .scheme-damson .card-item {
+            background: linear-gradient(135deg, #854C65 0%, #A06B7F 100%);
+        }
+
+        .scheme-damson .btn-primary {
+            background: #854C65;
+        }
+
+        .scheme-damson .user-card {
+            background: linear-gradient(135deg, #854C65 0%, #A06B7F 100%);
+        }
+
+        .scheme-damson .fab {
+            background: #854C65;
+            box-shadow: 0 4px 12px rgba(133, 76, 101, 0.4);
+        }
+
+        .scheme-damson .highlight {
+            color: #854C65;
+        }
+
+        .scheme-damson .wisdom-home {
+            background: linear-gradient(180deg, #2d1a2e 0%, #3d1f3e 50%, #4d1f4e 100%);
+        }
+
+        .scheme-damson .wisdom-home::before {
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(133, 76, 101, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 60%, rgba(160, 107, 127, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(200, 150, 180, 0.15) 0%, transparent 50%);
+        }
+
+        .scheme-damson .decoration-circle {
+            background: #c896b4;
+            box-shadow: 0 0 10px rgba(200, 150, 180, 0.6);
+        }
+
+        .scheme-damson .wisdom-example {
+            color: #c896b4;
+        }
+
+        .scheme-damson .wisdom-button {
+            background: linear-gradient(135deg, #854C65 0%, #A06B7F 100%);
+            box-shadow: 0 4px 20px rgba(133, 76, 101, 0.4);
+        }
+
+        .scheme-damson .wisdom-button:active {
+            box-shadow: 0 2px 10px rgba(133, 76, 101, 0.3);
+        }
+
+        /* 方案三：Lyons Blue（里昂蓝）色系 - 深蓝绿色 */
+        .scheme-lyons .tab-bar {
+            background: rgba(250, 252, 255, 0.95);
+            border-top: 1px solid rgba(1, 88, 113, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .scheme-lyons .tab-item {
+            color: #8fb3c0;
+        }
+
+        .scheme-lyons .tab-item.active {
+            color: #015871;
+        }
+
+        .scheme-lyons .tab-item:active {
+            background: rgba(1, 88, 113, 0.08);
+        }
+
+        .scheme-lyons .card-item {
+            background: linear-gradient(135deg, #015871 0%, #027A9A 100%);
+        }
+
+        .scheme-lyons .btn-primary {
+            background: #015871;
+        }
+
+        .scheme-lyons .user-card {
+            background: linear-gradient(135deg, #015871 0%, #027A9A 100%);
+        }
+
+        .scheme-lyons .fab {
+            background: #015871;
+            box-shadow: 0 4px 12px rgba(1, 88, 113, 0.4);
+        }
+
+        .scheme-lyons .highlight {
+            color: #015871;
+        }
+
+        .scheme-lyons .wisdom-home {
+            background: linear-gradient(180deg, #0a1a2e 0%, #0d2a3e 50%, #0f3a4e 100%);
+        }
+
+        .scheme-lyons .wisdom-home::before {
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(1, 88, 113, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 60%, rgba(2, 122, 154, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(100, 180, 200, 0.15) 0%, transparent 50%);
+        }
+
+        .scheme-lyons .decoration-circle {
+            background: #64b4c8;
+            box-shadow: 0 0 10px rgba(100, 180, 200, 0.6);
+        }
+
+        .scheme-lyons .wisdom-example {
+            color: #64b4c8;
+        }
+
+        .scheme-lyons .wisdom-button {
+            background: linear-gradient(135deg, #015871 0%, #027A9A 100%);
+            box-shadow: 0 4px 20px rgba(1, 88, 113, 0.4);
+        }
+
+        .scheme-lyons .wisdom-button:active {
+            box-shadow: 0 2px 10px rgba(1, 88, 113, 0.3);
+        }
+
+        /* 商店卡片样式适配 */
+        .scheme-original .store-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .scheme-damson .store-card {
+            background: linear-gradient(135deg, #854C65 0%, #A06B7F 100%);
+            box-shadow: 0 4px 12px rgba(133, 76, 101, 0.3);
+        }
+
+        .scheme-lyons .store-card {
+            background: linear-gradient(135deg, #015871 0%, #027A9A 100%);
+            box-shadow: 0 4px 12px rgba(1, 88, 113, 0.3);
+        }
+
+        /* 缓存信息颜色适配 */
+        .scheme-original .cache-value {
+            color: #667eea;
+        }
+
+        .scheme-damson .cache-value {
+            color: #854C65;
+        }
+
+        .scheme-lyons .cache-value {
+            color: #015871;
+        }
     </style>
 </head>
 <body>
@@ -488,58 +868,57 @@
                     <span>📶 🔋</span>
                 </div>
 
+                <!-- 方案切换器 -->
+                <div class="scheme-switcher">
+                    <button class="scheme-switch-btn active" onclick="switchScheme('original', event)">原方案</button>
+                    <button class="scheme-switch-btn" onclick="switchScheme('damson', event)">达姆森</button>
+                    <button class="scheme-switch-btn" onclick="switchScheme('lyons', event)">里昂蓝</button>
+                </div>
+
                 <!-- 方案视图容器 -->
                 <div class="scheme-views-container">
-                    <!-- 方案五：牌库抽屉 -->
-                <div id="scheme5" class="scheme-view active">
+                    <!-- 方案一：原方案（紫色系） -->
+                <div id="scheme-original" class="scheme-view active scheme-original">
                     <!-- 首页 -->
-                    <div id="scheme5-home" class="page active">
-                        <div class="nav-bar">
-                            <div class="nav-title">首页</div>
-                        </div>
-                        <div class="page-content">
-                            <div style="padding: 15px;">
-                                <!-- 智慧洞见 -->
-                                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; padding: 20px; margin-bottom: 15px; color: white; cursor: pointer;" onclick="alert('智慧洞见')">
-                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                                        <div style="font-size: 24px;">💡</div>
-                                        <h3 style="font-size: 18px; margin: 0;">智慧洞见</h3>
-                                    </div>
-                                    <p style="font-size: 14px; opacity: 0.9; margin: 0;">深度洞察，启迪人生</p>
-                                </div>
-
-                                <!-- 智慧愈言 -->
-                                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 8px; padding: 20px; margin-bottom: 15px; color: white; cursor: pointer;" onclick="alert('智慧愈言')">
-                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                                        <div style="font-size: 24px;">❤️</div>
-                                        <h3 style="font-size: 18px; margin: 0;">智慧愈言</h3>
-                                    </div>
-                                    <p style="font-size: 14px; opacity: 0.9; margin: 0;">温暖治愈，抚慰心灵</p>
-                                </div>
-
-                                <!-- 智慧答案 -->
-                                <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 8px; padding: 20px; margin-bottom: 15px; color: white; cursor: pointer;" onclick="alert('智慧答案')">
-                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                                        <div style="font-size: 24px;">🔮</div>
-                                        <h3 style="font-size: 18px; margin: 0;">智慧答案</h3>
-                                    </div>
-                                    <p style="font-size: 14px; opacity: 0.9; margin: 0;">解答疑惑，指引方向</p>
-                                </div>
-
-                                <!-- 日报 -->
-                                <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 8px; padding: 20px; margin-bottom: 15px; color: white; cursor: pointer;" onclick="alert('日报')">
-                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                                        <div style="font-size: 24px;">📰</div>
-                                        <h3 style="font-size: 18px; margin: 0;">日报</h3>
-                                    </div>
-                                    <p style="font-size: 14px; opacity: 0.9; margin: 0;">每日更新，持续成长</p>
-                                </div>
+                    <div id="scheme-original-home" class="page active">
+                        <div class="wisdom-home">
+                            <!-- 状态栏图标 -->
+                            <div class="wisdom-status-bar">
+                                <div class="status-dot"></div>
+                                <div class="status-dot"></div>
+                                <div class="status-dot"></div>
+                                <div class="status-icon"></div>
                             </div>
+
+                            <!-- 标题区域 -->
+                            <div class="wisdom-header">
+                                <div class="wisdom-title">《智慧洞见》</div>
+                                <div class="wisdom-subtitle">The book of answer</div>
+                            </div>
+
+                            <!-- 装饰元素 -->
+                            <div class="wisdom-decorations">
+                                <div class="decoration-circle"></div>
+                                <div class="decoration-circle"></div>
+                                <div class="decoration-circle"></div>
+                                <div class="decoration-star">★</div>
+                            </div>
+
+                            <!-- 提示文字 -->
+                            <div class="wisdom-prompt">心中默念,思考你的问题:</div>
+                            <div class="wisdom-example">我应该去表白吗?</div>
+                            <div class="wisdom-hint">命运已翻开书页,你准备好提问了吗?</div>
+
+                            <!-- 输入框 -->
+                            <input type="text" class="wisdom-input" placeholder="说出你的问题" />
+
+                            <!-- 按钮 -->
+                            <button class="wisdom-button" onclick="alert('寻找答案功能')">寻找答案</button>
                         </div>
                     </div>
 
                     <!-- 卡牌页面 -->
-                    <div id="scheme5-card" class="page">
+                    <div id="scheme-original-card" class="page">
                         <div class="nav-bar">
                             <div class="nav-title">卡牌</div>
                             <div class="nav-btn" onclick="showDrawer('scheme5-profile-list')" style="cursor: pointer;">📚</div>
@@ -566,7 +945,7 @@
                     </div>
 
                     <!-- 我的页面 -->
-                    <div id="scheme5-mine" class="page">
+                    <div id="scheme-original-mine" class="page">
                         <div class="nav-bar">
                             <div class="nav-title">我的</div>
                             <div class="nav-btn" onclick="showPopup('scheme5-settings-menu')">⚙️</div>
@@ -580,14 +959,12 @@
                             
                             <!-- 商店入口卡片 -->
                             <div style="margin: 15px; margin-top: 0; margin-bottom: 15px;">
-                                <div onclick="alert('进入商店')" style="
-                                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                <div onclick="alert('进入商店')" class="store-card" style="
                                     border-radius: 8px;
                                     padding: 18px 20px;
                                     display: flex;
                                     align-items: center;
                                     justify-content: space-between;
-                                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
                                     cursor: pointer;
                                     transition: transform 0.2s;
                                 " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
@@ -614,7 +991,7 @@
                             <div class="menu-list">
                                 <div class="menu-group">
                                     <div class="menu-group-title">功能</div>
-                                    <div class="menu-item" onclick="switchTabScheme5(null, 'card')">
+                                    <div class="menu-item" onclick="switchTab('original', null, 'card')">
                                         <div class="menu-item-left">
                                             <span class="menu-item-icon">🃏</span>
                                             <span>查看卡牌</span>
@@ -638,15 +1015,15 @@
 
                     <!-- TabBar -->
                     <div class="tab-bar">
-                        <div class="tab-item active" onclick="switchTabScheme5(this, 'home')">
+                        <div class="tab-item active" onclick="switchTab('original', this, 'home')">
                             <div class="tab-icon">🏠</div>
                             <div class="tab-text">首页</div>
                         </div>
-                        <div class="tab-item" onclick="switchTabScheme5(this, 'card')">
+                        <div class="tab-item" onclick="switchTab('original', this, 'card')">
                             <div class="tab-icon">🃏</div>
                             <div class="tab-text">卡牌</div>
                         </div>
-                        <div class="tab-item" onclick="switchTabScheme5(this, 'mine')">
+                        <div class="tab-item" onclick="switchTab('original', this, 'mine')">
                             <div class="tab-icon">👤</div>
                             <div class="tab-text">我的</div>
                         </div>
@@ -660,7 +1037,7 @@
                         </div>
                         <div class="drawer-content">
                             <div class="profile-list">
-                                <div class="profile-item" onclick="hideDrawer(); switchTabScheme5(null, 'card');">
+                                <div class="profile-item" onclick="hideDrawer(); switchTab('original', null, 'card');">
                                     <div class="profile-info">
                                         <h3>张三 - 男</h3>
                                         <p>1990年1月1日 子时</p>
@@ -669,7 +1046,7 @@
                                         <button class="btn btn-edit" onclick="event.stopPropagation(); showDrawer('scheme5-edit-profile');">编辑</button>
                                     </div>
                                 </div>
-                                <div class="profile-item" onclick="hideDrawer(); switchTabScheme5(null, 'card');">
+                                <div class="profile-item" onclick="hideDrawer(); switchTab('original', null, 'card');">
                                     <div class="profile-info">
                                         <h3>李四 - 女</h3>
                                         <p>1992年5月15日 午时</p>
@@ -793,11 +1170,11 @@
                             <div style="margin-bottom: 15px;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                                     <span>图片缓存</span>
-                                    <span style="color: #667eea;">12.5 MB</span>
+                                    <span class="cache-value" style="color: #667eea;">12.5 MB</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                                     <span>数据缓存</span>
-                                    <span style="color: #667eea;">2.3 MB</span>
+                                    <span class="cache-value" style="color: #667eea;">2.3 MB</span>
                                 </div>
                             </div>
                             <button class="btn btn-primary" style="width: 100%;" onclick="alert('缓存已清理')">清理缓存</button>
@@ -824,6 +1201,268 @@
 
                     <div class="drawer-mask" onclick="hideDrawer()"></div>
                 </div>
+
+                    <!-- 方案二：Damson（达姆森）色系 -->
+                <div id="scheme-damson" class="scheme-view scheme-damson">
+                    <!-- 首页 -->
+                    <div id="scheme-damson-home" class="page active">
+                        <div class="wisdom-home">
+                            <div class="wisdom-status-bar">
+                                <div class="status-dot"></div>
+                                <div class="status-dot"></div>
+                                <div class="status-dot"></div>
+                                <div class="status-icon"></div>
+                            </div>
+                            <div class="wisdom-header">
+                                <div class="wisdom-title">《智慧洞见》</div>
+                                <div class="wisdom-subtitle">The book of answer</div>
+                            </div>
+                            <div class="wisdom-decorations">
+                                <div class="decoration-circle"></div>
+                                <div class="decoration-circle"></div>
+                                <div class="decoration-circle"></div>
+                                <div class="decoration-star">★</div>
+                            </div>
+                            <div class="wisdom-prompt">心中默念,思考你的问题:</div>
+                            <div class="wisdom-example">我应该去表白吗?</div>
+                            <div class="wisdom-hint">命运已翻开书页,你准备好提问了吗?</div>
+                            <input type="text" class="wisdom-input" placeholder="说出你的问题" />
+                            <button class="wisdom-button" onclick="alert('寻找答案功能')">寻找答案</button>
+                        </div>
+                    </div>
+                    <!-- 卡牌页面 -->
+                    <div id="scheme-damson-card" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">卡牌</div>
+                            <div class="nav-btn" onclick="showDrawer('scheme-damson-profile-list')" style="cursor: pointer;">📚</div>
+                        </div>
+                        <div class="page-content">
+                            <div style="padding: 15px;">
+                                <div style="margin-bottom: 15px; text-align: center;">
+                                    <div style="font-size: 14px; color: #666; margin-bottom: 10px;">当前档案：张三</div>
+                                    <div class="card-grid">
+                                        <div class="card-item" onclick="alert('年柱卡牌详情')">年</div>
+                                        <div class="card-item" onclick="alert('月柱卡牌详情')">月</div>
+                                        <div class="card-item" onclick="alert('日柱卡牌详情')">日</div>
+                                        <div class="card-item" onclick="alert('时柱卡牌详情')">时</div>
+                                    </div>
+                                </div>
+                                <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center;">
+                                    <p style="font-size: 12px; color: #666;">点击卡牌查看详情<br/>点击右上角 📚 查看牌库列表</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 我的页面 -->
+                    <div id="scheme-damson-mine" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">我的</div>
+                            <div class="nav-btn" onclick="showPopup('scheme-damson-settings-menu')">⚙️</div>
+                        </div>
+                        <div class="page-content">
+                            <div class="user-card" onclick="showDrawer('scheme-damson-edit-user')">
+                                <h2>张三</h2>
+                                <p>探索者 | 已创建 2/50 个档案</p>
+                                <p style="margin-top: 10px; font-size: 12px; opacity: 0.8;">点击编辑资料</p>
+                            </div>
+                            <div style="margin: 15px; margin-top: 0; margin-bottom: 15px;">
+                                <div onclick="alert('进入商店')" class="store-card" style="border-radius: 8px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 48px; height: 48px; background: rgba(255, 255, 255, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🛒</div>
+                                        <div>
+                                            <div style="color: white; font-size: 16px; font-weight: 500; margin-bottom: 4px;">商店</div>
+                                            <div style="color: rgba(255, 255, 255, 0.9); font-size: 12px;">探索更多功能与服务</div>
+                                        </div>
+                                    </div>
+                                    <div style="color: white; font-size: 18px;">></div>
+                                </div>
+                            </div>
+                            <div class="menu-list">
+                                <div class="menu-group">
+                                    <div class="menu-group-title">功能</div>
+                                    <div class="menu-item" onclick="switchTab('damson', null, 'card')">
+                                        <div class="menu-item-left"><span class="menu-item-icon">🃏</span><span>查看卡牌</span></div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                                <div class="menu-group">
+                                    <div class="menu-group-title">其他</div>
+                                    <div class="menu-item" onclick="alert('商店功能')">
+                                        <div class="menu-item-left"><span class="menu-item-icon">🛒</span><span>商店</span></div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- TabBar -->
+                    <div class="tab-bar">
+                        <div class="tab-item active" onclick="switchTab('damson', this, 'home')">
+                            <div class="tab-icon">🏠</div>
+                            <div class="tab-text">首页</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTab('damson', this, 'card')">
+                            <div class="tab-icon">🃏</div>
+                            <div class="tab-text">卡牌</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTab('damson', this, 'mine')">
+                            <div class="tab-icon">👤</div>
+                            <div class="tab-text">我的</div>
+                        </div>
+                    </div>
+                    <!-- 抽屉和弹窗（简化版，复用原方案的逻辑） -->
+                    <div class="drawer" id="drawer-scheme-damson-profile-list">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">我的牌库</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="profile-list">
+                                <div class="profile-item" onclick="hideDrawer(); switchTab('damson', null, 'card');">
+                                    <div class="profile-info"><h3>张三 - 男</h3><p>1990年1月1日 子时</p></div>
+                                    <div class="profile-actions"><button class="btn btn-edit" onclick="event.stopPropagation(); showDrawer('scheme-damson-edit-profile');">编辑</button></div>
+                                </div>
+                                <div class="profile-item" onclick="hideDrawer(); switchTab('damson', null, 'card');">
+                                    <div class="profile-info"><h3>李四 - 女</h3><p>1992年5月15日 午时</p></div>
+                                    <div class="profile-actions"><button class="btn btn-edit" onclick="event.stopPropagation(); showDrawer('scheme-damson-edit-profile');">编辑</button></div>
+                                </div>
+                            </div>
+                            <div style="padding: 15px;"><button class="btn btn-primary" style="width: 100%;" onclick="showDrawer('scheme-damson-add-profile')">+ 添加档案</button></div>
+                        </div>
+                    </div>
+                    <div class="drawer-mask" onclick="hideDrawer()"></div>
+                </div>
+
+                    <!-- 方案三：Lyons Blue（里昂蓝）色系 -->
+                <div id="scheme-lyons" class="scheme-view scheme-lyons">
+                    <!-- 首页 -->
+                    <div id="scheme-lyons-home" class="page active">
+                        <div class="wisdom-home">
+                            <div class="wisdom-status-bar">
+                                <div class="status-dot"></div>
+                                <div class="status-dot"></div>
+                                <div class="status-dot"></div>
+                                <div class="status-icon"></div>
+                            </div>
+                            <div class="wisdom-header">
+                                <div class="wisdom-title">《智慧洞见》</div>
+                                <div class="wisdom-subtitle">The book of answer</div>
+                            </div>
+                            <div class="wisdom-decorations">
+                                <div class="decoration-circle"></div>
+                                <div class="decoration-circle"></div>
+                                <div class="decoration-circle"></div>
+                                <div class="decoration-star">★</div>
+                            </div>
+                            <div class="wisdom-prompt">心中默念,思考你的问题:</div>
+                            <div class="wisdom-example">我应该去表白吗?</div>
+                            <div class="wisdom-hint">命运已翻开书页,你准备好提问了吗?</div>
+                            <input type="text" class="wisdom-input" placeholder="说出你的问题" />
+                            <button class="wisdom-button" onclick="alert('寻找答案功能')">寻找答案</button>
+                        </div>
+                    </div>
+                    <!-- 卡牌页面 -->
+                    <div id="scheme-lyons-card" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">卡牌</div>
+                            <div class="nav-btn" onclick="showDrawer('scheme-lyons-profile-list')" style="cursor: pointer;">📚</div>
+                        </div>
+                        <div class="page-content">
+                            <div style="padding: 15px;">
+                                <div style="margin-bottom: 15px; text-align: center;">
+                                    <div style="font-size: 14px; color: #666; margin-bottom: 10px;">当前档案：张三</div>
+                                    <div class="card-grid">
+                                        <div class="card-item" onclick="alert('年柱卡牌详情')">年</div>
+                                        <div class="card-item" onclick="alert('月柱卡牌详情')">月</div>
+                                        <div class="card-item" onclick="alert('日柱卡牌详情')">日</div>
+                                        <div class="card-item" onclick="alert('时柱卡牌详情')">时</div>
+                                    </div>
+                                </div>
+                                <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center;">
+                                    <p style="font-size: 12px; color: #666;">点击卡牌查看详情<br/>点击右上角 📚 查看牌库列表</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 我的页面 -->
+                    <div id="scheme-lyons-mine" class="page">
+                        <div class="nav-bar">
+                            <div class="nav-title">我的</div>
+                            <div class="nav-btn" onclick="showPopup('scheme-lyons-settings-menu')">⚙️</div>
+                        </div>
+                        <div class="page-content">
+                            <div class="user-card" onclick="showDrawer('scheme-lyons-edit-user')">
+                                <h2>张三</h2>
+                                <p>探索者 | 已创建 2/50 个档案</p>
+                                <p style="margin-top: 10px; font-size: 12px; opacity: 0.8;">点击编辑资料</p>
+                            </div>
+                            <div style="margin: 15px; margin-top: 0; margin-bottom: 15px;">
+                                <div onclick="alert('进入商店')" class="store-card" style="border-radius: 8px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 48px; height: 48px; background: rgba(255, 255, 255, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🛒</div>
+                                        <div>
+                                            <div style="color: white; font-size: 16px; font-weight: 500; margin-bottom: 4px;">商店</div>
+                                            <div style="color: rgba(255, 255, 255, 0.9); font-size: 12px;">探索更多功能与服务</div>
+                                        </div>
+                                    </div>
+                                    <div style="color: white; font-size: 18px;">></div>
+                                </div>
+                            </div>
+                            <div class="menu-list">
+                                <div class="menu-group">
+                                    <div class="menu-group-title">功能</div>
+                                    <div class="menu-item" onclick="switchTab('lyons', null, 'card')">
+                                        <div class="menu-item-left"><span class="menu-item-icon">🃏</span><span>查看卡牌</span></div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                                <div class="menu-group">
+                                    <div class="menu-group-title">其他</div>
+                                    <div class="menu-item" onclick="alert('商店功能')">
+                                        <div class="menu-item-left"><span class="menu-item-icon">🛒</span><span>商店</span></div>
+                                        <span>></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- TabBar -->
+                    <div class="tab-bar">
+                        <div class="tab-item active" onclick="switchTab('lyons', this, 'home')">
+                            <div class="tab-icon">🏠</div>
+                            <div class="tab-text">首页</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTab('lyons', this, 'card')">
+                            <div class="tab-icon">🃏</div>
+                            <div class="tab-text">卡牌</div>
+                        </div>
+                        <div class="tab-item" onclick="switchTab('lyons', this, 'mine')">
+                            <div class="tab-icon">👤</div>
+                            <div class="tab-text">我的</div>
+                        </div>
+                    </div>
+                    <!-- 抽屉和弹窗（简化版，复用原方案的逻辑） -->
+                    <div class="drawer" id="drawer-scheme-lyons-profile-list">
+                        <div class="drawer-header">
+                            <span class="drawer-close" onclick="hideDrawer()">✕</span>
+                            <div class="drawer-title">我的牌库</div>
+                        </div>
+                        <div class="drawer-content">
+                            <div class="profile-list">
+                                <div class="profile-item" onclick="hideDrawer(); switchTab('lyons', null, 'card');">
+                                    <div class="profile-info"><h3>张三 - 男</h3><p>1990年1月1日 子时</p></div>
+                                    <div class="profile-actions"><button class="btn btn-edit" onclick="event.stopPropagation(); showDrawer('scheme-lyons-edit-profile');">编辑</button></div>
+                                </div>
+                                <div class="profile-item" onclick="hideDrawer(); switchTab('lyons', null, 'card');">
+                                    <div class="profile-info"><h3>李四 - 女</h3><p>1992年5月15日 午时</p></div>
+                                    <div class="profile-actions"><button class="btn btn-edit" onclick="event.stopPropagation(); showDrawer('scheme-lyons-edit-profile');">编辑</button></div>
+                                </div>
+                            </div>
+                            <div style="padding: 15px;"><button class="btn btn-primary" style="width: 100%;" onclick="showDrawer('scheme-lyons-add-profile')">+ 添加档案</button></div>
+                        </div>
+                    </div>
+                    <div class="drawer-mask" onclick="hideDrawer()"></div>
+                </div>
                 </div>
             </div>
         </div>
@@ -831,7 +1470,8 @@
         <!-- 说明 -->
         <div class="description">
             <h3>💡 操作说明</h3>
-            <p>• <span class="highlight">方案五（牌库抽屉）</span>：牌库整合为抽屉，有3个Tab（首页、卡牌、我的）</p>
+            <p>• <span class="highlight">三套设计方案</span>：原方案（紫色系）、达姆森（深紫红色系）、里昂蓝（深蓝绿色系）</p>
+            <p>• 点击左上角方案切换器可以在三套方案之间切换</p>
             <p>• 点击卡牌页面右上角📚图标打开牌库抽屉</p>
             <p>• 点击"编辑"按钮查看编辑档案抽屉效果</p>
             <p>• 点击设置按钮（⚙️）查看弹窗效果</p>
@@ -918,10 +1558,56 @@
             });
         }
 
-        // 切换Tab和页面
-        function switchTabScheme5(clickedElement, pageId) {
-            const scheme5 = document.getElementById('scheme5');
-            if (!scheme5 || !scheme5.classList.contains('active')) return;
+        // 切换方案
+        function switchScheme(schemeName, event) {
+            // 隐藏所有方案
+            document.querySelectorAll('.scheme-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // 显示选中的方案
+            const targetScheme = document.getElementById('scheme-' + schemeName);
+            if (targetScheme) {
+                targetScheme.classList.add('active');
+            }
+            
+            // 定义方案颜色映射
+            const schemeColors = {
+                'original': '#667eea',
+                'damson': '#854C65',
+                'lyons': '#015871'
+            };
+            
+            // 更新切换按钮状态和颜色
+            document.querySelectorAll('.scheme-switch-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = '#f0f0f0';
+                btn.style.color = '#666';
+            });
+            
+            let activeBtn = null;
+            if (event && event.target) {
+                activeBtn = event.target;
+            } else {
+                // 如果没有event，通过按钮文本查找
+                document.querySelectorAll('.scheme-switch-btn').forEach(btn => {
+                    if (btn.textContent.includes(schemeName === 'original' ? '原方案' : schemeName === 'damson' ? '达姆森' : '里昂蓝')) {
+                        activeBtn = btn;
+                    }
+                });
+            }
+            
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                activeBtn.style.background = schemeColors[schemeName] || '#667eea';
+                activeBtn.style.color = 'white';
+            }
+        }
+
+        // 切换Tab和页面（通用函数）
+        function switchTab(schemeName, clickedElement, pageId) {
+            const scheme = document.getElementById('scheme-' + schemeName);
+            if (!scheme || !scheme.classList.contains('active')) return;
             
             // 切换Tab状态（如果提供了clickedElement）
             if (clickedElement) {
@@ -934,7 +1620,7 @@
                 }
             } else {
                 // 如果没有提供clickedElement，根据pageId更新Tab状态
-                const tabBar = scheme5.querySelector('.tab-bar');
+                const tabBar = scheme.querySelector('.tab-bar');
                 if (tabBar) {
                     const tabItems = tabBar.querySelectorAll('.tab-item');
                     tabItems.forEach((item, index) => {
@@ -951,20 +1637,25 @@
             }
             
             // 切换页面
-            scheme5.querySelectorAll('.page').forEach(page => {
+            scheme.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
             });
             
             const pageMap = {
-                'home': 'scheme5-home',
-                'card': 'scheme5-card',
-                'mine': 'scheme5-mine'
+                'home': 'scheme-' + schemeName + '-home',
+                'card': 'scheme-' + schemeName + '-card',
+                'mine': 'scheme-' + schemeName + '-mine'
             };
             
-            const targetPage = scheme5.querySelector('#' + pageMap[pageId]);
+            const targetPage = scheme.querySelector('#' + pageMap[pageId]);
             if (targetPage) {
                 targetPage.classList.add('active');
             }
+        }
+
+        // 兼容旧函数名
+        function switchTabScheme5(clickedElement, pageId) {
+            switchTab('original', clickedElement, pageId);
         }
 
         // 点击遮罩关闭弹窗
