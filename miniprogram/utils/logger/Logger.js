@@ -464,24 +464,35 @@ class Logger {
 
   /**
    * 获取日志统计信息
+   * @returns {Promise<Object>} 统计信息
    */
-  getStats() {
-    return this.storage.getStats();
+  async getStats() {
+    return await this.storage.getStats();
   }
 
   /**
    * 清除所有日志
+   * @returns {Promise<void>}
    */
-  clearLogs() {
-    this.storage.clear();
+  async clearLogs() {
+    await this.storage.clear();
   }
 
   /**
    * 获取最近的日志
    * @param {number} days - 天数
+   * @returns {Promise<Array>} 日志数组
    */
-  getRecentLogs(days = 7) {
-    return this.storage.getLogs(days);
+  async getRecentLogs(days = 7) {
+    return await this.storage.getLogs(days);
+  }
+
+  /**
+   * 强制刷新日志缓存到文件（小程序关闭时调用）
+   * @returns {Promise<void>}
+   */
+  async forceFlush() {
+    await this.storage.forceFlush();
   }
 }
 

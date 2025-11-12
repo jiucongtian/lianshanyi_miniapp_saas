@@ -5,40 +5,45 @@
 class LogCleaner {
   constructor(options = {}) {
     this.retentionDays = options.retentionDays || 30;
-    this.storagePrefix = 'app_logs_';
     this.autoCleanEnabled = options.autoCleanEnabled !== false;
+    
+    // 文件系统管理器
+    this.fs = wx.getFileSystemManager();
+    this.logDir = `${wx.env.USER_DATA_PATH}/logs`;
   }
 
   /**
    * 清理过期日志
-   * @returns {Object} 清理结果 { cleaned: number, failed: number }
+   * @returns {Promise<Object>} 清理结果 { cleaned: number, failed: number }
    */
-  cleanExpiredLogs() {
+  async cleanExpiredLogs() {
     try {
-      const { keys } = wx.getStorageInfoSync();
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - this.retentionDays);
+      
+      // 获取所有日志文件
+      const files = await this._listLogFiles();
       
       let cleaned = 0;
       let failed = 0;
       
-      keys.forEach(key => {
-        if (key.startsWith(this.storagePrefix)) {
-          try {
-            const dateStr = key.replace(this.storagePrefix, '');
-            const logDate = this.parseDate(dateStr);
-            
-            if (logDate < cutoffDate) {
-              wx.removeStorageSync(key);
-              cleaned++;
-              console.log(`[LogCleaner] 清理过期日志: ${key}`);
-            }
-          } catch (e) {
-            failed++;
-            console.error(`[LogCleaner] 清理日志失败: ${key}`, e);
+      for (const filePath of files) {
+        try {
+          // 从文件名提取日期
+          const fileName = filePath.split('/').pop();
+          const dateStr = fileName.replace('.log', '');
+          const logDate = this.parseDate(dateStr);
+          
+          if (logDate < cutoffDate) {
+            await this._deleteFile(filePath);
+            cleaned++;
+            console.log(`[LogCleaner] 清理过期日志: ${filePath}`);
           }
+        } catch (e) {
+          failed++;
+          console.error(`[LogCleaner] 清理日志失败: ${filePath}`, e);
         }
-      });
+      }
       
       const result = { cleaned, failed };
       console.log(`[LogCleaner] 清理完成:`, result);
@@ -47,6 +52,44 @@ class LogCleaner {
       console.error('[LogCleaner] 清理过期日志失败:', e);
       return { cleaned: 0, failed: 0 };
     }
+  }
+
+  /**
+   * 列出所有日志文件
+   * @returns {Promise<Array>} 文件路径数组
+   * @private
+   */
+  async _listLogFiles() {
+    return new Promise((resolve) => {
+      this.fs.readdir({
+        dirPath: this.logDir,
+        success: (res) => {
+          const logFiles = res.files
+            .filter(file => file.endsWith('.log'))
+            .map(file => `${this.logDir}/${file}`);
+          resolve(logFiles);
+        },
+        fail: () => {
+          resolve([]);
+        }
+      });
+    });
+  }
+
+  /**
+   * 删除文件
+   * @param {string} filePath - 文件路径
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _deleteFile(filePath) {
+    return new Promise((resolve, reject) => {
+      this.fs.unlink({
+        filePath: filePath,
+        success: () => resolve(),
+        fail: (err) => reject(err)
+      });
+    });
   }
 
   /**
@@ -62,9 +105,9 @@ class LogCleaner {
       // 随机延迟1-6秒，避免影响启动性能
       const delay = Math.random() * 5000 + 1000;
       
-      setTimeout(() => {
+      setTimeout(async () => {
         console.log('[LogCleaner] 开始自动清理过期日志');
-        this.cleanExpiredLogs();
+        await this.cleanExpiredLogs();
       }, delay);
     } catch (e) {
       console.error('[LogCleaner] 自动清理失败:', e);
@@ -73,19 +116,21 @@ class LogCleaner {
 
   /**
    * 清理所有日志（慎用）
-   * @returns {number} 清理的日志文件数
+   * @returns {Promise<number>} 清理的日志文件数
    */
-  cleanAllLogs() {
+  async cleanAllLogs() {
     try {
-      const { keys } = wx.getStorageInfoSync();
+      const files = await this._listLogFiles();
       let count = 0;
       
-      keys.forEach(key => {
-        if (key.startsWith(this.storagePrefix)) {
-          wx.removeStorageSync(key);
+      for (const filePath of files) {
+        try {
+          await this._deleteFile(filePath);
           count++;
+        } catch (e) {
+          console.error(`[LogCleaner] 删除文件失败: ${filePath}`, e);
         }
-      });
+      }
       
       console.log(`[LogCleaner] 已清理所有日志，共${count}个文件`);
       return count;
@@ -98,30 +143,29 @@ class LogCleaner {
   /**
    * 按条件清理日志
    * @param {Function} filter - 过滤函数，返回true表示需要清理
-   * @returns {Object} 清理结果
+   * @returns {Promise<Object>} 清理结果
    */
-  cleanByFilter(filter) {
+  async cleanByFilter(filter) {
     try {
-      const { keys } = wx.getStorageInfoSync();
+      const files = await this._listLogFiles();
       let cleaned = 0;
       let failed = 0;
       
-      keys.forEach(key => {
-        if (key.startsWith(this.storagePrefix)) {
-          try {
-            const dateStr = key.replace(this.storagePrefix, '');
-            const logDate = this.parseDate(dateStr);
-            
-            if (filter(logDate, key)) {
-              wx.removeStorageSync(key);
-              cleaned++;
-            }
-          } catch (e) {
-            failed++;
-            console.error(`[LogCleaner] 清理日志失败: ${key}`, e);
+      for (const filePath of files) {
+        try {
+          const fileName = filePath.split('/').pop();
+          const dateStr = fileName.replace('.log', '');
+          const logDate = this.parseDate(dateStr);
+          
+          if (filter(logDate, filePath)) {
+            await this._deleteFile(filePath);
+            cleaned++;
           }
+        } catch (e) {
+          failed++;
+          console.error(`[LogCleaner] 清理日志失败: ${filePath}`, e);
         }
-      });
+      }
       
       return { cleaned, failed };
     } catch (e) {
@@ -148,31 +192,34 @@ class LogCleaner {
   }
 
   /**
-   * 获取需要清理的日志键列表（不执行清理）
-   * @returns {Array} 需要清理的键列表
+   * 获取需要清理的日志文件列表（不执行清理）
+   * @returns {Promise<Array>} 需要清理的文件路径列表
    */
-  getExpiredLogKeys() {
+  async getExpiredLogKeys() {
     try {
-      const { keys } = wx.getStorageInfoSync();
+      const files = await this._listLogFiles();
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - this.retentionDays);
       
-      const expiredKeys = [];
+      const expiredFiles = [];
       
-      keys.forEach(key => {
-        if (key.startsWith(this.storagePrefix)) {
-          const dateStr = key.replace(this.storagePrefix, '');
+      for (const filePath of files) {
+        try {
+          const fileName = filePath.split('/').pop();
+          const dateStr = fileName.replace('.log', '');
           const logDate = this.parseDate(dateStr);
           
           if (logDate < cutoffDate) {
-            expiredKeys.push(key);
+            expiredFiles.push(filePath);
           }
+        } catch (e) {
+          console.error(`[LogCleaner] 解析文件日期失败: ${filePath}`, e);
         }
-      });
+      }
       
-      return expiredKeys;
+      return expiredFiles;
     } catch (e) {
-      console.error('[LogCleaner] 获取过期日志键失败:', e);
+      console.error('[LogCleaner] 获取过期日志文件失败:', e);
       return [];
     }
   }

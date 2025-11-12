@@ -78,6 +78,37 @@ App({
     this.autoSaveUser();
   },
 
+  onHide() {
+    log.info('onHide', '小程序进入后台');
+    // 小程序进入后台时，刷新日志缓存到文件
+    this.flushLogs();
+  },
+
+  onUnload() {
+    log.info('onUnload', '小程序卸载');
+    // 小程序卸载时，强制刷新日志缓存到文件
+    this.flushLogs(true);
+  },
+
+  /**
+   * 刷新日志缓存到文件
+   * @param {boolean} force - 是否强制刷新
+   */
+  async flushLogs(force = false) {
+    try {
+      if (force) {
+        await logger.forceFlush();
+      } else {
+        // 非强制刷新，只刷新缓存（不停止定时器）
+        if (logger.storage && typeof logger.storage.flush === 'function') {
+          await logger.storage.flush();
+        }
+      }
+    } catch (error) {
+      console.error('[App] 刷新日志失败:', error);
+    }
+  },
+
   /**
    * 自动保存用户信息到数据库
    */
@@ -369,17 +400,18 @@ App({
   /**
    * 获取日志统计信息
    * 供"我的"页面使用
+   * @returns {Promise<Object>} 统计信息
    */
-  getLogStats() {
-    return logger.getStats();
+  async getLogStats() {
+    return await logger.getStats();
   },
 
   /**
    * 清空所有日志
    * 供"我的"页面设置使用
    */
-  clearAllLogs() {
-    logger.clearLogs();
+  async clearAllLogs() {
+    await logger.clearLogs();
     wx.showToast({
       title: '日志已清空',
       icon: 'success'

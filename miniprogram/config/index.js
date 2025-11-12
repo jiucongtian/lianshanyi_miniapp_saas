@@ -23,10 +23,13 @@ export const config = {
   },
   // 日志配置
   logger: {
-    // 本地存储配置
+    // 文件存储配置
     storage: {
-      enabled: true,                  // 是否启用本地存储
-      retentionDays: 30,             // 日志保留天数
+      enabled: true,                  // 是否启用文件存储
+      retentionDays: 30,              // 日志保留天数
+      maxCacheSize: 100 * 1024,       // 最大缓存大小（字节），默认100KB
+      flushInterval: 5000,             // 刷新间隔（毫秒），默认5秒
+      maxFileSize: 2 * 1024 * 1024,   // 单个文件最大大小（字节），默认2MB，超过此大小会循环覆盖
     },
     // 日志格式配置
     format: {
