@@ -1,11 +1,14 @@
-<t-button
-  theme="{{theme}}"
-  size="{{size}}"
-  block="{{block}}"
-  disabled="{{disabled || loading}}"
-  loading="{{loading}}"
-  bindtap="onButtonTap"
-  class="{{customClass}}"
->
-  {{loading ? loadingText : buttonText}}
-</t-button>
+<view class="loading-button-wrapper {{block ? 'block' : ''}}">
+  <button
+    class="damson-button {{size}} {{loading ? 'loading' : ''}} {{customClass}}"
+    disabled="{{disabled || loading}}"
+    bindtap="onButtonTap"
+    hover-class="damson-button--hover"
+    hover-stay-time="70"
+  >
+    <view class="button-content">
+      <view wx:if="{{loading}}" class="loading-spinner"></view>
+      <text class="button-text">{{loading ? loadingText : buttonText}}</text>
+    </view>
+  </button>
+</view>

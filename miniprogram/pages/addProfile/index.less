@@ -199,24 +199,10 @@ page {
 .action-section {
   padding: 0 32rpx;
   
-  .t-button {
-    height: 96rpx !important;
-    border-radius: 24rpx !important;
-    font-size: 32rpx !important;
-    font-weight: 600 !important;
-    box-shadow: 0 8rpx 24rpx rgba(0, 82, 217, 0.3) !important;
-    
-    &:not([disabled]):active {
-      transform: translateY(2rpx);
-      box-shadow: 0 4rpx 16rpx rgba(0, 82, 217, 0.4) !important;
-    }
-    
-    &[disabled] {
-      background: #e0e0e0 !important;
-      color: #999 !important;
-      box-shadow: none !important;
-    }
-  }
+  /* 
+   * loading-button 组件已改为自定义按钮实现
+   * 按钮样式完全由组件内部控制，无需页面级样式覆盖
+   */
 }
 
 
