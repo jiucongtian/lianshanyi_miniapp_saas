@@ -18,12 +18,12 @@
       
       <view class="input-group">
         <view class="input-label">
-          名称
+          昵称
           <text class="required">*</text>
         </view>
         <t-input
           value="{{formData.name}}"
-          placeholder="请输入您的名称"
+          placeholder="请输入您的昵称"
           bind:change="onNameChange"
           bind:blur="onNameBlur"
           error="{{nameError}}"

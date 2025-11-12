@@ -12,11 +12,11 @@ Page({
     editingProfileId: null,
     // 表单数据
     formData: {
-      name: '', // 名称
+      name: '', // 昵称
       gender: 1, // 性别，1=男，0=女，默认男
     },
     // 表单验证
-    nameError: '', // 名称错误信息
+    nameError: '', // 昵称错误信息
     isFormValid: false, // 表单是否有效
     
     // 时间选择相关

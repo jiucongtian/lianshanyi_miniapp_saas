@@ -117,15 +117,15 @@ class AddProfileController extends BaseController {
     let isValid = true;
     let nameError = '';
 
-    // 验证名称
+    // 验证昵称
     if (!this.formData.name || this.formData.name.trim() === '') {
-      nameError = '请输入名称';
+      nameError = '请输入昵称';
       isValid = false;
     } else if (this.formData.name.trim().length < 1) {
-      nameError = '名称至少需要1个字符';
+      nameError = '昵称至少需要1个字符';
       isValid = false;
     } else if (this.formData.name.trim().length > 20) {
-      nameError = '名称不能超过20个字符';
+      nameError = '昵称不能超过20个字符';
       isValid = false;
     }
 
@@ -471,8 +471,8 @@ class AddProfileController extends BaseController {
   // ==================== 表单处理方法 ====================
 
   /**
-   * 处理名称输入变化
-   * @param {string} name - 输入的名称
+   * 处理昵称输入变化
+   * @param {string} name - 输入的昵称
    */
   onNameChange(name) {
     this.formData.name = name;
