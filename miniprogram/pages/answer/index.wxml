@@ -85,7 +85,9 @@
 
     <!-- 按钮区域 -->
     <view class="button-container">
+      <!-- 抽卡按钮：初始显示，抽卡后隐藏 -->
       <loading-button
+        wx:if="{{showDrawButton}}"
         id="loading-button-draw"
         theme="primary"
         size="medium"
@@ -95,7 +97,9 @@
         prevent-duplicate="{{true}}"
         bind:tap="onAnalyzeAnswer"
       />
+      <!-- AI解读按钮：抽卡后显示，AI解读完成后隐藏 -->
       <loading-button
+        wx:if="{{showInterpretButton}}"
         id="loading-button-interpret"
         theme="secondary"
         size="medium"

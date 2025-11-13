@@ -13,6 +13,9 @@ Page({
   data: {
     question: '', // 用户的问题
     aiInterpretation: '', // AI解读结果
+    // 按钮显示控制
+    showDrawButton: true, // 是否显示抽卡按钮（初始显示）
+    showInterpretButton: false, // 是否显示AI解读按钮（初始隐藏）
     // 转圈动画相关数据
     tianGan: ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'],
     tianGanIndices: Array.from({ length: 10 }, (_, i) => i), // 天干索引数组
@@ -152,7 +155,11 @@ Page({
       this.clearImagePathTimer = setTimeout(() => {
         this.setData({
           selectedCard: null,
-          selectedCardImagePath: ''
+          selectedCardImagePath: '',
+          // 重新抽卡时：显示抽卡按钮，隐藏AI解读按钮和结果
+          showDrawButton: true,
+          showInterpretButton: false,
+          aiInterpretation: ''
         });
         this.clearImagePathTimer = null;
       }, 600); // 与 CSS 中的 transition 时间一致
@@ -355,7 +362,10 @@ Page({
       // 稍作延迟后翻转卡牌
       setTimeout(() => {
         this.setData({
-          isFlipped: true
+          isFlipped: true,
+          // 抽卡完成后：隐藏抽卡按钮，显示AI解读按钮
+          showDrawButton: false,
+          showInterpretButton: true
         });
         // 重置按钮状态和抽卡标志（抽卡完成）
         const buttonComponent = this.selectComponent('#loading-button-draw');
@@ -490,7 +500,9 @@ Page({
         }
         
         this.setData({
-          aiInterpretation: interpretation
+          aiInterpretation: interpretation,
+          // AI解读完成后：隐藏AI解读按钮
+          showInterpretButton: false
         });
         
         log.info('onAIInterpret', 'AI解读成功', { interpretation });
@@ -528,7 +540,9 @@ Page({
             if (interpretation) {
               // 有数据，显示数据但记录警告
               this.setData({
-                aiInterpretation: interpretation
+                aiInterpretation: interpretation,
+                // AI解读完成后：隐藏AI解读按钮
+                showInterpretButton: false
               });
               log.warn('onAIInterpret', '云函数返回失败状态但有数据', { error: errorMsg, interpretation });
               wx.showToast({
