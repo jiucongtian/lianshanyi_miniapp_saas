@@ -13,7 +13,6 @@ Page({
   data: {
     answerNumber: 188, // 答案编号
     question: '', // 用户的问题
-    ganzhiInput: '', // 干支输入框
     aiInterpretation: '', // AI解读结果
     // 转圈动画相关数据
     tianGan: ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'],
@@ -207,11 +206,10 @@ Page({
         this.clearImagePathTimer = null;
       }
       
-      // 保存选中的卡牌，并自动设置干支输入框
+      // 保存选中的卡牌
       this.setData({
         selectedCard: randomCard,
-        selectedCardImagePath: imagePath,
-        ganzhiInput: randomCard.cardName // 自动填入干支文字，方便AI解读
+        selectedCardImagePath: imagePath
       });
       
       // 开始抽卡动画
@@ -338,15 +336,6 @@ Page({
   },
 
   /**
-   * 干支输入框变化事件
-   */
-  onGanzhiInput(e) {
-    this.setData({
-      ganzhiInput: e.detail.value
-    });
-  },
-
-  /**
    * AI解读按钮点击事件
    */
   async onAIInterpret() {
@@ -358,10 +347,10 @@ Page({
       return;
     }
     
-    // 验证输入（组件已通过 disabled 属性处理，这里作为双重保险）
-    if (!this.data.ganzhiInput || this.data.ganzhiInput.trim() === '') {
+    // 验证是否有选中的卡牌（组件已通过 disabled 属性处理，这里作为双重保险）
+    if (!this.data.selectedCard || !this.data.selectedCard.cardName) {
       wx.showToast({
-        title: '请输入干支文字',
+        title: '请先抽卡',
         icon: 'none',
         duration: 2000
       });
@@ -372,6 +361,9 @@ Page({
       }
       return;
     }
+    
+    // 获取选中的干支名称
+    const baziName = this.data.selectedCard.cardName;
     
     // 设置解读标志
     this.isInterpreting = true;
@@ -396,7 +388,7 @@ Page({
       const functionName = VersionManager.getFunctionName('cozeFunctions');
       log.info('onAIInterpret', '调用云函数', { 
         functionName, 
-        bazi_name: this.data.ganzhiInput,
+        bazi_name: baziName,
         question: this.data.question 
       });
       
@@ -406,7 +398,7 @@ Page({
         data: {
           workflowType: 'DRAW_CARD', // 使用抽卡工作流，如需专门的解读工作流请修改此处
           parameters: {
-            bazi_name: this.data.ganzhiInput, // DRAW_CARD工作流需要bazi_name参数
+            bazi_name: baziName, // DRAW_CARD工作流需要bazi_name参数，使用抽中的卡牌名称
             question: this.data.question || '' // question为可选参数
           }
         }

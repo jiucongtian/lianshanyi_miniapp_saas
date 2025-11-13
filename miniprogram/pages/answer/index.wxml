@@ -71,18 +71,6 @@
       </view>
     </view>
 
-    <!-- 干支输入区域 -->
-    <view class="ganzhi-input-container">
-      <view class="input-label">干支文字</view>
-      <input 
-        class="ganzhi-input"
-        placeholder="请输入要解读的干支文字"
-        value="{{ganzhiInput}}"
-        bindinput="onGanzhiInput"
-        maxlength="200"
-      />
-    </view>
-
     <!-- AI解读结果显示 -->
     <view class="ai-result-container" wx:if="{{aiInterpretation}}">
       <view class="result-title">AI解读结果</view>
@@ -110,7 +98,7 @@
         loading-text="解读中..."
         prevent-duplicate="{{true}}"
         bind:tap="onAIInterpret"
-        disabled="{{!ganzhiInput || ganzhiInput.trim() === ''}}"
+        disabled="{{!selectedCard || !selectedCard.cardName}}"
       />
     </view>
   </view>
