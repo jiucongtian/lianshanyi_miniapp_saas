@@ -3,7 +3,7 @@
   <!-- 页面头部 -->
   <view class="header">
     <view class="header-content">
-      <text class="page-title">{{source === 'edit' ? '编辑个人资料' : '欢迎注册生命智慧卡牌'}}</text>
+      <text class="page-title">{{source === 'edit' ? '编辑个人资料' : '欢迎注册'}}</text>
       <text class="page-subtitle">{{source === 'edit' ? '更新您的个人信息' : '完成注册，解锁更多功能'}}</text>
     </view>
   </view>
