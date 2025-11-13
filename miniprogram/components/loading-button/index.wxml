@@ -1,6 +1,6 @@
 <view class="loading-button-wrapper {{block ? 'block' : ''}}">
   <button
-    class="damson-button {{size}} {{loading ? 'loading' : ''}} {{customClass}}"
+    class="damson-button {{theme}} {{size}} {{loading ? 'loading' : ''}} {{customClass}}"
     disabled="{{disabled || loading}}"
     bindtap="onButtonTap"
     hover-class="damson-button--hover"

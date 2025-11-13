@@ -15,7 +15,6 @@ Page({
     question: '', // 用户的问题
     ganzhiInput: '', // 干支输入框
     aiInterpretation: '', // AI解读结果
-    isInterpreting: false, // 是否正在解读
     // 转圈动画相关数据
     tianGan: ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'],
     tianGanIndices: Array.from({ length: 10 }, (_, i) => i), // 天干索引数组
@@ -24,7 +23,6 @@ Page({
     scrollOffset: 0, // 滚动偏移量（rpx）
     selectedIndex: 2, // 选中的卡牌索引（初始为2，保证左侧有足够卡牌）
     isFlipped: false, // 是否已翻转
-    isDrawing: false, // 是否正在抽卡
     transitionDuration: 0, // 过渡动画时长（ms）
     transitionTiming: 'linear', // 过渡动画缓动函数
     // 抽中的卡牌信息
@@ -34,6 +32,8 @@ Page({
   
   // 延迟清空定时器ID
   clearImagePathTimer: null,
+  // 抽卡操作进行中标志（同步标志，防止重复点击）
+  isDrawingCard: false,
   
   onLoad(options) {
     console.log('[AnswerPage] 页面加载');
@@ -128,11 +128,17 @@ Page({
   async onAnalyzeAnswer() {
     log.info('onAnalyzeAnswer', '点击抽卡');
     
-    // 如果正在抽卡，忽略点击
-    if (this.data.isDrawing) {
-      log.warn('onAnalyzeAnswer', '正在抽卡中，忽略点击');
+    // 同步检查：如果正在抽卡，直接返回（防止重复点击）
+    if (this.isDrawingCard) {
+      log.warn('onAnalyzeAnswer', '正在抽卡中，忽略重复点击');
       return;
     }
+    
+    // 设置抽卡标志
+    this.isDrawingCard = true;
+    
+    // 获取按钮组件引用（用于错误时重置状态）
+    const buttonComponent = this.selectComponent('#loading-button-draw');
     
     // 如果已经翻转，先翻转回来，等翻转动画完成后再清空图片路径
     if (this.data.isFlipped) {
@@ -173,7 +179,11 @@ Page({
         icon: 'none',
         duration: 2000
       });
-      this.setData({ isDrawing: false });
+      // 重置按钮状态和抽卡标志
+      if (buttonComponent) {
+        buttonComponent.reset();
+      }
+      this.isDrawingCard = false;
       return;
     }
     
@@ -199,8 +209,7 @@ Page({
       this.setData({
         selectedCard: randomCard,
         selectedCardImagePath: imagePath,
-        ganzhiInput: randomCard.cardName, // 自动填入干支文字，方便AI解读
-        isDrawing: true
+        ganzhiInput: randomCard.cardName // 自动填入干支文字，方便AI解读
       });
       
       // 开始抽卡动画
@@ -212,7 +221,11 @@ Page({
         icon: 'none',
         duration: 2000
       });
-      this.setData({ isDrawing: false });
+      // 重置按钮状态和抽卡标志
+      if (buttonComponent) {
+        buttonComponent.reset();
+      }
+      this.isDrawingCard = false;
     }
   },
   
@@ -307,9 +320,15 @@ Page({
       // 稍作延迟后翻转卡牌
       setTimeout(() => {
         this.setData({
-          isFlipped: true,
-          isDrawing: false
+          isFlipped: true
         });
+        // 重置按钮状态和抽卡标志（抽卡完成）
+        const buttonComponent = this.selectComponent('#loading-button-draw');
+        if (buttonComponent) {
+          buttonComponent.stopLoading();
+        }
+        // 重置抽卡标志，允许下次抽卡
+        this.isDrawingCard = false;
         console.log('[_startDrawCardAnimation] 抽卡完成');
       }, 50); // 50ms后翻转卡牌
       
@@ -331,31 +350,28 @@ Page({
   async onAIInterpret() {
     log.info('onAIInterpret', '点击AI解读');
     
-    // 验证输入
+    // 验证输入（组件已通过 disabled 属性处理，这里作为双重保险）
     if (!this.data.ganzhiInput || this.data.ganzhiInput.trim() === '') {
       wx.showToast({
         title: '请输入干支文字',
         icon: 'none',
         duration: 2000
       });
+      // 重置按钮状态
+      const buttonComponent = this.selectComponent('#loading-button-interpret');
+      if (buttonComponent) {
+        buttonComponent.reset();
+      }
       return;
     }
     
-    // 如果正在解读，忽略点击
-    if (this.data.isInterpreting) {
-      log.warn('onAIInterpret', '正在解读中，忽略点击');
-      return;
-    }
+    // 获取按钮组件引用（用于错误时重置状态）
+    const buttonComponent = this.selectComponent('#loading-button-interpret');
     
     // 显示加载提示
     wx.showLoading({
       title: 'AI解读中...',
       mask: true
-    });
-    
-    // 标记开始解读
-    this.setData({
-      isInterpreting: true
     });
     
     try {
@@ -480,10 +496,12 @@ Page({
         duration: 3000
       });
     } finally {
-      // 结束解读状态
-      this.setData({
-        isInterpreting: false
-      });
+      // 隐藏加载提示
+      wx.hideLoading();
+      // 重置按钮状态
+      if (buttonComponent) {
+        buttonComponent.stopLoading();
+      }
     }
   }
 });

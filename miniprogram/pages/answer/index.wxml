@@ -91,10 +91,27 @@
 
     <!-- 按钮区域 -->
     <view class="button-container">
-      <button class="btn-primary" bindtap="onAnalyzeAnswer">抽卡</button>
-      <button class="btn-secondary" bindtap="onAIInterpret" disabled="{{isInterpreting}}">
-        {{isInterpreting ? '解读中...' : 'AI解读'}}
-      </button>
+      <loading-button
+        id="loading-button-draw"
+        theme="primary"
+        size="medium"
+        block="{{true}}"
+        button-text="抽卡"
+        loading-text="抽卡中..."
+        prevent-duplicate="{{true}}"
+        bind:tap="onAnalyzeAnswer"
+      />
+      <loading-button
+        id="loading-button-interpret"
+        theme="secondary"
+        size="medium"
+        block="{{true}}"
+        button-text="AI解读"
+        loading-text="解读中..."
+        prevent-duplicate="{{true}}"
+        bind:tap="onAIInterpret"
+        disabled="{{!ganzhiInput || ganzhiInput.trim() === ''}}"
+      />
     </view>
   </view>
 </view>

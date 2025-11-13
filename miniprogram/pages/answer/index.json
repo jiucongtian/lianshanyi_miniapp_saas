@@ -5,7 +5,8 @@
   "backgroundTextStyle": "light",
   "enablePullDownRefresh": false,
   "usingComponents": {
-    "t-navbar": "/miniprogram_npm/tdesign-miniprogram/navbar/navbar"
+    "t-navbar": "/miniprogram_npm/tdesign-miniprogram/navbar/navbar",
+    "loading-button": "../../components/loading-button/index"
   }
 }
 

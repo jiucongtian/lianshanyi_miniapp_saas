@@ -63,10 +63,30 @@
     min-width: 240rpx;
   }
   
+  /* 主题变体 */
+  &.primary {
+    background: @damson-gradient;
+    border-color: @damson-primary;
+  }
+  
+  &.secondary {
+    background: transparent;
+    border-color: @damson-decorative;
+    color: #ffffff;
+  }
+  
   /* 悬停效果 */
   &--hover:not([disabled]) {
-    background: @damson-primary;
-    opacity: 0.9;
+    &.primary {
+      background: @damson-primary;
+      opacity: 0.9;
+    }
+    
+    &.secondary {
+      background: rgba(200, 150, 180, 0.1);
+      border-color: @damson-decorative;
+    }
+    
     transform: translateY(1rpx);
     box-shadow: 0 2rpx 8rpx rgba(133, 76, 101, 0.4);
   }
@@ -83,8 +103,16 @@
   
   /* 加载状态 */
   &.loading[disabled] {
-    background: @damson-primary-light !important;
-    border-color: @damson-primary-light !important;
+    &.primary {
+      background: @damson-primary-light !important;
+      border-color: @damson-primary-light !important;
+    }
+    
+    &.secondary {
+      background: rgba(200, 150, 180, 0.2) !important;
+      border-color: @damson-decorative !important;
+    }
+    
     color: #ffffff !important;
     box-shadow: 0 2rpx 8rpx rgba(133, 76, 101, 0.3) !important;
   }
