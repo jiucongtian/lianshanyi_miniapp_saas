@@ -31,7 +31,10 @@ Page({
     selectedCard: null, // 格式：{ cardNumber, cardName, pinyin, description, category, keywords }
     selectedCardImagePath: '' // 选中卡牌的图片路径
   },
-
+  
+  // 延迟清空定时器ID
+  clearImagePathTimer: null,
+  
   onLoad(options) {
     console.log('[AnswerPage] 页面加载');
     
@@ -131,19 +134,26 @@ Page({
       return;
     }
     
-    // 如果已经翻转，重置翻转状态
-    // 注意：先翻转回来，等翻转动画完成后再清空图片路径，避免翻转过程中显示默认内容
+    // 如果已经翻转，先翻转回来，等翻转动画完成后再清空图片路径
     if (this.data.isFlipped) {
+      // 取消之前的延迟清空操作（如果存在）
+      if (this.clearImagePathTimer) {
+        clearTimeout(this.clearImagePathTimer);
+        this.clearImagePathTimer = null;
+      }
+      
+      // 先翻转回来
       this.setData({
         isFlipped: false
       });
       
-      // 等翻转动画完成（0.6s）后再清空数据
-      setTimeout(() => {
+      // 等翻转动画完成（0.6s）后再清空数据，避免图片瞬间消失
+      this.clearImagePathTimer = setTimeout(() => {
         this.setData({
           selectedCard: null,
           selectedCardImagePath: ''
         });
+        this.clearImagePathTimer = null;
       }, 600); // 与 CSS 中的 transition 时间一致
     }
     
@@ -179,6 +189,12 @@ Page({
         imagePath: imagePath
       });
       
+      // 取消之前的延迟清空操作（如果存在），因为已经设置了新图片
+      if (this.clearImagePathTimer) {
+        clearTimeout(this.clearImagePathTimer);
+        this.clearImagePathTimer = null;
+      }
+      
       // 保存选中的卡牌，并自动设置干支输入框
       this.setData({
         selectedCard: randomCard,
@@ -186,6 +202,9 @@ Page({
         ganzhiInput: randomCard.cardName, // 自动填入干支文字，方便AI解读
         isDrawing: true
       });
+      
+      // 开始抽卡动画
+      this._startDrawCardAnimation();
     } catch (error) {
       log.error('onAnalyzeAnswer', '获取图片缓存失败', { error: error.message });
       wx.showToast({
@@ -195,9 +214,6 @@ Page({
       });
       this.setData({ isDrawing: false });
     }
-    
-    // 开始抽卡动画
-    this._startDrawCardAnimation();
   },
   
   /**

@@ -64,11 +64,6 @@
                   src="{{selectedCardImagePath}}" 
                   mode="aspectFill"
                 />
-                <!-- 默认显示问题和答案编号 -->
-                <view class="card-content" wx:else>
-                  <text class="card-number">{{answerNumber}}</text>
-                  <text class="card-text">{{question}}</text>
-                </view>
               </view>
             </view>
           </view>
