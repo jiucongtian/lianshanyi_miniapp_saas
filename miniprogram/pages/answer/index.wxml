@@ -53,7 +53,7 @@
             <view class="card-inner {{cardIndex === selectedIndex && isFlipped ? 'flipped' : ''}}">
               <!-- 卡牌背面 -->
               <view class="card-back">
-                <image class="card-back-image" src="/static/card-back.jpg" mode="aspectFit"></image>
+                <image class="card-back-image" src="/static/card-back.jpg" mode="aspectFill"></image>
               </view>
               <!-- 卡牌正面 -->
               <view class="card-front">
@@ -62,7 +62,7 @@
                   wx:if="{{selectedCardImagePath}}" 
                   class="card-front-image" 
                   src="{{selectedCardImagePath}}" 
-                  mode="aspectFit"
+                  mode="aspectFill"
                 />
                 <!-- 默认显示问题和答案编号 -->
                 <view class="card-content" wx:else>
@@ -79,13 +79,12 @@
     <!-- 干支输入区域 -->
     <view class="ganzhi-input-container">
       <view class="input-label">干支文字</view>
-      <textarea 
-        class="ganzhi-textarea"
+      <input 
+        class="ganzhi-input"
         placeholder="请输入要解读的干支文字"
         value="{{ganzhiInput}}"
         bindinput="onGanzhiInput"
         maxlength="200"
-        auto-height
       />
     </view>
 
