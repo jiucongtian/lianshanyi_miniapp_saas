@@ -132,12 +132,19 @@ Page({
     }
     
     // 如果已经翻转，重置翻转状态
+    // 注意：先翻转回来，等翻转动画完成后再清空图片路径，避免翻转过程中显示默认内容
     if (this.data.isFlipped) {
       this.setData({
-        isFlipped: false,
-        selectedCard: null,
-        selectedCardImagePath: ''
+        isFlipped: false
       });
+      
+      // 等翻转动画完成（0.6s）后再清空数据
+      setTimeout(() => {
+        this.setData({
+          selectedCard: null,
+          selectedCardImagePath: ''
+        });
+      }, 600); // 与 CSS 中的 transition 时间一致
     }
     
     // 随机选择一个甲子
