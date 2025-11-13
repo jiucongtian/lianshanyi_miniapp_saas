@@ -12,7 +12,7 @@
     <!-- 名字输入 -->
     <view class="form-section">
       <view class="section-header">
-        <t-icon name="user" size="20" color="#0052d9" />
+        <t-icon name="user" size="20" color="#854C65" />
         <text class="section-title">基本信息</text>
       </view>
       
@@ -59,7 +59,7 @@
     <!-- 出生信息选择 -->
     <view class="form-section">
       <view class="section-header">
-        <t-icon name="time" size="20" color="#0052d9" />
+        <t-icon name="time" size="20" color="#854C65" />
         <text class="section-title">出生信息</text>
       </view>
       

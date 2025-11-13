@@ -155,7 +155,7 @@ Page({
 .time-picker-container {
   --picker-bg-color: #fff;           // 背景色
   --picker-text-color: #333;         // 文字颜色
-  --picker-primary-color: #0052d9;   // 主色调
+  --picker-primary-color: #854C65;   // 主色调（达姆森色系）
   --picker-border-color: #e0e0e0;    // 边框颜色
   --picker-border-radius: 24rpx;     // 圆角大小
 }

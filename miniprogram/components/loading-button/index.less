@@ -21,15 +21,15 @@
   min-width: 200rpx;
   height: 88rpx;
   background: @damson-gradient;
-  border: 2rpx solid @damson-primary;
+  border: 3rpx solid @damson-primary;
   border-radius: 16rpx;
   color: #ffffff;
   font-size: 32rpx;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 16rpx rgba(133, 76, 101, 0.3);
+  box-shadow: 0 8rpx 24rpx rgba(133, 76, 101, 0.4), 0 2rpx 8rpx rgba(133, 76, 101, 0.3);
   transition: all 0.3s ease;
   padding: 0;
   margin: 0;
@@ -47,6 +47,8 @@
     font-size: 28rpx;
     border-radius: 12rpx;
     min-width: 160rpx;
+    border-width: 2rpx;
+    box-shadow: 0 4rpx 16rpx rgba(133, 76, 101, 0.35), 0 1rpx 4rpx rgba(133, 76, 101, 0.25);
   }
   
   &.medium {
@@ -54,6 +56,8 @@
     font-size: 32rpx;
     border-radius: 16rpx;
     min-width: 200rpx;
+    border-width: 3rpx;
+    box-shadow: 0 8rpx 24rpx rgba(133, 76, 101, 0.4), 0 2rpx 8rpx rgba(133, 76, 101, 0.3);
   }
   
   &.large {
@@ -61,6 +65,8 @@
     font-size: 36rpx;
     border-radius: 20rpx;
     min-width: 240rpx;
+    border-width: 3rpx;
+    box-shadow: 0 10rpx 28rpx rgba(133, 76, 101, 0.45), 0 3rpx 10rpx rgba(133, 76, 101, 0.35);
   }
   
   /* 主题变体 */
@@ -142,6 +148,7 @@
     font-size: inherit;
     font-weight: inherit;
     line-height: 1;
+    text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.15);
   }
 }
 
