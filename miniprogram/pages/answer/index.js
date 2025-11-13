@@ -2,6 +2,11 @@ const { VersionManager } = require('../../utils/manager/versionManager');
 const { createModuleLogger } = require('../../utils/logger/index');
 const log = createModuleLogger('AnswerPage');
 
+// 引入60甲子数据（统一数据源）
+const { JIAZI_DATA } = require('../../utils/jiaziData');
+// 引入图片映射工具
+const { getBaziImageById } = require('../../utils/baziImageMap');
+
 Page({
   data: {
     answerNumber: 188, // 答案编号
@@ -19,7 +24,10 @@ Page({
     isFlipped: false, // 是否已翻转
     isDrawing: false, // 是否正在抽卡
     transitionDuration: 0, // 过渡动画时长（ms）
-    transitionTiming: 'linear' // 过渡动画缓动函数
+    transitionTiming: 'linear', // 过渡动画缓动函数
+    // 抽中的卡牌信息
+    selectedCard: null, // 格式：{ cardNumber, cardName, pinyin, description, category, keywords }
+    selectedCardImagePath: '' // 选中卡牌的图片路径
   },
 
   onLoad(options) {
@@ -113,28 +121,59 @@ Page({
    * 抽卡按钮点击事件
    */
   onAnalyzeAnswer() {
-    console.log('[AnswerPage] 点击抽卡');
+    log.info('onAnalyzeAnswer', '点击抽卡');
     
     // 如果正在抽卡，忽略点击
     if (this.data.isDrawing) {
-      console.log('[AnswerPage] 正在抽卡中，忽略点击');
+      log.warn('onAnalyzeAnswer', '正在抽卡中，忽略点击');
       return;
     }
     
     // 如果已经翻转，重置翻转状态
     if (this.data.isFlipped) {
       this.setData({
-        isFlipped: false
+        isFlipped: false,
+        selectedCard: null,
+        selectedCardImagePath: ''
       });
     }
     
-    // 标记开始抽卡
+    // 随机选择一个甲子
+    const randomCard = this._selectRandomCard();
+    log.info('onAnalyzeAnswer', '随机选择卡牌', { 
+      cardNumber: randomCard.cardNumber, 
+      cardName: randomCard.cardName 
+    });
+    
+    // 获取对应的卡片图片路径
+    const imageInfo = getBaziImageById(randomCard.cardNumber);
+    const imagePath = imageInfo ? imageInfo.imagePath : '';
+    
+    log.info('onAnalyzeAnswer', '获取卡片图片', { 
+      cardNumber: randomCard.cardNumber,
+      imagePath: imagePath
+    });
+    
+    // 保存选中的卡牌，并自动设置干支输入框
     this.setData({
+      selectedCard: randomCard,
+      selectedCardImagePath: imagePath,
+      ganzhiInput: randomCard.cardName, // 自动填入干支文字，方便AI解读
       isDrawing: true
     });
     
     // 开始抽卡动画
     this._startDrawCardAnimation();
+  },
+  
+  /**
+   * 随机选择一个甲子卡牌
+   * @returns {Object} 选中的卡牌数据
+   */
+  _selectRandomCard() {
+    // 从60甲子中随机选择一个
+    const randomIndex = Math.floor(Math.random() * JIAZI_DATA.length);
+    return JIAZI_DATA[randomIndex];
   },
   
   /**

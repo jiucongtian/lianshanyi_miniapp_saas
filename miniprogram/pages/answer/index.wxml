@@ -57,7 +57,15 @@
               </view>
               <!-- 卡牌正面 -->
               <view class="card-front">
-                <view class="card-content">
+                <!-- 显示卡片图片 -->
+                <image 
+                  wx:if="{{selectedCardImagePath}}" 
+                  class="card-front-image" 
+                  src="{{selectedCardImagePath}}" 
+                  mode="aspectFit"
+                />
+                <!-- 默认显示问题和答案编号 -->
+                <view class="card-content" wx:else>
                   <text class="card-number">{{answerNumber}}</text>
                   <text class="card-text">{{question}}</text>
                 </view>
