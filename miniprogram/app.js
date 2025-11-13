@@ -10,6 +10,7 @@ const { profileManager } = require('./utils/manager/profileManager');
 const logger = require('./utils/logger/Logger');
 const { LogCleaner } = require('./utils/logger/LogCleaner');
 const { createModuleLogger } = require('./utils/logger/index');
+const { getAllBaziImages } = require('./utils/baziImageMap');
 const log = createModuleLogger('App');
 
 App({
@@ -52,6 +53,9 @@ App({
     
     // 清理过期的图片缓存
     this.cleanExpiredImageCache();
+    
+    // 预加载所有卡牌图片（后台异步执行，不阻塞启动）
+    this.preloadCardImages();
 
     const updateManager = wx.getUpdateManager();
 
@@ -331,6 +335,60 @@ App({
       
     } catch (error) {
       log.error('cleanExpiredImageCache', '清理图片缓存失败', { error: error.message });
+    }
+  },
+
+  /**
+   * 预加载所有卡牌图片
+   * 在小程序启动时后台异步执行，只下载未缓存的图片
+   * 不阻塞启动流程，静默执行
+   * 
+   * 优化策略：
+   * 1. 延迟2秒后开始预加载，避免影响启动速度
+   * 2. 只下载未缓存的图片，已有缓存直接跳过
+   * 3. 后台静默执行，不影响用户体验
+   */
+  async preloadCardImages() {
+    try {
+      // 延迟2秒后开始预加载，让启动流程先完成
+      setTimeout(async () => {
+        try {
+          log.info('preloadCardImages', '开始预加载卡牌图片');
+          
+          // 获取所有60张卡牌图片信息
+          const allBaziImages = getAllBaziImages();
+          
+          if (!allBaziImages || allBaziImages.length === 0) {
+            log.warn('preloadCardImages', '未找到卡牌图片数据');
+            return;
+          }
+          
+          // 转换为预加载所需的格式
+          const imageList = allBaziImages.map(image => ({
+            cloudPath: image.imagePath,
+            fileName: image.fileName
+          }));
+          
+          log.info('preloadCardImages', '准备预加载卡牌图片', { count: imageList.length });
+          
+          // 异步预加载（不阻塞启动）
+          // preloadImages 方法会自动检查缓存，只下载未缓存的图片
+          const results = await imageCacheManager.preloadImages(imageList);
+          
+          log.info('preloadCardImages', '卡牌图片预加载完成', {
+            total: imageList.length,
+            cached: results.cached,
+            downloaded: results.downloaded,
+            failed: results.failed
+          });
+          
+        } catch (error) {
+          log.error('preloadCardImages', '预加载卡牌图片失败', { error: error.message });
+        }
+      }, 2000); // 延迟2秒
+      
+    } catch (error) {
+      log.error('preloadCardImages', '预加载卡牌图片出错', { error: error.message });
     }
   },
 
