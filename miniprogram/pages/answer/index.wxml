@@ -3,6 +3,12 @@
 <view class="page-container">
   <!-- 主内容区域 -->
   <view class="main-content">
+    <!-- 用户问题显示区域 -->
+    <view class="question-container" wx:if="{{question}}">
+      <view class="question-label">你的问题</view>
+      <view class="question-text">{{question}}</view>
+    </view>
+    
     <!-- 转圈动画区域 -->
     <view class="mandala-container">
       <view class="mandala">
