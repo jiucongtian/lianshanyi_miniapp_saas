@@ -53,7 +53,7 @@ async function callCozeAPI(parameters, workflowId) {
         workflow_id: finalWorkflowId,
         parameters: parameters
       },
-      timeout: 25000 // 25秒超时，给云函数留出处理时间
+      timeout: 60000 // 30秒超时，给云函数留出处理时间（云函数默认超时60秒）
     });
 
     console.log('=== Coze API 完整响应 ===');
@@ -88,18 +88,34 @@ async function callCozeAPI(parameters, workflowId) {
       workflowId: finalWorkflowId
     };
   } catch (error) {
-    console.error('Coze API 请求失败:', error);
+    // 安全地记录错误信息，避免序列化问题
+    const errorInfo = {
+      message: error?.message || '未知错误',
+      code: error?.code,
+      name: error?.name,
+      stack: error?.stack
+    };
+    console.error('Coze API 请求失败:', JSON.stringify(errorInfo, null, 2));
     
     // 处理axios错误
     if (error.response) {
       // 服务器返回了错误状态码
-      throw new Error(`API请求失败: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`);
+      const status = error.response.status || '未知';
+      const statusText = error.response.statusText || '未知';
+      const responseData = error.response.data;
+      const errorMessage = responseData?.message || responseData?.msg || statusText;
+      throw new Error(`API请求失败: ${status} - ${errorMessage}`);
     } else if (error.request) {
-      // 请求已发出但没有收到响应
-      throw new Error('网络请求失败，请检查网络连接');
+      // 请求已发出但没有收到响应（可能是超时或网络问题）
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        throw new Error('请求超时，Coze API响应时间过长，请稍后重试');
+      } else {
+        throw new Error('网络请求失败，请检查网络连接');
+      }
     } else {
       // 其他错误
-      throw new Error(`请求配置错误: ${error.message}`);
+      const errorMessage = error?.message || '请求配置错误';
+      throw new Error(`请求配置错误: ${errorMessage}`);
     }
   }
 }

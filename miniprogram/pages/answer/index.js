@@ -34,6 +34,8 @@ Page({
   clearImagePathTimer: null,
   // 抽卡操作进行中标志（同步标志，防止重复点击）
   isDrawingCard: false,
+  // AI解读操作进行中标志（同步标志，防止重复点击）
+  isInterpreting: false,
   
   onLoad(options) {
     console.log('[AnswerPage] 页面加载');
@@ -350,6 +352,12 @@ Page({
   async onAIInterpret() {
     log.info('onAIInterpret', '点击AI解读');
     
+    // 同步检查：如果正在解读，直接返回（防止重复点击）
+    if (this.isInterpreting) {
+      log.warn('onAIInterpret', '正在解读中，忽略重复点击');
+      return;
+    }
+    
     // 验证输入（组件已通过 disabled 属性处理，这里作为双重保险）
     if (!this.data.ganzhiInput || this.data.ganzhiInput.trim() === '') {
       wx.showToast({
@@ -365,14 +373,23 @@ Page({
       return;
     }
     
+    // 设置解读标志
+    this.isInterpreting = true;
+    
     // 获取按钮组件引用（用于错误时重置状态）
     const buttonComponent = this.selectComponent('#loading-button-interpret');
     
-    // 显示加载提示
-    wx.showLoading({
-      title: 'AI解读中...',
-      mask: true
-    });
+    // 显示加载提示（使用标志确保只显示一次）
+    let loadingShown = false;
+    try {
+      wx.showLoading({
+        title: 'AI解读中...',
+        mask: true
+      });
+      loadingShown = true;
+    } catch (e) {
+      log.warn('onAIInterpret', 'showLoading 失败', { error: e.message });
+    }
     
     try {
       // 通过版本管理器获取云函数名称
@@ -396,9 +413,6 @@ Page({
       });
       
       log.info('onAIInterpret', '云函数调用结果', result);
-      
-      // 隐藏加载提示
-      wx.hideLoading();
       
       // 处理返回结果
       if (result.result && result.result.success) {
@@ -460,19 +474,70 @@ Page({
           duration: 2000
         });
       } else {
+        // 云函数调用成功，但返回失败状态
+        // 尝试提取数据，即使 success 为 false 也可能有数据返回
         const errorMsg = result.result?.error || '解读失败，请重试';
-        log.error('onAIInterpret', '云函数返回失败', { error: errorMsg });
+        const data = result.result?.data;
         
-        wx.showToast({
-          title: errorMsg,
-          icon: 'none',
-          duration: 2000
-        });
+        // 如果返回了数据，尝试解析并显示
+        if (data && data.data) {
+          try {
+            const parsedData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+            let interpretation = '';
+            
+            if (parsedData && parsedData.data) {
+              interpretation = parsedData.data;
+              interpretation = interpretation
+                .replace(/\\n/g, '\n')
+                .replace(/\\"/g, '"')
+                .replace(/\\'/g, "'")
+                .replace(/\\t/g, '\t')
+                .replace(/\\r/g, '\r')
+                .replace(/\\\\/g, '\\');
+            } else {
+              interpretation = parsedData.output || parsedData.result || parsedData.text || JSON.stringify(parsedData);
+            }
+            
+            if (interpretation) {
+              // 有数据，显示数据但记录警告
+              this.setData({
+                aiInterpretation: interpretation
+              });
+              log.warn('onAIInterpret', '云函数返回失败状态但有数据', { error: errorMsg, interpretation });
+              wx.showToast({
+                title: '解读完成（可能有错误）',
+                icon: 'none',
+                duration: 2000
+              });
+            } else {
+              // 没有数据，显示错误
+              log.error('onAIInterpret', '云函数返回失败且无数据', { error: errorMsg });
+              wx.showToast({
+                title: errorMsg,
+                icon: 'none',
+                duration: 2000
+              });
+            }
+          } catch (parseError) {
+            log.error('onAIInterpret', '解析失败数据失败', { error: parseError.message });
+            wx.showToast({
+              title: errorMsg,
+              icon: 'none',
+              duration: 2000
+            });
+          }
+        } else {
+          // 没有数据，显示错误
+          log.error('onAIInterpret', '云函数返回失败', { error: errorMsg });
+          wx.showToast({
+            title: errorMsg,
+            icon: 'none',
+            duration: 2000
+          });
+        }
       }
     } catch (error) {
       log.error('onAIInterpret', '调用云函数失败', { error: error.message });
-      
-      wx.hideLoading();
       
       // 处理超时错误
       let errorMessage = '网络错误，请重试';
@@ -496,12 +561,19 @@ Page({
         duration: 3000
       });
     } finally {
-      // 隐藏加载提示
-      wx.hideLoading();
-      // 重置按钮状态
+      // 隐藏加载提示（确保配对）
+      if (loadingShown) {
+        try {
+          wx.hideLoading();
+        } catch (e) {
+          log.warn('onAIInterpret', 'hideLoading 失败', { error: e.message });
+        }
+      }
+      // 重置按钮状态和解读标志
       if (buttonComponent) {
         buttonComponent.stopLoading();
       }
+      this.isInterpreting = false;
     }
   }
 });
