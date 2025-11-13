@@ -11,7 +11,6 @@ const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
 
 Page({
   data: {
-    answerNumber: 188, // 答案编号
     question: '', // 用户的问题
     aiInterpretation: '', // AI解读结果
     // 转圈动画相关数据
@@ -39,27 +38,29 @@ Page({
   onLoad(options) {
     console.log('[AnswerPage] 页面加载');
     
+    // 准备初始数据（合并所有 setData 调用）
+    const initialData = {};
+    
     // 获取传递的问题
     if (options.question) {
-      this.setData({
-        question: decodeURIComponent(options.question)
-      });
+      initialData.question = decodeURIComponent(options.question);
     }
     
-    // 随机生成答案编号（1-999）
-    const randomNumber = Math.floor(Math.random() * 999) + 1;
-    this.setData({
-      answerNumber: randomNumber
-    });
+    // 初始化卡牌列表数据
+    const cardListData = this._prepareCardListData();
     
-    // 初始化卡牌列表（生成足够多的卡牌用于滚动）
-    this._initCardList();
+    // 合并所有初始数据，一次性 setData
+    this.setData({
+      ...initialData,
+      ...cardListData
+    });
   },
   
   /**
-   * 初始化卡牌列表
+   * 准备卡牌列表数据（不执行 setData，只返回数据对象）
+   * @returns {Object} 卡牌列表相关的 data 数据
    */
-  _initCardList() {
+  _prepareCardListData() {
     // 创建10张卡牌，用于循环滚动
     // 使用全局ID来跟踪每张卡牌的唯一性
     const cardList = Array.from({ length: 10 }, (_, i) => ({
@@ -96,20 +97,13 @@ Page({
       nextCardId: 10 // 下一个要创建的卡牌ID
     };
     
-    this.setData({
+    // 返回需要设置到 data 的数据对象
+    return {
       cardList: cardList,
       scrollOffset: initialOffset,
       selectedIndex: initialSelectedIndex,
       isFlipped: false
-    });
-    
-    console.log('[_initCardList] 初始化完成');
-    console.log('  容器宽度:', containerWidth);
-    console.log('  中心X坐标:', centerX);
-    console.log('  卡牌数量:', cardList.length);
-    console.log('  初始选中索引:', initialSelectedIndex);
-    console.log('  选中卡牌中心X:', selectedCardCenterX);
-    console.log('  初始偏移量:', initialOffset);
+    };
   },
 
   onShow() {

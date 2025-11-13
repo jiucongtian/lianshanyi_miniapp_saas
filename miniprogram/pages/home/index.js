@@ -53,33 +53,34 @@ Page({
       return;
     }
 
+    // 设置搜索状态
     this.setData({
       isSearching: true
     });
 
-    // 模拟寻找答案的过程
-    setTimeout(() => {
-      // 跳转到答案页面
-      const questionParam = question ? encodeURIComponent(question) : '';
-      wx.navigateTo({
-        url: `/pages/answer/index${questionParam ? '?question=' + questionParam : ''}`,
-        success: () => {
-          console.log('[HomePage] 跳转到答案页面');
-        },
-        fail: (err) => {
-          console.error('[HomePage] 跳转失败:', err);
-          wx.showToast({
-            title: '跳转失败',
-            icon: 'none'
-          });
-        },
-        complete: () => {
-          this.setData({
-            isSearching: false
-          });
-        }
-      });
-    }, 2000);
+    // 直接跳转到答案页面（移除2秒延迟）
+    const questionParam = question ? encodeURIComponent(question) : '';
+    wx.navigateTo({
+      url: `/pages/answer/index${questionParam ? '?question=' + questionParam : ''}`,
+      success: () => {
+        console.log('[HomePage] 跳转到答案页面');
+        // 跳转成功后重置搜索状态
+        this.setData({
+          isSearching: false
+        });
+      },
+      fail: (err) => {
+        console.error('[HomePage] 跳转失败:', err);
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        });
+        // 跳转失败后重置搜索状态
+        this.setData({
+          isSearching: false
+        });
+      }
+    });
   },
 
 
