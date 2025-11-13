@@ -6,6 +6,8 @@ const log = createModuleLogger('AnswerPage');
 const { JIAZI_DATA } = require('../../utils/jiaziData');
 // 引入图片映射工具
 const { getBaziImageById } = require('../../utils/baziImageMap');
+// 引入图片缓存管理器
+const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
 
 Page({
   data: {
@@ -120,7 +122,7 @@ Page({
   /**
    * 抽卡按钮点击事件
    */
-  onAnalyzeAnswer() {
+  async onAnalyzeAnswer() {
     log.info('onAnalyzeAnswer', '点击抽卡');
     
     // 如果正在抽卡，忽略点击
@@ -145,22 +147,47 @@ Page({
       cardName: randomCard.cardName 
     });
     
-    // 获取对应的卡片图片路径
+    // 获取对应的卡片图片信息
     const imageInfo = getBaziImageById(randomCard.cardNumber);
-    const imagePath = imageInfo ? imageInfo.imagePath : '';
+    if (!imageInfo) {
+      log.error('onAnalyzeAnswer', '找不到对应的卡片图片', { cardNumber: randomCard.cardNumber });
+      wx.showToast({
+        title: '获取卡片图片失败',
+        icon: 'none',
+        duration: 2000
+      });
+      this.setData({ isDrawing: false });
+      return;
+    }
     
-    log.info('onAnalyzeAnswer', '获取卡片图片', { 
-      cardNumber: randomCard.cardNumber,
-      imagePath: imagePath
-    });
-    
-    // 保存选中的卡牌，并自动设置干支输入框
-    this.setData({
-      selectedCard: randomCard,
-      selectedCardImagePath: imagePath,
-      ganzhiInput: randomCard.cardName, // 自动填入干支文字，方便AI解读
-      isDrawing: true
-    });
+    // 使用图片缓存管理器获取图片路径（会自动缓存）
+    try {
+      const imagePath = await imageCacheManager.getImagePath(
+        imageInfo.imagePath,
+        imageInfo.fileName
+      );
+      
+      log.info('onAnalyzeAnswer', '获取卡片图片（已缓存）', { 
+        cardNumber: randomCard.cardNumber,
+        imagePath: imagePath
+      });
+      
+      // 保存选中的卡牌，并自动设置干支输入框
+      this.setData({
+        selectedCard: randomCard,
+        selectedCardImagePath: imagePath,
+        ganzhiInput: randomCard.cardName, // 自动填入干支文字，方便AI解读
+        isDrawing: true
+      });
+    } catch (error) {
+      log.error('onAnalyzeAnswer', '获取图片缓存失败', { error: error.message });
+      wx.showToast({
+        title: '图片加载失败',
+        icon: 'none',
+        duration: 2000
+      });
+      this.setData({ isDrawing: false });
+    }
     
     // 开始抽卡动画
     this._startDrawCardAnimation();
