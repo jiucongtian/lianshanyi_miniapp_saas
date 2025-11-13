@@ -164,14 +164,14 @@ Page({
       }, 600); // 与 CSS 中的 transition 时间一致
     }
     
-    // 随机选择一个甲子
+    // 随机选择一个甲子（同步操作，很快）
     const randomCard = this._selectRandomCard();
     log.info('onAnalyzeAnswer', '随机选择卡牌', { 
       cardNumber: randomCard.cardNumber, 
       cardName: randomCard.cardName 
     });
     
-    // 获取对应的卡片图片信息
+    // 获取对应的卡片图片信息（同步操作，很快）
     const imageInfo = getBaziImageById(randomCard.cardNumber);
     if (!imageInfo) {
       log.error('onAnalyzeAnswer', '找不到对应的卡片图片', { cardNumber: randomCard.cardNumber });
@@ -188,44 +188,85 @@ Page({
       return;
     }
     
-    // 使用图片缓存管理器获取图片路径（会自动缓存）
+    // 取消之前的延迟清空操作（如果存在）
+    if (this.clearImagePathTimer) {
+      clearTimeout(this.clearImagePathTimer);
+      this.clearImagePathTimer = null;
+    }
+    
+    // 先保存选中的卡牌信息（不等待图片加载）
+    this.setData({
+      selectedCard: randomCard
+    });
+    
+    // 立即开始抽卡动画（不等待图片加载）
+    this._startDrawCardAnimation();
+    
+    // 在后台异步加载图片（不阻塞动画）
+    // 优先使用缓存，如果没有缓存则先返回云存储路径，让微信自动处理
+    this._loadCardImageAsync(imageInfo, randomCard, buttonComponent);
+  },
+  
+  /**
+   * 异步加载卡牌图片（不阻塞动画）
+   * @param {Object} imageInfo - 图片信息
+   * @param {Object} randomCard - 选中的卡牌
+   * @param {Object} buttonComponent - 按钮组件引用
+   */
+  async _loadCardImageAsync(imageInfo, randomCard, buttonComponent) {
     try {
-      const imagePath = await imageCacheManager.getImagePath(
-        imageInfo.imagePath,
-        imageInfo.fileName
-      );
+      // 先检查缓存，如果缓存存在则立即返回
+      const cacheInfo = imageCacheManager.getCacheInfo(imageInfo.imagePath);
+      if (cacheInfo) {
+        // 缓存存在，立即设置图片路径
+        log.info('_loadCardImageAsync', '使用缓存图片', { 
+          cardNumber: randomCard.cardNumber,
+          imagePath: cacheInfo.localPath
+        });
+        this.setData({
+          selectedCardImagePath: cacheInfo.localPath
+        });
+        return;
+      }
       
-      log.info('onAnalyzeAnswer', '获取卡片图片（已缓存）', { 
+      // 缓存不存在，先返回云存储路径（让微信自动处理，不阻塞）
+      // 这样用户可以看到动画立即开始
+      log.info('_loadCardImageAsync', '缓存不存在，先使用云存储路径', { 
         cardNumber: randomCard.cardNumber,
-        imagePath: imagePath
+        cloudPath: imageInfo.imagePath
       });
-      
-      // 取消之前的延迟清空操作（如果存在），因为已经设置了新图片
-      if (this.clearImagePathTimer) {
-        clearTimeout(this.clearImagePathTimer);
-        this.clearImagePathTimer = null;
-      }
-      
-      // 保存选中的卡牌
       this.setData({
-        selectedCard: randomCard,
-        selectedCardImagePath: imagePath
+        selectedCardImagePath: imageInfo.imagePath
       });
       
-      // 开始抽卡动画
-      this._startDrawCardAnimation();
+      // 在后台异步下载并缓存图片（不阻塞用户操作）
+      // 下载完成后会自动更新为本地路径（但用户可能已经看到图片了）
+      imageCacheManager.getImagePath(imageInfo.imagePath, imageInfo.fileName)
+        .then(localPath => {
+          // 下载完成，如果当前显示的还是云存储路径，则更新为本地路径
+          if (this.data.selectedCardImagePath === imageInfo.imagePath) {
+            log.info('_loadCardImageAsync', '图片下载完成，更新为本地路径', { 
+              cardNumber: randomCard.cardNumber,
+              localPath: localPath
+            });
+            this.setData({
+              selectedCardImagePath: localPath
+            });
+          }
+        })
+        .catch(error => {
+          log.error('_loadCardImageAsync', '图片下载失败（不影响使用）', { 
+            cardNumber: randomCard.cardNumber,
+            error: error.message
+          });
+          // 下载失败不影响使用，继续使用云存储路径
+        });
     } catch (error) {
-      log.error('onAnalyzeAnswer', '获取图片缓存失败', { error: error.message });
-      wx.showToast({
-        title: '图片加载失败',
-        icon: 'none',
-        duration: 2000
+      log.error('_loadCardImageAsync', '加载图片失败', { error: error.message });
+      // 即使出错也使用云存储路径，确保图片能显示
+      this.setData({
+        selectedCardImagePath: imageInfo.imagePath
       });
-      // 重置按钮状态和抽卡标志
-      if (buttonComponent) {
-        buttonComponent.reset();
-      }
-      this.isDrawingCard = false;
     }
   },
   
