@@ -8,6 +8,8 @@ const { JIAZI_DATA } = require('../../utils/jiaziData');
 const { getBaziImageById } = require('../../utils/baziImageMap');
 // 引入图片缓存管理器
 const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
+// 引入抽卡服务
+const { drawCardService } = require('../../services/DrawCardService');
 
 Page({
   data: {
@@ -28,7 +30,10 @@ Page({
     transitionTiming: 'linear', // 过渡动画缓动函数
     // 抽中的卡牌信息
     selectedCard: null, // 格式：{ cardNumber, cardName, pinyin, description, category, keywords }
-    selectedCardImagePath: '' // 选中卡牌的图片路径
+    selectedCardImagePath: '', // 选中卡牌的图片路径
+    // 配额信息
+    userQuotaInfo: null, // 用户配额信息
+    drawButtonText: '抽卡' // 抽卡按钮文本（包含剩余次数）
   },
   
   // 延迟清空定时器ID
@@ -38,7 +43,7 @@ Page({
   // AI解读操作进行中标志（同步标志，防止重复点击）
   isInterpreting: false,
   
-  onLoad(options) {
+  async onLoad(options) {
     console.log('[AnswerPage] 页面加载');
     
     // 准备初始数据（合并所有 setData 调用）
@@ -57,6 +62,9 @@ Page({
       ...initialData,
       ...cardListData
     });
+    
+    // 预加载用户配额信息
+    await this._loadUserQuota();
   },
   
   /**
@@ -131,6 +139,14 @@ Page({
       log.warn('onAnalyzeAnswer', '正在抽卡中，忽略重复点击');
       return;
     }
+    
+    // ========== 配额检查 ==========
+    const quotaCheck = await this._checkDrawQuota();
+    if (!quotaCheck || !quotaCheck.canDraw) {
+      this._showQuotaError(quotaCheck);
+      return;
+    }
+    // ==============================
     
     // 设置抽卡标志
     this.isDrawingCard = true;
@@ -518,6 +534,19 @@ Page({
         
         log.info('onAIInterpret', 'AI解读成功', { interpretation, isAutoCall });
         
+        // ========== 记录抽卡历史 ==========
+        if (this.data.selectedCard) {
+          await this._recordDrawHistory(
+            this.data.selectedCard,
+            this.data.question || '',
+            interpretation
+          );
+          
+          // 刷新配额信息
+          await this._loadUserQuota();
+        }
+        // ==================================
+        
         // 如果是自动调用，不显示toast（避免打断用户体验）
         if (!isAutoCall) {
           wx.showToast({
@@ -650,6 +679,170 @@ Page({
       }
       this.isInterpreting = false;
     }
+  },
+  
+  /**
+   * 加载用户配额信息
+   */
+  async _loadUserQuota() {
+    try {
+      const response = await drawCardService.checkQuota();
+      
+      if (response.success) {
+        const quotaInfo = response.data;
+        this.setData({
+          userQuotaInfo: quotaInfo,
+          drawButtonText: this._getDrawButtonText(quotaInfo)
+        });
+        log.info('_loadUserQuota', '配额信息加载成功', quotaInfo);
+      } else {
+        log.warn('_loadUserQuota', '配额信息加载失败', response.error);
+        // 静默处理，不影响页面显示
+        // 使用默认按钮文本
+        this.setData({
+          drawButtonText: '抽卡'
+        });
+      }
+    } catch (error) {
+      log.error('_loadUserQuota', '加载配额信息异常', error);
+      // 静默处理
+      // 使用默认按钮文本
+      this.setData({
+        drawButtonText: '抽卡'
+      });
+    }
+  },
+  
+  /**
+   * 获取抽卡按钮文本（包含剩余次数）
+   * @param {DrawCardQuotaBean} quotaInfo - 配额信息
+   * @returns {string} 按钮文本
+   */
+  _getDrawButtonText(quotaInfo) {
+    if (!quotaInfo) {
+      return '抽卡';
+    }
+    
+    // 如果是无限配额
+    if (typeof quotaInfo.isUnlimited === 'function' && quotaInfo.isUnlimited()) {
+      return '抽卡（无限次）';
+    }
+    
+    // 如果有剩余配额信息
+    const remainingQuota = quotaInfo.remainingQuota;
+    const totalQuota = quotaInfo.totalQuota;
+    
+    if (typeof remainingQuota === 'number' && typeof totalQuota === 'number') {
+      if (remainingQuota > 0) {
+        return `抽卡（剩余${remainingQuota}次）`;
+      } else {
+        return '抽卡（已用完）';
+      }
+    }
+    
+    // 默认文本
+    return '抽卡';
+  },
+  
+  /**
+   * 检查抽卡配额
+   * @returns {Promise<Object|null>} 配额信息，失败返回null
+   */
+  async _checkDrawQuota() {
+    try {
+      const response = await drawCardService.checkQuota();
+      
+      if (response.success) {
+        return response.data; // 已经是 DrawCardQuotaBean 实例
+      } else {
+        // 返回错误信息，供后续处理
+        return {
+          canDraw: false,
+          error: response.error,
+          code: response.code,
+          ...(response.data || {}) // 包含配额信息（如果有）
+        };
+      }
+    } catch (error) {
+      log.error('_checkDrawQuota', '检查配额异常', error);
+      return {
+        canDraw: false,
+        error: '网络错误，请重试',
+        code: -1
+      };
+    }
+  },
+  
+  /**
+   * 记录抽卡历史
+   * @param {Object} card - 卡牌信息
+   * @param {string} question - 用户问题
+   * @param {string} aiAnswer - AI解读结果
+   */
+  async _recordDrawHistory(card, question, aiAnswer) {
+    try {
+      // 获取云函数版本号（如果可用）
+      const cloudFunctionVersion = VersionManager.getFunctionName('cozeFunctions');
+      
+      const response = await drawCardService.recordDraw({
+        question: question || '',
+        cardNumber: card.cardNumber,
+        cardName: card.cardName,
+        aiAnswer: aiAnswer,
+        drawTime: new Date(), // 抽卡时间
+        cloudFunctionVersion: cloudFunctionVersion
+      });
+      
+      if (response.success) {
+        log.info('_recordDrawHistory', '记录成功', { recordId: response.data?.recordId });
+      } else {
+        log.warn('_recordDrawHistory', '记录失败（不影响使用）', response.error);
+        // 静默处理，不影响用户体验
+      }
+    } catch (error) {
+      log.error('_recordDrawHistory', '记录异常（不影响使用）', error);
+      // 静默处理
+    }
+  },
+  
+  /**
+   * 显示配额错误提示
+   * @param {Object} quotaInfo - 配额信息（包含错误信息）
+   */
+  _showQuotaError(quotaInfo) {
+    if (!quotaInfo) {
+      wx.showToast({
+        title: '暂时无法使用抽卡功能',
+        icon: 'none',
+        duration: 2500
+      });
+      return;
+    }
+    
+    let message = quotaInfo.error || '暂时无法使用抽卡功能';
+    
+    // 根据错误码显示不同提示
+    switch (quotaInfo.code) {
+      case 1001: // 未注册用户
+        message = '请先注册后使用抽卡功能';
+        break;
+      case 1002: // 用户类型不支持
+        message = '您当前的用户类型不支持抽卡功能';
+        break;
+      case 1003: // 配额用完
+        const totalQuota = quotaInfo.totalQuota || 3;
+        message = `今日抽卡次数已用完（${totalQuota}次/天），明天再来吧~`;
+        break;
+      default:
+        // 使用原始错误信息
+        break;
+    }
+    
+    wx.showToast({
+      title: message,
+      icon: 'none',
+      duration: 2500
+    });
   }
 });
 

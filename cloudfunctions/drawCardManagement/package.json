@@ -1,7 +1,7 @@
 {
-  "name": "initDrawCardDatabase",
+  "name": "drawCardManagement",
   "version": "1.0.0",
-  "description": "初始化抽卡配额系统数据库",
+  "description": "抽卡配额管理和记录云函数",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

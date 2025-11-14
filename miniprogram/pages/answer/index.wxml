@@ -92,7 +92,7 @@
         theme="primary"
         size="medium"
         block="{{true}}"
-        button-text="抽卡"
+        button-text="{{drawButtonText}}"
         loading-text="抽卡中..."
         prevent-duplicate="{{true}}"
         bind:tap="onAnalyzeAnswer"

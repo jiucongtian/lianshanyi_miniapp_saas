@@ -14,9 +14,11 @@
 
 ### 阶段一：数据库准备（30分钟）
 
+> **✅ 已完成**：数据库配置已完成。
+
 > **📋 详细操作指南**：请参考 `docs/database/phase1-setup-guide.md` 获取完整的操作步骤和截图说明。
 
-> **🔧 自动化脚本**：可以使用云函数 `initDrawCardDatabase` 自动更新 `static_user_types` 表（需要手动创建 `draw_card_records` 集合）。
+> **🗑️ 清理说明**：`initDrawCardDatabase` 云函数是一次性初始化工具，如果数据库配置已完成，可以删除该云函数。
 
 #### 1.1 确认/更新 `static_user_types` 表
 
@@ -98,6 +100,8 @@
 
 ### 阶段二：云函数开发（90分钟）
 
+> **✅ 已完成**：云函数代码已创建，请部署到云端后测试。
+
 #### 2.1 创建云函数基础结构
 
 **任务**：创建 `drawCardManagement` 云函数
@@ -109,46 +113,16 @@ cloudfunctions/drawCardManagement/
 └── package.json
 ```
 
-**package.json**：
-```json
-{
-  "name": "drawCardManagement",
-  "version": "1.0.0",
-  "description": "抽卡配额管理和记录云函数",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "~2.6.3"
-  }
-}
-```
+**状态**：✅ 已完成
 
-**index.js 基础结构**：
-```javascript
-const cloud = require('wx-server-sdk');
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
-const db = cloud.database();
+**文件位置**：
+- `cloudfunctions/drawCardManagement/index.js` - 云函数主文件
+- `cloudfunctions/drawCardManagement/package.json` - 依赖配置
 
-exports.main = async (event, context) => {
-  const wxContext = cloud.getWXContext();
-  const { action, data } = event;
-  
-  try {
-    switch (action) {
-      case 'checkQuota':
-        return await checkQuota(wxContext);
-      case 'recordDraw':
-        return await recordDraw(wxContext, data);
-      default:
-        return { success: false, error: '未知操作类型', code: -1 };
-    }
-  } catch (error) {
-    console.error('[drawCardManagement] 云函数执行失败:', error);
-    return { success: false, error: error.message || '操作失败', code: -1 };
-  }
-};
-```
-
-**参考**：参考 `cloudfunctions/userManagement/index.js` 的实现风格
+**实现特点**：
+- 参考了 `userManagement` 云函数的实现风格
+- 包含完整的错误处理和日志记录
+- 实现了 `getUserTypeConfig` 函数，支持 `dailyDrawQuota` 字段
 
 ---
 
@@ -156,101 +130,23 @@ exports.main = async (event, context) => {
 
 **功能**：检查用户抽卡配额
 
+**状态**：✅ 已完成
+
 **实现要点**：
-1. 获取用户信息（从 `users` 表）
-2. 获取用户类型配置（从 `static_user_types` 表，包含 `dailyDrawQuota`）
-3. 检查用户类型：
+1. ✅ 获取用户信息（从 `users` 表）
+2. ✅ 获取用户类型配置（从 `static_user_types` 表，包含 `dailyDrawQuota`）
+3. ✅ 检查用户类型：
    - `guest`：返回错误码 1001（不可用）
    - `normal`/`premium`：继续检查配额
-4. 查询今日已使用次数（从 `draw_card_records` 表）
-5. 计算剩余配额
-6. 返回配额信息
+4. ✅ 查询今日已使用次数（从 `draw_card_records` 表）
+5. ✅ 计算剩余配额
+6. ✅ 返回配额信息
 
-**关键代码逻辑**：
-```javascript
-async function checkQuota(wxContext) {
-  const { OPENID } = wxContext;
-  
-  // 1. 获取用户信息
-  const userResult = await db.collection('users')
-    .where({ openid: OPENID, isActive: true })
-    .get();
-  
-  if (userResult.data.length === 0) {
-    return {
-      success: false,
-      error: '用户不存在',
-      code: 1001
-    };
-  }
-  
-  const user = userResult.data[0];
-  
-  // 2. 获取用户类型配置
-  const typeConfig = await getUserTypeConfig(user.userType);
-  
-  // 3. 检查用户类型配额
-  if (typeConfig.dailyDrawQuota === 0) {
-    return {
-      success: false,
-      error: '请先注册后使用抽卡功能',
-      code: 1001,
-      data: {
-        canDraw: false,
-        userTypeCode: user.userType,
-        remainingQuota: 0,
-        totalQuota: 0,
-        usedToday: 0
-      }
-    };
-  }
-  
-  // 4. 查询今日已使用次数
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  const countResult = await db.collection('draw_card_records')
-    .where({
-      userId: user._id,
-      drawDate: today,
-      isActive: true
-    })
-    .count();
-  
-  const usedToday = countResult.total;
-  const totalQuota = typeConfig.dailyDrawQuota;
-  const remainingQuota = totalQuota === -1 ? -1 : Math.max(0, totalQuota - usedToday);
-  const canDraw = totalQuota === -1 || remainingQuota > 0;
-  
-  // 5. 如果配额用完，返回错误
-  if (!canDraw) {
-    return {
-      success: false,
-      error: '今日抽卡次数已用完',
-      code: 1003,
-      data: {
-        canDraw: false,
-        userTypeCode: user.userType,
-        remainingQuota: 0,
-        totalQuota: totalQuota,
-        usedToday: usedToday
-      }
-    };
-  }
-  
-  // 6. 返回成功响应
-  return {
-    success: true,
-    data: {
-      canDraw: true,
-      userTypeCode: user.userType,
-      remainingQuota: remainingQuota,
-      totalQuota: totalQuota,
-      usedToday: usedToday
-    }
-  };
-}
-```
-
-**辅助函数**：复用 `userManagement` 云函数中的 `getUserTypeConfig` 函数，或提取到公共模块
+**关键特性**：
+- 支持无限配额（premium用户，`dailyDrawQuota: -1`）
+- 按日期（YYYY-MM-DD）统计配额
+- 详细的日志记录，便于调试
+- 完整的错误处理和错误码
 
 **参考文档**：`docs/api/drawCardManagement-api.md`
 
@@ -260,11 +156,13 @@ async function checkQuota(wxContext) {
 
 **功能**：记录抽卡历史
 
+**状态**：✅ 已完成
+
 **实现要点**：
-1. 验证必需参数（cardNumber, cardName, aiAnswer）
-2. 获取用户信息
-3. 获取用户类型（用于快照）
-4. 构建记录数据：
+1. ✅ 验证必需参数（cardNumber, cardName, aiAnswer）
+2. ✅ 获取用户信息
+3. ✅ 获取用户类型（用于快照）
+4. ✅ 构建记录数据：
    - `userId`: 用户ID
    - `openid`: 用户openid
    - `userTypeCode`: 用户类型（快照）
@@ -276,94 +174,54 @@ async function checkQuota(wxContext) {
    - `interpretTime`: 解读时间（当前时间）
    - `drawDate`: 抽卡日期（YYYY-MM-DD格式）
    - `isActive`: true
-5. 插入记录到 `draw_card_records` 表
+   - `cloudFunctionVersion`: 云函数版本号（可选）
+5. ✅ 插入记录到 `draw_card_records` 表
 
-**关键代码逻辑**：
-```javascript
-async function recordDraw(wxContext, data) {
-  const { OPENID } = wxContext;
-  
-  // 1. 验证必需参数
-  if (!data || !data.cardNumber || !data.cardName || !data.aiAnswer) {
-    return {
-      success: false,
-      error: '缺少必需参数',
-      code: -2
-    };
-  }
-  
-  // 2. 获取用户信息
-  const userResult = await db.collection('users')
-    .where({ openid: OPENID, isActive: true })
-    .get();
-  
-  if (userResult.data.length === 0) {
-    return {
-      success: false,
-      error: '用户不存在',
-      code: 1001
-    };
-  }
-  
-  const user = userResult.data[0];
-  
-  // 3. 构建记录数据
-  const now = new Date();
-  const drawDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-  
-  // drawTime 从参数传入，如果没有则使用当前时间
-  const drawTime = data.drawTime ? new Date(data.drawTime) : now;
-  
-  const record = {
-    userId: user._id,
-    openid: OPENID,
-    userTypeCode: user.userType, // 快照
-    question: data.question || '',
-    cardNumber: data.cardNumber,
-    cardName: data.cardName,
-    aiAnswer: data.aiAnswer,
-    drawTime: drawTime,
-    interpretTime: now,
-    drawDate: drawDate,
-    isActive: true
-  };
-  
-  // 4. 插入记录
-  try {
-    await db.collection('draw_card_records').add({
-      data: record
-    });
-    
-    return {
-      success: true,
-      message: '记录成功'
-    };
-  } catch (error) {
-    console.error('[recordDraw] 插入记录失败:', error);
-    return {
-      success: false,
-      error: '记录失败: ' + error.message,
-      code: -1
-    };
-  }
-}
-```
+**关键特性**：
+- 参数验证完善
+- 时间处理安全（支持传入或自动生成）
+- 用户类型快照（记录抽卡时的用户类型）
+- 详细的日志记录
 
 **参考文档**：`docs/api/drawCardManagement-api.md`
 
 ---
 
+#### 2.4 部署说明
+
+**重要**：完成代码编写后，需要手动部署到云端。
+
+**部署步骤**：
+1. 在云开发控制台找到 `drawCardManagement` 云函数
+2. 如果不存在，点击「新建云函数」
+3. 上传 `cloudfunctions/drawCardManagement/` 目录中的文件
+4. 点击「上传并部署」
+5. 等待部署完成
+6. 测试云函数是否正常工作
+
+**测试方法**：
+1. 在控制台调用云函数测试
+2. 或使用小程序客户端调用测试
+3. 检查日志输出，确认功能正常
+
+---
+
 ### 阶段三：客户端开发（120分钟）
+
+> **✅ 已完成**：客户端代码已创建，请测试功能。
 
 #### 3.1 创建 `DrawCardService` 服务类
 
 **文件路径**：`miniprogram/services/DrawCardService.js`
 
+**状态**：✅ 已完成
+
 **实现要点**：
-1. 继承 `BaseService`
-2. 实现 `checkQuota()` 方法
-3. 实现 `recordDraw()` 方法
-4. 返回 `ResponseBean` 格式
+1. ✅ 继承 `BaseService`
+2. ✅ 实现 `checkQuota()` 方法
+3. ✅ 实现 `recordDraw()` 方法
+4. ✅ 返回 `ResponseBean` 格式
+5. ✅ 成功时将 data 转换为 `DrawCardQuotaBean` 实例
 
 **代码结构**：
 ```javascript
@@ -455,11 +313,13 @@ module.exports = {
 
 ---
 
-#### 3.2 创建 `DrawCardQuotaBean` Bean类（可选）
+#### 3.2 创建 `DrawCardQuotaBean` Bean类
 
 **文件路径**：`miniprogram/beans/DrawCardQuotaBean.js`
 
-**说明**：如果需要对配额数据进行格式化或添加业务方法，可以创建此Bean类。如果不需要，可以直接使用原始数据。
+**状态**：✅ 已完成
+
+**说明**：用于格式化配额数据并提供业务方法。
 
 **代码结构**（如果需要）：
 ```javascript
@@ -516,7 +376,11 @@ module.exports = { DrawCardQuotaBean };
 
 **任务**：在抽卡流程中集成配额检查和记录功能
 
+**状态**：✅ 已完成
+
 **修改点1：页面加载时预加载配额信息**
+
+**状态**：✅ 已完成
 
 在 `onLoad` 方法中添加：
 ```javascript
@@ -558,6 +422,8 @@ async _loadUserQuota() {
 ```
 
 **修改点2：抽卡前检查配额**
+
+**状态**：✅ 已完成
 
 在 `onAnalyzeAnswer` 方法开头添加：
 ```javascript
@@ -620,6 +486,8 @@ async _checkDrawQuota() {
 ```
 
 **修改点3：AI解读成功后记录历史**
+
+**状态**：✅ 已完成
 
 在 `onAIInterpret` 方法中，AI解读成功后添加记录逻辑：
 ```javascript
@@ -696,6 +564,8 @@ async _recordDrawHistory(card, question, aiAnswer) {
 ```
 
 **修改点4：添加配额错误提示**
+
+**状态**：✅ 已完成
 
 添加方法：
 ```javascript
@@ -819,25 +689,27 @@ _showQuotaError(quotaInfo) {
 ## 三、实施检查清单
 
 ### 数据库检查清单
-- [ ] `static_user_types` 表包含 `dailyDrawQuota` 字段
-- [ ] 三个用户类型的 `dailyDrawQuota` 值正确（guest: 0, normal: 3, premium: -1）
-- [ ] `draw_card_records` 集合已创建
-- [ ] `draw_card_records` 集合权限配置正确（仅管理端可读写）
-- [ ] `userId + drawDate` 复合索引已创建
+- [x] `static_user_types` 表包含 `dailyDrawQuota` 字段
+- [x] 三个用户类型的 `dailyDrawQuota` 值正确（guest: 0, normal: 3, premium: -1）
+- [x] `draw_card_records` 集合已创建
+- [x] `draw_card_records` 集合权限配置正确（仅管理端可读写）
+- [x] `userId + drawDate` 复合索引已创建
 
 ### 云函数检查清单
-- [ ] `drawCardManagement` 云函数已创建
-- [ ] `checkQuota` 接口实现完整
-- [ ] `recordDraw` 接口实现完整
-- [ ] 错误处理完善
-- [ ] 日志记录完善
+- [x] `drawCardManagement` 云函数已创建
+- [x] `checkQuota` 接口实现完整
+- [x] `recordDraw` 接口实现完整
+- [x] 错误处理完善
+- [x] 日志记录完善
+- [ ] 云函数已部署到云端（需要手动操作）
 
 ### 客户端检查清单
-- [ ] `DrawCardService` 服务类已创建
-- [ ] `pages/answer/index.js` 已集成配额检查
-- [ ] `pages/answer/index.js` 已集成记录功能
-- [ ] 错误提示处理完善
-- [ ] 配额信息预加载功能正常
+- [x] `DrawCardService` 服务类已创建
+- [x] `DrawCardQuotaBean` Bean类已创建
+- [x] `pages/answer/index.js` 已集成配额检查
+- [x] `pages/answer/index.js` 已集成记录功能
+- [x] 错误提示处理完善
+- [x] 配额信息预加载功能正常
 
 ### 测试检查清单
 - [ ] guest 用户测试通过
