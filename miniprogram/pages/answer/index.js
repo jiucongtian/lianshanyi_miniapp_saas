@@ -363,9 +363,9 @@ Page({
       setTimeout(() => {
         this.setData({
           isFlipped: true,
-          // 抽卡完成后：隐藏抽卡按钮，显示AI解读按钮
+          // 抽卡完成后：隐藏抽卡按钮，不显示AI解读按钮（等待自动解读结果）
           showDrawButton: false,
-          showInterpretButton: true
+          showInterpretButton: false
         });
         // 重置按钮状态和抽卡标志（抽卡完成）
         const buttonComponent = this.selectComponent('#loading-button-draw');
@@ -375,6 +375,12 @@ Page({
         // 重置抽卡标志，允许下次抽卡
         this.isDrawingCard = false;
         console.log('[_startDrawCardAnimation] 抽卡完成');
+        
+        // 抽卡动画完成后，自动调用AI解读功能
+        // 延迟一小段时间，让翻转动画完成
+        setTimeout(() => {
+          this.onAIInterpret(true); // true 表示自动调用
+        }, 100);
       }, 50); // 50ms后翻转卡牌
       
     }, animationDuration);
@@ -382,13 +388,18 @@ Page({
 
   /**
    * AI解读按钮点击事件
+   * @param {boolean} isAutoCall - 是否为自动调用（抽卡后自动调用）
    */
-  async onAIInterpret() {
-    log.info('onAIInterpret', '点击AI解读');
+  async onAIInterpret(isAutoCall = false) {
+    if (isAutoCall) {
+      log.info('onAIInterpret', '自动调用AI解读（抽卡后）');
+    } else {
+      log.info('onAIInterpret', '点击AI解读');
+    }
     
     // 同步检查：如果正在解读，直接返回（防止重复点击）
     if (this.isInterpreting) {
-      log.warn('onAIInterpret', '正在解读中，忽略重复点击');
+      log.warn('onAIInterpret', '正在解读中，忽略重复调用');
       return;
     }
     
@@ -501,17 +512,20 @@ Page({
         
         this.setData({
           aiInterpretation: interpretation,
-          // AI解读完成后：隐藏AI解读按钮
+          // AI解读成功：不显示AI解读按钮（从头到尾都不显示）
           showInterpretButton: false
         });
         
-        log.info('onAIInterpret', 'AI解读成功', { interpretation });
+        log.info('onAIInterpret', 'AI解读成功', { interpretation, isAutoCall });
         
-        wx.showToast({
-          title: '解读成功',
-          icon: 'success',
-          duration: 2000
-        });
+        // 如果是自动调用，不显示toast（避免打断用户体验）
+        if (!isAutoCall) {
+          wx.showToast({
+            title: '解读成功',
+            icon: 'success',
+            duration: 2000
+          });
+        }
       } else {
         // 云函数调用成功，但返回失败状态
         // 尝试提取数据，即使 success 为 false 也可能有数据返回
@@ -541,18 +555,25 @@ Page({
               // 有数据，显示数据但记录警告
               this.setData({
                 aiInterpretation: interpretation,
-                // AI解读完成后：隐藏AI解读按钮
+                // 虽然返回失败状态但有数据，视为成功，不显示AI解读按钮
                 showInterpretButton: false
               });
-              log.warn('onAIInterpret', '云函数返回失败状态但有数据', { error: errorMsg, interpretation });
-              wx.showToast({
-                title: '解读完成（可能有错误）',
-                icon: 'none',
-                duration: 2000
-              });
+              log.warn('onAIInterpret', '云函数返回失败状态但有数据', { error: errorMsg, interpretation, isAutoCall });
+              // 如果是自动调用，不显示toast
+              if (!isAutoCall) {
+                wx.showToast({
+                  title: '解读完成（可能有错误）',
+                  icon: 'none',
+                  duration: 2000
+                });
+              }
             } else {
-              // 没有数据，显示错误
-              log.error('onAIInterpret', '云函数返回失败且无数据', { error: errorMsg });
+              // 没有数据，显示错误，并显示AI解读按钮让用户重试
+              log.error('onAIInterpret', '云函数返回失败且无数据', { error: errorMsg, isAutoCall });
+              this.setData({
+                // 解读失败：显示AI解读按钮，让用户可以重试
+                showInterpretButton: true
+              });
               wx.showToast({
                 title: errorMsg,
                 icon: 'none',
@@ -560,7 +581,11 @@ Page({
               });
             }
           } catch (parseError) {
-            log.error('onAIInterpret', '解析失败数据失败', { error: parseError.message });
+            log.error('onAIInterpret', '解析失败数据失败', { error: parseError.message, isAutoCall });
+            // 解析失败：显示AI解读按钮，让用户可以重试
+            this.setData({
+              showInterpretButton: true
+            });
             wx.showToast({
               title: errorMsg,
               icon: 'none',
@@ -568,8 +593,12 @@ Page({
             });
           }
         } else {
-          // 没有数据，显示错误
-          log.error('onAIInterpret', '云函数返回失败', { error: errorMsg });
+          // 没有数据，显示错误，并显示AI解读按钮让用户重试
+          log.error('onAIInterpret', '云函数返回失败', { error: errorMsg, isAutoCall });
+          this.setData({
+            // 解读失败：显示AI解读按钮，让用户可以重试
+            showInterpretButton: true
+          });
           wx.showToast({
             title: errorMsg,
             icon: 'none',
@@ -578,7 +607,7 @@ Page({
         }
       }
     } catch (error) {
-      log.error('onAIInterpret', '调用云函数失败', { error: error.message });
+      log.error('onAIInterpret', '调用云函数失败', { error: error.message, isAutoCall });
       
       // 处理超时错误
       let errorMessage = '网络错误，请重试';
@@ -595,6 +624,11 @@ Page({
           errorMessage = error.message.length > 30 ? '请求失败，请重试' : error.message;
         }
       }
+      
+      // 解读失败：显示AI解读按钮，让用户可以重试
+      this.setData({
+        showInterpretButton: true
+      });
       
       wx.showToast({
         title: errorMessage,
