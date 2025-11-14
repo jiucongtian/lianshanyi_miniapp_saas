@@ -59,6 +59,7 @@
         value="{{question}}"
         bindinput="onQuestionInput"
         confirm-type="done"
+        maxlength="50"
       />
     </view>
 

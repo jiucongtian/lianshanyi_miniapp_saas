@@ -38,9 +38,40 @@ Page({
    */
   onQuestionInput(e) {
     const value = e.detail.value;
+    // 限制最大50字（虽然已经通过maxlength限制，但这里作为双重保险）
+    const limitedValue = value.length > 50 ? value.substring(0, 50) : value;
     this.setData({
-      question: value
+      question: limitedValue
     });
+  },
+
+  /**
+   * 验证问题输入
+   * @param {string} question - 问题文本
+   * @returns {Object} { valid: boolean, message: string }
+   */
+  _validateQuestion(question) {
+    // 去除首尾空格
+    const trimmedQuestion = question ? question.trim() : '';
+    
+    // 可以为空
+    if (trimmedQuestion === '') {
+      return { valid: true, message: '' };
+    }
+    
+    // 如果不为空，需要包含有意义的中文内容
+    // 检查是否包含中文字符（Unicode范围：\u4e00-\u9fa5）
+    const chineseCharRegex = /[\u4e00-\u9fa5]/;
+    const hasChinese = chineseCharRegex.test(trimmedQuestion);
+    
+    if (!hasChinese) {
+      return { 
+        valid: false, 
+        message: '请输入有意义的问题，不能是纯数字、字母或符号' 
+      };
+    }
+    
+    return { valid: true, message: '' };
   },
 
   /**
@@ -53,13 +84,24 @@ Page({
       return;
     }
 
+    // 验证问题输入
+    const validation = this._validateQuestion(question);
+    if (!validation.valid) {
+      wx.showToast({
+        title: validation.message,
+        icon: 'none',
+        duration: 3000
+      });
+      return;
+    }
+
     // 设置搜索状态
     this.setData({
       isSearching: true
     });
 
     // 直接跳转到答案页面（移除2秒延迟）
-    const questionParam = question ? encodeURIComponent(question) : '';
+    const questionParam = question ? encodeURIComponent(question.trim()) : '';
     wx.navigateTo({
       url: `/pages/answer/index${questionParam ? '?question=' + questionParam : ''}`,
       success: () => {
