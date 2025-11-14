@@ -10,6 +10,8 @@ const { getBaziImageById } = require('../../utils/baziImageMap');
 const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
 // 引入抽卡服务
 const { drawCardService } = require('../../services/DrawCardService');
+// 引入全局用户管理器
+const globalUserManager = require('../../utils/manager/globalUserManager');
 
 Page({
   data: {
@@ -542,7 +544,9 @@ Page({
             interpretation
           );
           
-          // 刷新配额信息
+          // 刷新用户信息（包含抽卡配额）
+          await globalUserManager.refreshUserInfo();
+          // 更新按钮文本
           await this._loadUserQuota();
         }
         // ==================================
@@ -682,21 +686,26 @@ Page({
   },
   
   /**
-   * 加载用户配额信息
+   * 加载用户配额信息（从UserBean中获取）
    */
   async _loadUserQuota() {
     try {
-      const response = await drawCardService.checkQuota();
+      // 从全局用户管理器获取用户信息
+      const response = await globalUserManager.getUserInfo();
       
-      if (response.success) {
-        const quotaInfo = response.data;
+      if (response.success && response.data) {
+        const userInfo = response.data; // UserBean实例
         this.setData({
-          userQuotaInfo: quotaInfo,
-          drawButtonText: this._getDrawButtonText(quotaInfo)
+          userQuotaInfo: userInfo,
+          drawButtonText: this._getDrawButtonText(userInfo)
         });
-        log.info('_loadUserQuota', '配额信息加载成功', quotaInfo);
+        log.info('_loadUserQuota', '配额信息加载成功', {
+          canDraw: userInfo.canDrawCard(),
+          remainingQuota: userInfo.getDrawCardRemainingQuota(),
+          totalQuota: userInfo.getDrawCardTotalQuota()
+        });
       } else {
-        log.warn('_loadUserQuota', '配额信息加载失败', response.error);
+        log.warn('_loadUserQuota', '获取用户信息失败', response.error);
         // 静默处理，不影响页面显示
         // 使用默认按钮文本
         this.setData({
@@ -715,22 +724,22 @@ Page({
   
   /**
    * 获取抽卡按钮文本（包含剩余次数）
-   * @param {DrawCardQuotaBean} quotaInfo - 配额信息
+   * @param {UserBean} userInfo - 用户信息
    * @returns {string} 按钮文本
    */
-  _getDrawButtonText(quotaInfo) {
-    if (!quotaInfo) {
+  _getDrawButtonText(userInfo) {
+    if (!userInfo) {
       return '抽卡';
     }
     
     // 如果是无限配额
-    if (typeof quotaInfo.isUnlimited === 'function' && quotaInfo.isUnlimited()) {
+    if (userInfo.isDrawCardUnlimited && userInfo.isDrawCardUnlimited()) {
       return '抽卡（无限次）';
     }
     
-    // 如果有剩余配额信息
-    const remainingQuota = quotaInfo.remainingQuota;
-    const totalQuota = quotaInfo.totalQuota;
+    // 获取剩余配额信息
+    const remainingQuota = userInfo.getDrawCardRemainingQuota();
+    const totalQuota = userInfo.getDrawCardTotalQuota();
     
     if (typeof remainingQuota === 'number' && typeof totalQuota === 'number') {
       if (remainingQuota > 0) {
@@ -745,22 +754,63 @@ Page({
   },
   
   /**
-   * 检查抽卡配额
+   * 检查抽卡配额（从UserBean中获取）
    * @returns {Promise<Object|null>} 配额信息，失败返回null
    */
   async _checkDrawQuota() {
     try {
-      const response = await drawCardService.checkQuota();
+      // 从全局用户管理器获取用户信息
+      const response = await globalUserManager.getUserInfo();
       
-      if (response.success) {
-        return response.data; // 已经是 DrawCardQuotaBean 实例
+      if (response.success && response.data) {
+        const userInfo = response.data; // UserBean实例
+        
+        // 检查是否可以抽卡
+        const canDraw = userInfo.canDrawCard();
+        const remainingQuota = userInfo.getDrawCardRemainingQuota();
+        const totalQuota = userInfo.getDrawCardTotalQuota();
+        const usedToday = userInfo.getDrawCardUsedToday();
+        const dailyDrawQuota = userInfo.dailyDrawQuota;
+        
+        if (!canDraw) {
+          // 不能抽卡，返回错误信息
+          let error = '暂时无法使用抽卡功能';
+          let code = -1;
+          
+          // 根据配额情况判断错误类型
+          if (dailyDrawQuota === 0) {
+            error = '请先注册后使用抽卡功能';
+            code = 1001;
+          } else if (remainingQuota === 0 && totalQuota > 0) {
+            error = '今日抽卡次数已用完';
+            code = 1003;
+          }
+          
+          return {
+            canDraw: false,
+            error: error,
+            code: code,
+            userTypeCode: userInfo.userType,
+            remainingQuota: remainingQuota,
+            totalQuota: totalQuota,
+            usedToday: usedToday
+          };
+        }
+        
+        // 可以抽卡
+        return {
+          canDraw: true,
+          userTypeCode: userInfo.userType,
+          remainingQuota: remainingQuota,
+          totalQuota: totalQuota,
+          usedToday: usedToday
+        };
       } else {
-        // 返回错误信息，供后续处理
+        // 获取用户信息失败
         return {
           canDraw: false,
-          error: response.error,
-          code: response.code,
-          ...(response.data || {}) // 包含配额信息（如果有）
+          error: response.error || '获取用户信息失败',
+          code: -1
         };
       }
     } catch (error) {

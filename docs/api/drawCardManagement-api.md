@@ -2,9 +2,9 @@
 
 ## 接口概述
 
-`drawCardManagement` 云函数用于管理抽卡功能的配额检查和使用记录。包含两个主要功能：
-1. 检查用户抽卡配额（checkQuota）
-2. 记录抽卡历史（recordDraw）
+`drawCardManagement` 云函数用于记录抽卡历史。抽卡配额信息已集成到 `userManagement` 云函数的 `getUserInfo` 接口中，通过 `UserBean` 获取。
+
+**注意**：抽卡配额检查已迁移到 `userManagement` 云函数，本云函数仅负责记录抽卡历史。
 
 ## 云函数信息
 
@@ -19,7 +19,7 @@
 
 ```mermaid
 graph TD
-    A[用户点击抽卡] --> B[调用checkQuota检查配额]
+    A[用户点击抽卡] --> B[从UserBean获取配额信息]
     B --> C{是否可以抽卡?}
     C -->|否| D[显示错误提示]
     C -->|是| E[执行抽卡]
@@ -28,166 +28,12 @@ graph TD
     G -->|否| H[显示错误]
     G -->|是| I[显示结果]
     I --> J[调用recordDraw记录]
-    J --> K[刷新配额信息]
+    J --> K[刷新用户信息]
 ```
 
 ---
 
-## 接口1：检查用户配额
-
-### 接口名称
-检查用户抽卡配额
-
-### 接口地址
-云函数：`drawCardManagement`
-
-### 请求方式
-POST（云函数调用）
-
-### 功能说明
-检查当前用户是否可以使用抽卡功能，返回配额信息。
-
-### 请求参数
-
-```javascript
-{
-  action: 'checkQuota'
-}
-```
-
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| action | string | 是 | 固定值：'checkQuota' |
-
-### 返回数据
-
-#### 成功响应（可以抽卡）
-
-```json
-{
-  "success": true,
-  "data": {
-    "canDraw": true,
-    "userTypeCode": "normal",
-    "remainingQuota": 2,
-    "totalQuota": 3,
-    "usedToday": 1
-  }
-}
-```
-
-#### 成功响应（无限配额）
-
-```json
-{
-  "success": true,
-  "data": {
-    "canDraw": true,
-    "userTypeCode": "premium",
-    "remainingQuota": -1,
-    "totalQuota": -1,
-    "usedToday": 0
-  }
-}
-```
-
-#### 失败响应（未注册用户）
-
-```json
-{
-  "success": false,
-  "error": "请先注册后使用抽卡功能",
-  "code": 1001,
-  "data": {
-    "canDraw": false,
-    "userTypeCode": "guest",
-    "remainingQuota": 0,
-    "totalQuota": 0,
-    "usedToday": 0
-  }
-}
-```
-
-#### 失败响应（配额用完）
-
-```json
-{
-  "success": false,
-  "error": "今日抽卡次数已用完",
-  "code": 1003,
-  "data": {
-    "canDraw": false,
-    "userTypeCode": "normal",
-    "remainingQuota": 0,
-    "totalQuota": 3,
-    "usedToday": 3
-  }
-}
-```
-
-### 返回字段说明
-
-| 字段名 | 类型 | 说明 |
-|--------|------|------|
-| success | boolean | 请求是否成功 |
-| error | string | 错误信息（失败时） |
-| code | number | 错误码（失败时） |
-| data | object | 配额数据 |
-| data.canDraw | boolean | 是否可以抽卡 |
-| data.userTypeCode | string | 用户类型代码 |
-| data.remainingQuota | number | 今日剩余次数（-1表示无限） |
-| data.totalQuota | number | 每日总配额（-1表示无限） |
-| data.usedToday | number | 今日已使用次数 |
-
-### 错误码说明
-
-| 错误码 | 说明 | 处理建议 |
-|--------|------|----------|
-| 1001 | 未注册用户（guest） | 提示用户注册 |
-| 1002 | 用户类型不支持抽卡功能 | 提示功能不可用 |
-| 1003 | 今日配额已用完 | 提示明天再来 |
-| -1 | 系统错误 | 稍后重试 |
-
-### 使用示例
-
-```javascript
-// 在客户端调用
-async function checkDrawQuota() {
-  try {
-    const res = await wx.cloud.callFunction({
-      name: 'drawCardManagement',
-      data: {
-        action: 'checkQuota'
-      }
-    });
-    
-    if (res.result.success) {
-      const quota = res.result.data;
-      console.log('可以抽卡:', quota.canDraw);
-      console.log('剩余次数:', quota.remainingQuota);
-      return quota;
-    } else {
-      console.error('配额检查失败:', res.result.error);
-      wx.showToast({
-        title: res.result.error,
-        icon: 'none'
-      });
-      return null;
-    }
-  } catch (error) {
-    console.error('网络错误:', error);
-    wx.showToast({
-      title: '网络错误，请重试',
-      icon: 'none'
-    });
-    return null;
-  }
-}
-```
-
----
-
-## 接口2：记录抽卡历史
+## 接口：记录抽卡历史
 
 ### 接口名称
 记录抽卡和AI解读历史
@@ -292,34 +138,32 @@ async function recordDrawHistory(card, question, aiAnswer) {
 
 ```javascript
 // pages/answer/index.js
+const { drawCardService } = require('../../services/DrawCardService');
+const globalUserManager = require('../../utils/manager/globalUserManager');
 
 Page({
   data: {
     question: '',
     selectedCard: null,
     aiInterpretation: '',
-    userQuotaInfo: null
+    userInfo: null // UserBean实例，包含配额信息
   },
   
   /**
-   * 页面加载时获取配额信息
+   * 页面加载时获取用户信息（包含配额）
    */
   async onLoad() {
-    await this.loadUserQuota();
+    await this.loadUserInfo();
   },
   
   /**
-   * 加载用户配额
+   * 加载用户信息（包含配额信息）
    */
-  async loadUserQuota() {
-    const res = await wx.cloud.callFunction({
-      name: 'drawCardManagement',
-      data: { action: 'checkQuota' }
-    });
-    
-    if (res.result.success) {
+  async loadUserInfo() {
+    const response = await globalUserManager.getUserInfo();
+    if (response.success) {
       this.setData({
-        userQuotaInfo: res.result.data
+        userInfo: response.data // UserBean实例
       });
     }
   },
@@ -328,10 +172,10 @@ Page({
    * 点击抽卡按钮
    */
   async onDrawCard() {
-    // 1. 检查配额
-    const quotaCheck = await this.checkQuota();
-    if (!quotaCheck.canDraw) {
-      this.showQuotaError(quotaCheck);
+    // 1. 从UserBean检查配额
+    const userInfo = this.data.userInfo;
+    if (!userInfo || !userInfo.canDrawCard()) {
+      this.showQuotaError(userInfo);
       return;
     }
     
@@ -344,56 +188,39 @@ Page({
     // 4. 记录历史
     if (aiAnswer) {
       await this.recordHistory(card, aiAnswer);
-      // 5. 刷新配额
-      await this.loadUserQuota();
+      // 5. 刷新用户信息（配额会更新）
+      await this.loadUserInfo();
     }
-  },
-  
-  /**
-   * 检查配额
-   */
-  async checkQuota() {
-    const res = await wx.cloud.callFunction({
-      name: 'drawCardManagement',
-      data: { action: 'checkQuota' }
-    });
-    
-    return res.result.success 
-      ? res.result.data 
-      : { canDraw: false, error: res.result.error, code: res.result.code };
   },
   
   /**
    * 记录历史
    */
   async recordHistory(card, aiAnswer) {
-    await wx.cloud.callFunction({
-      name: 'drawCardManagement',
-      data: {
-        action: 'recordDraw',
-        data: {
-          question: this.data.question || '',
-          cardNumber: card.cardNumber,
-          cardName: card.cardName,
-          aiAnswer: aiAnswer
-        }
-      }
+    const response = await drawCardService.recordDraw({
+      question: this.data.question || '',
+      cardNumber: card.cardNumber,
+      cardName: card.cardName,
+      aiAnswer: aiAnswer
     });
+    
+    if (!response.success) {
+      console.warn('记录失败（不影响使用）:', response.error);
+    }
   },
   
   /**
    * 显示配额错误
    */
-  showQuotaError(quotaInfo) {
-    let message = quotaInfo.error;
+  showQuotaError(userInfo) {
+    let message = '抽卡功能不可用';
     
-    switch (quotaInfo.code) {
-      case 1001:
-        message = '请先注册后使用抽卡功能';
-        break;
-      case 1003:
-        message = `今日抽卡次数已用完（${quotaInfo.totalQuota}次/天），明天再来吧~`;
-        break;
+    if (!userInfo) {
+      message = '请先注册后使用抽卡功能';
+    } else if (userInfo.userType === 'guest') {
+      message = '请先注册后使用抽卡功能';
+    } else if (userInfo.getRemainingDrawQuota() === 0) {
+      message = `今日抽卡次数已用完（${userInfo.dailyDrawQuota}次/天），明天再来吧~`;
     }
     
     wx.showToast({
@@ -436,23 +263,23 @@ Page({
 ### 客户端错误处理
 
 ```javascript
+// 配额检查已集成到UserBean中
 async function handleDrawCard() {
   try {
-    // 1. 检查配额
-    const quotaCheck = await checkQuota();
-    
-    if (!quotaCheck) {
-      // 网络错误
+    // 1. 从UserBean检查配额
+    const userInfo = await globalUserManager.getUserInfo();
+    if (!userInfo.success || !userInfo.data) {
       wx.showToast({
-        title: '网络错误，请重试',
+        title: '获取用户信息失败，请重试',
         icon: 'none'
       });
       return;
     }
     
-    if (!quotaCheck.canDraw) {
+    const userBean = userInfo.data;
+    if (!userBean.canDrawCard()) {
       // 配额不足或权限不足
-      showQuotaError(quotaCheck);
+      showQuotaError(userBean);
       return;
     }
     
@@ -492,12 +319,12 @@ async function recordHistory(data) {
 
 ## 性能优化建议
 
-1. **预加载配额信息**
-   - 页面加载时预先获取配额信息
+1. **预加载用户信息**
+   - 页面加载时预先获取用户信息（包含配额）
    - 避免点击时等待
 
-2. **配额信息缓存**
-   - 在客户端缓存配额信息
+2. **用户信息缓存**
+   - 通过 `globalUserManager` 统一管理用户信息
    - 每次操作后更新缓存
 
 3. **异步记录**
@@ -517,7 +344,7 @@ async function recordHistory(data) {
    - 无需额外登录认证
 
 2. **权限控制**
-   - 配额检查在云函数中进行
+   - 配额检查在 `userManagement` 云函数中进行
    - 客户端无法绕过限制
 
 3. **数据隔离**
@@ -559,5 +386,6 @@ async function recordHistory(data) {
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 2.0 | 2024-12-XX | 移除checkQuota接口，配额信息已集成到userManagement云函数 |
 | 1.0 | 2024-11-14 | 初始版本，实现配额检查和记录功能 |
 

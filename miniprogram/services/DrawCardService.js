@@ -1,38 +1,14 @@
 /**
  * 抽卡服务类
- * 处理抽卡相关的业务逻辑，包括配额检查、抽卡记录等
+ * 处理抽卡相关的业务逻辑，包括抽卡记录等
+ * 注意：抽卡配额信息已集成到UserBean中，通过userManagement云函数获取
  */
 const { BaseService } = require('./BaseService');
 const { ResponseBean } = require('../beans/ResponseBean');
-const { DrawCardQuotaBean } = require('../beans/DrawCardQuotaBean');
 
 class DrawCardService extends BaseService {
   constructor() {
     super();
-  }
-  
-  /**
-   * 检查抽卡配额
-   * @returns {Promise<ResponseBean>} 配额信息响应，成功时data为DrawCardQuotaBean实例
-   */
-  async checkQuota() {
-    try {
-      const response = await this.callFunction('drawCardManagement', {
-        action: 'checkQuota'
-      });
-      
-      this._logServiceCall('checkQuota', {}, response);
-      
-      // 成功时将data转换为DrawCardQuotaBean
-      if (response.success && response.data) {
-        response.data = new DrawCardQuotaBean(response.data);
-      }
-      
-      return response;
-    } catch (error) {
-      this._error('checkQuota', '检查配额异常:', error);
-      return ResponseBean.error('检查配额失败: ' + error.message, -1);
-    }
   }
   
   /**

@@ -29,7 +29,7 @@ class VersionManager {
     },
     '1.3.0': {
       calculateBazi: 'v1_1',
-      userManagement: 'v1_0',
+      userManagement: 'v1_3',
       profileManagement: 'v1_2',
       cozeFunctions: 'v1_3'
     }

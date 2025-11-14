@@ -35,6 +35,13 @@ class UserBean extends BaseBean {
     this.profileQuota = this._getField(this.data, 'profileQuota', 3, 'number');
     this.permissions = this._getField(this.data, 'permissions', []);
     
+    // 抽卡配额相关字段（从static_user_types表获取，并在getUserInfo时计算）
+    this.dailyDrawQuota = this._getField(this.data, 'dailyDrawQuota', 0, 'number');
+    this.canDraw = this._getField(this.data, 'canDraw', false, 'boolean');
+    this.drawCardRemainingQuota = this._getField(this.data, 'drawCardRemainingQuota', 0, 'number');
+    this.drawCardTotalQuota = this._getField(this.data, 'drawCardTotalQuota', 0, 'number');
+    this.drawCardUsedToday = this._getField(this.data, 'drawCardUsedToday', 0, 'number');
+    
     // 计算字段（存储原始值，方法会重新计算）
     this._canCreateMoreValue = this._getField(this.data, 'canCreateMore');
     this._remainingQuotaValue = this._getField(this.data, 'remainingQuota');
@@ -56,6 +63,13 @@ class UserBean extends BaseBean {
     this._validateArray('permissions', this.permissions);
     this._validateFieldType('usedProfiles', this.usedProfiles, 'number');
     this._validateFieldType('isActive', this.isActive, 'boolean');
+    
+    // 验证抽卡配额字段
+    this._validateFieldType('dailyDrawQuota', this.dailyDrawQuota, 'number');
+    this._validateFieldType('canDraw', this.canDraw, 'boolean');
+    this._validateFieldType('drawCardRemainingQuota', this.drawCardRemainingQuota, 'number');
+    this._validateFieldType('drawCardTotalQuota', this.drawCardTotalQuota, 'number');
+    this._validateFieldType('drawCardUsedToday', this.drawCardUsedToday, 'number');
     
     // 验证用户类型
     const validUserTypes = ['guest', 'normal', 'premium'];
@@ -292,6 +306,57 @@ class UserBean extends BaseBean {
     } else {
       return `临时用户，可创建${this.profileQuota}个档案`;
     }
+  }
+  
+  /**
+   * 检查是否可以抽卡
+   * @returns {boolean} 是否可以抽卡
+   */
+  canDrawCard() {
+    return this.canDraw === true;
+  }
+  
+  /**
+   * 获取抽卡剩余配额
+   * @returns {number} 剩余配额，-1表示无限
+   */
+  getDrawCardRemainingQuota() {
+    return this.drawCardRemainingQuota;
+  }
+  
+  /**
+   * 获取抽卡总配额
+   * @returns {number} 总配额，-1表示无限
+   */
+  getDrawCardTotalQuota() {
+    return this.drawCardTotalQuota;
+  }
+  
+  /**
+   * 获取今日已使用抽卡次数
+   * @returns {number} 已使用次数
+   */
+  getDrawCardUsedToday() {
+    return this.drawCardUsedToday;
+  }
+  
+  /**
+   * 是否无限抽卡配额
+   * @returns {boolean} 是否无限
+   */
+  isDrawCardUnlimited() {
+    return this.drawCardTotalQuota === -1;
+  }
+  
+  /**
+   * 获取抽卡配额描述
+   * @returns {string} 配额描述
+   */
+  getDrawCardQuotaDescription() {
+    if (this.isDrawCardUnlimited()) {
+      return '无限次';
+    }
+    return `今日剩余 ${this.drawCardRemainingQuota}/${this.drawCardTotalQuota} 次`;
   }
   
   /**
