@@ -13,6 +13,7 @@
 | 档案管理 | [profileManagement-api.md](./profileManagement-api.md) | ✅ 已完成 | 八字档案的增删改查功能 |
 | 档案管理 v1.1 | [profileManagement_v1_1-api.md](./profileManagement_v1_1-api.md) | ✅ 已完成 | 档案管理增强版，集成八字计算功能 |
 | 档案管理 v1.2 | [profileManagement_v1_2-api.md](./profileManagement_v1_2-api.md) | ✅ 已完成 | 支持公历/农历和农历闰月标记 |
+| 抽卡管理 | [drawCardManagement-api.md](./drawCardManagement-api.md) | 📋 待实现 | 抽卡配额检查和使用记录管理 |
 
 ### 待添加接口
 
@@ -84,6 +85,7 @@ docs/api/
 ├── profileManagement-api.md    # 档案管理云函数接口
 ├── profileManagement_v1_1-api.md # 档案管理云函数接口v1.1（集成八字计算）
 ├── profileManagement_v1_2-api.md # 档案管理云函数接口v1.2（支持农历闰月）
+├── drawCardManagement-api.md   # 抽卡管理云函数接口（配额检查和记录）
 ├── userClassification-api.md   # 用户分类接口
 └── [future-api].md             # 未来的其他接口文档
 ```

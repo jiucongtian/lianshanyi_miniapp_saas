@@ -13,22 +13,41 @@
 | users | 用户表 | 存储用户基本信息和身份识别 | [usersdb.md](./usersdb.md) |
 | user_types | 用户类型配置表 | 存储用户类型的权限和配额配置 | [user_typesdb.md](./user_typesdb.md) |
 | profiles | 档案表 | 存储用户创建的生辰八字档案 | [profilesdb.md](./profilesdb.md) |
+| draw_card_records | 抽卡记录表 | 存储用户的抽卡和AI解读历史 | [draw_card_recordsdb.md](./draw_card_recordsdb.md) |
 
 ### 数据表关系图
 
 ```
-┌─────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ user_types  │    │     users       │    │    profiles     │
-├─────────────┤    ├─────────────────┤    ├─────────────────┤
-│ _id (PK)    │    │ _id (PK)        │    │ _id (PK)        │
-│ typeCode    │◄───┤ userTypeCode(FK)│    │ userId (FK)     │
-│ typeName    │    │ openid          │◄───┤ openid          │
-│ profileQuota│    │ unionid         │    │ profileName     │
-│ permissions │    │ nickName        │    │ birthDate       │
-│ ...         │    │ ...             │    │ baziData        │
-└─────────────┘    └─────────────────┘    │ ...             │
-     1                      1              └─────────────────┘
-                                           N
+┌──────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  user_types      │    │     users       │    │    profiles     │
+├──────────────────┤    ├─────────────────┤    ├─────────────────┤
+│ _id (PK)         │    │ _id (PK)        │    │ _id (PK)        │
+│ typeCode         │◄───┤ userTypeCode(FK)│    │ userId (FK)     │
+│ typeName         │    │ openid          │◄───┤ openid          │
+│ profileQuota     │    │ unionid         │    │ profileName     │
+│ dailyDrawQuota   │    │ nickName        │    │ birthDate       │
+│ permissions      │    │ ...             │    │ baziData        │
+│ ...              │    └─────────────────┘    │ ...             │
+└──────────────────┘             │             └─────────────────┘
+     1                           │                      N
+                                 │
+                                 │ 1
+                                 ▼
+                        ┌──────────────────┐
+                        │draw_card_records │
+                        ├──────────────────┤
+                        │ _id (PK)         │
+                        │ userId (FK)      │
+                        │ openid           │
+                        │ userTypeCode     │
+                        │ question         │
+                        │ cardNumber       │
+                        │ cardName         │
+                        │ aiAnswer         │
+                        │ drawDate         │
+                        │ ...              │
+                        └──────────────────┘
+                                 N
 ```
 
 ## 设计原则
@@ -58,6 +77,8 @@
 2. **档案列表**: 通过openid查询用户的所有有效档案
 3. **档案详情**: 通过档案ID查询具体档案信息
 4. **档案管理**: 创建、更新、删除档案操作
+5. **抽卡配额检查**: 查询用户当日抽卡次数，判断是否可以继续抽卡
+6. **抽卡历史查询**: 查询用户的抽卡历史记录
 
 ### 查询性能优化
 
@@ -67,9 +88,12 @@
    - user_types.typeCode: 唯一索引
    - profiles.openid: 普通索引
    - profiles.userId: 普通索引
+   - draw_card_records.interpretTime: 普通索引
 
 2. **复合索引**:
    - profiles: {openid: 1, isActive: 1, createTime: -1}
+   - draw_card_records: {userId: 1, drawDate: 1} （必须创建，用于配额统计）
+   - draw_card_records: {openid: 1, drawDate: 1} （可选，备用查询）
 
 ## 扩展性设计
 

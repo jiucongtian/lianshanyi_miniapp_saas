@@ -17,6 +17,7 @@
 | description | string | 否 | - | 用户类型描述 |
 | profileQuota | number | 是 | - | 档案配额(-1表示无限制) |
 | permissions | array | 是 | - | 权限列表 |
+| dailyDrawQuota | number | 是 | - | 每日抽卡配额(0=不可用，正整数=次数限制，-1=无限) |
 
 ## 数据示例
 
@@ -28,7 +29,8 @@
   "displayName": "临时用户",
   "description": "未注册的临时用户，功能受限",
   "profileQuota": 3,
-  "permissions": ["view", "create_limited"]
+  "permissions": ["view", "create_limited"],
+  "dailyDrawQuota": 0
 }
 ```
 
@@ -40,7 +42,8 @@
   "displayName": "探索者",
   "description": "已注册的普通用户，享受基础功能",
   "profileQuota": 50,
-  "permissions": ["view", "create"]
+  "permissions": ["view", "create"],
+  "dailyDrawQuota": 3
 }
 ```
 
@@ -52,7 +55,8 @@
   "displayName": "高级用户",
   "description": "付费高级用户，享受全部功能",
   "profileQuota": -1,
-  "permissions": ["all"]
+  "permissions": ["all"],
+  "dailyDrawQuota": -1
 }
 ```
 
@@ -77,6 +81,10 @@
   - 外键: `users.userTypeCode` 关联 `user_types.typeCode`
   - 关系描述: 一个用户类型可以被多个用户使用
 
+- **draw_card_records表**: 间接关联
+  - 通过 `draw_card_records.userTypeCode` 字段关联
+  - 关系描述: 抽卡记录中存储用户当时的类型（快照），用于统计分析
+
 ## 业务规则
 
 1. **类型代码唯一性**: 通过typeCode保证用户类型唯一性
@@ -86,24 +94,32 @@
    - 权限代码：view(查看)、create(创建)、create_limited(受限创建)、all(全部权限)
 4. **配额管理**:
    - profileQuota表示档案创建配额
-   - -1表示无限制
-   - 其他数值表示具体配额数量
+     - -1表示无限制
+     - 其他数值表示具体配额数量
+   - dailyDrawQuota表示每日抽卡配额
+     - 0表示不可用（如临时用户）
+     - 正整数表示每日次数限制
+     - -1表示无限制
 
 ## 用户类型权限详细说明
 
 ### 临时用户 (guest)
 - 档案配额：3个
+- 抽卡配额：0次（不可用）
 - 权限范围：
   - ✅ 查看小程序基础功能
   - ✅ 进行生辰八字计算
   - ✅ 创建档案（数量限制）
   - ✅ 查看已创建的档案
+  - ❌ 无法使用抽卡功能
   - ❌ 无法享受高级分析功能
 
 ### 普通用户 (normal)
 - 档案配额：50个
+- 抽卡配额：3次/天
 - 权限范围：
   - ✅ 临时用户的所有权限
+  - ✅ 使用抽卡功能（每日3次）
   - ✅ 参与社区互动（如有）
   - ✅ 收藏和管理档案
   - ❌ 无法使用高级分析算法
@@ -111,8 +127,10 @@
 
 ### 高级用户 (premium)
 - 档案配额：无限制
+- 抽卡配额：无限制
 - 权限范围：
   - ✅ 普通用户的所有权限
+  - ✅ 无限抽卡次数
   - ✅ 高级八字分析算法
   - ✅ 专属分析报告模板
   - ✅ 无限档案创建
