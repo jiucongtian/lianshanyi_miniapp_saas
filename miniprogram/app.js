@@ -15,10 +15,10 @@ const log = createModuleLogger('App');
 
 App({
   globalData: {
-    userInfo: null,
     profilesLoaded: false, // 标记档案是否已加载
     version: '1.3.0', // 客户端版本
     profileManager: profileManager, // 全局档案管理器
+    globalUserManager: globalUserManager, // 全局用户管理器
   },
 
   /** 全局事件总线 */
@@ -121,13 +121,10 @@ App({
       log.info('autoSaveUser', '开始自动保存用户信息');
       
       // 使用全局用户管理器初始化用户信息
-      const result = await globalUserManager.initialize();
+      const result = await this.globalData.globalUserManager.initialize();
       
       if (result.success) {
         log.info('autoSaveUser', '用户信息初始化成功', { message: result.message });
-        
-        // 更新全局用户信息
-        this.globalData.userInfo = result.data;
         
         // 用户信息更新完成，无需发送事件（当前无监听器）
         
@@ -146,7 +143,7 @@ App({
    * @returns {Object|null} 当前用户信息
    */
   getCurrentUser() {
-    return globalUserManager.getCachedUserInfo() || this.globalData.userInfo;
+    return this.globalData.globalUserManager.getCachedUserInfo();
   },
 
   /**
@@ -160,10 +157,7 @@ App({
       
       if (result.success) {
         // 刷新 globalUserManager 缓存
-        await globalUserManager.refreshUserInfo();
-        
-        // 更新全局数据（从 globalUserManager 获取最新数据）
-        this.globalData.userInfo = globalUserManager.getCachedUserInfo();
+        await this.globalData.globalUserManager.refreshUserInfo();
         
         // 用户信息更新完成，无需发送事件（当前无监听器）
       }

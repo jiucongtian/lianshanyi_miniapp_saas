@@ -11,7 +11,6 @@
 
 const { BaseController } = require('./BaseController');
 const { userService } = require('../services/UserService');
-const { globalUserManager } = require('../utils/manager/globalUserManager');
 const { permissionManager, USER_TYPES } = require('../utils/manager/permissionManager');
 
 class RegisterController extends BaseController {
@@ -56,6 +55,9 @@ class RegisterController extends BaseController {
    */
   async loadUserInfo() {
     try {
+      const app = getApp();
+      const globalUserManager = app.globalData.globalUserManager;
+      
       // 使用 globalUserManager 获取用户信息
       const currentUser = globalUserManager.getCachedUserInfo();
       
@@ -228,6 +230,9 @@ class RegisterController extends BaseController {
     this._showLoading('上传头像中...', true);
     
     try {
+      const app = getApp();
+      const globalUserManager = app.globalData.globalUserManager;
+      
       // 从 globalUserManager 获取用户信息
       let currentUser = globalUserManager.getCachedUserInfo();
       this._log('_uploadAvatar', '当前用户信息:', currentUser);
@@ -370,7 +375,8 @@ class RegisterController extends BaseController {
       
       // 如果操作成功，刷新 globalUserManager 的用户信息
       if (result.success) {
-        await globalUserManager.refreshUserInfo();
+        const app = getApp();
+        await app.globalData.globalUserManager.refreshUserInfo();
       }
       
       this._setData({ loading: false });

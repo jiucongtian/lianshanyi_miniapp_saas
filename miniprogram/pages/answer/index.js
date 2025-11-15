@@ -10,8 +10,6 @@ const { getBaziImageById } = require('../../utils/baziImageMap');
 const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
 // 引入抽卡服务（暂时注释，只测试配额显示）
 // const { drawCardService } = require('../../services/DrawCardService');
-// 引入全局用户管理器
-const { globalUserManager } = require('../../utils/manager/globalUserManager');
 
 Page({
   data: {
@@ -552,7 +550,8 @@ Page({
         // }
         
         // 刷新用户信息（包含抽卡配额）
-        await globalUserManager.refreshUserInfo();
+        const app = getApp();
+        await app.globalData.globalUserManager.refreshUserInfo();
         // 更新按钮文本
         await this._loadUserQuota();
         // ==================================
@@ -699,6 +698,8 @@ Page({
       log.info('_loadUserQuota', '开始加载用户配额信息');
       
       // 从全局用户管理器获取用户信息
+      const app = getApp();
+      const globalUserManager = app.globalData.globalUserManager;
       let response;
       try {
         response = await globalUserManager.getUserInfo();
@@ -867,6 +868,8 @@ Page({
   async _checkDrawQuota() {
     try {
       // 从全局用户管理器获取用户信息
+      const app = getApp();
+      const globalUserManager = app.globalData.globalUserManager;
       const response = await globalUserManager.getUserInfo();
       
       if (response.success && response.data) {

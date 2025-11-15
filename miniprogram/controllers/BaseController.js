@@ -15,7 +15,6 @@
  */
 
 const { BaseClass } = require('../common/BaseClass');
-const { globalUserManager } = require('../utils/manager/globalUserManager');
 
 class BaseController extends BaseClass {
   /**
@@ -51,6 +50,8 @@ class BaseController extends BaseClass {
     this._log('loadUserInfo', '开始加载用户信息', { forceRefresh });
     
     try {
+      const app = getApp();
+      const globalUserManager = app.globalData.globalUserManager;
       const response = await globalUserManager.getUserInfo(forceRefresh);
       
       if (response.success && response.data) {
