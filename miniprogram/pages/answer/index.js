@@ -839,8 +839,8 @@ Page({
           // 有剩余次数
           return `抽卡（剩余${remainingQuota}次）`;
         } else if (remainingQuota === 0 && totalQuota > 0) {
-          // 已用完
-          return '抽卡（已用完）';
+          // 今日已用完
+          return '抽卡（今日已用完）';
         } else {
           // 其他情况（可能是配额为0，不可用）
           return '抽卡';
