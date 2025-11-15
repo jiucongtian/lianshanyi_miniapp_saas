@@ -2,7 +2,7 @@
   <button
     class="damson-button {{theme}} {{size}} {{loading ? 'loading' : ''}} {{customClass}}"
     disabled="{{disabled || loading}}"
-    bindtap="onButtonTap"
+    catchtap="onButtonTap"
     hover-class="damson-button--hover"
     hover-stay-time="70"
   >

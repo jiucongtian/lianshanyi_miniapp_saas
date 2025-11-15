@@ -58,6 +58,16 @@ Component({
   },
 
   /**
+   * 组件生命周期
+   */
+  lifetimes: {
+    attached() {
+      // 使用同步标志防止重复点击（比 data.loading 更可靠）
+      this._isProcessing = false;
+    }
+  },
+
+  /**
    * 组件的方法列表
    */
   methods: {
@@ -65,12 +75,25 @@ Component({
      * 按钮点击事件
      */
     onButtonTap() {
-      // 如果禁用或正在加载中，直接返回
-      if (this.data.disabled || this.data.loading) {
+      // 如果禁用，直接返回
+      if (this.data.disabled) {
         return;
       }
 
-      // 如果启用防重复点击
+      // 使用同步标志防止重复点击（比异步的 setData 更可靠）
+      if (this._isProcessing) {
+        return;
+      }
+
+      // 如果正在加载中，也直接返回（双重保险）
+      if (this.data.loading) {
+        return;
+      }
+
+      // 设置处理标志（同步操作，立即生效）
+      this._isProcessing = true;
+
+      // 如果启用防重复点击，更新 loading 状态
       if (this.data.preventDuplicate) {
         this.setData({
           loading: true
@@ -87,6 +110,7 @@ Component({
      * 开始加载状态
      */
     startLoading() {
+      this._isProcessing = true;
       this.setData({
         loading: true
       });
@@ -96,6 +120,7 @@ Component({
      * 结束加载状态
      */
     stopLoading() {
+      this._isProcessing = false;
       this.setData({
         loading: false
       });
@@ -105,6 +130,7 @@ Component({
      * 重置按钮状态（用于错误处理）
      */
     reset() {
+      this._isProcessing = false;
       this.setData({
         loading: false
       });

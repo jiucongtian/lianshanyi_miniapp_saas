@@ -134,27 +134,33 @@ Page({
    * 抽卡按钮点击事件
    */
   async onAnalyzeAnswer() {
-    log.info('onAnalyzeAnswer', '点击抽卡');
-    
     // 同步检查：如果正在抽卡，直接返回（防止重复点击）
+    // 这个检查必须在日志之前，避免日志被打印两次
     if (this.isDrawingCard) {
       log.warn('onAnalyzeAnswer', '正在抽卡中，忽略重复点击');
       return;
     }
     
+    // 立即设置标志，防止在异步操作期间重复触发
+    this.isDrawingCard = true;
+    
+    log.info('onAnalyzeAnswer', '点击抽卡');
+    
     // ========== 配额检查 ==========
+    // 先获取按钮组件引用（用于配额检查失败时重置状态）
+    const buttonComponent = this.selectComponent('#loading-button-draw');
+    
     const quotaCheck = await this._checkDrawQuota();
     if (!quotaCheck || !quotaCheck.canDraw) {
+      // 配额检查失败，重置按钮状态和抽卡标志
+      if (buttonComponent) {
+        buttonComponent.reset();
+      }
+      this.isDrawingCard = false; // 重置抽卡标志，允许下次点击
       this._showQuotaError(quotaCheck);
       return;
     }
     // ==============================
-    
-    // 设置抽卡标志
-    this.isDrawingCard = true;
-    
-    // 获取按钮组件引用（用于错误时重置状态）
-    const buttonComponent = this.selectComponent('#loading-button-draw');
     
     // 如果已经翻转，先翻转回来，等翻转动画完成后再清空图片路径
     if (this.data.isFlipped) {
