@@ -37,26 +37,52 @@ class VersionManager {
   
   /**
    * 获取当前客户端版本
-   * @returns {string} 当前版本号
+   * @returns {string|null} 当前版本号，如果无法获取则返回 null
    */
   static getCurrentVersion() {
     try {
-      // 从app.json或配置中获取当前版本
-      // 这里可以从全局配置或环境变量中读取
       const appConfig = getApp();
       
-      // 安全检查：确保appConfig存在且globalData存在
       if (appConfig && appConfig.globalData && appConfig.globalData.version) {
-        return appConfig.globalData.version;
+        const version = appConfig.globalData.version;
+        log.debug('getCurrentVersion', '成功获取版本', { version });
+        return version;
       }
       
-      // 如果无法获取版本信息，返回默认版本（这是正常的降级行为）
-      log.debug('getCurrentVersion', 'App实例未完全初始化，使用默认版本 1.1.0');
-      return '1.1.0';
+      // 如果无法获取版本信息，返回 null（由调用方决定如何处理）
+      log.warn('getCurrentVersion', 'App实例未完全初始化，无法获取版本', {
+        hasAppConfig: !!appConfig,
+        hasGlobalData: !!(appConfig && appConfig.globalData)
+      });
+      return null;
     } catch (error) {
-      log.error('getCurrentVersion', '获取版本信息失败', { error: error.message });
-      return '1.1.0';
+      log.error('getCurrentVersion', '获取版本信息失败', { error: error.message, errorStack: error.stack });
+      return null;
     }
+  }
+  
+  /**
+   * 等待版本可用（轮询检查直到版本可用）
+   * @param {number} maxRetries - 最大重试次数，默认 50 次
+   * @param {number} interval - 每次检查间隔（毫秒），默认 100ms
+   * @returns {Promise<string>} 版本号
+   */
+  static async waitForVersion(maxRetries = 50, interval = 100) {
+    for (let i = 0; i < maxRetries; i++) {
+      const version = this.getCurrentVersion();
+      if (version) {
+        log.debug('waitForVersion', '版本可用', { version, retries: i });
+        return version;
+      }
+      
+      // 等待一段时间后重试
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+    }
+    
+    // 如果所有重试都失败，抛出错误
+    throw new Error(`无法获取版本信息，已重试 ${maxRetries} 次`);
   }
   
   /**
@@ -66,29 +92,65 @@ class VersionManager {
    */
   static getFunctionVersion(functionName) {
     const currentVersion = this.getCurrentVersion();
+    
+    // 如果无法获取版本，返回 null（由调用方处理）
+    if (!currentVersion) {
+      log.warn('getFunctionVersion', '无法获取客户端版本，无法确定云函数版本', { 
+        functionName
+      });
+      return null;
+    }
+    
     const config = this.VERSION_CONFIG[currentVersion];
     
+    log.debug('getFunctionVersion', '获取云函数版本', {
+      functionName,
+      currentVersion,
+      hasConfig: !!config,
+      functionVersion: config && config[functionName]
+    });
+    
     if (!config) {
-      log.warn('getFunctionVersion', '未找到客户端版本的配置，使用默认版本 v1_0', { currentVersion });
+      log.warn('getFunctionVersion', '未找到客户端版本的配置，使用默认版本 v1_0', { 
+        currentVersion,
+        availableVersions: Object.keys(this.VERSION_CONFIG)
+      });
       return 'v1_0';
     }
     
     if (!config[functionName]) {
-      log.warn('getFunctionVersion', '未找到函数的版本配置，使用默认版本 v1_0', { functionName });
+      log.warn('getFunctionVersion', '未找到函数的版本配置，使用默认版本 v1_0', { 
+        functionName,
+        currentVersion,
+        availableFunctions: Object.keys(config)
+      });
       return 'v1_0';
     }
     
-    return config[functionName];
+    const functionVersion = config[functionName];
+    log.debug('getFunctionVersion', '成功获取云函数版本', {
+      functionName,
+      currentVersion,
+      functionVersion
+    });
+    
+    return functionVersion;
   }
   
   /**
    * 获取完整的云函数名称（包含版本后缀）
    * @param {string} baseName - 云函数基础名称
    * @param {string} version - 指定版本（可选）
-   * @returns {string} 完整的云函数名称
+   * @returns {string|null} 完整的云函数名称，如果无法确定版本则返回 null
    */
   static getFunctionName(baseName, version = null) {
     const functionVersion = version || this.getFunctionVersion(baseName);
+    
+    // 如果无法获取版本，返回 null
+    if (!functionVersion) {
+      log.warn('getFunctionName', '无法确定云函数版本，无法生成完整函数名', { baseName });
+      return null;
+    }
     
     // v1_0 版本不加后缀，保持向后兼容
     if (functionVersion === 'v1_0') {

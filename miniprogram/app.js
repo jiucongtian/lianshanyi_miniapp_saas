@@ -5,7 +5,7 @@ const { PROFILE_EVENTS, SYSTEM_EVENTS } = require('./utils/eventTypes');
 const { globalUserManager } = require('./utils/manager/globalUserManager');
 const { userService } = require('./services/UserService');
 const { imageCacheManager } = require('./utils/manager/imageCacheManager');
-const { profileService } = require('./services/index');
+const { profileService } = require('./services/ProfileService');
 const { profileManager } = require('./utils/manager/profileManager');
 const logger = require('./utils/logger/Logger');
 const { LogCleaner } = require('./utils/logger/LogCleaner');
@@ -17,7 +17,7 @@ App({
   globalData: {
     userInfo: null,
     profilesLoaded: false, // 标记档案是否已加载
-    version: '1.2.0', // 客户端版本
+    version: '1.3.0', // 客户端版本
     profileManager: profileManager, // 全局档案管理器
   },
 

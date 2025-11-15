@@ -8,10 +8,10 @@ const { JIAZI_DATA } = require('../../utils/jiaziData');
 const { getBaziImageById } = require('../../utils/baziImageMap');
 // 引入图片缓存管理器
 const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
-// 引入抽卡服务
-const { drawCardService } = require('../../services/DrawCardService');
+// 引入抽卡服务（暂时注释，只测试配额显示）
+// const { drawCardService } = require('../../services/DrawCardService');
 // 引入全局用户管理器
-const globalUserManager = require('../../utils/manager/globalUserManager');
+const { globalUserManager } = require('../../utils/manager/globalUserManager');
 
 Page({
   data: {
@@ -536,19 +536,19 @@ Page({
         
         log.info('onAIInterpret', 'AI解读成功', { interpretation, isAutoCall });
         
-        // ========== 记录抽卡历史 ==========
-        if (this.data.selectedCard) {
-          await this._recordDrawHistory(
-            this.data.selectedCard,
-            this.data.question || '',
-            interpretation
-          );
-          
-          // 刷新用户信息（包含抽卡配额）
-          await globalUserManager.refreshUserInfo();
-          // 更新按钮文本
-          await this._loadUserQuota();
-        }
+        // ========== 记录抽卡历史（暂时注释，只测试配额显示） ==========
+        // if (this.data.selectedCard) {
+        //   await this._recordDrawHistory(
+        //     this.data.selectedCard,
+        //     this.data.question || '',
+        //     interpretation
+        //   );
+        // }
+        
+        // 刷新用户信息（包含抽卡配额）
+        await globalUserManager.refreshUserInfo();
+        // 更新按钮文本
+        await this._loadUserQuota();
         // ==================================
         
         // 如果是自动调用，不显示toast（避免打断用户体验）
@@ -690,22 +690,89 @@ Page({
    */
   async _loadUserQuota() {
     try {
+      log.info('_loadUserQuota', '开始加载用户配额信息');
+      
       // 从全局用户管理器获取用户信息
-      const response = await globalUserManager.getUserInfo();
+      let response;
+      try {
+        response = await globalUserManager.getUserInfo();
+        log.info('_loadUserQuota', 'globalUserManager.getUserInfo() 调用成功', {
+          responseType: typeof response,
+          isNull: response === null,
+          isUndefined: response === undefined,
+          hasSuccess: response && 'success' in response,
+          hasData: response && 'data' in response
+        });
+      } catch (getUserInfoError) {
+        log.error('_loadUserQuota', 'globalUserManager.getUserInfo() 调用异常', {
+          error: getUserInfoError,
+          errorMessage: getUserInfoError?.message,
+          errorStack: getUserInfoError?.stack,
+          errorType: typeof getUserInfoError
+        });
+        throw getUserInfoError;
+      }
+      
+      if (!response) {
+        log.warn('_loadUserQuota', 'response 为空或 undefined');
+        this.setData({ drawButtonText: '抽卡' });
+        return;
+      }
+      
+      log.info('_loadUserQuota', '获取用户信息响应', {
+        success: response.success,
+        hasData: !!response.data,
+        error: response.error,
+        dataType: typeof response.data,
+        isUserBean: response.data && response.data.constructor && response.data.constructor.name === 'UserBean'
+      });
       
       if (response.success && response.data) {
         const userInfo = response.data; // UserBean实例
+        
+        // 详细记录 UserBean 中的配额数据
+        log.info('_loadUserQuota', 'UserBean 配额数据详情', {
+          drawCardRemainingQuota: userInfo.drawCardRemainingQuota,
+          drawCardTotalQuota: userInfo.drawCardTotalQuota,
+          drawCardUsedToday: userInfo.drawCardUsedToday,
+          dailyDrawQuota: userInfo.dailyDrawQuota,
+          canDraw: userInfo.canDraw,
+          hasGetDrawCardRemainingQuota: typeof userInfo.getDrawCardRemainingQuota === 'function',
+          hasGetDrawCardTotalQuota: typeof userInfo.getDrawCardTotalQuota === 'function',
+          hasIsDrawCardUnlimited: typeof userInfo.isDrawCardUnlimited === 'function',
+          userType: userInfo.userType
+        });
+        
+        // 生成按钮文本
+        let buttonText;
+        try {
+          buttonText = this._getDrawButtonText(userInfo);
+          log.info('_loadUserQuota', '生成的按钮文本', { buttonText });
+        } catch (buttonTextError) {
+          log.error('_loadUserQuota', '生成按钮文本异常', {
+            error: buttonTextError,
+            errorMessage: buttonTextError?.message
+          });
+          buttonText = '抽卡';
+        }
+        
         this.setData({
           userQuotaInfo: userInfo,
-          drawButtonText: this._getDrawButtonText(userInfo)
+          drawButtonText: buttonText
         });
-        log.info('_loadUserQuota', '配额信息加载成功', {
-          canDraw: userInfo.canDrawCard(),
-          remainingQuota: userInfo.getDrawCardRemainingQuota(),
-          totalQuota: userInfo.getDrawCardTotalQuota()
+        
+        log.info('_loadUserQuota', '配额信息加载成功，已更新按钮文本', {
+          canDraw: typeof userInfo.canDrawCard === 'function' ? userInfo.canDrawCard() : userInfo.canDraw,
+          remainingQuota: typeof userInfo.getDrawCardRemainingQuota === 'function' ? userInfo.getDrawCardRemainingQuota() : userInfo.drawCardRemainingQuota,
+          totalQuota: typeof userInfo.getDrawCardTotalQuota === 'function' ? userInfo.getDrawCardTotalQuota() : userInfo.drawCardTotalQuota,
+          buttonText: buttonText
         });
       } else {
-        log.warn('_loadUserQuota', '获取用户信息失败', response.error);
+        log.warn('_loadUserQuota', '获取用户信息失败', {
+          success: response.success,
+          error: response.error,
+          hasData: !!response.data
+        });
         // 静默处理，不影响页面显示
         // 使用默认按钮文本
         this.setData({
@@ -713,7 +780,14 @@ Page({
         });
       }
     } catch (error) {
-      log.error('_loadUserQuota', '加载配额信息异常', error);
+      log.error('_loadUserQuota', '加载配额信息异常', {
+        error: error,
+        errorMessage: error?.message || String(error),
+        errorStack: error?.stack,
+        errorName: error?.name,
+        errorType: typeof error,
+        errorString: JSON.stringify(error, Object.getOwnPropertyNames(error))
+      });
       // 静默处理
       // 使用默认按钮文本
       this.setData({
@@ -729,28 +803,55 @@ Page({
    */
   _getDrawButtonText(userInfo) {
     if (!userInfo) {
+      log.warn('_getDrawButtonText', 'userInfo 为空，返回默认文本');
       return '抽卡';
     }
     
-    // 如果是无限配额
-    if (userInfo.isDrawCardUnlimited && userInfo.isDrawCardUnlimited()) {
-      return '抽卡（无限次）';
-    }
-    
-    // 获取剩余配额信息
-    const remainingQuota = userInfo.getDrawCardRemainingQuota();
-    const totalQuota = userInfo.getDrawCardTotalQuota();
-    
-    if (typeof remainingQuota === 'number' && typeof totalQuota === 'number') {
-      if (remainingQuota > 0) {
-        return `抽卡（剩余${remainingQuota}次）`;
-      } else {
-        return '抽卡（已用完）';
+    try {
+      // 检查是否是无限配额
+      if (typeof userInfo.isDrawCardUnlimited === 'function' && userInfo.isDrawCardUnlimited()) {
+        log.info('_getDrawButtonText', '无限配额');
+        return '抽卡（无限次）';
       }
+      
+      // 获取剩余配额信息
+      const remainingQuota = typeof userInfo.getDrawCardRemainingQuota === 'function' 
+        ? userInfo.getDrawCardRemainingQuota() 
+        : (userInfo.drawCardRemainingQuota || 0);
+      const totalQuota = typeof userInfo.getDrawCardTotalQuota === 'function'
+        ? userInfo.getDrawCardTotalQuota()
+        : (userInfo.drawCardTotalQuota || 0);
+      
+      log.info('_getDrawButtonText', '配额信息', { remainingQuota, totalQuota, type: typeof remainingQuota });
+      
+      // 验证数据类型
+      if (typeof remainingQuota === 'number' && typeof totalQuota === 'number') {
+        if (totalQuota === -1) {
+          // 无限配额
+          return '抽卡（无限次）';
+        } else if (remainingQuota > 0) {
+          // 有剩余次数
+          return `抽卡（剩余${remainingQuota}次）`;
+        } else if (remainingQuota === 0 && totalQuota > 0) {
+          // 已用完
+          return '抽卡（已用完）';
+        } else {
+          // 其他情况（可能是配额为0，不可用）
+          return '抽卡';
+        }
+      } else {
+        log.warn('_getDrawButtonText', '配额数据类型不正确', { 
+          remainingQuota, 
+          totalQuota,
+          remainingType: typeof remainingQuota,
+          totalType: typeof totalQuota
+        });
+        return '抽卡';
+      }
+    } catch (error) {
+      log.error('_getDrawButtonText', '获取按钮文本异常', error);
+      return '抽卡';
     }
-    
-    // 默认文本
-    return '抽卡';
   },
   
   /**
@@ -824,36 +925,36 @@ Page({
   },
   
   /**
-   * 记录抽卡历史
+   * 记录抽卡历史（暂时注释，只测试配额显示）
    * @param {Object} card - 卡牌信息
    * @param {string} question - 用户问题
    * @param {string} aiAnswer - AI解读结果
    */
-  async _recordDrawHistory(card, question, aiAnswer) {
-    try {
-      // 获取云函数版本号（如果可用）
-      const cloudFunctionVersion = VersionManager.getFunctionName('cozeFunctions');
-      
-      const response = await drawCardService.recordDraw({
-        question: question || '',
-        cardNumber: card.cardNumber,
-        cardName: card.cardName,
-        aiAnswer: aiAnswer,
-        drawTime: new Date(), // 抽卡时间
-        cloudFunctionVersion: cloudFunctionVersion
-      });
-      
-      if (response.success) {
-        log.info('_recordDrawHistory', '记录成功', { recordId: response.data?.recordId });
-      } else {
-        log.warn('_recordDrawHistory', '记录失败（不影响使用）', response.error);
-        // 静默处理，不影响用户体验
-      }
-    } catch (error) {
-      log.error('_recordDrawHistory', '记录异常（不影响使用）', error);
-      // 静默处理
-    }
-  },
+  // async _recordDrawHistory(card, question, aiAnswer) {
+  //   try {
+  //     // 获取云函数版本号（如果可用）
+  //     const cloudFunctionVersion = VersionManager.getFunctionName('cozeFunctions');
+  //     
+  //     const response = await drawCardService.recordDraw({
+  //       question: question || '',
+  //       cardNumber: card.cardNumber,
+  //       cardName: card.cardName,
+  //       aiAnswer: aiAnswer,
+  //       drawTime: new Date(), // 抽卡时间
+  //       cloudFunctionVersion: cloudFunctionVersion
+  //     });
+  //     
+  //     if (response.success) {
+  //       log.info('_recordDrawHistory', '记录成功', { recordId: response.data?.recordId });
+  //     } else {
+  //       log.warn('_recordDrawHistory', '记录失败（不影响使用）', response.error);
+  //       // 静默处理，不影响用户体验
+  //     }
+  //   } catch (error) {
+  //     log.error('_recordDrawHistory', '记录异常（不影响使用）', error);
+  //     // 静默处理
+  //   }
+  // },
   
   /**
    * 显示配额错误提示

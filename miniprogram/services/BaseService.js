@@ -22,10 +22,62 @@ class BaseService extends BaseClass {
    */
   async callFunction(name, data = {}, version = null) {
     try {
-      // 获取实际的云函数名称（包含版本后缀）
-      const actualFunctionName = VersionManager.getFunctionName(name, version);
+      // 如果指定了版本，直接使用
+      if (version) {
+        const actualFunctionName = VersionManager.getFunctionName(name, version);
+        this._log(`调用云函数（指定版本）`, {
+          baseName: name,
+          specifiedVersion: version,
+          actualFunctionName: actualFunctionName,
+          data: data
+        });
+        
+        const result = await wx.cloud.callFunction({ 
+          name: actualFunctionName, 
+          data 
+        });
+        
+        this._log(`云函数 ${actualFunctionName} 返回:`, result);
+        const responseBean = ResponseBean.fromCloudResult(result);
+        return responseBean;
+      }
       
-      this._log(`调用云函数 ${actualFunctionName} (基础名称: ${name}):`, data);
+      // 如果没有指定版本，需要获取当前版本
+      let currentVersion = VersionManager.getCurrentVersion();
+      
+      // 如果无法获取版本，等待版本可用（最多等待 5 秒）
+      if (!currentVersion) {
+        this._log(`版本信息不可用，等待版本初始化`, { baseName: name });
+        try {
+          currentVersion = await VersionManager.waitForVersion(50, 100); // 最多等待 5 秒
+          this._log(`版本信息已可用`, { version: currentVersion });
+        } catch (waitError) {
+          this._error(`等待版本信息超时`, waitError);
+          return ResponseBean.error('系统初始化中，请稍后重试', -1);
+        }
+      }
+      
+      // 获取云函数版本（此时 currentVersion 已经可用）
+      const functionVersion = VersionManager.getFunctionVersion(name);
+      if (!functionVersion) {
+        this._error(`无法获取云函数版本`, { functionName: name, currentVersion });
+        return ResponseBean.error('系统配置错误，请稍后重试', -1);
+      }
+      
+      // 获取实际的云函数名称（包含版本后缀）
+      const actualFunctionName = VersionManager.getFunctionName(name, null);
+      if (!actualFunctionName) {
+        this._error(`无法生成云函数名称`, { functionName: name, functionVersion });
+        return ResponseBean.error('系统配置错误，请稍后重试', -1);
+      }
+      
+      this._log(`调用云函数`, {
+        baseName: name,
+        currentVersion: currentVersion,
+        functionVersion: functionVersion,
+        actualFunctionName: actualFunctionName,
+        data: data
+      });
       
       const result = await wx.cloud.callFunction({ 
         name: actualFunctionName, 
