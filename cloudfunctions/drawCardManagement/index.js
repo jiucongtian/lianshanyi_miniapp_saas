@@ -1,3 +1,20 @@
+/**
+ * ⚠️ 废弃警告：此云函数已废弃
+ * 
+ * 抽卡历史记录功能已迁移到 `cozeFunctions_v1_3` 云函数中。
+ * 当 AI 解读成功时，`cozeFunctions_v1_3` 会自动记录抽卡历史并返回更新后的配额信息。
+ * 
+ * 新的使用方式：
+ * - 调用 `cozeFunctions_v1_3` 进行 AI 解读
+ * - 解读成功后会自动记录，无需单独调用此云函数
+ * - 返回值中包含 `drawCardQuota` 字段，包含更新后的配额信息
+ * 
+ * 此云函数保留仅作为备用接口，不建议新代码使用。
+ * 计划在未来版本中完全移除。
+ * 
+ * @deprecated 使用 cozeFunctions_v1_3 代替
+ */
+
 // 云函数入口文件
 const cloud = require('wx-server-sdk')
 
@@ -37,7 +54,10 @@ exports.main = async (event, context) => {
 
 /**
  * 记录抽卡历史
- * 注意：抽卡配额检查已集成到userManagement云函数的getUserInfo接口中
+ * 
+ * ⚠️ 已废弃：此功能已迁移到 cozeFunctions_v1_3 云函数
+ * 
+ * @deprecated 使用 cozeFunctions_v1_3 代替，AI解读成功时会自动记录
  */
 async function recordDraw(wxContext, data) {
   const { OPENID } = wxContext

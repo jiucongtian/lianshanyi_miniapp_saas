@@ -1,7 +1,18 @@
 /**
- * 抽卡服务类
- * 处理抽卡相关的业务逻辑，包括抽卡记录等
- * 注意：抽卡配额信息已集成到UserBean中，通过userManagement云函数获取
+ * ⚠️ 废弃警告：此服务类已废弃
+ * 
+ * 抽卡历史记录功能已迁移到 `cozeFunctions_v1_3` 云函数中。
+ * 当 AI 解读成功时，`cozeFunctions_v1_3` 会自动记录抽卡历史并返回更新后的配额信息。
+ * 
+ * 新的使用方式：
+ * - 直接调用 `cozeFunctions_v1_3` 进行 AI 解读
+ * - 解读成功后会自动记录，无需单独调用此服务
+ * - 返回值中包含 `drawCardQuota` 字段，包含更新后的配额信息
+ * 
+ * 此服务类保留仅作为备用，不建议新代码使用。
+ * 计划在未来版本中完全移除。
+ * 
+ * @deprecated 使用 cozeFunctions_v1_3 代替
  */
 const { BaseService } = require('./BaseService');
 const { ResponseBean } = require('../beans/ResponseBean');
@@ -13,6 +24,10 @@ class DrawCardService extends BaseService {
   
   /**
    * 记录抽卡历史
+   * 
+   * ⚠️ 已废弃：此方法已废弃，功能已迁移到 cozeFunctions_v1_3
+   * 
+   * @deprecated 使用 cozeFunctions_v1_3 代替，AI解读成功时会自动记录
    * @param {Object} drawData - 抽卡数据
    * @param {string} drawData.question - 用户问题（可选）
    * @param {number} drawData.cardNumber - 卡牌编号

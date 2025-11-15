@@ -1,10 +1,25 @@
 # drawCardManagement 云函数接口文档
 
+> ⚠️ **废弃警告：此云函数已废弃**
+> 
+> 抽卡历史记录功能已迁移到 `cozeFunctions_v1_3` 云函数中。
+> 当 AI 解读成功时，`cozeFunctions_v1_3` 会自动记录抽卡历史并返回更新后的配额信息。
+> 
+> **新的使用方式**：
+> - 调用 `cozeFunctions_v1_3` 进行 AI 解读
+> - 解读成功后会自动记录，无需单独调用此云函数
+> - 返回值中包含 `drawCardQuota` 字段，包含更新后的配额信息
+> 
+> 此云函数保留仅作为备用接口，不建议新代码使用。
+> 计划在未来版本中完全移除。
+> 
+> 参考文档：[cozeFunctions_v1_3 API文档](./cozeFunctions_v1_3-api.md)
+
 ## 接口概述
 
 `drawCardManagement` 云函数用于记录抽卡历史。抽卡配额信息已集成到 `userManagement` 云函数的 `getUserInfo` 接口中，通过 `UserBean` 获取。
 
-**注意**：抽卡配额检查已迁移到 `userManagement` 云函数，本云函数仅负责记录抽卡历史。
+**⚠️ 已废弃**：抽卡配额检查已迁移到 `userManagement` 云函数，记录功能已迁移到 `cozeFunctions_v1_3` 云函数。
 
 ## 云函数信息
 
