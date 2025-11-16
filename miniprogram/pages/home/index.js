@@ -135,6 +135,43 @@ Page({
     setTimeout(() => {
       wx.stopPullDownRefresh();
     }, 1000);
+  },
+
+  /**
+   * 分享功能 - 激活右上角分享按钮
+   * 用户点击右上角分享按钮时触发
+   */
+  onShareAppMessage() {
+    const { question } = this.data;
+    
+    // 如果有输入的问题，在分享标题中体现
+    let shareTitle = '智慧洞见 - 寻找你心中的答案';
+    if (question && question.trim()) {
+      shareTitle = `智慧洞见 - ${question.trim().substring(0, 20)}${question.trim().length > 20 ? '...' : ''}`;
+    }
+    
+    return {
+      title: shareTitle,
+      path: '/pages/home/index',
+      imageUrl: '' // 可以设置分享图片，留空则使用小程序默认图片
+    };
+  },
+
+  /**
+   * 分享到朋友圈功能（如果支持）
+   */
+  onShareTimeline() {
+    const { question } = this.data;
+    
+    let shareTitle = '智慧洞见 - 寻找你心中的答案';
+    if (question && question.trim()) {
+      shareTitle = `智慧洞见 - ${question.trim().substring(0, 20)}${question.trim().length > 20 ? '...' : ''}`;
+    }
+    
+    return {
+      title: shareTitle,
+      imageUrl: '' // 可以设置分享图片
+    };
   }
 });
 
