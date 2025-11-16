@@ -108,6 +108,8 @@ class LogStorage {
    * @param {Object} logData - 日志数据对象
    */
   save(logData) {
+    // 已注释：日志写入文件功能已禁用，仅保留控制台打印
+    return;
     if (!this.enabled) return;
 
     try {
