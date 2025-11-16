@@ -304,6 +304,24 @@ Page({
   },
   
   /**
+   * 格式化卡牌信息提示
+   * @param {Object} selectedCard - 选中的卡牌
+   * @returns {string} 格式化后的卡牌信息提示
+   */
+  _formatCardInfoHint(selectedCard) {
+    if (!selectedCard || !selectedCard.cardNumber || !selectedCard.cardName) {
+      return '';
+    }
+    
+    // 格式化卡牌序号为两位数
+    const cardNumberStr = selectedCard.cardNumber < 10 
+      ? `0${selectedCard.cardNumber}` 
+      : `${selectedCard.cardNumber}`;
+    
+    return `您抽的这张卡牌是生命智慧卡牌的【${cardNumberStr}号】卡牌【${selectedCard.cardName}】\n\n`;
+  },
+  
+  /**
    * 开始抽卡动画
    * 固定滚动5张卡牌的距离，使用单一平滑的缓动函数
    */
@@ -532,8 +550,12 @@ Page({
           }
         }
         
+        // 拼接卡牌信息到解读结果最前面
+        const cardInfoHint = this._formatCardInfoHint(this.data.selectedCard);
+        const finalInterpretation = cardInfoHint + interpretation;
+        
         this.setData({
-          aiInterpretation: interpretation,
+          aiInterpretation: finalInterpretation,
           // AI解读成功：不显示AI解读按钮（从头到尾都不显示）
           showInterpretButton: false
         });
@@ -591,8 +613,12 @@ Page({
             
             if (interpretation) {
               // 有数据，显示数据但记录警告
+              // 拼接卡牌信息到解读结果最前面
+              const cardInfoHint = this._formatCardInfoHint(this.data.selectedCard);
+              const finalInterpretation = cardInfoHint + interpretation;
+              
               this.setData({
-                aiInterpretation: interpretation,
+                aiInterpretation: finalInterpretation,
                 // 虽然返回失败状态但有数据，视为成功，不显示AI解读按钮
                 showInterpretButton: false
               });
