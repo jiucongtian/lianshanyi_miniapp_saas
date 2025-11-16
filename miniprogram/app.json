@@ -28,8 +28,8 @@
       {
         "pagePath": "pages/home/index",
         "text": "首页",
-        "iconPath": "static/icons/card.png",
-        "selectedIconPath": "static/icons/card-active.png"
+        "iconPath": "static/icons/home.png",
+        "selectedIconPath": "static/icons/home-active.png"
       },
       {
         "pagePath": "pages/card/index",
