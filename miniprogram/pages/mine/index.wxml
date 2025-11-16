@@ -57,6 +57,18 @@
       </view>
     </view>
     
+    <!-- 工具区域 -->
+    <view class="tools-section">
+      <view class="tool-card" bindtap="onCardViewerTap">
+        <view class="tool-icon">🃏</view>
+        <view class="tool-info">
+          <text class="tool-title">卡牌查看器</text>
+          <text class="tool-desc">输入1-60查看对应卡牌</text>
+        </view>
+        <view class="tool-arrow">›</view>
+      </view>
+    </view>
+    
     <!-- 微信小店入口 -->
     <view class="store-section">
       <view class="store-card" bindtap="onStoreTap">

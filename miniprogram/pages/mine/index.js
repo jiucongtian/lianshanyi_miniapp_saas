@@ -115,5 +115,14 @@ Page({
     if (this.controller) {
       this.controller.onStoreTap();
     }
+  },
+
+  /**
+   * 点击卡牌查看器
+   */
+  onCardViewerTap() {
+    wx.navigateTo({
+      url: '/pages/cardViewer/index'
+    });
   }
 })

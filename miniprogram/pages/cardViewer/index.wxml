@@ -1,0 +1,67 @@
+<!--pages/cardViewer/index.wxml-->
+<view class="card-viewer-container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">卡牌查看器</text>
+    <text class="page-subtitle">输入1-60的数字查看对应卡牌</text>
+  </view>
+
+  <!-- 输入区域 -->
+  <view class="input-section">
+    <view class="input-wrapper">
+      <input 
+        class="card-input" 
+        type="number" 
+        placeholder="请输入1-60的数字"
+        value="{{cardNumber}}"
+        bindinput="onCardNumberInput"
+        maxlength="2"
+      />
+      <view class="input-actions">
+        <button class="action-btn clear-btn" bindtap="onClear" wx:if="{{cardNumber}}">
+          <text class="btn-text">清空</text>
+        </button>
+        <button class="action-btn view-btn" bindtap="onViewCard">
+          <text class="btn-text">查看</text>
+        </button>
+      </view>
+    </view>
+    
+    <!-- 错误提示 -->
+    <view class="error-message" wx:if="{{error}}">
+      <text class="error-text">{{error}}</text>
+    </view>
+  </view>
+
+  <!-- 卡牌显示区域 -->
+  <view class="card-display-section" wx:if="{{cardInfo}}">
+    <!-- 卡牌信息 -->
+    <view class="card-info">
+      <text class="card-info-text">卡牌编号：{{cardInfo.number}}</text>
+      <text class="card-info-text">干支：{{cardInfo.cardName}}</text>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading-container" wx:if="{{isLoading}}">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 卡牌图片 -->
+    <view class="card-image-wrapper" wx:elif="{{cardImagePath}}">
+      <image 
+        class="card-image" 
+        src="{{cardImagePath}}" 
+        mode="aspectFit"
+        lazy-load="{{false}}"
+      />
+    </view>
+  </view>
+
+  <!-- 空状态提示 -->
+  <view class="empty-state" wx:if="{{!cardInfo && !isLoading}}">
+    <view class="empty-icon">🃏</view>
+    <text class="empty-text">请输入卡牌编号查看</text>
+  </view>
+</view>
+
