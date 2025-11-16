@@ -21,7 +21,6 @@
  */
 
 const { BaseController } = require('./BaseController');
-const { userService } = require('../services/UserService');
 const { profileService } = require('../services/ProfileService');
 const { profileManager } = require('../utils/manager/profileManager');
 const eventBus = require('../utils/eventBus');
@@ -78,16 +77,18 @@ class ProfileController extends BaseController {
 
   /**
    * 加载用户信息
+   * @param {boolean} forceRefresh - 是否强制刷新，默认false
    * @returns {Promise<void>}
    */
-  async loadUserInfo() {
-    this._log('loadUserInfo', '开始加载用户信息');
+  async loadUserInfo(forceRefresh = false) {
+    this._log('loadUserInfo', '开始加载用户信息', { forceRefresh });
     
     try {
-      const response = await userService.getUserInfo();
+      // 使用 BaseController 的统一方法，它会使用 GlobalUserManager
+      const userInfo = await super.loadUserInfo(forceRefresh);
       
-      if (response.success && response.data) {
-        this.userInfo = response.data; // 已经是UserBean实例
+      if (userInfo) {
+        this.userInfo = userInfo; // 已经是UserBean实例
         
         // 更新页面数据
         this._setData({
@@ -104,8 +105,8 @@ class ProfileController extends BaseController {
           usedProfiles: this.userInfo.usedProfiles
         });
       } else {
-        this._error('loadUserInfo', '获取用户信息失败', null, response.error);
-        this._showError('获取用户信息失败：' + (response.error || '未知错误'));
+        this._error('loadUserInfo', '获取用户信息失败');
+        this._showError('获取用户信息失败');
       }
     } catch (error) {
       this._error('loadUserInfo', '加载用户信息异常', error);
@@ -658,7 +659,7 @@ class ProfileController extends BaseController {
   /**
    * 页面显示时的处理
    */
-  onShow() {
+  async onShow() {
     this._log('onShow', '页面显示');
     
     // 使用ProfileManager获取当前档案ID
@@ -669,6 +670,22 @@ class ProfileController extends BaseController {
       profileName: currentProfile ? currentProfile.profileName : 'null'
     });
     this._setData({ currentProfileId: this.currentProfileId });
+    
+    // 使用全局缓存的用户信息（应用启动时已初始化，注册成功后已更新）
+    const app = getApp();
+    const globalUserManager = app.globalData.globalUserManager;
+    const cachedUserInfo = globalUserManager.getCachedUserInfo();
+    
+    // 应用启动时已初始化，注册成功后已更新，所以缓存应该总是存在
+    this._log('onShow', '使用全局缓存的用户信息');
+    this.userInfo = cachedUserInfo;
+    this._setData({
+      userType: this.userInfo.userType,
+      userTypeName: this.userInfo.getDisplayName(),
+      profileQuota: this.userInfo.profileQuota,
+      usedProfiles: this.userInfo.usedProfiles,
+      canCreateMore: this.userInfo.canCreateMore()
+    });
     
     // 检查ProfileManager是否已初始化，避免重复请求
     if (profileManager.isReady()) {

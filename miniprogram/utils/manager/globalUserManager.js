@@ -81,6 +81,10 @@ class GlobalUserManager {
    */
   async refreshUserInfo() {
     log.info('refreshUserInfo', '业务操作后刷新用户信息');
+    
+    // 清除 UserService 的缓存，确保获取最新数据
+    userService.clearUserInfoCache();
+    
     return this._loadUserInfo('refreshUserInfo');
   }
 
