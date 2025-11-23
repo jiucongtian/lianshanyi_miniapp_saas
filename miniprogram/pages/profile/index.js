@@ -88,17 +88,54 @@ Page({
     const profileId = e.currentTarget.dataset.id;
     this.controller.selectProfile(profileId);
     
-    // 跳转到卡牌页面显示档案的八字卡牌
-    // 由于 card 是 tab 页面，需要使用 switchTab
-    wx.switchTab({
-      url: '/pages/card/index',
-      success: () => {
-        log.debug('navigateToCard', '成功跳转到卡牌页面');
-      },
-      fail: (error) => {
-        log.error('navigateToCard', '跳转失败', { error: error.errMsg });
-      }
+    // 智能判断如何跳转到 card 页面
+    // profile 现在是独立页面，通常从 card 页面 navigateTo 进入
+    const pages = getCurrentPages();
+    const cardPageIndex = pages.findIndex(p => p && p.route === 'pages/card/index');
+    
+    log.debug('onProfileTap', '选择档案后跳转到 card', {
+      cardPageIndex: cardPageIndex,
+      totalPages: pages.length,
+      currentPageIndex: pages.length - 1
     });
+    
+    if (cardPageIndex >= 0 && cardPageIndex < pages.length - 1) {
+      // 页面栈中有 card 页面，且不是当前页，使用 navigateBack 返回
+      const delta = pages.length - 1 - cardPageIndex;
+      log.debug('onProfileTap', `使用 navigateBack 返回到 card 页面，delta=${delta}`);
+      
+      wx.navigateBack({
+        delta: delta,
+        success: () => {
+          log.debug('onProfileTap', '成功返回到 card 页面');
+        },
+        fail: (error) => {
+          log.error('onProfileTap', 'navigateBack 失败，降级使用 switchTab', { error: error.errMsg });
+          // 降级方案：使用 switchTab
+          wx.switchTab({
+            url: '/pages/card/index',
+            success: () => {
+              log.debug('onProfileTap', 'switchTab 成功跳转到 card 页面');
+            },
+            fail: (err) => {
+              log.error('onProfileTap', 'switchTab 也失败', { error: err.errMsg });
+            }
+          });
+        }
+      });
+    } else {
+      // 页面栈中没有 card 页面，使用 switchTab 跳转
+      log.debug('onProfileTap', '页面栈中没有 card，使用 switchTab 跳转');
+      wx.switchTab({
+        url: '/pages/card/index',
+        success: () => {
+          log.debug('onProfileTap', '成功跳转到 card 页面');
+        },
+        fail: (error) => {
+          log.error('onProfileTap', '跳转失败', { error: error.errMsg });
+        }
+      });
+    }
   },
 
   /**
