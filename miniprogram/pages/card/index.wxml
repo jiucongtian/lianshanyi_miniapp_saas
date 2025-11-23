@@ -21,7 +21,13 @@
     <view class="empty-state" wx:elif="{{!isDataLoaded}}">
       <view class="empty-icon">🃏</view>
       <view class="empty-text">暂无卡牌数据</view>
-      <view class="empty-desc">请先创建一个档案或选择现有档案</view>
+      <view class="empty-desc" wx:if="{{profileCount > 0}}">请先选择一个档案</view>
+      <view class="empty-desc" wx:else>牌库中还没有卡牌，快来创建第一个吧</view>
+      <!-- 当牌库中没有卡牌时，显示新建卡牌按钮 -->
+      <view class="create-card-button" wx:if="{{profileCount === 0}}" bindtap="onCreateCardTap">
+        <text class="create-card-icon">➕</text>
+        <text class="create-card-text">新建卡牌</text>
+      </view>
     </view>
 
     <!-- 卡牌内容 -->

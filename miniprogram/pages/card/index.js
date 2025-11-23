@@ -159,6 +159,24 @@ Page({
         });
       }
     });
+  },
+
+  // 新建卡牌按钮点击事件
+  onCreateCardTap: function() {
+    log.debug('onCreateCardTap', '点击新建卡牌按钮');
+    wx.navigateTo({
+      url: '/pages/addProfile/index',
+      success: () => {
+        log.debug('onCreateCardTap', '成功跳转到新建档案页面');
+      },
+      fail: (error) => {
+        log.error('onCreateCardTap', '跳转失败', { error: error.errMsg });
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        });
+      }
+    });
   }
 
 });

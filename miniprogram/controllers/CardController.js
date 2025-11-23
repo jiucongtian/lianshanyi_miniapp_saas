@@ -617,6 +617,9 @@ class CardController extends BaseController {
   _showNoDataState() {
     this._log('_showNoDataState', '显示无数据状态');
     
+    // 确保档案数量是最新的
+    this._updateProfileCount();
+    
     // 只设置必要的状态字段
     this._setData({
       isLoading: false,
