@@ -89,6 +89,7 @@ Page({
     this.controller.selectProfile(profileId);
     
     // 跳转到卡牌页面显示档案的八字卡牌
+    // 由于 card 是 tab 页面，需要使用 switchTab
     wx.switchTab({
       url: '/pages/card/index',
       success: () => {

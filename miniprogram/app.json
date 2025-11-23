@@ -39,12 +39,6 @@
         "selectedIconPath": "static/icons/card-active.png"
       },
       {
-        "pagePath": "pages/profile/index",
-        "text": "牌库",
-        "iconPath": "static/icons/profile.png",
-        "selectedIconPath": "static/icons/profile-active.png"
-      },
-      {
         "pagePath": "pages/mine/index",
         "text": "我的",
         "iconPath": "static/icons/mine.png",

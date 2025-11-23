@@ -1,6 +1,15 @@
 <view class="page-container">
   <view class="bazi-content">
-    <view class="bazi-title">{{currentProfileName}}</view>
+    <view class="title-header">
+      <view class="bazi-title">{{currentProfileName}}</view>
+      <view class="profile-entry-button" bindtap="onProfileEntryTap">
+        <text class="profile-entry-icon">📋</text>
+        <text class="profile-entry-text">牌库</text>
+        <view class="profile-count-badge" wx:if="{{profileCount > 0}}">
+          <text class="badge-text">{{profileCount}}</text>
+        </view>
+      </view>
+    </view>
 
     <!-- 加载状态 -->
     <view class="loading-state" wx:if="{{isLoading}}">

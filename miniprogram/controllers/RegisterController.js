@@ -423,7 +423,6 @@ class RegisterController extends BaseController {
     
     // TabBar 页面列表
     const tabBarPages = [
-      '/pages/profile/index',
       '/pages/card/index',
       '/pages/mine/index'
     ];
@@ -469,7 +468,14 @@ class RegisterController extends BaseController {
       if (pages.length > 1) {
         this._navigateBack();
       } else {
-        this._switchTab('/pages/profile/index');
+        // profile 不再是 tab 页面，使用 navigateTo
+        wx.navigateTo({
+          url: '/pages/profile/index',
+          fail: () => {
+            // 如果跳转失败，降级到卡牌页面（tab 页面）
+            this._switchTab('/pages/card/index');
+          }
+        });
       }
     }
   }

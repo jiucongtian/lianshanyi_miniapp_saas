@@ -9,6 +9,7 @@ Page({
     isLoading: true, // 标记是否正在加载
     currentProfileName: '生命智慧卡牌', // 当前档案名称，默认为生命智慧卡牌
     isUncertainTime: false, // 是否不确定时辰信息
+    profileCount: 0, // 档案数量
     // 图片预览相关
     showImagePreview: false,
     previewImagePath: '',
@@ -140,6 +141,24 @@ Page({
       path: '/pages/card/index',
       imageUrl: '', // 可以设置分享图片
     };
+  },
+
+  // 牌库入口点击事件
+  onProfileEntryTap: function() {
+    log.debug('onProfileEntryTap', '点击牌库入口');
+    wx.navigateTo({
+      url: '/pages/profile/index',
+      success: () => {
+        log.debug('onProfileEntryTap', '成功跳转到牌库页面');
+      },
+      fail: (error) => {
+        log.error('onProfileEntryTap', '跳转失败', { error: error.errMsg });
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        });
+      }
+    });
   }
 
 });

@@ -129,25 +129,58 @@ class CardController extends BaseController {
       // 直接使用ProfileBean的转换方法
       const cardData = profileBean.toCardDisplayData();
       
-      // 先设置isUncertainTime，确保updateBaziDisplay能获取到正确的值
-      this.isUncertainTime = Boolean(cardData.isUncertainTime);
+      // 检查八字数据是否完整
+      if (!cardData.baziData || !cardData.baziData.yearPillar || !cardData.baziData.monthPillar || 
+          !cardData.baziData.dayPillar || !cardData.baziData.timePillar) {
+        this._error('loadProfileData', '八字数据不完整，无法加载', cardData);
+        this._showNoDataState();
+        return;
+      }
       
-      // 更新八字显示
-      this.updateBaziDisplay(cardData.baziData);
+      // 设置isUncertainTime
+      const isUncertainTime = Boolean(cardData.isUncertainTime);
+      this.isUncertainTime = isUncertainTime;
       
-      // 设置数据加载完成状态
-      this._setData({
+      // 准备更新的数据
+      const updateData = {
+        // 八字数据
+        yearPillar: {
+          heavenlyStem: cardData.baziData.yearPillar.heavenlyStem,
+          earthlyBranch: cardData.baziData.yearPillar.earthlyBranch
+        },
+        monthPillar: {
+          heavenlyStem: cardData.baziData.monthPillar.heavenlyStem,
+          earthlyBranch: cardData.baziData.monthPillar.earthlyBranch
+        },
+        dayPillar: {
+          heavenlyStem: cardData.baziData.dayPillar.heavenlyStem,
+          earthlyBranch: cardData.baziData.dayPillar.earthlyBranch
+        },
+        timePillar: {
+          heavenlyStem: cardData.baziData.timePillar.heavenlyStem,
+          earthlyBranch: cardData.baziData.timePillar.earthlyBranch
+        },
+        // 页面状态 - 关键：必须同时设置这两个状态
         isLoading: false,
         isDataLoaded: true,
         currentProfileName: cardData.profileName || '生命智慧卡牌',
-        isUncertainTime: this.isUncertainTime, // 同步不确定时辰状态到页面
+        isUncertainTime: isUncertainTime,
         // 重置预览状态
         showImagePreview: false,
         previewImagePath: '',
         previewCardDescription: null
+      };
+      
+      this._log('loadProfileData', '准备更新页面数据', {
+        isLoading: updateData.isLoading,
+        isDataLoaded: updateData.isDataLoaded,
+        profileName: updateData.currentProfileName
       });
       
-      this._log('loadProfileData', '档案数据加载成功');
+      // 合并所有状态更新到一次 _setData 调用中，避免状态更新顺序问题
+      this._setData(updateData);
+      
+      this._log('loadProfileData', '档案数据加载成功，所有状态已更新');
     } catch (error) {
       this._error('loadProfileData', '加载档案数据失败:', error);
       this._showNoDataState();
@@ -301,7 +334,10 @@ class CardController extends BaseController {
     this._boundHandlers = {
       profileManagerReady: this._handleProfileManagerReady.bind(this),
       profileSelected: this._handleSelectProfile.bind(this),
-      profileUpdated: this._handleProfileUpdated.bind(this)
+      profileUpdated: this._handleProfileUpdated.bind(this),
+      profileCreated: this._handleProfileCreated.bind(this),
+      profileDeleted: this._handleProfileDeleted.bind(this),
+      profileListRefresh: this._handleProfileListRefresh.bind(this)
     };
     
     // 监听ProfileManager初始化完成事件
@@ -313,6 +349,15 @@ class CardController extends BaseController {
     // 监听档案更新事件（档案属性被修改）
     eventBus.on(PROFILE_EVENTS.PROFILE_UPDATED, this._boundHandlers.profileUpdated);
     
+    // 监听档案创建事件
+    eventBus.on(PROFILE_EVENTS.PROFILE_CREATED, this._boundHandlers.profileCreated);
+    
+    // 监听档案删除事件
+    eventBus.on(PROFILE_EVENTS.PROFILE_DELETED, this._boundHandlers.profileDeleted);
+    
+    // 监听档案列表刷新事件
+    eventBus.on(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._boundHandlers.profileListRefresh);
+    
     this._log('_bindEventHandlers', '事件监听器已绑定');
   }
 
@@ -322,6 +367,7 @@ class CardController extends BaseController {
    */
   _handleProfileManagerReady() {
     this._log('_handleProfileManagerReady', '收到ProfileManager初始化完成事件');
+    this._updateProfileCount();
     this._loadCurrentProfile();
   }
 
@@ -361,6 +407,56 @@ class CardController extends BaseController {
   }
 
   /**
+   * 处理档案创建事件
+   * @param {Object} data - 事件数据
+   * @private
+   */
+  _handleProfileCreated(data) {
+    this._log('_handleProfileCreated', '收到档案创建事件:', data);
+    this._updateProfileCount();
+  }
+
+  /**
+   * 处理档案删除事件
+   * @param {Object} data - 事件数据
+   * @private
+   */
+  _handleProfileDeleted(data) {
+    this._log('_handleProfileDeleted', '收到档案删除事件:', data);
+    this._updateProfileCount();
+  }
+
+  /**
+   * 处理档案列表刷新事件
+   * @param {Object} data - 事件数据
+   * @private
+   */
+  _handleProfileListRefresh(data) {
+    this._log('_handleProfileListRefresh', '收到档案列表刷新事件:', data);
+    this._updateProfileCount();
+  }
+
+  /**
+   * 更新档案数量
+   * @private
+   */
+  _updateProfileCount() {
+    if (!profileManager.isReady()) {
+      this._log('_updateProfileCount', 'ProfileManager未初始化，延迟更新');
+      setTimeout(() => {
+        this._updateProfileCount();
+      }, 500);
+      return;
+    }
+    
+    const count = profileManager.getProfileCount();
+    this._log('_updateProfileCount', '更新档案数量', { count });
+    this._setData({
+      profileCount: count
+    });
+  }
+
+  /**
    * 等待ProfileManager初始化完成并加载数据
    * @private
    */
@@ -376,7 +472,8 @@ class CardController extends BaseController {
       return;
     }
     
-    // ProfileManager已初始化，获取当前档案
+    // ProfileManager已初始化，更新档案数量并获取当前档案
+    this._updateProfileCount();
     this._loadCurrentProfile();
   }
 
@@ -622,6 +719,9 @@ class CardController extends BaseController {
       return;
     }
     
+    // 更新档案数量
+    this._updateProfileCount();
+    
     const currentProfile = profileManager.getCurrentProfile();
     
     // 如果没有当前档案
@@ -648,11 +748,14 @@ class CardController extends BaseController {
     this._log('_checkAndReloadIfNeeded', '旧档案ID:', this.currentLoadedProfileId);
     this._log('_checkAndReloadIfNeeded', '新档案ID:', currentProfileId);
     
-    // 完全重新初始化所有数据和变量
+    // 完全重新初始化所有数据和变量（清空旧数据）
     this._completeReinitialize();
     
-    // 加载新档案数据
-    this.loadProfileData(currentProfile);
+    // 使用 nextTick 确保状态重置完成后再加载新数据，避免状态更新冲突
+    wx.nextTick(() => {
+      // 加载新档案数据
+      this.loadProfileData(currentProfile);
+    });
   }
 
   /**
@@ -676,6 +779,15 @@ class CardController extends BaseController {
       }
       if (this._boundHandlers.profileUpdated) {
         eventBus.off(PROFILE_EVENTS.PROFILE_UPDATED, this._boundHandlers.profileUpdated);
+      }
+      if (this._boundHandlers.profileCreated) {
+        eventBus.off(PROFILE_EVENTS.PROFILE_CREATED, this._boundHandlers.profileCreated);
+      }
+      if (this._boundHandlers.profileDeleted) {
+        eventBus.off(PROFILE_EVENTS.PROFILE_DELETED, this._boundHandlers.profileDeleted);
+      }
+      if (this._boundHandlers.profileListRefresh) {
+        eventBus.off(PROFILE_EVENTS.PROFILE_LIST_REFRESH, this._boundHandlers.profileListRefresh);
       }
       // 注意：once 监听器会自动移除，但为了统一性也可以尝试移除
     }

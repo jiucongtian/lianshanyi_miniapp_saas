@@ -17,13 +17,79 @@
   box-sizing: border-box;
 }
 
+.title-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 48rpx;
+  position: relative;
+}
+
 .bazi-title {
   font-size: 36rpx;
   font-weight: bold;
   color: #854C65;
   text-align: center;
-  margin-bottom: 48rpx;
+  flex: 1;
   letter-spacing: 2rpx;
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.profile-entry-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #854C65 0%, #a85c7a 100%);
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 12rpx rgba(133, 76, 101, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.profile-entry-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2rpx 8rpx rgba(133, 76, 101, 0.2);
+}
+
+.profile-entry-icon {
+  font-size: 28rpx;
+  margin-right: 8rpx;
+}
+
+.profile-entry-text {
+  font-size: 26rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.profile-count-badge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  background: #ff4757;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8rpx;
+  box-shadow: 0 2rpx 8rpx rgba(255, 71, 87, 0.4);
+  border: 2rpx solid #ffffff;
+  box-sizing: border-box;
+}
+
+.badge-text {
+  font-size: 20rpx;
+  color: #ffffff;
+  font-weight: bold;
+  line-height: 1;
 }
 
 /* 加载状态样式 */
