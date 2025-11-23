@@ -1,4 +1,4 @@
-<t-navbar title="{{pageMode === 'edit' ? '编辑个人信息' : '创建个人信息'}}" left-arrow bind:go-back="goBack" />
+<t-navbar title="{{pageMode === 'edit' ? '编辑个人信息' : '创建个人信息'}}" left-arrow bind:click-left="goBack" />
 
 <!-- 页面内容 -->
 <view class="page-container">
