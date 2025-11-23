@@ -90,19 +90,17 @@ class ProfileController extends BaseController {
       if (userInfo) {
         this.userInfo = userInfo; // 已经是UserBean实例
         
-        // 更新页面数据
+        // 更新页面数据（不设置usedProfiles和canCreateMore，这些值应该基于实际档案列表长度计算）
         this._setData({
           userType: this.userInfo.userType,
           userTypeName: this.userInfo.getDisplayName(),
-          profileQuota: this.userInfo.profileQuota,
-          usedProfiles: this.userInfo.usedProfiles,
-          canCreateMore: this.userInfo.canCreateMore()
+          profileQuota: this.userInfo.profileQuota
+          // usedProfiles 和 canCreateMore 由 loadDataFromProfileManager 根据实际档案列表计算
         });
         
         this._log('loadUserInfo', '用户信息加载成功', {
           userType: this.userInfo.userType,
-          profileQuota: this.userInfo.profileQuota,
-          usedProfiles: this.userInfo.usedProfiles
+          profileQuota: this.userInfo.profileQuota
         });
       } else {
         this._error('loadUserInfo', '获取用户信息失败');
@@ -682,9 +680,8 @@ class ProfileController extends BaseController {
     this._setData({
       userType: this.userInfo.userType,
       userTypeName: this.userInfo.getDisplayName(),
-      profileQuota: this.userInfo.profileQuota,
-      usedProfiles: this.userInfo.usedProfiles,
-      canCreateMore: this.userInfo.canCreateMore()
+      profileQuota: this.userInfo.profileQuota
+      // usedProfiles 和 canCreateMore 由 loadDataFromProfileManager 根据实际档案列表计算
     });
     
     // 检查ProfileManager是否已初始化，避免重复请求
