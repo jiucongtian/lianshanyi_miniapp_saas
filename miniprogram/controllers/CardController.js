@@ -496,6 +496,17 @@ class CardController extends BaseController {
   _handleSelectProfile(data) {
     this._log('_handleSelectProfile', '收到档案选中事件:', data);
     if (data && data.profileId) {
+      const selectedProfileId = data.profileId;
+      
+      // 如果选中的档案与当前加载的档案相同，且页面状态正常，则不需要重新加载
+      if (this.currentLoadedProfileId === selectedProfileId) {
+        const pageData = this.page?.data;
+        if (pageData && pageData.isLoading === false && pageData.isDataLoaded === true) {
+          this._log('_handleSelectProfile', '选中的档案与当前档案相同且页面状态正常，无需重新加载');
+          return;
+        }
+      }
+      
       // 重新加载当前档案
       this._loadCurrentProfile();
     }
@@ -872,9 +883,23 @@ class CardController extends BaseController {
     
     const currentProfileId = currentProfile._id || currentProfile.id;
     
-    // 如果档案ID相同，不需要重新加载
+    // 如果档案ID相同，检查页面状态是否正确
     if (this.currentLoadedProfileId === currentProfileId) {
-      this._log('_checkAndReloadIfNeeded', '档案未变更，无需重新加载');
+      this._log('_checkAndReloadIfNeeded', '档案未变更，检查页面状态');
+      
+      // 检查页面状态，如果处于加载中或数据未加载状态，需要重新加载
+      const pageData = this.page?.data;
+      if (pageData && (pageData.isLoading === true || pageData.isDataLoaded === false)) {
+        this._log('_checkAndReloadIfNeeded', '页面状态异常，重新加载数据', {
+          isLoading: pageData.isLoading,
+          isDataLoaded: pageData.isDataLoaded
+        });
+        
+        // 重新加载当前档案数据
+        this.loadProfileData(currentProfile);
+      } else {
+        this._log('_checkAndReloadIfNeeded', '页面状态正常，无需重新加载');
+      }
       return;
     }
     
