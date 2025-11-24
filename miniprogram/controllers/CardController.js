@@ -71,6 +71,20 @@ class CardController extends BaseController {
     // 记录当前加载的档案ID，用于判断是否需要重新加载
     this.currentLoadedProfileId = null;
     
+    // 图片加载状态跟踪（用于自动翻转）
+    this.imageLoadStatus = {
+      year: false,
+      month: false,
+      day: false,
+      time: false
+    };
+    
+    // 是否已触发自动翻转
+    this.hasAutoFlipped = false;
+    
+    // 自动翻转超时定时器
+    this.autoFlipTimeout = null;
+    
     // 绑定事件处理器
     this._bindEventHandlers();
   }
@@ -181,6 +195,34 @@ class CardController extends BaseController {
       this._setData(updateData);
       
       this._log('loadProfileData', '档案数据加载成功，所有状态已更新');
+      
+      // 重置图片加载状态和自动翻转标志
+      this.imageLoadStatus = {
+        year: false,
+        month: false,
+        day: false,
+        time: false
+      };
+      this.hasAutoFlipped = false;
+      
+      // 清除之前的超时定时器
+      if (this.autoFlipTimeout) {
+        clearTimeout(this.autoFlipTimeout);
+        this.autoFlipTimeout = null;
+      }
+      
+      // 等待页面渲染完成后，开始监听图片加载
+      wx.nextTick(() => {
+        // 设置一个超时，如果图片加载太慢，也自动翻转（避免用户等待太久）
+        this.autoFlipTimeout = setTimeout(() => {
+          if (!this.hasAutoFlipped) {
+            this._log('loadProfileData', '图片加载超时，开始自动翻转');
+            this.hasAutoFlipped = true;
+            this._autoFlipAllCards();
+          }
+          this.autoFlipTimeout = null;
+        }, 3000); // 3秒超时
+      });
     } catch (error) {
       this._error('loadProfileData', '加载档案数据失败:', error);
       this._showNoDataState();
@@ -224,42 +266,117 @@ class CardController extends BaseController {
 
 
   /**
+   * 图片加载成功回调
+   * @param {string} pillar - 柱子名称（year/month/day/time）
+   */
+  onImageLoaded(pillar) {
+    this._log('onImageLoaded', `${pillar} 卡牌图片加载成功`);
+    
+    // 更新图片加载状态
+    if (this.imageLoadStatus && pillar in this.imageLoadStatus) {
+      this.imageLoadStatus[pillar] = true;
+      
+      // 检查是否所有图片都已加载完成
+      const allLoaded = Object.values(this.imageLoadStatus).every(status => status === true);
+      
+      if (allLoaded && !this.hasAutoFlipped) {
+        this._log('onImageLoaded', '所有图片加载完成，开始自动翻转');
+        this.hasAutoFlipped = true;
+        
+        // 清除超时定时器
+        if (this.autoFlipTimeout) {
+          clearTimeout(this.autoFlipTimeout);
+          this.autoFlipTimeout = null;
+        }
+        
+        // 等待一小段时间确保图片渲染完成，然后开始翻转
+        setTimeout(() => {
+          this._autoFlipAllCards();
+        }, 200);
+      }
+    }
+  }
+
+  /**
    * 图片加载失败回调（仅用于错误日志）
    * 注意：图片加载现在由 bazi-card 组件内部管理
    * @param {string} pillar - 柱子名称（year/month/day/time）
    */
   onImageLoadError(pillar) {
     this._error('onImageLoadError', `${pillar} 卡牌图片渲染失败`);
+    
+    // 即使图片加载失败，也标记为已加载（避免一直等待）
+    if (this.imageLoadStatus && pillar in this.imageLoadStatus) {
+      this.imageLoadStatus[pillar] = true;
+      
+      // 检查是否所有图片都已加载完成（包括失败的）
+      const allLoaded = Object.values(this.imageLoadStatus).every(status => status === true);
+      
+      if (allLoaded && !this.hasAutoFlipped) {
+        this._log('onImageLoadError', '所有图片加载完成（包含失败），开始自动翻转');
+        this.hasAutoFlipped = true;
+        
+        // 清除超时定时器
+        if (this.autoFlipTimeout) {
+          clearTimeout(this.autoFlipTimeout);
+          this.autoFlipTimeout = null;
+        }
+        
+        // 等待一小段时间，然后开始翻转
+        setTimeout(() => {
+          this._autoFlipAllCards();
+        }, 200);
+      }
+    }
   }
 
   /**
-   * 翻转卡牌（带动画）
-   * @param {string} pillar - 柱子名称（year/month/day/time）
+   * 自动依次翻转所有卡牌
+   * @private
    */
-  flipCard(pillar) {
+  _autoFlipAllCards() {
+    this._log('_autoFlipAllCards', '开始自动翻转所有卡牌');
+    
+    // 卡牌顺序：年、月、日、时
+    const pillars = ['year', 'month', 'day', 'time'];
+    const flipDelay = 400; // 每张卡牌翻转的延迟时间（毫秒）
+    
+    pillars.forEach((pillar, index) => {
+      setTimeout(() => {
+        this._flipCard(pillar);
+      }, index * flipDelay);
+    });
+  }
+
+  /**
+   * 翻转单张卡牌（内部方法）
+   * @param {string} pillar - 柱子名称（year/month/day/time）
+   * @private
+   */
+  _flipCard(pillar) {
     // 安全获取页面数据
     if (!this.page || !this.page.data) {
-      this._error('flipCard', '页面数据未初始化');
+      this._error('_flipCard', '页面数据未初始化');
       return;
     }
     
     const pillarData = this.page.data[`${pillar}Pillar`];
     
-    this._log('flipCard', `点击${pillar}卡牌`);
+    this._log('_flipCard', `翻转${pillar}卡牌`);
     
     // 检查是否有八字数据（天干地支）
     if (!pillarData || !pillarData.heavenlyStem || !pillarData.earthlyBranch) {
-      this._log('flipCard', `${pillar}卡牌没有八字数据，不进行翻转`);
+      this._log('_flipCard', `${pillar}卡牌没有八字数据，不进行翻转`);
       return;
     }
     
     // 直接调用组件的翻转方法，组件会处理状态和动画
     const card = this.page.selectComponent(`#${pillar}-card`);
     if (card && typeof card.flipToFront === 'function') {
-      this._log('flipCard', `调用 ${pillar} 组件的翻转动画`);
+      this._log('_flipCard', `调用 ${pillar} 组件的翻转动画`);
       card.flipToFront();
     } else {
-      this._warn('flipCard', `未找到 ${pillar} 组件或 flipToFront 方法`);
+      this._warn('_flipCard', `未找到 ${pillar} 组件或 flipToFront 方法`);
     }
   }
 
@@ -498,6 +615,21 @@ class CardController extends BaseController {
    */
   _completeReinitialize() {
     this._log('_completeReinitialize', '开始完全重新初始化卡牌页面数据');
+    
+    // 重置图片加载状态和自动翻转标志
+    this.imageLoadStatus = {
+      year: false,
+      month: false,
+      day: false,
+      time: false
+    };
+    this.hasAutoFlipped = false;
+    
+    // 清除自动翻转超时定时器
+    if (this.autoFlipTimeout) {
+      clearTimeout(this.autoFlipTimeout);
+      this.autoFlipTimeout = null;
+    }
     
     // 重置所有状态变量（只设置必要字段，组件会自己管理状态）
     this._setData({

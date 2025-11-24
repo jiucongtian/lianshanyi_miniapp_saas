@@ -69,10 +69,8 @@ Page({
   // ==================== 事件处理方法 ====================
 
   /**
-   * 卡牌点击事件 - 统一处理翻转和预览
+   * 卡牌点击事件 - 只处理预览
    * 逻辑：
-   * - 如果卡牌正在加载，不响应点击
-   * - 如果卡牌显示背面（未翻转），点击后翻转显示正面
    * - 如果卡牌显示正面（已翻转），点击后放大预览
    */
   onCardTap: function(e) {
@@ -83,12 +81,10 @@ Page({
 
     log.debug('onCardTap', '卡牌被点击', { pillarName, isFlipped: isFlipped ? '正面' : '背面' });
     
+    // 只有已翻转的卡牌才能预览
     if (isFlipped) {
       // 卡牌已翻转（显示正面），执行预览操作
       this.controller.previewCard(pillarName);
-    } else {
-      // 卡牌未翻转（显示背面），执行翻转操作
-      this.controller.flipCard(pillarName);
     }
   },
 
@@ -103,7 +99,11 @@ Page({
   onImageLoaded: function(e) {
     const { pillarName, imagePath } = e.detail;
     log.debug('onImageLoaded', '卡牌图片加载成功', { pillarName, imagePath });
-    // 组件内部已经处理了所有逻辑，这里只记录日志
+    
+    // 通知Controller图片加载完成
+    if (this.controller) {
+      this.controller.onImageLoaded(pillarName);
+    }
   },
 
   // 图片加载失败（组件触发的 imageloaderror 事件）

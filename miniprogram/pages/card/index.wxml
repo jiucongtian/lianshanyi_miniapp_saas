@@ -70,7 +70,7 @@
         heavenly-stem="{{dayPillar.heavenlyStem}}"
         earthly-branch="{{dayPillar.earthlyBranch}}"
         card-back-image="{{cardBackImagePath}}"
-        default-show-front="{{true}}"
+        default-show-front="{{false}}"
         animation="{{dayAnimation}}"
         bind:cardtap="onCardTap"
         bind:imageloaded="onImageLoaded"
