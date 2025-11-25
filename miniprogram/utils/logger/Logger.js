@@ -162,8 +162,8 @@ class Logger {
         this.printToConsole(level, logData);
       }
 
-      // 保存到本地存储（已注释：仅保留控制台打印）
-      // this.saveToStorage(logData);
+      // 保存到本地存储（根据配置决定是否启用）
+      this.saveToStorage(logData);
     } catch (e) {
       // 日志记录失败不应影响主流程
       console.error('[Logger] 记录日志失败:', e);

@@ -25,7 +25,7 @@ export const config = {
   logger: {
     // 文件存储配置
     storage: {
-      enabled: true,                  // 是否启用文件存储
+      enabled: false,                 // 是否启用文件存储
       retentionDays: 30,              // 日志保留天数
       maxCacheSize: 100 * 1024,       // 最大缓存大小（字节），默认100KB
       flushInterval: 5000,             // 刷新间隔（毫秒），默认5秒
