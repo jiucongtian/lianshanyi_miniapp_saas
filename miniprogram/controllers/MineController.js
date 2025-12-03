@@ -328,6 +328,36 @@ class MineController extends BaseController {
   }
 
   /**
+   * 打开用户使用手册
+   */
+  onUserManualTap() {
+    this._log('onUserManualTap', '用户点击使用手册入口');
+    
+    const { config } = require('../config/index');
+    
+    // 构建静态托管URL
+    const staticHostingUrl = config.staticHosting?.baseUrl || '';
+    const manualPath = config.staticHosting?.userManualPath || '/user-manual.html';
+    
+    if (!staticHostingUrl) {
+      this._showError('静态托管URL未配置，请联系管理员');
+      this._error('onUserManualTap', '静态托管URL未配置');
+      return;
+    }
+    
+    const manualUrl = `${staticHostingUrl}${manualPath}`;
+    
+    this._log('onUserManualTap', '跳转到使用手册:', manualUrl);
+    
+    // 跳转到webview页面
+    // 注意：不需要手动编码，_navigateTo方法会自动处理
+    this._navigateTo('/pages/webview/index', {
+      url: manualUrl,
+      title: '使用手册'
+    });
+  }
+
+  /**
    * 刷新页面数据
    */
   async onRefresh() {

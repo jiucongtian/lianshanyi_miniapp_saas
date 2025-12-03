@@ -124,5 +124,14 @@ Page({
     wx.navigateTo({
       url: '/pages/cardViewer/index'
     });
+  },
+
+  /**
+   * 点击使用手册
+   */
+  onUserManualTap() {
+    if (this.controller) {
+      this.controller.onUserManualTap();
+    }
   }
 })

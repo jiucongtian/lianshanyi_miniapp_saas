@@ -21,6 +21,15 @@ export const config = {
     // 也可以通过 API 获取商品列表：https://developers.weixin.qq.com/doc/store/API/product/get.html
     productIds: [10000319374901,10000319244356], // 例如：['product-id-1', 'product-id-2']
   },
+  // 静态托管配置
+  staticHosting: {
+    // 静态托管基础URL，需要在云开发控制台获取
+    // 控制台地址：https://console.cloud.tencent.com/tcb/hosting
+    // 获取后请填写完整的域名，例如：https://your-env-id.tcloudbaseapp.com
+    baseUrl: 'https://cloudbase-8g06skyf81a65a87-1378890368.tcloudbaseapp.com', // 静态托管域名（不需要末尾的斜杠）
+    // 用户手册路径
+    userManualPath: '/user-manual/index.html',
+  },
   // 日志配置
   logger: {
     // 文件存储配置
