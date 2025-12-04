@@ -24,7 +24,9 @@
 | 变量名 | 说明 | 获取方式 |
 |-----|---|---|
 | WECHAT_PAY_MCHID | 微信支付商户号 | 商户平台-账户中心-商户信息 |
-| WECHAT_PAY_API_KEY | 微信支付API密钥 | 商户平台-账户中心-API安全-设置API密钥 |
+| WECHAT_PAY_API_KEY | 微信支付API密钥（APIv3密钥） | 商户平台-账户中心-API安全-设置API密钥 |
+| WECHAT_PAY_PRIVATE_KEY | 商户API证书私钥（PEM格式） | 商户平台-账户中心-API安全-API证书-下载证书后提取私钥 |
+| WECHAT_PAY_SERIAL_NO | 商户API证书序列号 | 商户平台-账户中心-API安全-API证书-查看证书序列号 |
 
 ### 可选配置
 
@@ -67,6 +69,50 @@
 - API密钥必须妥善保管，不要泄露
 - 建议定期更换API密钥
 - 密钥丢失需要重新设置，可能影响现有订单
+
+## 商户API证书设置
+
+### 获取商户API证书
+
+根据[微信支付开发文档](https://pay.weixin.qq.com/doc/v3/merchant/4013070756)，商户API证书用于APIv3接口请求签名。
+
+1. 登录[微信支付商户平台](https://pay.weixin.qq.com/)
+2. 进入"账户中心" → "API安全" → "API证书"
+3. 参考[申请商户API证书流程](https://pay.weixin.qq.com/doc/v3/merchant/4012072428)下载证书
+4. 下载的证书文件包含：
+   - **商户私钥**（private key，PEM格式）- 用于签名，配置到 `WECHAT_PAY_PRIVATE_KEY`
+   - **商户证书**（certificate）- 用于验证，一般不需要配置
+
+### 获取证书序列号
+
+证书序列号（serial_no）需要与私钥一起配置：
+
+1. 登录[微信商户平台](https://pay.weixin.qq.com/)
+2. 进入"账户中心" → "API安全" → "API证书"
+3. 参考[查看商户API证书序列号指南](https://pay.weixin.qq.com/doc/v3/merchant/4012072428#Q%EF%BC%9A%E5%A6%82%E4%BD%95%E6%9F%A5%E7%9C%8B%E5%95%86%E6%88%B7API%E8%AF%81%E4%B9%A6%E5%BA%8F%E5%88%97%E5%8F%B7%EF%BC%9F)
+4. 或使用openssl命令行工具查看：
+   ```bash
+   openssl x509 -in apiclient_cert.pem -noout -serial
+   ```
+
+### 私钥格式说明
+
+商户私钥必须是PEM格式，示例：
+
+```
+-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...
+（私钥内容）
+...
+-----END PRIVATE KEY-----
+```
+
+### 注意事项
+
+- **商户API证书只能下载一次**，请妥善保管
+- 私钥一旦泄露，需要在商户平台重新申请下载
+- 证书序列号必须与使用的私钥对应
+- 生产环境必须配置私钥和序列号才能正常签名
 
 ## 支付回调配置
 
