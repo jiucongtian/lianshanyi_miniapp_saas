@@ -6,7 +6,7 @@
     <title>身心游卡牌小程序 - 用户使用手册</title>
     <style>
         body { font-family: "Microsoft YaHei", sans-serif; line-height: 1.8; margin: 0; padding: 0px; background: #f8f9fa; color: #333; }
-        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .container { max-width: 1500px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 30px; }
         h2 { color: #3498db; margin: 40px 0 20px; border-left: 4px solid #3498db; padding-left: 15px; }
         h3 { color: #2980b9; margin: 30px 0 15px; }
@@ -21,6 +21,8 @@
         .note { color: #7f8c8d; font-style: italic; }
         .image-placeholder { text-align: center; margin: 30px 0; }
         .image-placeholder img { max-width: 80%; height: auto; border: 1px solid #eee; border-radius: 8px; padding: 10px; }
+        .image-row { display: flex; justify-content: center; align-items: center; gap: 15px; margin: 30px 0; flex-wrap: wrap; }
+        .image-row img { max-width: 30%; height: auto; border: 1px solid #eee; border-radius: 8px; padding: 10px; flex: 0 0 auto; }
         .module-box { background: #e8f4f8; border-radius: 8px; padding: 20px; margin: 20px 0; }
         .faq-item { margin: 15px 0; }
         .faq-question { font-weight: bold; color: #2c3e50; }
@@ -121,27 +123,21 @@
         </ul>
         <p><strong>注意</strong>：抽卡功能需要小程序注册才能使用。</p>
 
-        <div class="image-placeholder">
-            <img src="https://picsum.photos/id/180/800/400" alt="首页抽卡功能示意图">
-            <p class="note">图：首页智慧洞见抽卡界面示例</p>
+        <div class="image-row">
+            <img src="https://636c-cloudbase-8g06skyf81a65a87-1378890368.tcb.qcloud.la/user-manual/IMG_8446.PNG?sign=bc21a8cb05c8c156d7e43132b707ff91&t=1764846166" alt="首页抽卡功能示意图1">
+            <img src="https://636c-cloudbase-8g06skyf81a65a87-1378890368.tcb.qcloud.la/user-manual/IMG_8448.PNG?sign=c50abecff26f52dc9412a01003844de9&t=1764846194" alt="首页抽卡功能示意图2">
+            <img src="https://636c-cloudbase-8g06skyf81a65a87-1378890368.tcb.qcloud.la/user-manual/IMG_8449.PNG?sign=4ded4621a2ea106100a19f0598a9f4e8&t=1764845853" alt="首页抽卡功能示意图3">
         </div>
 
-        <div class="card-example">
-            <h4>AI解读结果示例</h4>
-            <p>您抽的这张卡牌是生命智慧卡牌的【60号】卡牌【癸亥】</p>
-            <p>癸亥卡牌带着「福德」的温柔能量——就像清晨风里裹着晒透的青草香，是连呼吸都能慢半拍的「舒展感」。</p>
-            <p>明天很适合用「轻松不勉强」的方式和身体对话：不用定「必须5公里」的目标，哪怕穿舒服的鞋子绕着楼下慢走两圈，再慢慢颠两步；或者跟着风的节奏调整呼吸，跑的时候感受脚掌踩在地上的软度、风擦过耳尖的温度——这种「不逼自己」的运动状态，刚好接住福德给的「顺遂」：身体会比往常更愿意配合，连汗都流得更轻爽。</p>
-            <p>如果跑着跑着突然想停下来看看云，或者改成蹲在路边摸一下开得圆滚滚的绣球花？完全没关系——「顺着心意来」的松弛，才是今天能量最想给你的「奖励」~</p>
-            <p>放心去动吧，明天的每一步，都是和自己的「小和解」。</p>
-        </div>
 
         <h3 id="card-page">3.2 卡牌</h3>
         <p>“卡牌”页面并非静态展示，而是基于用户在牌库中填写的出生年月日时生成的四张专属生命智慧卡牌。</p>
 
-        <div class="image-placeholder">
-            <img src="https://picsum.photos/id/237/800/300" alt="专属四张生命智慧卡牌示意图">
-            <p class="note">图：专属生命智慧卡牌展示界面</p>
+        <div class="image-row">
+            <img src="https://636c-cloudbase-8g06skyf81a65a87-1378890368.tcb.qcloud.la/user-manual/IMG_8450.PNG?sign=7ee874b9dc4bd3780243edb44299c7d6&t=1764846419" alt="首页抽卡功能示意图1">
         </div>
+
+
 
         <p>四张专属卡牌分别对应四种关系维度：</p>
         <table>
@@ -201,9 +197,8 @@
             <li>提醒疗愈师：“本卡不准确，请勿基于此卡做解读。”</li>
         </ul>
 
-        <div class="image-placeholder">
-            <img src="https://picsum.photos/id/48/800/300" alt="牌库档案管理示意图">
-            <p class="note">图：牌库档案管理界面示例</p>
+        <div class="image-row">
+            <img src="https://636c-cloudbase-8g06skyf81a65a87-1378890368.tcb.qcloud.la/user-manual/IMG_8450.PNG?sign=7ee874b9dc4bd3780243edb44299c7d6&t=1764846419" alt="首页抽卡功能示意图1">
         </div>
 
         <h3 id="my-page">3.4 我的</h3>
@@ -226,11 +221,6 @@
             <li>已上线基础展示</li>
             <li>后续将发布课程、实体产品、周边</li>
         </ul>
-
-        <div class="image-placeholder">
-            <img src="https://picsum.photos/id/60/800/300" alt="“我的”页面功能示意图">
-            <p class="note">图：“我的”页面功能布局示例</p>
-        </div>
 
         <!-- 4. 使用流程示例 -->
         <h2 id="use-flow">4. 使用流程示例</h2>
