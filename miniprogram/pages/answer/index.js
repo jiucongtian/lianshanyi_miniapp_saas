@@ -10,6 +10,8 @@ const { getBaziImageById } = require('../../utils/baziImageMap');
 const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
 // 引入抽卡服务（暂时注释，只测试配额显示）
 // const { drawCardService } = require('../../services/DrawCardService');
+// 引入海报生成器
+const { posterGenerator } = require('../../utils/posterGenerator');
 
 Page({
   data: {
@@ -18,6 +20,7 @@ Page({
     // 按钮显示控制
     showDrawButton: true, // 是否显示抽卡按钮（初始显示）
     showInterpretButton: false, // 是否显示AI解读按钮（初始隐藏）
+    showShareButton: false, // 是否显示分享海报按钮（AI解读完成后显示）
     // 转圈动画相关数据
     tianGan: ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'],
     tianGanIndices: Array.from({ length: 10 }, (_, i) => i), // 天干索引数组
@@ -42,6 +45,9 @@ Page({
   isDrawingCard: false,
   // AI解读操作进行中标志（同步标志，防止重复点击）
   isInterpreting: false,
+  // Canvas相关
+  canvasContext: null,
+  canvas: null,
   
   async onLoad(options) {
     console.log('[AnswerPage] 页面加载');
@@ -181,6 +187,7 @@ Page({
           // 重新抽卡时：显示抽卡按钮，隐藏AI解读按钮和结果
           showDrawButton: true,
           showInterpretButton: false,
+          showShareButton: false,
           aiInterpretation: ''
         });
         this.clearImagePathTimer = null;
@@ -557,7 +564,9 @@ Page({
         this.setData({
           aiInterpretation: finalInterpretation,
           // AI解读成功：不显示AI解读按钮（从头到尾都不显示）
-          showInterpretButton: false
+          showInterpretButton: false,
+          // 显示分享海报按钮
+          showShareButton: true
         });
         
         log.info('onAIInterpret', 'AI解读成功', { interpretation, isAutoCall });
@@ -620,7 +629,9 @@ Page({
               this.setData({
                 aiInterpretation: finalInterpretation,
                 // 虽然返回失败状态但有数据，视为成功，不显示AI解读按钮
-                showInterpretButton: false
+                showInterpretButton: false,
+                // 显示分享海报按钮
+                showShareButton: true
               });
               log.warn('onAIInterpret', '云函数返回失败状态但有数据', { error: errorMsg, interpretation, isAutoCall });
               // 如果是自动调用，不显示toast
@@ -1028,6 +1039,160 @@ Page({
       title: message,
       icon: 'none',
       duration: 2500
+    });
+  },
+
+  /**
+   * 生成分享海报
+   */
+  async onGeneratePoster() {
+    log.info('onGeneratePoster', '点击生成海报');
+
+    // 验证数据
+    if (!this.data.selectedCard || !this.data.aiInterpretation) {
+      wx.showToast({
+        title: '请先完成抽卡和AI解读',
+        icon: 'none',
+        duration: 2000
+      });
+      const buttonComponent = this.selectComponent('#loading-button-share');
+      if (buttonComponent) {
+        buttonComponent.reset();
+      }
+      return;
+    }
+
+    try {
+      // 获取Canvas上下文（如果还没有获取）
+      if (!this.canvas || !this.canvasContext) {
+        await this._initCanvas();
+      }
+
+      if (!this.canvas || !this.canvasContext) {
+        throw new Error('Canvas初始化失败');
+      }
+
+      // 生成海报
+      const posterPath = await posterGenerator.generatePoster({
+        cardImagePath: this.data.selectedCardImagePath,
+        cardName: this.data.selectedCard.cardName,
+        cardNumber: this.data.selectedCard.cardNumber,
+        question: this.data.question || '', // 传入用户问题
+        aiInterpretation: this.data.aiInterpretation,
+        canvasContext: this.canvasContext,
+        canvas: this.canvas
+      });
+
+      log.info('onGeneratePoster', '海报生成成功', { posterPath });
+
+      // 重置按钮状态
+      const buttonComponent = this.selectComponent('#loading-button-share');
+      if (buttonComponent) {
+        buttonComponent.stopLoading();
+      }
+
+      // 预览海报
+      wx.previewImage({
+        urls: [posterPath],
+        current: posterPath,
+        success: () => {
+          log.info('onGeneratePoster', '海报预览成功');
+        },
+        fail: (err) => {
+          log.error('onGeneratePoster', '海报预览失败', err);
+          // 预览失败，提示用户保存到相册
+          this._savePosterToAlbum(posterPath);
+        }
+      });
+
+    } catch (error) {
+      log.error('onGeneratePoster', '生成海报失败', error);
+      
+      // 重置按钮状态
+      const buttonComponent = this.selectComponent('#loading-button-share');
+      if (buttonComponent) {
+        buttonComponent.reset();
+      }
+
+      wx.showToast({
+        title: '生成海报失败，请重试',
+        icon: 'none',
+        duration: 2000
+      });
+    }
+  },
+
+  /**
+   * 初始化Canvas
+   */
+  async _initCanvas() {
+    return new Promise((resolve, reject) => {
+      const query = wx.createSelectorQuery();
+      query.select('#posterCanvas')
+        .fields({ node: true, size: true })
+        .exec((res) => {
+          if (!res || !res[0]) {
+            log.error('_initCanvas', 'Canvas节点查询失败');
+            reject(new Error('Canvas节点查询失败'));
+            return;
+          }
+
+          const canvas = res[0].node;
+          const ctx = canvas.getContext('2d');
+
+          this.canvas = canvas;
+          this.canvasContext = ctx;
+
+          log.info('_initCanvas', 'Canvas初始化成功');
+          resolve();
+        });
+    });
+  },
+
+  /**
+   * 保存海报到相册
+   */
+  _savePosterToAlbum(posterPath) {
+    wx.showModal({
+      title: '保存海报',
+      content: '是否保存海报到相册？',
+      success: (res) => {
+        if (res.confirm) {
+          wx.saveImageToPhotosAlbum({
+            filePath: posterPath,
+            success: () => {
+              wx.showToast({
+                title: '保存成功',
+                icon: 'success',
+                duration: 2000
+              });
+              log.info('_savePosterToAlbum', '海报保存到相册成功');
+            },
+            fail: (err) => {
+              log.error('_savePosterToAlbum', '保存到相册失败', err);
+              
+              if (err.errMsg.includes('auth deny')) {
+                wx.showModal({
+                  title: '提示',
+                  content: '需要您授权保存图片到相册',
+                  confirmText: '去设置',
+                  success: (modalRes) => {
+                    if (modalRes.confirm) {
+                      wx.openSetting();
+                    }
+                  }
+                });
+              } else {
+                wx.showToast({
+                  title: '保存失败',
+                  icon: 'none',
+                  duration: 2000
+                });
+              }
+            }
+          });
+        }
+      }
     });
   }
 });

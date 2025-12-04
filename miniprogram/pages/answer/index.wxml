@@ -110,7 +110,26 @@
         bind:tap="onAIInterpret"
         disabled="{{!selectedCard || !selectedCard.cardName}}"
       />
+      <!-- 分享海报按钮：AI解读完成后显示 -->
+      <loading-button
+        wx:if="{{showShareButton}}"
+        id="loading-button-share"
+        theme="secondary"
+        size="medium"
+        block="{{true}}"
+        button-text="生成分享海报"
+        loading-text="生成中..."
+        prevent-duplicate="{{true}}"
+        bind:tap="onGeneratePoster"
+      />
     </view>
   </view>
 </view>
+
+<!-- 隐藏的Canvas画布，用于生成海报 -->
+<canvas 
+  type="2d" 
+  id="posterCanvas" 
+  class="poster-canvas"
+></canvas>
 
