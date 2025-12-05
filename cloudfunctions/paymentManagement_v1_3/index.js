@@ -525,10 +525,30 @@ async function upgradeUserToPremium(openid, targetUserType) {
  */
 async function handlePaymentNotify(event) {
   try {
-    // 微信支付回调数据在event.body中
-    const notifyData = event.body || event;
+    // HTTP触发器调用时，微信支付回调数据在event.body中
+    // 如果event.body是字符串，需要解析为JSON
+    let notifyData;
+    if (typeof event.body === 'string') {
+      try {
+        notifyData = JSON.parse(event.body);
+      } catch (parseError) {
+        console.error('[handlePaymentNotify] 解析回调数据失败', parseError);
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            code: 'FAIL',
+            message: '回调数据格式错误'
+          })
+        };
+      }
+    } else {
+      notifyData = event.body || event;
+    }
     
-    console.log('[handlePaymentNotify] 收到支付回调', notifyData);
+    console.log('[handlePaymentNotify] 收到支付回调', {
+      headers: event.headers,
+      body: notifyData
+    });
     
     // TODO: 验证回调签名
     // 1. 获取回调头部的签名信息
@@ -543,8 +563,14 @@ async function handlePaymentNotify(event) {
     const trade_state = notifyData.trade_state; // SUCCESS, NOTPAY, CLOSED等
     
     if (!out_trade_no) {
-      console.error('[handlePaymentNotify] 回调数据缺少订单号');
-      return error('回调数据不完整');
+      console.error('[handlePaymentNotify] 回调数据缺少订单号', notifyData);
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          code: 'FAIL',
+          message: '回调数据不完整：缺少订单号'
+        })
+      };
     }
     
     // 查询订单
@@ -557,7 +583,13 @@ async function handlePaymentNotify(event) {
     
     if (orderResult.data.length === 0) {
       console.error('[handlePaymentNotify] 订单不存在', { out_trade_no });
-      return error('订单不存在');
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          code: 'FAIL',
+          message: '订单不存在'
+        })
+      };
     }
     
     const order = orderResult.data[0];
@@ -596,23 +628,98 @@ async function handlePaymentNotify(event) {
       }
     }
     
-    // 返回成功响应给微信支付
+    // 返回成功响应给微信支付（HTTP触发器需要返回HTTP响应格式）
     return {
-      code: 'SUCCESS',
-      message: '成功'
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        code: 'SUCCESS',
+        message: '成功'
+      })
     };
     
   } catch (err) {
     console.error('[handlePaymentNotify] 处理支付回调失败:', err);
     return {
-      code: 'FAIL',
-      message: err.message || '处理失败'
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        code: 'FAIL',
+        message: err.message || '处理失败'
+      })
     };
   }
 }
 
 // 云函数入口函数
 exports.main = async (event, context) => {
+  // 判断是否为HTTP触发器调用（支付回调）
+  // 云开发HTTP触发器调用时，event可能包含以下字段：
+  // - path, httpMethod (标准格式)
+  // - requestContext.path, requestContext.httpMethod (某些版本)
+  // - 或者直接通过URL路径判断
+  
+  // 记录event信息用于调试
+  console.log('[main] 收到请求', {
+    hasPath: !!event.path,
+    hasHttpMethod: !!event.httpMethod,
+    hasRequestContext: !!event.requestContext,
+    path: event.path,
+    httpMethod: event.httpMethod,
+    requestContext: event.requestContext,
+    body: typeof event.body === 'string' ? event.body.substring(0, 100) : event.body,
+    keys: Object.keys(event)
+  });
+  
+  // 判断是否为HTTP触发器调用
+  const isHttpTrigger = 
+    (event.path && event.httpMethod) ||  // 标准格式
+    (event.requestContext && event.requestContext.path) ||  // 某些版本格式
+    (event.requestContext && event.requestContext.httpMethod) ||  // 某些版本格式
+    (context && context.requestId);  // HTTP触发器通常有requestId
+  
+  if (isHttpTrigger) {
+    // 获取路径和HTTP方法
+    const path = event.path || (event.requestContext && event.requestContext.path) || '';
+    const httpMethod = event.httpMethod || (event.requestContext && event.requestContext.httpMethod) || '';
+    
+    console.log('[main] 识别为HTTP触发器', { path, httpMethod });
+    
+    // HTTP触发器调用：处理支付回调
+    if (path === '/payment/notify' || path.endsWith('/payment/notify')) {
+      if (httpMethod === 'POST' || !httpMethod) {  // 如果没有httpMethod，默认处理POST
+        return await handlePaymentNotify(event);
+      } else {
+        return {
+          statusCode: 405,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            code: 'METHOD_NOT_ALLOWED',
+            message: '只支持POST方法'
+          })
+        };
+      }
+    } else {
+      return {
+        statusCode: 404,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          code: 'NOT_FOUND',
+          message: '路径不存在: ' + path
+        })
+      };
+    }
+  }
+  
+  // 普通云函数调用：处理业务逻辑
   const wxContext = cloud.getWXContext();
   const { action, data } = event;
   
@@ -622,8 +729,6 @@ exports.main = async (event, context) => {
         return await createPaymentOrder(wxContext, data);
       case 'queryOrderStatus':
         return await queryOrderStatus(wxContext, data);
-      case 'handlePaymentNotify':
-        return await handlePaymentNotify(event);
       default:
         return error('未知操作类型');
     }
