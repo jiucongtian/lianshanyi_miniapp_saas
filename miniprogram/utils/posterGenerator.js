@@ -37,7 +37,7 @@ class PosterGenerator {
       aiInterpretation,
       canvasContext,
       canvas,
-      qrCodePath = '/static/erweima.JPG' // 默认二维码路径
+      qrCodePath = 'static/erweima.JPG' // 默认二维码路径（去掉前导斜杠）
     } = options;
 
     try {
@@ -383,6 +383,64 @@ class PosterGenerator {
    * @param {number} padding - 二维码内边距
    */
   async _drawQRCode(ctx, canvas, qrCodePath, startY, qrCodeSize, padding) {
+    // 尝试多种路径格式
+    const pathVariants = [
+      qrCodePath, // 原始路径
+      qrCodePath.startsWith('/') ? qrCodePath.substring(1) : `/${qrCodePath}`, // 去掉或添加前导斜杠
+      qrCodePath.replace(/^\/+/, ''), // 去掉所有前导斜杠
+      `/${qrCodePath.replace(/^\/+/, '')}`, // 确保有一个前导斜杠
+    ];
+    
+    let imageInfo = null;
+    let actualPath = null;
+    
+    // 尝试每个路径格式
+    for (const path of pathVariants) {
+      try {
+        imageInfo = await new Promise((resolve, reject) => {
+          wx.getImageInfo({
+            src: path,
+            success: (res) => {
+              log.info('_drawQRCode', '获取图片信息成功', {
+                triedPath: path,
+                width: res.width,
+                height: res.height,
+                actualPath: res.path
+              });
+              resolve(res);
+            },
+            fail: (err) => {
+              log.warn('_drawQRCode', '获取图片信息失败，尝试下一个路径', {
+                triedPath: path,
+                error: err
+              });
+              reject(err);
+            }
+          });
+        });
+        
+        // 成功获取图片信息
+        actualPath = imageInfo.path;
+        log.info('_drawQRCode', '找到可用路径', {
+          originalPath: qrCodePath,
+          workingPath: path,
+          actualPath: actualPath
+        });
+        break; // 找到可用路径，退出循环
+      } catch (error) {
+        // 继续尝试下一个路径
+        continue;
+      }
+    }
+    
+    // 如果所有路径都失败，直接使用原始路径尝试
+    if (!imageInfo) {
+      log.warn('_drawQRCode', '所有路径格式都失败，直接使用原始路径', {
+        originalPath: qrCodePath
+      });
+      actualPath = qrCodePath;
+    }
+    
     return new Promise((resolve, reject) => {
       const img = canvas.createImage();
       
@@ -421,18 +479,25 @@ class PosterGenerator {
         log.info('_drawQRCode', '二维码绘制完成', {
           position: `(${x}, ${y})`,
           size: `${qrCodeSize}x${qrCodeSize}`,
-          drawSize: `${drawWidth}x${drawHeight}`
+          drawSize: `${drawWidth}x${drawHeight}`,
+          originalPath: qrCodePath,
+          actualPath: actualPath
         });
         resolve();
       };
 
       img.onerror = (err) => {
-        log.error('_drawQRCode', '加载二维码失败', err);
+        log.error('_drawQRCode', '加载二维码图片失败', {
+          originalPath: qrCodePath,
+          actualPath: actualPath,
+          error: err
+        });
         // 即使失败也继续，不影响整体海报生成
         resolve();
       };
 
-      img.src = qrCodePath;
+      // 使用找到的路径或原始路径
+      img.src = actualPath;
     });
   }
 
