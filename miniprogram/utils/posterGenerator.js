@@ -25,6 +25,7 @@ class PosterGenerator {
    * @param {string} options.aiInterpretation - AI解读内容
    * @param {Object} options.canvasContext - Canvas上下文
    * @param {Object} options.canvas - Canvas对象（Canvas 2D API）
+   * @param {string} options.qrCodePath - 二维码图片路径（可选）
    * @returns {Promise<string>} 海报临时文件路径
    */
   async generatePoster(options) {
@@ -35,7 +36,8 @@ class PosterGenerator {
       question,
       aiInterpretation,
       canvasContext,
-      canvas
+      canvas,
+      qrCodePath = '/static/erweima.JPG' // 默认二维码路径
     } = options;
 
     try {
@@ -93,8 +95,8 @@ class PosterGenerator {
       currentY = await this._drawInterpretation(canvasContext, aiInterpretation, currentY);
       currentY += 60; // 解读与底部之间的间距
 
-      // 7. 绘制底部信息
-      await this._drawFooter(canvasContext, canvasHeight);
+      // 7. 绘制底部信息（包含二维码）
+      await this._drawFooter(canvasContext, canvas, canvasHeight, qrCodePath);
 
       // 绘制完成，导出为图片
       log.info('generatePoster', '画布绘制完成，开始导出图片');
@@ -151,8 +153,9 @@ class PosterGenerator {
     const interpretationLines = this._wrapText(ctx, cleanContent, this.canvasWidth - 80);
     totalHeight += 50 + (interpretationLines.length * this.lineHeight) + 60; // 标题 + 内容 + 间距
     
-    // 底部信息和边距
-    totalHeight += 80;
+    // 底部信息和边距（包含二维码区域）
+    // 二维码尺寸220 + 内边距24 + 文字高度30 + 间距40 + 底部边距40 = 354
+    totalHeight += 354; // 增加高度以容纳二维码和文字
     
     return totalHeight;
   }
@@ -224,21 +227,45 @@ class PosterGenerator {
       const img = canvas.createImage();
       
       img.onload = () => {
-        // 计算绘制位置和尺寸（居中，保持宽高比）
+        // 获取图片原始尺寸
+        const imgWidth = img.width;
+        const imgHeight = img.height;
+        const imgAspectRatio = imgWidth / imgHeight;
+        
+        // 设置最大绘制尺寸
         const maxWidth = 400;
         const maxHeight = 560;
-        const x = (this.canvasWidth - maxWidth) / 2;
-        const y = startY;
-
-        // 绘制白色背景
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x - 10, y - 10, maxWidth + 20, maxHeight + 20);
-
-        // 绘制卡牌图片
-        ctx.drawImage(img, x, y, maxWidth, maxHeight);
         
-        log.info('_drawCardImage', '卡牌图片绘制完成');
-        resolve(y + maxHeight); // 返回下一个元素的起始Y坐标
+        // 根据图片宽高比计算实际绘制尺寸（保持比例，不拉伸）
+        let drawWidth, drawHeight;
+        if (imgAspectRatio > maxWidth / maxHeight) {
+          // 图片较宽，以宽度为准
+          drawWidth = maxWidth;
+          drawHeight = maxWidth / imgAspectRatio;
+        } else {
+          // 图片较高，以高度为准
+          drawHeight = maxHeight;
+          drawWidth = maxHeight * imgAspectRatio;
+        }
+        
+        // 计算居中位置
+        const x = (this.canvasWidth - drawWidth) / 2;
+        const y = startY;
+        
+        // 绘制白色背景（根据实际图片尺寸）
+        const padding = 10;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x - padding, y - padding, drawWidth + padding * 2, drawHeight + padding * 2);
+
+        // 绘制卡牌图片（保持原始宽高比）
+        ctx.drawImage(img, x, y, drawWidth, drawHeight);
+        
+        log.info('_drawCardImage', '卡牌图片绘制完成', {
+          originalSize: `${imgWidth}x${imgHeight}`,
+          drawSize: `${drawWidth}x${drawHeight}`,
+          aspectRatio: imgAspectRatio.toFixed(2)
+        });
+        resolve(y + drawHeight); // 返回下一个元素的起始Y坐标
       };
 
       img.onerror = (err) => {
@@ -316,15 +343,97 @@ class PosterGenerator {
   }
 
   /**
-   * 绘制底部信息
+   * 绘制底部信息（包含二维码）
+   * @param {CanvasContext} ctx - Canvas上下文
+   * @param {Object} canvas - Canvas对象
+   * @param {number} canvasHeight - 画布高度
+   * @param {string} qrCodePath - 二维码图片路径
    */
-  async _drawFooter(ctx, canvasHeight) {
-    const y = canvasHeight - 60;
-
+  async _drawFooter(ctx, canvas, canvasHeight, qrCodePath) {
+    const qrCodeSize = 220; // 二维码尺寸（增大以便扫描）
+    const qrCodePadding = 12; // 二维码内边距（白色背景）
+    const footerPadding = 40; // 底部边距
+    const textSpacing = 30; // 文字和二维码之间的间距
+    
+    // 计算二维码位置（居中显示）
+    const qrCodeY = canvasHeight - footerPadding - qrCodeSize - qrCodePadding * 2;
+    
+    // 绘制提示文字（在二维码上方，居中显示）
+    const text = '长按保存图片，分享给朋友';
+    const textY = qrCodeY - textSpacing;
+    
     ctx.fillStyle = '#c896b4';
     ctx.font = '24px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('长按保存图片，分享给朋友', this.canvasWidth / 2, y);
+    ctx.fillText(text, this.canvasWidth / 2, textY);
+    
+    // 绘制二维码（居中显示）
+    if (qrCodePath) {
+      await this._drawQRCode(ctx, canvas, qrCodePath, qrCodeY, qrCodeSize, qrCodePadding);
+    }
+  }
+
+  /**
+   * 绘制二维码
+   * @param {CanvasContext} ctx - Canvas上下文
+   * @param {Object} canvas - Canvas对象
+   * @param {string} qrCodePath - 二维码图片路径
+   * @param {number} startY - 起始Y坐标（包含padding）
+   * @param {number} qrCodeSize - 二维码尺寸
+   * @param {number} padding - 二维码内边距
+   */
+  async _drawQRCode(ctx, canvas, qrCodePath, startY, qrCodeSize, padding) {
+    return new Promise((resolve, reject) => {
+      const img = canvas.createImage();
+      
+      img.onload = () => {
+        // 计算二维码位置（居中显示）
+        const totalSize = qrCodeSize + padding * 2;
+        const x = (this.canvasWidth - totalSize) / 2; // 水平居中
+        const y = startY + padding; // 加上内边距
+        
+        // 绘制白色背景（使二维码更突出）
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x, y - padding, totalSize, totalSize);
+        
+        // 绘制二维码图片（保持原始宽高比）
+        const imgWidth = img.width;
+        const imgHeight = img.height;
+        const imgAspectRatio = imgWidth / imgHeight;
+        
+        let drawWidth, drawHeight;
+        if (imgAspectRatio > 1) {
+          // 图片较宽
+          drawWidth = qrCodeSize;
+          drawHeight = qrCodeSize / imgAspectRatio;
+        } else {
+          // 图片较高或正方形
+          drawHeight = qrCodeSize;
+          drawWidth = qrCodeSize * imgAspectRatio;
+        }
+        
+        // 居中绘制二维码
+        const drawX = x + padding + (qrCodeSize - drawWidth) / 2;
+        const drawY = y + (qrCodeSize - drawHeight) / 2;
+        
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        
+        log.info('_drawQRCode', '二维码绘制完成', {
+          position: `(${x}, ${y})`,
+          size: `${qrCodeSize}x${qrCodeSize}`,
+          drawSize: `${drawWidth}x${drawHeight}`
+        });
+        resolve();
+      };
+
+      img.onerror = (err) => {
+        log.error('_drawQRCode', '加载二维码失败', err);
+        // 即使失败也继续，不影响整体海报生成
+        resolve();
+      };
+
+      img.src = qrCodePath;
+    });
   }
 
   /**
