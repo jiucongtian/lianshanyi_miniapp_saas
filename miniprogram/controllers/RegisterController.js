@@ -180,12 +180,14 @@ class RegisterController extends BaseController {
    * @returns {boolean} 是否有效
    */
   _validatePhoneNumber(phoneNumber) {
+    // 手机号是必填项，不能为空
     if (!phoneNumber || phoneNumber.trim() === '') {
-      return true; // 手机号不是必填项
+      return false;
     }
     
+    // 验证手机号格式：11位数字，以1开头，第二位为3-9
     const phoneRegex = /^1[3-9]\d{9}$/;
-    return phoneRegex.test(phoneNumber);
+    return phoneRegex.test(phoneNumber.trim());
   }
 
   /**
@@ -324,8 +326,18 @@ class RegisterController extends BaseController {
     this._log('submitRegister', '提交注册');
     
     // 表单验证
+    const { userInfo } = this.data;
     if (!this.data.formValid) {
-      this._showError('请完善信息');
+      // 提供更具体的错误提示
+      if (!userInfo.nickName || userInfo.nickName.trim().length === 0) {
+        this._showError('请输入昵称');
+      } else if (!userInfo.phoneNumber || !this._validatePhoneNumber(userInfo.phoneNumber)) {
+        this._showError('请输入正确的手机号');
+      } else if (!this.data.agreeTerms) {
+        this._showError('请同意用户协议');
+      } else {
+        this._showError('请完善信息');
+      }
       return;
     }
 
@@ -353,12 +365,12 @@ class RegisterController extends BaseController {
         }
       }
       
-      // 准备注册数据
+      // 准备注册数据（手机号已通过验证，确保不为空）
       const registrationData = {
         nickName: userInfo.nickName.trim(),
         gender: userInfo.gender,
         avatarUrl: finalAvatarUrl,
-        phoneNumber: userInfo.phoneNumber.trim() || ''
+        phoneNumber: userInfo.phoneNumber.trim()
       };
       
       this._log('submitRegister', '提交数据:', registrationData);
