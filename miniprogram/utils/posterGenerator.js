@@ -4,6 +4,7 @@
  */
 
 const { createModuleLogger } = require('./logger/index');
+const { config } = require('../config/index');
 const log = createModuleLogger('PosterGenerator');
 
 class PosterGenerator {
@@ -37,16 +38,10 @@ class PosterGenerator {
       aiInterpretation,
       canvasContext,
       canvas,
-      qrCodePath = 'static/erweima.JPG' // 默认二维码路径（去掉前导斜杠）
+      qrCodePath = config.cloud.qrCodePath || '/static/erweima.JPG'
     } = options;
 
     try {
-      log.info('generatePoster', '开始生成海报', {
-        cardName,
-        cardNumber,
-        hasImage: !!cardImagePath,
-        hasQuestion: !!question
-      });
 
       // 预先计算内容高度，动态调整画布高度
       const calculatedHeight = await this._calculateCanvasHeight(
@@ -99,15 +94,10 @@ class PosterGenerator {
       await this._drawFooter(canvasContext, canvas, canvasHeight, qrCodePath);
 
       // 绘制完成，导出为图片
-      log.info('generatePoster', '画布绘制完成，开始导出图片');
-
       return new Promise((resolve, reject) => {
         wx.canvasToTempFilePath({
           canvas: canvas,
           success: (res) => {
-            log.info('generatePoster', '海报生成成功', { 
-              tempFilePath: res.tempFilePath 
-            });
             resolve(res.tempFilePath);
           },
           fail: (err) => {
@@ -259,17 +249,10 @@ class PosterGenerator {
 
         // 绘制卡牌图片（保持原始宽高比）
         ctx.drawImage(img, x, y, drawWidth, drawHeight);
-        
-        log.info('_drawCardImage', '卡牌图片绘制完成', {
-          originalSize: `${imgWidth}x${imgHeight}`,
-          drawSize: `${drawWidth}x${drawHeight}`,
-          aspectRatio: imgAspectRatio.toFixed(2)
-        });
         resolve(y + drawHeight); // 返回下一个元素的起始Y坐标
       };
 
-      img.onerror = (err) => {
-        log.error('_drawCardImage', '加载图片失败', err);
+      img.onerror = () => {
         resolve(startY + 560); // 即使失败也继续，返回预期的高度
       };
 
@@ -377,78 +360,32 @@ class PosterGenerator {
    * 绘制二维码
    * @param {CanvasContext} ctx - Canvas上下文
    * @param {Object} canvas - Canvas对象
-   * @param {string} qrCodePath - 二维码图片路径
+   * @param {string} qrCodePath - 二维码图片路径（支持 HTTP URL、云存储路径等）
    * @param {number} startY - 起始Y坐标（包含padding）
    * @param {number} qrCodeSize - 二维码尺寸
    * @param {number} padding - 二维码内边距
    */
   async _drawQRCode(ctx, canvas, qrCodePath, startY, qrCodeSize, padding) {
-    // 尝试多种路径格式
-    const pathVariants = [
-      qrCodePath, // 原始路径
-      qrCodePath.startsWith('/') ? qrCodePath.substring(1) : `/${qrCodePath}`, // 去掉或添加前导斜杠
-      qrCodePath.replace(/^\/+/, ''), // 去掉所有前导斜杠
-      `/${qrCodePath.replace(/^\/+/, '')}`, // 确保有一个前导斜杠
-    ];
-    
-    let imageInfo = null;
-    let actualPath = null;
-    
-    // 尝试每个路径格式
-    for (const path of pathVariants) {
-      try {
-        imageInfo = await new Promise((resolve, reject) => {
-          wx.getImageInfo({
-            src: path,
-            success: (res) => {
-              log.info('_drawQRCode', '获取图片信息成功', {
-                triedPath: path,
-                width: res.width,
-                height: res.height,
-                actualPath: res.path
-              });
-              resolve(res);
-            },
-            fail: (err) => {
-              log.warn('_drawQRCode', '获取图片信息失败，尝试下一个路径', {
-                triedPath: path,
-                error: err
-              });
-              reject(err);
-            }
-          });
-        });
-        
-        // 成功获取图片信息
-        actualPath = imageInfo.path;
-        log.info('_drawQRCode', '找到可用路径', {
-          originalPath: qrCodePath,
-          workingPath: path,
-          actualPath: actualPath
-        });
-        break; // 找到可用路径，退出循环
-      } catch (error) {
-        // 继续尝试下一个路径
-        continue;
-      }
+    if (!qrCodePath) {
+      return Promise.resolve();
     }
-    
-    // 如果所有路径都失败，直接使用原始路径尝试
-    if (!imageInfo) {
-      log.warn('_drawQRCode', '所有路径格式都失败，直接使用原始路径', {
-        originalPath: qrCodePath
-      });
-      actualPath = qrCodePath;
-    }
-    
-    return new Promise((resolve, reject) => {
+
+    // 直接使用传入的路径加载图片（与卡牌图片加载方式一致）
+    return new Promise((resolve) => {
       const img = canvas.createImage();
       
+      // 设置超时，避免无限等待
+      const timeout = setTimeout(() => {
+        resolve();
+      }, 5000);
+      
       img.onload = () => {
+        clearTimeout(timeout);
+        
         // 计算二维码位置（居中显示）
         const totalSize = qrCodeSize + padding * 2;
-        const x = (this.canvasWidth - totalSize) / 2; // 水平居中
-        const y = startY + padding; // 加上内边距
+        const x = (this.canvasWidth - totalSize) / 2;
+        const y = startY + padding;
         
         // 绘制白色背景（使二维码更突出）
         ctx.fillStyle = '#ffffff';
@@ -461,11 +398,9 @@ class PosterGenerator {
         
         let drawWidth, drawHeight;
         if (imgAspectRatio > 1) {
-          // 图片较宽
           drawWidth = qrCodeSize;
           drawHeight = qrCodeSize / imgAspectRatio;
         } else {
-          // 图片较高或正方形
           drawHeight = qrCodeSize;
           drawWidth = qrCodeSize * imgAspectRatio;
         }
@@ -475,29 +410,16 @@ class PosterGenerator {
         const drawY = y + (qrCodeSize - drawHeight) / 2;
         
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-        
-        log.info('_drawQRCode', '二维码绘制完成', {
-          position: `(${x}, ${y})`,
-          size: `${qrCodeSize}x${qrCodeSize}`,
-          drawSize: `${drawWidth}x${drawHeight}`,
-          originalPath: qrCodePath,
-          actualPath: actualPath
-        });
         resolve();
       };
 
-      img.onerror = (err) => {
-        log.error('_drawQRCode', '加载二维码图片失败', {
-          originalPath: qrCodePath,
-          actualPath: actualPath,
-          error: err
-        });
+      img.onerror = () => {
+        clearTimeout(timeout);
         // 即使失败也继续，不影响整体海报生成
         resolve();
       };
 
-      // 使用找到的路径或原始路径
-      img.src = actualPath;
+      img.src = qrCodePath;
     });
   }
 
