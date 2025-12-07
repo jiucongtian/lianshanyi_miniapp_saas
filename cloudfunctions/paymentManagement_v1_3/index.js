@@ -2,12 +2,94 @@
 const cloud = require('wx-server-sdk');
 const crypto = require('crypto');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV // 使用当前云环境
 });
 
 const db = cloud.database();
+
+/**
+ * 从文件读取私钥
+ * @param {string} filename - 私钥文件名（默认：apiclient_key.pem）
+ * @returns {string|null} 私钥内容或null
+ */
+function loadPrivateKeyFromFile(filename = 'apiclient_key.pem') {
+  try {
+    const keyPath = path.join(__dirname, filename);
+    
+    if (fs.existsSync(keyPath)) {
+      const privateKey = fs.readFileSync(keyPath, 'utf8');
+      console.log('[loadPrivateKeyFromFile] 成功从文件读取私钥:', filename);
+      console.log('[loadPrivateKeyFromFile] 私钥长度:', privateKey.length);
+      return privateKey;
+    } else {
+      console.log('[loadPrivateKeyFromFile] 私钥文件不存在:', keyPath);
+      return null;
+    }
+  } catch (error) {
+    console.error('[loadPrivateKeyFromFile] 读取私钥文件失败:', error);
+    return null;
+  }
+}
+
+/**
+ * 获取私钥（优先从文件读取，否则从环境变量读取）
+ * @returns {string|null} 私钥内容或null
+ */
+function getPrivateKey() {
+  // 优先从文件读取
+  let privateKey = loadPrivateKeyFromFile('apiclient_key.pem');
+  
+  if (privateKey) {
+    console.log('[getPrivateKey] 使用文件中的私钥');
+    return privateKey;
+  }
+  
+  // 如果文件不存在，尝试从环境变量读取
+  privateKey = process.env.WECHAT_PAY_PRIVATE_KEY;
+  
+  if (privateKey) {
+    console.log('[getPrivateKey] 使用环境变量中的私钥');
+    
+    // 修复私钥格式：如果换行符被替换成了空格，恢复换行符
+    if (!privateKey.includes('\n') && privateKey.includes(' ')) {
+      console.log('[getPrivateKey] 检测到私钥格式问题（换行符被空格替换），自动修复...');
+      
+      // 提取BEGIN和END标记之间的Base64内容
+      const beginMarker = '-----BEGIN PRIVATE KEY-----';
+      const endMarker = '-----END PRIVATE KEY-----';
+      
+      // 移除所有空格，重新格式化
+      const cleanKey = privateKey.replace(/\s+/g, '');
+      const beginIndex = cleanKey.indexOf(beginMarker);
+      const endIndex = cleanKey.indexOf(endMarker);
+      
+      if (beginIndex !== -1 && endIndex !== -1) {
+        const base64Content = cleanKey.substring(beginIndex + beginMarker.length, endIndex);
+        
+        // 将Base64内容按每64个字符分行
+        const lines = [beginMarker];
+        for (let i = 0; i < base64Content.length; i += 64) {
+          lines.push(base64Content.substring(i, i + 64));
+        }
+        lines.push(endMarker);
+        
+        privateKey = lines.join('\n');
+        console.log('[getPrivateKey] 私钥格式已修复，共', lines.length, '行');
+      } else {
+        console.error('[getPrivateKey] 私钥格式修复失败：未找到BEGIN或END标记');
+      }
+    }
+    
+    return privateKey;
+  }
+  
+  console.warn('[getPrivateKey] 未配置私钥（既无文件也无环境变量）');
+  return null;
+}
 
 /**
  * 创建成功响应
@@ -128,7 +210,7 @@ async function createOrder(orderData) {
   
   // 从环境变量获取配置
   const apiKey = process.env.WECHAT_PAY_API_KEY;
-  const privateKey = process.env.WECHAT_PAY_PRIVATE_KEY; // 商户私钥（PEM格式）
+  const privateKey = getPrivateKey(); // 优先从文件读取，否则从环境变量读取
   const serialNo = process.env.WECHAT_PAY_SERIAL_NO; // 证书序列号
   
   if (!apiKey) {
@@ -138,7 +220,7 @@ async function createOrder(orderData) {
   // 如果没有配置私钥和序列号，使用模拟数据（仅用于开发测试）
   if (!privateKey || !serialNo) {
     console.warn('[createOrder] 未配置商户私钥或证书序列号，使用模拟数据');
-    console.warn('[createOrder] 生产环境必须配置WECHAT_PAY_PRIVATE_KEY和WECHAT_PAY_SERIAL_NO');
+    console.warn('[createOrder] 生产环境必须配置商户私钥文件(apiclient_key.pem)和WECHAT_PAY_SERIAL_NO');
     
     // 返回模拟数据（仅用于开发测试）
     return {
@@ -287,7 +369,8 @@ async function createPaymentOrder(wxContext, data) {
     // 从环境变量获取配置
     const mchid = process.env.WECHAT_PAY_MCHID;
     const apiKey = process.env.WECHAT_PAY_API_KEY;
-    const privateKey = process.env.WECHAT_PAY_PRIVATE_KEY; // 商户私钥（PEM格式）
+    const privateKey = getPrivateKey(); // 优先从文件读取，否则从环境变量读取
+    const serialNo = process.env.WECHAT_PAY_SERIAL_NO;
     const notifyUrl = process.env.WECHAT_PAY_NOTIFY_URL || `https://${cloud.getWXContext().ENV}.cloudbaseapp.com/payment/notify`;
     
     if (!mchid || !apiKey) {
@@ -316,6 +399,7 @@ async function createPaymentOrder(wxContext, data) {
       orderType: orderType || 'default',
       orderData: orderData || {},
       status: 'NOTPAY', // 未支付
+      isActive: true, // 订单有效
       createTime: new Date(),
       updateTime: new Date()
     };
@@ -329,6 +413,16 @@ async function createPaymentOrder(wxContext, data) {
       orderId: dbResult._id,
       out_trade_no
     });
+    
+    // 诊断私钥配置
+    console.log('[createPaymentOrder] 私钥配置诊断:');
+    console.log('  - 是否配置私钥:', !!privateKey);
+    console.log('  - 私钥长度:', privateKey ? privateKey.length : 0);
+    console.log('  - 私钥前50个字符:', privateKey ? privateKey.substring(0, 50) : 'null');
+    console.log('  - 私钥后50个字符:', privateKey ? privateKey.substring(privateKey.length - 50) : 'null');
+    console.log('  - 是否包含BEGIN标记:', privateKey ? privateKey.includes('-----BEGIN') : false);
+    console.log('  - 是否包含END标记:', privateKey ? privateKey.includes('-----END') : false);
+    console.log('  - 私钥类型:', privateKey ? (privateKey.includes('BEGIN PRIVATE KEY') ? 'PRIVATE KEY' : privateKey.includes('BEGIN RSA PRIVATE KEY') ? 'RSA PRIVATE KEY' : 'Unknown') : 'null');
     
     // 调用微信支付统一下单接口
     const orderDataForWechat = {
@@ -385,8 +479,7 @@ async function queryOrderStatus(wxContext, data) {
     
     // 构建查询条件
     const query = {
-      openid: OPENID,
-      isActive: true
+      openid: OPENID
     };
     
     if (out_trade_no) {
@@ -401,8 +494,19 @@ async function queryOrderStatus(wxContext, data) {
       .get();
     
     if (orderResult.data.length === 0) {
+      console.log('[queryOrderStatus] 未找到订单', {
+        openid: OPENID,
+        out_trade_no,
+        orderId,
+        query
+      });
       return error('订单不存在');
     }
+    
+    console.log('[queryOrderStatus] 找到订单', {
+      orderId: orderResult.data[0]._id,
+      status: orderResult.data[0].status
+    });
     
     const order = orderResult.data[0];
     
