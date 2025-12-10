@@ -502,10 +502,10 @@ class CardController extends BaseController {
     const currentX = touch.clientX;
     const currentY = touch.clientY;
     
-    // 获取屏幕尺寸
-    const systemInfo = wx.getSystemInfoSync();
-    const screenWidth = systemInfo.windowWidth;
-    const screenHeight = systemInfo.windowHeight;
+    // 获取屏幕尺寸（使用新的API）
+    const windowInfo = wx.getWindowInfo();
+    const screenWidth = windowInfo.windowWidth;
+    const screenHeight = windowInfo.windowHeight;
     
     // 图片占据90%的屏幕，计算图片中心位置
     const imageWidth = screenWidth * 0.9;
