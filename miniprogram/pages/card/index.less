@@ -232,11 +232,13 @@
 }
 
 .preview-image {
-  width: 80vw !important;
-  height: 80vh !important;
-  max-width: 80vw !important;
-  max-height: 80vh !important;
-  object-fit: contain !important;
+  width: 90vw !important;
+  height: 90vh !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  min-width: 90vw !important;
+  min-height: 90vh !important;
+  object-fit: cover !important;
   animation: scaleIn 0.3s ease-out;
   display: block !important;
   visibility: visible !important;
@@ -247,6 +249,7 @@
   position: relative !important;
   z-index: 100000 !important;
   margin: 0 auto !important;
+  overflow: hidden !important;
 }
 
 /* 卡牌描述信息样式 */

@@ -100,7 +100,7 @@
     <image 
       class="preview-image" 
       src="{{previewImagePath}}" 
-      mode="aspectFit" 
+      mode="aspectFill" 
       bindload="onImageLoad" 
       binderror="onImageError"
       lazy-load="{{false}}"
