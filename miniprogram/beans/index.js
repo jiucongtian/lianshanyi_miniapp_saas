@@ -8,11 +8,13 @@ const { ResponseBean } = require('./ResponseBean');
 const { UserBean } = require('./UserBean');
 const { ProfileBean } = require('./ProfileBean');
 const { BaziBean } = require('./BaziBean');
+const { FeedbackBean } = require('./FeedbackBean');
 
 module.exports = {
   BaseBean,
   ResponseBean,
   UserBean,
   ProfileBean,
-  BaziBean
+  BaziBean,
+  FeedbackBean
 };
