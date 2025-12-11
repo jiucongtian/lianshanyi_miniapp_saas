@@ -76,6 +76,15 @@
         </view>
         <view class="tool-arrow">›</view>
       </view>
+      
+      <view class="tool-card" bindtap="onFeedbackTap">
+        <view class="tool-icon">💬</view>
+        <view class="tool-info">
+          <text class="tool-title">反馈与建议</text>
+          <text class="tool-desc">告诉我们您的想法</text>
+        </view>
+        <view class="tool-arrow">›</view>
+      </view>
     </view>
     
     <!-- 微信小店入口 -->

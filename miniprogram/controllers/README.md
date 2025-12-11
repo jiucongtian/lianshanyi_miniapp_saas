@@ -17,6 +17,7 @@ controllers/
 ├── CardController-README.md       # 卡牌控制器文档
 ├── MineController.js              # 个人中心控制器
 ├── MineController-README.md       # 个人中心控制器文档
+├── FeedbackController.js          # 反馈管理控制器
 └── README.md                      # 使用文档
 ```
 
@@ -46,6 +47,12 @@ controllers/
 - **文件**: `MineController.js`
 - **功能**: 个人中心页面控制器，处理个人中心相关的业务逻辑
 - **文档**: `MineController-README.md`
+- **状态**: ✅ 已完成
+
+#### FeedbackController
+- **文件**: `FeedbackController.js`
+- **功能**: 反馈页面控制器，处理反馈提交和表单验证相关的业务逻辑
+- **文档**: 无（代码注释完整）
 - **状态**: ✅ 已完成
 
 ## ProfileController 档案管理控制器

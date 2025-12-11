@@ -1,199 +1,151 @@
 /**
  * 反馈服务类
- * 提供反馈相关的业务逻辑和云函数调用
+ * 负责反馈相关的业务逻辑和云函数调用
  */
 const { BaseService } = require('./BaseService');
-const { FeedbackBean } = require('../beans/FeedbackBean');
+const { ResponseBean } = require('../beans/ResponseBean');
+const { VersionManager } = require('../utils/manager/versionManager');
+const { createModuleLogger } = require('../utils/logger/index');
+
+const log = createModuleLogger('FeedbackService');
 
 class FeedbackService extends BaseService {
-  constructor() {
-    super();
-    this.serviceName = 'FeedbackService';
-  }
-  
   /**
-   * 提交反馈
+   * 提交用户反馈
    * @param {Object} feedbackData - 反馈数据
-   * @param {string} feedbackData.feedbackType - 反馈类型（problem/suggestion/other）
-   * @param {string} feedbackData.title - 反馈标题
-   * @param {string} feedbackData.content - 反馈内容
-   * @returns {Promise<ResponseBean>} 提交结果响应
+   * @param {string} feedbackData.feedbackType - 反馈类型 (problem/suggestion/other)
+   * @param {string} feedbackData.title - 反馈标题 (10-50字符)
+   * @param {string} feedbackData.content - 反馈内容 (20-500字符)
+   * @returns {Promise<ResponseBean>}
    */
   async submitFeedback(feedbackData) {
-    this._log('submitFeedback', '开始提交反馈', feedbackData);
-    
-    // 验证必需参数
-    const validation = this._validateRequiredParams(feedbackData, ['feedbackType', 'title', 'content']);
-    if (!validation.valid) {
-      this._error('submitFeedback', '参数验证失败', { missingFields: validation.missingFields });
-      return this._createValidationError(validation.missingFields);
-    }
-    
-    // 验证反馈类型
-    const validTypes = ['problem', 'suggestion', 'other'];
-    if (!validTypes.includes(feedbackData.feedbackType)) {
-      this._error('submitFeedback', '反馈类型无效', { feedbackType: feedbackData.feedbackType });
-      return this._createValidationError(['feedbackType: 必须是 problem、suggestion 或 other']);
-    }
-    
-    // 验证标题长度
-    const title = feedbackData.title.trim();
-    if (title.length < 10 || title.length > 50) {
-      this._error('submitFeedback', '标题长度不符合要求', { length: title.length });
-      return this._createValidationError(['title: 长度必须为10-50个字符']);
-    }
-    
-    // 验证内容长度
-    const content = feedbackData.content.trim();
-    if (content.length < 20 || content.length > 500) {
-      this._error('submitFeedback', '内容长度不符合要求', { length: content.length });
-      return this._createValidationError(['content: 长度必须为20-500个字符']);
-    }
-    
     try {
+      log.info('submitFeedback', '提交反馈', feedbackData);
+      
+      // 获取云函数名称
+      const functionName = VersionManager.getFunctionName('feedbackManagement');
+      
+      if (!functionName) {
+        log.error('submitFeedback', '无法获取云函数名称');
+        return ResponseBean.error('系统初始化失败，请稍后重试');
+      }
+      
+      log.debug('submitFeedback', '调用云函数:', functionName);
+      
       // 调用云函数
-      const response = await this.callFunction('feedbackManagement', {
-        action: 'submitFeedback',
+      const result = await wx.cloud.callFunction({
+        name: functionName,
         data: {
-          feedbackType: feedbackData.feedbackType,
-          title: title,
-          content: content
+          action: 'submitFeedback',
+          data: feedbackData
         }
       });
       
-      // 如果成功，将data转换为FeedbackBean
-      if (response.success && response.data) {
-        this._log('submitFeedback', '反馈提交成功', { feedbackId: response.data._id });
-        response.data = new FeedbackBean(response.data);
-      } else {
-        this._error('submitFeedback', '反馈提交失败', { error: response.error });
-      }
+      log.debug('submitFeedback', '云函数返回:', result);
       
-      // 记录服务调用日志
-      this._logServiceCall('submitFeedback', feedbackData, response);
+      // 转换为ResponseBean
+      const response = ResponseBean.fromCloudResult(result);
+      
+      if (response.success) {
+        log.info('submitFeedback', '提交成功');
+      } else {
+        log.error('submitFeedback', '提交失败:', response.error);
+      }
       
       return response;
     } catch (error) {
-      this._error('submitFeedback', '提交反馈异常', error);
-      throw error;
+      log.error('submitFeedback', '提交反馈失败:', error);
+      return ResponseBean.error(error.message || '提交反馈失败');
     }
   }
   
   /**
-   * 获取用户反馈列表（预留接口，后续扩展）
-   * @param {Object} params - 查询参数
-   * @param {number} params.page - 页码，默认1
-   * @param {number} params.limit - 每页数量，默认20
-   * @param {string} params.feedbackType - 反馈类型筛选，可选
-   * @param {string} params.status - 状态筛选，可选
-   * @returns {Promise<ResponseBean>} 反馈列表响应
+   * 获取用户反馈列表
+   * @param {Object} queryData - 查询参数
+   * @param {number} queryData.page - 页码
+   * @param {number} queryData.limit - 每页数量
+   * @param {string} queryData.feedbackType - 反馈类型筛选
+   * @param {string} queryData.status - 状态筛选
+   * @returns {Promise<ResponseBean>}
    */
-  async getFeedbackList(params = {}) {
-    this._log('getFeedbackList', '获取反馈列表', params);
-    
-    const { page = 1, limit = 20, feedbackType, status } = params;
-    
+  async getUserFeedbacks(queryData = {}) {
     try {
-      const response = await this.callFunction('feedbackManagement', {
-        action: 'getFeedbackList',
+      log.info('getUserFeedbacks', '获取反馈列表', queryData);
+      
+      const functionName = VersionManager.getFunctionName('feedbackManagement');
+      
+      if (!functionName) {
+        log.error('getUserFeedbacks', '无法获取云函数名称');
+        return ResponseBean.error('系统初始化失败，请稍后重试');
+      }
+      
+      const result = await wx.cloud.callFunction({
+        name: functionName,
         data: {
-          page,
-          limit,
-          feedbackType,
-          status
+          action: 'getUserFeedbacks',
+          data: queryData
         }
       });
       
-      // 如果成功，将列表中的每个项转换为FeedbackBean
-      if (response.success && response.data && response.data.items) {
-        this._log('getFeedbackList', '反馈列表获取成功', { 
-          count: response.data.items.length,
-          total: response.data.total 
-        });
-        
-        response.data.items = response.data.items.map(item => new FeedbackBean(item));
-      } else {
-        this._error('getFeedbackList', '获取反馈列表失败', { error: response.error });
-      }
+      const response = ResponseBean.fromCloudResult(result);
       
-      this._logServiceCall('getFeedbackList', params, response);
+      if (response.success) {
+        log.info('getUserFeedbacks', '获取成功，共', response.data.total, '条记录');
+      } else {
+        log.error('getUserFeedbacks', '获取失败:', response.error);
+      }
       
       return response;
     } catch (error) {
-      this._error('getFeedbackList', '获取反馈列表异常', error);
-      throw error;
+      log.error('getUserFeedbacks', '获取反馈列表失败:', error);
+      return ResponseBean.error(error.message || '获取反馈列表失败');
     }
   }
   
   /**
-   * 获取反馈详情（预留接口，后续扩展）
+   * 获取反馈详情
    * @param {string} feedbackId - 反馈ID
-   * @returns {Promise<ResponseBean>} 反馈详情响应
+   * @returns {Promise<ResponseBean>}
    */
   async getFeedbackDetail(feedbackId) {
-    this._log('getFeedbackDetail', '获取反馈详情', { feedbackId });
-    
-    // 验证参数
-    if (!feedbackId) {
-      this._error('getFeedbackDetail', '缺少反馈ID');
-      return this._createValidationError(['feedbackId']);
-    }
-    
     try {
-      const response = await this.callFunction('feedbackManagement', {
-        action: 'getFeedbackDetail',
-        data: { feedbackId }
-      });
+      log.info('getFeedbackDetail', '获取反馈详情:', feedbackId);
       
-      // 如果成功，将data转换为FeedbackBean
-      if (response.success && response.data) {
-        this._log('getFeedbackDetail', '反馈详情获取成功', { feedbackId });
-        response.data = new FeedbackBean(response.data);
-      } else {
-        this._error('getFeedbackDetail', '获取反馈详情失败', { error: response.error });
+      const functionName = VersionManager.getFunctionName('feedbackManagement');
+      
+      if (!functionName) {
+        log.error('getFeedbackDetail', '无法获取云函数名称');
+        return ResponseBean.error('系统初始化失败，请稍后重试');
       }
       
-      this._logServiceCall('getFeedbackDetail', { feedbackId }, response);
-      
-      return response;
-    } catch (error) {
-      this._error('getFeedbackDetail', '获取反馈详情异常', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * 删除反馈（预留接口，后续扩展）
-   * @param {string} feedbackId - 反馈ID
-   * @returns {Promise<ResponseBean>} 删除结果响应
-   */
-  async deleteFeedback(feedbackId) {
-    this._log('deleteFeedback', '删除反馈', { feedbackId });
-    
-    // 验证参数
-    if (!feedbackId) {
-      this._error('deleteFeedback', '缺少反馈ID');
-      return this._createValidationError(['feedbackId']);
-    }
-    
-    try {
-      const response = await this.callFunction('feedbackManagement', {
-        action: 'deleteFeedback',
-        data: { feedbackId }
+      const result = await wx.cloud.callFunction({
+        name: functionName,
+        data: {
+          action: 'getFeedbackDetail',
+          data: { feedbackId }
+        }
       });
       
-      this._logServiceCall('deleteFeedback', { feedbackId }, response);
+      const response = ResponseBean.fromCloudResult(result);
+      
+      if (response.success) {
+        log.info('getFeedbackDetail', '获取成功');
+      } else {
+        log.error('getFeedbackDetail', '获取失败:', response.error);
+      }
       
       return response;
     } catch (error) {
-      this._error('deleteFeedback', '删除反馈异常', error);
-      throw error;
+      log.error('getFeedbackDetail', '获取反馈详情失败:', error);
+      return ResponseBean.error(error.message || '获取反馈详情失败');
     }
   }
 }
 
-// 导出类和单例
+// 导出单例
+const feedbackService = new FeedbackService();
+
 module.exports = {
   FeedbackService,
-  feedbackService: new FeedbackService()
+  feedbackService
 };
