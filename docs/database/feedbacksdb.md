@@ -16,8 +16,7 @@
 | feedbackType | string | 是 | 索引 | 反馈类型（problem/suggestion/other） |
 | title | string | 是 | - | 反馈标题，10-50个字符 |
 | content | string | 是 | - | 反馈内容，20-500个字符 |
-| images | array | 否 | - | 反馈图片URL数组，最多3张，存储云存储文件ID |
-| status | string | 是 | 索引 | 反馈状态（pending/processing/resolved/closed） |
+| status | string | 是 | 索引 | 反馈状态（pending/processing/resolved/closed），仅后台使用 |
 | adminReply | string | 否 | - | 管理员回复内容 |
 | adminId | string | 否 | 索引 | 处理反馈的管理员ID，关联users表的_id |
 | replyTime | date | 否 | - | 管理员回复时间 |
@@ -35,9 +34,6 @@
   "feedbackType": "problem",
   "title": "卡牌显示异常",
   "content": "在查看卡牌时，发现某些卡牌的图片显示不出来，希望能修复这个问题。",
-  "images": [
-    "cloud://xxx/feedback/xxx.jpg"
-  ],
   "status": "pending",
   "adminReply": null,
   "adminId": null,
@@ -90,7 +86,6 @@
 ### 内容限制
 - **标题**：10-50个字符
 - **内容**：20-500个字符
-- **图片**：最多上传3张图片，单张图片大小不超过5MB，支持格式：jpg、png、jpeg
 
 ### 数据完整性
 - userId和openid为必填字段，用于关联用户
@@ -103,16 +98,16 @@
 - 删除的反馈仍然保留在数据库中，但不会在正常查询中显示
 
 ### 权限控制
-- 用户只能查看和删除自己的反馈
+- 用户只能提交反馈
 - 管理员可以查看和处理所有用户的反馈
-- 用户只能删除状态为'pending'或'processing'的反馈
+- 状态字段仅用于后台管理，不对用户展示
 
 ## 扩展性考虑
 
 1. **反馈分类细化**：可以添加更多反馈类型，如"bug报告"、"功能请求"、"用户体验"等
 2. **优先级系统**：可添加priority字段（low/medium/high/urgent）用于反馈优先级管理
 3. **标签系统**：可添加tags数组字段用于反馈标签分类
-4. **附件支持**：可扩展支持更多附件类型（视频、文档等）
+4. **图片上传**：可扩展支持图片上传功能
 5. **反馈统计**：可添加统计字段用于数据分析，如处理时长、回复次数等
 6. **反馈关联**：可添加relatedFeedbackId字段用于关联相关反馈
 7. **用户评分**：可添加rating字段用于用户对处理结果的评分
