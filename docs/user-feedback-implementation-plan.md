@@ -16,7 +16,7 @@
 
 ## 二、详细实施步骤
 
-### 步骤1：数据库准备（优先级：最高）
+### 步骤1：数据库准备（优先级：最高）✅ 已完成
 
 #### 1.1 创建数据库集合
 **任务**：在云开发控制台创建 `feedbacks` 集合
@@ -62,7 +62,7 @@
 
 ---
 
-### 步骤2：Bean层实现（优先级：高）
+### 步骤2：Bean层实现（优先级：高）⏭️ 已跳过（暂不需要）
 
 #### 2.1 创建 FeedbackBean.js
 **文件路径**：`miniprogram/beans/FeedbackBean.js`
@@ -98,7 +98,7 @@ class FeedbackBean {
 
 ---
 
-### 步骤3：Service层实现（优先级：高）
+### 步骤3：Service层实现（优先级：高）✅ 已完成
 
 #### 3.1 创建 FeedbackService.js
 **文件路径**：`miniprogram/services/FeedbackService.js`
@@ -146,7 +146,7 @@ ResponseBean {
 
 ---
 
-### 步骤4：Controller层实现（优先级：高）
+### 步骤4：Controller层实现（优先级：高）✅ 已完成
 
 #### 4.1 检查 BaseController
 **任务**：确认是否存在 BaseController，如不存在需要创建
@@ -561,7 +561,7 @@ onFeedback() {
 
 ---
 
-### 步骤8：配置更新（优先级：中）
+### 步骤8：配置更新（优先级：中）✅ 已完成
 
 #### 8.1 更新 app.json
 **任务**：注册反馈页面路由
