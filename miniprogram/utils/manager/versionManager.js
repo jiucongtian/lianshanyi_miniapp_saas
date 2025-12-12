@@ -11,23 +11,7 @@ class VersionManager {
    * 格式：{ 客户端版本: { 云函数名: 云函数版本 } }
    */
   static VERSION_CONFIG = {
-    '1.0.0': {
-      calculateBazi: 'v1_0',
-      userManagement: 'v1_0',
-      profileManagement: 'v1_0'
-    },
-    '1.1.0': {
-      calculateBazi: 'v1_1',
-      userManagement: 'v1_0',
-      profileManagement: 'v1_1'
-    },
-    '1.2.0': {
-      calculateBazi: 'v1_1',
-      userManagement: 'v1_0',
-      profileManagement: 'v1_2',
-      cozeFunctions: 'v1_3'
-    },
-    '1.3.0': {
+    '1.4.0': {
       calculateBazi: 'v1_1',
       userManagement: 'v1_3',
       profileManagement: 'v1_2',

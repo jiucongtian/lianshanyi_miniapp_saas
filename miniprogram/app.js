@@ -16,7 +16,7 @@ const log = createModuleLogger('App');
 App({
   globalData: {
     profilesLoaded: false, // 标记档案是否已加载
-    version: '1.3.0', // 客户端版本
+    version: '1.4.0', // 客户端版本
     profileManager: profileManager, // 全局档案管理器
     globalUserManager: globalUserManager, // 全局用户管理器
   },
