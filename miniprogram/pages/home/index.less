@@ -978,6 +978,18 @@ page {
   align-items: center;
   justify-content: center;
   gap: 24rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 40rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2rpx solid transparent;
+}
+
+.daily-placeholder:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(200, 150, 180, 0.3);
 }
 
 .placeholder-icon {
@@ -991,6 +1003,7 @@ page {
   color: #ffffff;
   letter-spacing: 2rpx;
   text-align: center;
+  font-weight: 500;
 }
 
 .placeholder-desc {
@@ -998,6 +1011,25 @@ page {
   color: rgba(255, 255, 255, 0.6);
   letter-spacing: 1rpx;
   text-align: center;
+}
+
+.enter-icon {
+  font-size: 48rpx;
+  color: #c896b4;
+  margin-top: 16rpx;
+  animation: slideRight 1.5s ease-in-out infinite;
+}
+
+/* 滑动动画 */
+@keyframes slideRight {
+  0%, 100% {
+    transform: translateX(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateX(20rpx);
+    opacity: 1;
+  }
 }
 
 /* 浮动动画 */

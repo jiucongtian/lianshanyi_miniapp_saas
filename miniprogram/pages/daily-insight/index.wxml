@@ -1,0 +1,69 @@
+<view class="page-container">
+  <!-- 顶部导航 -->
+  <view class="navbar">
+    <view class="nav-back" bindtap="onBack">
+      <text class="back-icon">←</text>
+    </view>
+    <view class="nav-title">每日愈见</view>
+    <view class="nav-right">
+      <text class="share-icon" bindtap="onShare">⋯</text>
+    </view>
+  </view>
+
+  <!-- 主内容区 -->
+  <view class="content-wrapper">
+    <!-- 日期卡片 -->
+    <view class="date-card">
+      <view class="date-main">{{dateInfo.month}}/{{dateInfo.day}}</view>
+      <view class="date-sub">{{dateInfo.weekday}}</view>
+      <view class="date-lunar">{{dateInfo.lunar}}</view>
+    </view>
+
+    <!-- 每日一句卡片 -->
+    <view class="quote-card">
+      <!-- 装饰元素 -->
+      <view class="quote-decoration top-left"></view>
+      <view class="quote-decoration bottom-right"></view>
+      
+      <view class="quote-content">
+        <text class="quote-text">{{dailyQuote.content}}</text>
+      </view>
+      
+      <view class="quote-author">
+        <text class="author-name">— {{dailyQuote.author}}</text>
+      </view>
+    </view>
+
+    <!-- 解读卡片 -->
+    <view class="interpretation-card">
+      <view class="card-header">
+        <view class="header-icon">✨</view>
+        <view class="header-title">今日解读</view>
+      </view>
+      
+      <view class="interpretation-content">
+        <text class="interpretation-text">{{dailyQuote.interpretation}}</text>
+      </view>
+    </view>
+
+    <!-- 底部操作按钮 -->
+    <view class="action-buttons">
+      <button class="action-btn refresh-btn" bindtap="onRefresh">
+        <text class="btn-icon">🔄</text>
+        <text class="btn-text">换一换</text>
+      </button>
+      <button class="action-btn collect-btn" bindtap="onCollect">
+        <text class="btn-icon">{{isCollected ? '💖' : '🤍'}}</text>
+        <text class="btn-text">{{isCollected ? '已收藏' : '收藏'}}</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 背景装饰 -->
+  <view class="bg-decoration">
+    <view class="floating-element element-1"></view>
+    <view class="floating-element element-2"></view>
+    <view class="floating-element element-3"></view>
+  </view>
+</view>
+

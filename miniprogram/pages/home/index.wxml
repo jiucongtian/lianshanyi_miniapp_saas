@@ -102,10 +102,11 @@
 
       <!-- 占位内容 -->
       <view class="daily-content">
-        <view class="daily-placeholder">
+        <view class="daily-placeholder" bindtap="onNavigateToDailyInsight">
           <text class="placeholder-icon">🌸</text>
-          <text class="placeholder-text">每日愈见内容即将上线</text>
-          <text class="placeholder-desc">敬请期待...</text>
+          <text class="placeholder-text">点击查看每日愈见</text>
+          <text class="placeholder-desc">获取今日的治愈与启发</text>
+          <view class="enter-icon">→</view>
         </view>
       </view>
     </view>

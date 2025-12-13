@@ -51,6 +51,23 @@ Page({
   },
 
   /**
+   * 跳转到每日愈见页面
+   */
+  onNavigateToDailyInsight() {
+    console.log('[HomePage] 跳转到每日愈见页面');
+    wx.navigateTo({
+      url: '/pages/daily-insight/index',
+      fail: (err) => {
+        console.error('[HomePage] 跳转失败:', err);
+        wx.showToast({
+          title: '跳转失败',
+          icon: 'none'
+        });
+      }
+    });
+  },
+
+  /**
    * 输入框输入事件
    */
   onQuestionInput(e) {
