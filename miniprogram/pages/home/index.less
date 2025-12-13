@@ -62,7 +62,7 @@ page {
   backdrop-filter: blur(4rpx);
   border: 4rpx solid #c896b4;
   border-radius: 24rpx;
-  padding: 80rpx 52rpx;
+  padding: 48rpx 52rpx 80rpx;
   margin: 150rpx 0 0;
   position: relative;
   z-index: 10;
@@ -73,6 +73,84 @@ page {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Tab导航 */
+.tab-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 48rpx;
+  margin-bottom: 32rpx;
+  flex-shrink: 0;
+}
+
+.tab-item {
+  position: relative;
+  padding: 16rpx 24rpx;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-text {
+  font-size: 32rpx;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 2rpx;
+  transition: all 0.3s ease;
+}
+
+.tab-item.active .tab-text {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* Tab下划线 */
+.tab-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 80%;
+  height: 4rpx;
+  background: linear-gradient(90deg, transparent, #c896b4, transparent);
+  border-radius: 2rpx;
+  transition: transform 0.3s ease;
+}
+
+.tab-item.active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+/* Tab内容容器 */
+.tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(20rpx);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  position: absolute;
+  top: 120rpx;
+  left: 52rpx;
+  right: 52rpx;
+  bottom: 80rpx;
+}
+
+.tab-content.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+}
+
+.tab-content.hide {
+  display: none;
 }
 
 /* 卡片标题 */
@@ -882,6 +960,53 @@ page {
   100% {
     transform: translate(-1320rpx, 1320rpx) rotate(-135deg);
     opacity: 0;
+  }
+}
+
+/* 每日愈见内容 */
+.daily-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx 0;
+}
+
+.daily-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24rpx;
+}
+
+.placeholder-icon {
+  font-size: 120rpx;
+  opacity: 0.8;
+  animation: float 3s ease-in-out infinite;
+}
+
+.placeholder-text {
+  font-size: 32rpx;
+  color: #ffffff;
+  letter-spacing: 2rpx;
+  text-align: center;
+}
+
+.placeholder-desc {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 1rpx;
+  text-align: center;
+}
+
+/* 浮动动画 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20rpx);
   }
 }
 

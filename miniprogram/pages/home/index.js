@@ -1,5 +1,6 @@
 Page({
   data: {
+    currentTab: 'wisdom', // 当前激活的Tab: 'wisdom' | 'daily'
     question: '',
     isSearching: false,
     // 用于生成装饰图案的数组
@@ -31,6 +32,22 @@ Page({
 
   onShow() {
     console.log('[HomePage] 页面显示');
+  },
+
+  /**
+   * Tab切换事件
+   */
+  onTabChange(e) {
+    const tab = e.currentTarget.dataset.tab;
+    console.log('[HomePage] 切换Tab:', tab);
+    
+    if (this.data.currentTab === tab) {
+      return; // 已经是当前Tab，无需切换
+    }
+    
+    this.setData({
+      currentTab: tab
+    });
   },
 
   /**
