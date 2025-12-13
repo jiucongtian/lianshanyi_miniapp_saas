@@ -3,19 +3,30 @@ const logger = createModuleLogger('DailyInsightPage');
 
 Page({
   data: {
+    // 当前时间
+    currentTime: '',
     // 日期信息
     dateInfo: {
       year: '',
       month: '',
       day: '',
       weekday: '',
-      lunar: ''
+      lunar: '',
+      ganzhiYear: '' // 干支纪年
     },
-    // 每日一句
-    dailyQuote: {
-      content: '人生如逆旅，我亦是行人。',
-      author: '苏轼',
-      interpretation: '生命就像一场旅行，我们都是这旅途中的过客。无论遇到什么困难和挫折，都只是旅程中的一段经历。保持平和的心态，珍惜当下的每一刻，因为所有的相遇和别离都是人生必经的风景。'
+    // 卡牌信息
+    cardInfo: {
+      name: '贵虎',
+      imageUrl: '/static/card-back.jpg', // 默认卡牌图片
+      central: '个身着兽皮，手拿令牌的虎官。',
+      seasonMark: '春秋',
+      talentMark: '变通力',
+      abilityMark: '二',
+      pathMark: '精与义',
+      description: '卡牌建议您尽一鼓作的快节，还传悦神烂式发布，无异于新算到和新机会高扩比率证记到断都和前进。黄贯足錦定目标快准狠。今天不通，拒绝高的期待，需要我们的新思路比起来都不算啥',
+      blessing: '卡牌给我们的提醒是：寿秋季节印记提示我要带着目的去找寻新的机会和方向，技力集中向上生长和游戏规则给予的正面反馈机制为前提，就像是让我压力让我不舒服，陷入是非，同也让我成长。',
+      tip: '季节提示我们会有矛盾和纠结，断舍离是有点痛，痛了了才能那些坐耗，脱屋成蝶。黄贯足錦定目标就快准狠。今天不通，拒绝高期待，需要我们的调整高期待。结果跟新机会新思路比起来都不算啥',
+      password: '破茧蝶变'
     },
     // 是否已收藏
     isCollected: false,
@@ -36,6 +47,9 @@ Page({
    * 初始化页面数据
    */
   initPageData() {
+    // 设置当前时间
+    this.setCurrentTime();
+    
     // 设置日期信息
     this.setDateInfo();
     
@@ -44,6 +58,19 @@ Page({
     
     // 检查是否已收藏
     this.checkCollectionStatus();
+  },
+
+  /**
+   * 设置当前时间
+   */
+  setCurrentTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    this.setData({
+      currentTime: `${hours}:${minutes}`
+    });
   },
 
   /**
@@ -59,7 +86,8 @@ Page({
         month: String(now.getMonth() + 1).padStart(2, '0'),
         day: String(now.getDate()).padStart(2, '0'),
         weekday: weekdays[now.getDay()],
-        lunar: this.getLunarDate(now) // 获取农历日期
+        lunar: this.getLunarDate(now),
+        ganzhiYear: this.getGanzhiYear(now) // 获取干支纪年
       }
     });
   },
@@ -73,58 +101,103 @@ Page({
   },
 
   /**
-   * 加载每日一句
+   * 获取干支纪年（简化版）
+   */
+  getGanzhiYear(date) {
+    // TODO: 接入真实的干支纪年计算
+    const year = date.getFullYear();
+    const ganList = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const zhiList = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    
+    // 简单计算，以1984年（甲子年）为基准
+    const baseYear = 1984;
+    const diff = year - baseYear;
+    const ganIndex = diff % 10;
+    const zhiIndex = diff % 12;
+    
+    return `${ganList[ganIndex]}${zhiList[zhiIndex]}`;
+  },
+
+  /**
+   * 加载每日卡牌
    */
   async loadDailyQuote() {
     try {
-      logger.info('loadDailyQuote', '加载每日一句');
+      logger.info('loadDailyQuote', '加载每日卡牌');
       
-      // TODO: 后续从云端获取每日一句
-      // const response = await dailyQuoteService.getTodayQuote();
+      // TODO: 后续从云端获取每日卡牌
+      // const response = await dailyCardService.getTodayCard();
       
       // 临时使用本地数据
-      const quotes = [
+      const cards = [
         {
-          content: '人生如逆旅，我亦是行人。',
-          author: '苏轼',
-          interpretation: '生命就像一场旅行，我们都是这旅途中的过客。无论遇到什么困难和挫折，都只是旅程中的一段经历。保持平和的心态，珍惜当下的每一刻，因为所有的相遇和别离都是人生必经的风景。'
+          name: '贵虎',
+          imageUrl: '/static/card-back.jpg',
+          central: '个身着兽皮，手拿令牌的虎官。',
+          seasonMark: '春秋',
+          talentMark: '变通力',
+          abilityMark: '二',
+          pathMark: '精与义',
+          description: '卡牌建议您尽一鼓作的快节，还传悦神烂式发布，无异于新算到和新机会高扩比率证记到断都和前进。黄贯足錦定目标快准狠。今天不通，拒绝高的期待，需要我们的新思路比起来都不算啥',
+          blessing: '卡牌给我们的提醒是：寿秋季节印记提示我要带着目的去找寻新的机会和方向，技力集中向上生长和游戏规则给予的正面反馈机制为前提，就像是让我压力让我不舒服，陷入是非，同也让我成长。',
+          tip: '季节提示我们会有矛盾和纠结，断舍离是有点痛，痛了了才能那些坐耗，脱屋成蝶。黄贯足錦定目标就快准狠。今天不通，拒绝高期待，需要我们的调整高期待。结果跟新机会新思路比起来都不算啥',
+          password: '破茧蝶变'
         },
         {
-          content: '凡是过往，皆为序章。',
-          author: '莎士比亚',
-          interpretation: '过去的一切都已经成为历史，无论好坏都是你人生故事的开篇。不要被过去束缚，每一天都是崭新的开始。放下过去的包袱，轻装前行，未来还有无限可能等着你去书写。'
+          name: '智者之龙',
+          imageUrl: '/static/card-back.jpg',
+          central: '一位智慧长者，手持古卷。',
+          seasonMark: '冬夏',
+          talentMark: '洞察力',
+          abilityMark: '三',
+          pathMark: '知与行',
+          description: '智慧不在于知道多少，而在于如何运用。今天是积累经验、总结反思的好时机，为未来的行动做好准备。洞察力提示你要看透表象，理解事物的本质。',
+          blessing: '冬夏季节印记带来的是沉淀与爆发的力量。智慧需要时间的积累，也需要在关键时刻果断出击。保持冷静的头脑，在适当的时机展现你的智慧。',
+          tip: '洞察力提示你要看透表象，理解事物的本质。不要被表面的现象所迷惑，深入思考，找到问题的根源。知行合一，将智慧转化为行动。',
+          password: '知行合一'
         },
         {
-          content: '山川异域，风月同天。',
-          author: '古语',
-          interpretation: '虽然我们身处不同的地方，但我们共享着同一片天空和月光。这句话提醒我们，世界是相连的，人与人之间的情感是相通的。无论身在何处，保持一颗包容和善良的心，感受这个世界的美好。'
-        },
-        {
-          content: '愿你出走半生，归来仍是少年。',
-          author: '现代诗句',
-          interpretation: '希望你在经历了人生的风雨之后，依然能保持一颗年轻、热情的心。岁月会改变我们的容颜，但不应该磨灭我们对生活的热爱和好奇。永远保持那份初心，对世界充满期待。'
-        },
-        {
-          content: '心之所向，素履以往。',
-          author: '古语',
-          interpretation: '内心向往什么，就朴素地前往。这是一种简单而坚定的人生态度。不要被外界的纷扰所迷惑，听从内心的声音，脚踏实地地朝着目标前进。即使道路艰辛，只要方向正确，每一步都有意义。'
+          name: '灵鸟凤凰',
+          imageUrl: '/static/card-back.jpg',
+          central: '一只浴火重生的凤凰。',
+          seasonMark: '四季',
+          talentMark: '重生力',
+          abilityMark: '五',
+          pathMark: '舍与得',
+          description: '凤凰涅槃，浴火重生。今天是放下过去、迎接新生的时刻。不要害怕结束，每一次结束都是新的开始。勇敢地面对变化，拥抱新的可能。',
+          blessing: '重生需要勇气，需要舍弃旧的自己。放下执念，释放束缚，让自己在新的环境中重新绽放。记住，失去的同时也在获得，每一次蜕变都是成长。',
+          tip: '今天是转变的时刻，旧的模式需要打破，新的可能正在孕育。不要害怕改变，拥抱未知，相信自己有能力重新开始。舍得舍得，有舍才有得。',
+          password: '涅槃重生'
         }
       ];
       
-      // 根据日期选择一句话（确保每天相同）
+      // 根据日期选择一张卡牌（确保每天相同）
       const today = new Date();
       const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-      const selectedQuote = quotes[dayOfYear % quotes.length];
+      const selectedCard = cards[dayOfYear % cards.length];
       
       this.setData({
-        dailyQuote: selectedQuote
+        cardInfo: selectedCard
       });
       
     } catch (error) {
-      logger.error('loadDailyQuote', '加载每日一句失败', { error: error.message });
+      logger.error('loadDailyQuote', '加载每日卡牌失败', { error: error.message });
       wx.showToast({
         title: '加载失败',
         icon: 'none'
+      });
+    }
+  },
+
+  /**
+   * 查看卡牌大图
+   */
+  onViewCardImage() {
+    const { imageUrl } = this.data.cardInfo;
+    if (imageUrl) {
+      wx.previewImage({
+        urls: [imageUrl],
+        current: imageUrl
       });
     }
   },
@@ -135,7 +208,7 @@ Page({
   checkCollectionStatus() {
     // TODO: 从本地存储检查是否已收藏
     const today = this.getTodayKey();
-    const collected = wx.getStorageSync(`collected_${today}`);
+    const collected = wx.getStorageSync(`daily_card_${today}`);
     this.setData({
       isCollected: !!collected
     });
@@ -185,32 +258,56 @@ Page({
     });
 
     try {
-      // TODO: 从云端获取随机一句
-      const quotes = [
+      // TODO: 从云端获取随机卡牌
+      const cards = [
         {
-          content: '世界以痛吻我，我却报之以歌。',
-          author: '泰戈尔',
-          interpretation: '即使生活给予我们痛苦和挫折，我们也应该以积极乐观的态度去面对。将苦难化作成长的养分，用坚韧和希望回应生活的考验。这是一种高贵的人生态度，也是内心强大的体现。'
+          name: '智者之龙',
+          imageUrl: '/static/card-back.jpg',
+          central: '一位智慧长者，手持古卷。',
+          seasonMark: '冬夏',
+          talentMark: '洞察力',
+          abilityMark: '三',
+          pathMark: '知与行',
+          description: '智慧不在于知道多少，而在于如何运用。今天是积累经验、总结反思的好时机，为未来的行动做好准备。洞察力提示你要看透表象，理解事物的本质。',
+          blessing: '冬夏季节印记带来的是沉淀与爆发的力量。智慧需要时间的积累，也需要在关键时刻果断出击。保持冷静的头脑，在适当的时机展现你的智慧。',
+          tip: '洞察力提示你要看透表象，理解事物的本质。不要被表面的现象所迷惑，深入思考，找到问题的根源。知行合一，将智慧转化为行动。',
+          password: '知行合一'
         },
         {
-          content: '莫听穿林打叶声，何妨吟啸且徐行。',
-          author: '苏轼',
-          interpretation: '不要在意外界的风雨声响，不妨从容吟唱、缓步前行。人生路上总会遇到各种困难和阻碍，但我们可以选择以怎样的心态去面对。保持内心的平静和从容，优雅地应对人生的风风雨雨。'
+          name: '灵鸟凤凰',
+          imageUrl: '/static/card-back.jpg',
+          central: '一只浴火重生的凤凰。',
+          seasonMark: '四季',
+          talentMark: '重生力',
+          abilityMark: '五',
+          pathMark: '舍与得',
+          description: '凤凰涅槃，浴火重生。今天是放下过去、迎接新生的时刻。不要害怕结束，每一次结束都是新的开始。勇敢地面对变化，拥抱新的可能。',
+          blessing: '重生需要勇气，需要舍弃旧的自己。放下执念，释放束缚，让自己在新的环境中重新绽放。记住，失去的同时也在获得，每一次蜕变都是成长。',
+          tip: '今天是转变的时刻，旧的模式需要打破，新的可能正在孕育。不要害怕改变，拥抱未知，相信自己有能力重新开始。舍得舍得，有舍才有得。',
+          password: '涅槃重生'
         },
         {
-          content: '长风破浪会有时，直挂云帆济沧海。',
-          author: '李白',
-          interpretation: '尽管前路艰难，但总有一天会乘风破浪，高挂云帆渡过沧海。这是一种坚定的信念和对未来的期待。无论现在遇到什么困难，都要相信自己终将实现目标，到达理想的彼岸。'
+          name: '勇士之狮',
+          imageUrl: '/static/card-back.jpg',
+          central: '一只威武雄狮，目光坚定。',
+          seasonMark: '夏秋',
+          talentMark: '勇气',
+          abilityMark: '四',
+          pathMark: '进与退',
+          description: '狮子的勇气不是无畏，而是即使恐惧也要前进。今天需要你展现勇气，面对那些一直逃避的问题。勇敢地迈出第一步，你会发现事情并没有想象中那么困难。',
+          blessing: '勇气不是没有恐惧，而是带着恐惧前行。今天是展现你勇气的时刻，不要让恐惧束缚你的手脚。相信自己，勇敢地面对挑战。',
+          tip: '勇气不是没有恐惧，而是带着恐惧前行。评估风险，做好准备，然后果断行动。记住，退一步是为了更好地前进，进退之间需要智慧。',
+          password: '勇往直前'
         }
       ];
 
-      const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+      const randomCard = cards[Math.floor(Math.random() * cards.length)];
       
       // 模拟网络延迟
       await new Promise(resolve => setTimeout(resolve, 800));
 
       this.setData({
-        dailyQuote: randomQuote,
+        cardInfo: randomCard,
         isCollected: false // 换了新内容，收藏状态重置
       });
 
@@ -237,12 +334,12 @@ Page({
    * 收藏/取消收藏
    */
   onCollect() {
-    const { isCollected, dailyQuote } = this.data;
+    const { isCollected, cardInfo, dateInfo } = this.data;
     const today = this.getTodayKey();
 
     if (isCollected) {
       // 取消收藏
-      wx.removeStorageSync(`collected_${today}`);
+      wx.removeStorageSync(`daily_card_${today}`);
       this.setData({ isCollected: false });
       wx.showToast({
         title: '已取消收藏',
@@ -250,9 +347,10 @@ Page({
       });
     } else {
       // 收藏
-      wx.setStorageSync(`collected_${today}`, {
+      wx.setStorageSync(`daily_card_${today}`, {
         date: today,
-        quote: dailyQuote,
+        dateInfo: dateInfo,
+        card: cardInfo,
         timestamp: Date.now()
       });
       this.setData({ isCollected: true });
@@ -267,11 +365,11 @@ Page({
    * 分享给好友
    */
   onShareAppMessage() {
-    const { dailyQuote } = this.data;
+    const { cardInfo } = this.data;
     return {
-      title: `每日愈见：${dailyQuote.content}`,
+      title: `每日愈见：${cardInfo.name} - ${cardInfo.password}`,
       path: '/pages/daily-insight/index',
-      imageUrl: '' // 可以设置分享图片
+      imageUrl: cardInfo.imageUrl || '' // 使用卡牌图片作为分享图
     };
   },
 
@@ -279,10 +377,10 @@ Page({
    * 分享到朋友圈
    */
   onShareTimeline() {
-    const { dailyQuote } = this.data;
+    const { cardInfo } = this.data;
     return {
-      title: `每日愈见：${dailyQuote.content}`,
-      imageUrl: '' // 可以设置分享图片
+      title: `每日愈见：${cardInfo.name} - ${cardInfo.password}`,
+      imageUrl: cardInfo.imageUrl || '' // 使用卡牌图片作为分享图
     };
   }
 });

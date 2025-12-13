@@ -11,59 +11,97 @@
   </view>
 
   <!-- 主内容区 -->
-  <view class="content-wrapper">
-    <!-- 日期卡片 -->
-    <view class="date-card">
-      <view class="date-main">{{dateInfo.month}}/{{dateInfo.day}}</view>
-      <view class="date-sub">{{dateInfo.weekday}}</view>
-      <view class="date-lunar">{{dateInfo.lunar}}</view>
-    </view>
+  <scroll-view class="content-wrapper" scroll-y>
+    <!-- 古风卡牌容器 -->
+    <view class="card-container">
+      <!-- 标题边框 -->
+      <view class="title-border">
+        <view class="title-text">今天的年月日</view>
+      </view>
 
-    <!-- 每日一句卡片 -->
-    <view class="quote-card">
-      <!-- 装饰元素 -->
-      <view class="quote-decoration top-left"></view>
-      <view class="quote-decoration bottom-right"></view>
-      
-      <view class="quote-content">
-        <text class="quote-text">{{dailyQuote.content}}</text>
-      </view>
-      
-      <view class="quote-author">
-        <text class="author-name">— {{dailyQuote.author}}</text>
-      </view>
-    </view>
+      <!-- 今日卡牌区域 -->
+      <view class="today-card-section">
+        <view class="card-header">
+          <view class="card-label-box">
+            <text class="card-label-text">今</text>
+            <text class="card-label-text">日</text>
+            <text class="card-label-text">卡</text>
+            <text class="card-label-text">牌</text>
+          </view>
+          <view class="time-info">
+            <text class="time-value">{{currentTime}}</text>
+            <text class="card-count">1例</text>
+          </view>
+        </view>
 
-    <!-- 解读卡片 -->
-    <view class="interpretation-card">
-      <view class="card-header">
-        <view class="header-icon">✨</view>
-        <view class="header-title">今日解读</view>
+        <!-- 卡牌插图和标题 -->
+        <view class="card-main">
+          <image 
+            class="card-illustration" 
+            src="{{cardInfo.imageUrl}}" 
+            mode="aspectFit"
+            bindtap="onViewCardImage"
+          />
+          <view class="card-title-box">
+            <text class="card-title-name">路途印记</text>
+          </view>
+        </view>
       </view>
-      
-      <view class="interpretation-content">
-        <text class="interpretation-text">{{dailyQuote.interpretation}}</text>
+
+      <!-- 卡牌说明区 -->
+      <view class="card-description">
+        <view class="desc-text">{{cardInfo.description}}</view>
+      </view>
+
+      <!-- 印记列表 -->
+      <view class="marks-section">
+        <view class="mark-row">
+          <text class="mark-number">1.</text>
+          <text class="mark-label">季节印记是：</text>
+          <text class="mark-value">{{cardInfo.seasonMark}}</text>
+        </view>
+        <view class="mark-row">
+          <text class="mark-number">3.</text>
+          <text class="mark-label">才属印记是：</text>
+          <text class="mark-value">{{cardInfo.pathMark}}</text>
+        </view>
+        <view class="mark-row">
+          <text class="mark-number">4.</text>
+          <text class="mark-label">路途印记是：</text>
+          <text class="mark-value">【补充内容】</text>
+        </view>
+      </view>
+
+      <!-- 卡牌给我的提示 -->
+      <view class="tip-section">
+        <view class="tip-title">卡牌给我的提示：</view>
+        <view class="tip-content">{{cardInfo.tip}}</view>
+      </view>
+
+      <!-- 卡牌给我的祝福 -->
+      <view class="blessing-section">
+        <view class="blessing-title">卡牌给我的祝福：</view>
+        <view class="blessing-content">{{cardInfo.blessing}}</view>
+      </view>
+
+      <!-- 通关密码 -->
+      <view class="password-banner">
+        <text class="password-text">通关密码：{{cardInfo.password}}</text>
       </view>
     </view>
 
     <!-- 底部操作按钮 -->
     <view class="action-buttons">
       <button class="action-btn refresh-btn" bindtap="onRefresh">
-        <text class="btn-icon">🔄</text>
-        <text class="btn-text">换一换</text>
+        <text class="btn-text">换一张</text>
       </button>
       <button class="action-btn collect-btn" bindtap="onCollect">
-        <text class="btn-icon">{{isCollected ? '💖' : '🤍'}}</text>
         <text class="btn-text">{{isCollected ? '已收藏' : '收藏'}}</text>
       </button>
     </view>
-  </view>
 
-  <!-- 背景装饰 -->
-  <view class="bg-decoration">
-    <view class="floating-element element-1"></view>
-    <view class="floating-element element-2"></view>
-    <view class="floating-element element-3"></view>
-  </view>
+    <!-- 底部间距 -->
+    <view class="bottom-spacing"></view>
+  </scroll-view>
 </view>
 
