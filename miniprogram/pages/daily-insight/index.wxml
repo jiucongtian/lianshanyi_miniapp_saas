@@ -1,15 +1,6 @@
-<view class="page-container">
-  <!-- 顶部导航 -->
-  <view class="navbar">
-    <view class="nav-back" bindtap="onBack">
-      <text class="back-icon">←</text>
-    </view>
-    <view class="nav-title">每日愈见</view>
-    <view class="nav-right">
-      <text class="share-icon" bindtap="onShare">⋯</text>
-    </view>
-  </view>
+<t-navbar title="每日愈见" left-arrow bind:click-left="onBack" />
 
+<view class="page-container">
   <!-- 主内容区 -->
   <scroll-view class="content-wrapper" scroll-y>
     <!-- 古风卡牌容器 -->

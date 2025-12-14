@@ -2,8 +2,10 @@
   "navigationBarTitleText": "每日愈见",
   "navigationStyle": "custom",
   "enablePullDownRefresh": false,
-  "backgroundColor": "#2d1a2e",
-  "backgroundTextStyle": "light",
-  "usingComponents": {}
+  "backgroundColor": "#f5f0e8",
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "t-navbar": "/miniprogram_npm/tdesign-miniprogram/navbar/navbar"
+  }
 }
 
