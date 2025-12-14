@@ -72,7 +72,7 @@ page {
   background: #fffef9;
   border: 4rpx solid #d4a574;
   border-radius: 16rpx;
-  margin: 24rpx auto;
+  margin: 25rpx auto;
   padding: 32rpx;
   box-shadow: 0 8rpx 24rpx rgba(139, 69, 19, 0.15);
   position: relative;
@@ -104,8 +104,8 @@ page {
   border-top-right-radius: 16rpx;
 }
 
-/* 标题边框 */
-.title-border {
+/* 日期头部 */
+.date-header {
   text-align: center;
   padding: 24rpx 0;
   border: 3rpx solid #d4a574;
@@ -115,9 +115,9 @@ page {
   position: relative;
 }
 
-/* 标题装饰角 */
-.title-border::before,
-.title-border::after {
+/* 日期装饰角 */
+.date-header::before,
+.date-header::after {
   content: '';
   position: absolute;
   width: 20rpx;
@@ -125,7 +125,7 @@ page {
   border: 2rpx solid #c89960;
 }
 
-.title-border::before {
+.date-header::before {
   bottom: -2rpx;
   left: -2rpx;
   border-right: none;
@@ -133,7 +133,7 @@ page {
   border-bottom-left-radius: 12rpx;
 }
 
-.title-border::after {
+.date-header::after {
   bottom: -2rpx;
   right: -2rpx;
   border-left: none;
@@ -141,198 +141,134 @@ page {
   border-bottom-right-radius: 12rpx;
 }
 
-.title-text {
+.date-text {
   font-size: 32rpx;
   font-weight: 500;
   color: #8b4513;
   letter-spacing: 4rpx;
 }
 
-/* 今日卡牌区域 */
-.today-card-section {
-  border: 3rpx solid #d4a574;
-  border-radius: 12rpx;
-  padding: 24rpx;
-  margin-bottom: 24rpx;
-  background: #fffef9;
-  box-shadow: inset 0 0 20rpx rgba(212, 165, 116, 0.1);
-}
-
-.card-header {
+/* 卡牌图片区域 */
+.card-image-wrapper {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24rpx;
-}
-
-.card-label-box {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  background: #f5efe4;
-  border: 2rpx solid #d4a574;
-  border-radius: 8rpx;
-  padding: 16rpx 12rpx;
-  gap: 8rpx;
+  justify-content: center;
+  margin-bottom: 40rpx;
 }
 
-.card-label-text {
+.card-image {
+  width: 240rpx;
+  height: 280rpx;
+  border-radius: 8rpx;
+  background: #f5efe4;
+  box-shadow: 0 4rpx 12rpx rgba(139, 69, 19, 0.2);
+}
+
+/* 时间轴容器 */
+.timeline {
+  position: relative;
+  padding-left: 30rpx;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 10rpx;
+  top: 0;
+  bottom: 0;
+  width: 2rpx;
+  background: #d4a574;
+}
+
+/* 时间轴节点 */
+.timeline-item {
+  position: relative;
+  margin-bottom: 25rpx;
+  padding-left: 20rpx;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -25rpx;
+  top: 5rpx;
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #d4a574;
+  border: 3rpx solid #fffef9;
+  box-shadow: 0 0 0 2rpx #d4a574;
+  z-index: 1;
+}
+
+/* 通用section样式 */
+.section {
+  padding: 24rpx;
+  background: #fffef9;
+  border-radius: 8rpx;
+  border: 2rpx solid #d4a574;
+  margin-bottom: 0;
+}
+
+.section-title {
   font-size: 28rpx;
   font-weight: 500;
   color: #8b4513;
-  line-height: 1.2;
-}
-
-.time-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8rpx;
-}
-
-.time-value {
-  font-size: 36rpx;
-  font-weight: 500;
-  color: #8b4513;
-}
-
-.card-count {
-  font-size: 24rpx;
-  color: #8b4513;
-}
-
-.card-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24rpx;
-}
-
-.card-illustration {
-  width: 280rpx;
-  height: 320rpx;
-  border-radius: 8rpx;
-  background: #f5efe4;
-  flex-shrink: 0;
-}
-
-.card-title-box {
-  flex: 1;
-  text-align: center;
-  padding: 24rpx;
-  background: #f5efe4;
-  border: 2rpx solid #d4a574;
-  border-radius: 8rpx;
-}
-
-.card-title-name {
-  font-size: 32rpx;
-  font-weight: 500;
-  color: #8b4513;
-  letter-spacing: 2rpx;
-}
-
-/* 卡牌说明区 */
-.card-description {
-  padding: 24rpx;
-  background: #f9f5ee;
-  border-radius: 8rpx;
-  margin-bottom: 24rpx;
-  border-left: 4rpx solid #d4a574;
-}
-
-.desc-text {
-  font-size: 26rpx;
-  color: #5d4037;
-  line-height: 1.8;
-  text-align: justify;
+  margin-bottom: 16rpx;
   letter-spacing: 1rpx;
 }
 
-/* 印记列表 */
-.marks-section {
-  padding: 24rpx;
-  background: #f9f5ee;
-  border-radius: 8rpx;
-  margin-bottom: 24rpx;
+.section-content {
+  font-size: 26rpx;
+  color: #5d4037;
+  line-height: 1.8;
+  letter-spacing: 0.5rpx;
 }
 
-.mark-row {
-  display: flex;
-  align-items: baseline;
-  padding: 16rpx 0;
+/* 卡牌中央描述 */
+.central-desc {
+  margin-bottom: 20rpx;
+  padding-bottom: 20rpx;
   border-bottom: 1rpx solid #e8dcc8;
 }
 
-.mark-row:last-child {
-  border-bottom: none;
-}
-
-.mark-number {
+.desc-label {
   font-size: 26rpx;
   color: #8b4513;
-  margin-right: 16rpx;
   font-weight: 500;
+  margin-right: 8rpx;
+}
+
+.desc-value {
+  font-size: 26rpx;
+  color: #5d4037;
+  line-height: 1.8;
+}
+
+/* 印记项 */
+.mark-item {
+  display: flex;
+  align-items: baseline;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #e8dcc8;
+}
+
+.mark-item:last-child {
+  border-bottom: none;
 }
 
 .mark-label {
   font-size: 26rpx;
   color: #5d4037;
   margin-right: 8rpx;
+  min-width: 140rpx;
 }
 
 .mark-value {
   font-size: 26rpx;
   color: #8b4513;
   font-weight: 500;
-}
-
-/* 提示区 */
-.tip-section {
-  padding: 24rpx;
-  background: #f9f5ee;
-  border-radius: 8rpx;
-  margin-bottom: 24rpx;
-}
-
-.tip-title {
-  font-size: 28rpx;
-  color: #8b4513;
-  font-weight: 500;
-  margin-bottom: 16rpx;
-  letter-spacing: 1rpx;
-}
-
-.tip-content {
-  font-size: 26rpx;
-  color: #5d4037;
-  line-height: 1.8;
-  letter-spacing: 1rpx;
-  text-align: justify;
-}
-
-/* 祝福区 */
-.blessing-section {
-  padding: 24rpx;
-  background: #f9f5ee;
-  border-radius: 8rpx;
-  margin-bottom: 24rpx;
-}
-
-.blessing-title {
-  font-size: 28rpx;
-  color: #8b4513;
-  font-weight: 500;
-  margin-bottom: 16rpx;
-  letter-spacing: 1rpx;
-}
-
-.blessing-content {
-  font-size: 26rpx;
-  color: #5d4037;
-  line-height: 1.8;
-  letter-spacing: 1rpx;
-  text-align: justify;
+  flex: 1;
 }
 
 /* 通关密码横幅 */
@@ -341,7 +277,7 @@ page {
   padding: 24rpx 32rpx;
   text-align: center;
   border-radius: 8rpx;
-  margin-bottom: 24rpx;
+  margin: 0;
   box-shadow: 0 4rpx 16rpx rgba(211, 47, 47, 0.3);
 }
 
