@@ -61,14 +61,14 @@ class DailyInsightController extends BaseController {
   
   /**
    * 加载今日卡牌
-   * @param {boolean} forceRefresh - 是否强制刷新
+   * 注意：每次都从云端获取最新数据，不使用缓存
    */
-  async loadTodayCard(forceRefresh = false) {
+  async loadTodayCard() {
     try {
       this._setData({ loading: true });
       
       // 调用Service，不传递日期参数，由服务器自动处理
-      const response = await dailyInsightService.getTodayCard(forceRefresh);
+      const response = await dailyInsightService.getTodayCard();
       
       if (response.success && response.data) {
         const { card, date } = response.data;

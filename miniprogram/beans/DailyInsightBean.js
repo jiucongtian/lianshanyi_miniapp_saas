@@ -11,7 +11,6 @@ class DailyInsightBean extends BaseBean {
     
     // 使用BaseBean提供的_getField方法提取字段
     this._id = this._getField(this.data, '_id', '', 'string');
-    this.date = this._getField(this.data, 'date', '', 'string');
     this.cardName = this._getField(this.data, 'cardName', '未知卡牌', 'string');
     this.cardNumber = this._getField(this.data, 'cardNumber', 0, 'number');
     this.central = this._getField(this.data, 'central', '', 'string');
@@ -37,17 +36,11 @@ class DailyInsightBean extends BaseBean {
   _validate() {
     // 验证必需字段
     this._validateRequiredField('_id', this._id);
-    this._validateRequiredField('date', this.date);
     this._validateRequiredField('cardName', this.cardName);
     
     // 验证cardNumber范围（1-60）
     if (this.cardNumber < 1 || this.cardNumber > 60) {
       this._addValidationError('cardNumber', `cardNumber必须在1-60之间，当前值: ${this.cardNumber}`);
-    }
-    
-    // 验证日期格式（YYYY-MM-DD）
-    if (this.date && !/^\d{4}-\d{2}-\d{2}$/.test(this.date)) {
-      this._addValidationError('date', `日期格式错误，期望YYYY-MM-DD，实际: ${this.date}`);
     }
     
     // 标记为已验证
@@ -80,19 +73,11 @@ class DailyInsightBean extends BaseBean {
   }
   
   /**
-   * 获取日期键（从YYYY-MM-DD转换为YYYYMMDD）
-   * @returns {string} 日期键
-   */
-  getDateKey() {
-    return this.date ? this.date.replace(/-/g, '') : '';
-  }
-  
-  /**
    * 检查数据完整性（业务方法）
    * @returns {boolean} 数据是否完整
    */
   isValid() {
-    return !!(this._id && this.cardName && this.date && this.cardNumber >= 1 && this.cardNumber <= 60);
+    return !!(this._id && this.cardName && this.cardNumber >= 1 && this.cardNumber <= 60);
   }
 }
 
