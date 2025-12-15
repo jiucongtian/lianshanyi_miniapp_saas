@@ -76,16 +76,6 @@
       </view>
     </view>
 
-    <!-- 底部操作按钮 -->
-    <view class="action-buttons">
-      <button class="action-btn refresh-btn" bindtap="onRefresh">
-        <text class="btn-text">换一张</text>
-      </button>
-      <button class="action-btn collect-btn" bindtap="onCollect">
-        <text class="btn-text">{{isCollected ? '已收藏' : '收藏'}}</text>
-      </button>
-    </view>
-
     <!-- 底部间距 -->
     <view class="bottom-spacing"></view>
   </scroll-view>
