@@ -261,26 +261,16 @@ class PosterGenerator {
   }
 
   /**
-   * 绘制卡牌信息
+   * 绘制卡牌信息（只显示卡牌名称，不显示号码和干支名称）
    */
   async _drawCardInfo(ctx, cardName, cardNumber, startY) {
-    let currentY = startY;
-
-    // 绘制卡牌编号
-    ctx.fillStyle = '#c896b4';
-    ctx.font = 'bold 36px sans-serif';
-    ctx.textAlign = 'center';
-    const cardNumberStr = cardNumber < 10 ? `0${cardNumber}` : `${cardNumber}`;
-    ctx.fillText(`【${cardNumberStr}号】`, this.canvasWidth / 2, currentY + 36);
-    currentY += 50;
-
-    // 绘制卡牌名称
+    // 只绘制卡牌名称，不显示号码和干支名称
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 42px sans-serif';
-    ctx.fillText(cardName, this.canvasWidth / 2, currentY + 42);
-    currentY += 50;
-
-    return currentY; // 返回下一个元素的起始Y坐标
+    ctx.textAlign = 'center';
+    ctx.fillText(cardName, this.canvasWidth / 2, startY + 42);
+    
+    return startY + 50; // 返回下一个元素的起始Y坐标
   }
 
   /**
@@ -459,6 +449,328 @@ class PosterGenerator {
     });
 
     return lines;
+  }
+
+  /**
+   * 生成每日愈见分享海报
+   * @param {Object} options - 海报配置
+   * @param {string} options.cardImagePath - 卡牌图片路径
+   * @param {string} options.cardName - 卡牌名称
+   * @param {number} options.cardNumber - 卡牌编号
+   * @param {string} options.date - 日期字符串（YYYY-MM-DD）
+   * @param {string} options.central - 卡牌传递的能量
+   * @param {string} options.seasonMark - 季节印记
+   * @param {string} options.talentMark - 天赋印记
+   * @param {string} options.abilityMark - 才能印记
+   * @param {string} options.pathMark - 路途印记
+   * @param {string} options.blessing - 卡牌给我的祝福
+   * @param {string} options.tip - 卡牌给我的提示
+   * @param {string} options.password - 通关密码
+   * @param {Object} options.canvasContext - Canvas上下文
+   * @param {Object} options.canvas - Canvas对象（Canvas 2D API）
+   * @param {string} options.qrCodePath - 二维码图片路径（可选）
+   * @returns {Promise<string>} 海报临时文件路径
+   */
+  async generateDailyInsightPoster(options) {
+    const {
+      cardImagePath,
+      cardName,
+      cardNumber,
+      date,
+      central,
+      seasonMark,
+      talentMark,
+      abilityMark,
+      pathMark,
+      blessing,
+      tip,
+      password,
+      canvasContext,
+      canvas,
+      qrCodePath = config.cloud.qrCodePath || '/static/erweima.JPG'
+    } = options;
+
+    try {
+      // 计算所需高度
+      const calculatedHeight = await this._calculateDailyInsightHeight(
+        canvasContext,
+        date,
+        central,
+        seasonMark,
+        talentMark,
+        abilityMark,
+        pathMark,
+        blessing,
+        tip,
+        password
+      );
+      
+      const canvasHeight = Math.max(this.minCanvasHeight, calculatedHeight);
+
+      // 设置画布尺寸
+      canvas.width = this.canvasWidth;
+      canvas.height = canvasHeight;
+
+      // 清空画布
+      canvasContext.clearRect(0, 0, this.canvasWidth, canvasHeight);
+
+      let currentY = 0;
+
+      // 1. 绘制背景渐变
+      await this._drawBackground(canvasContext, canvasHeight);
+      currentY = 80;
+
+      // 2. 绘制标题
+      currentY = await this._drawDailyInsightTitle(canvasContext, currentY);
+      currentY += 40;
+
+      // 3. 绘制日期
+      if (date) {
+        currentY = await this._drawDate(canvasContext, date, currentY);
+        currentY += 30;
+      }
+
+      // 4. 绘制卡牌图片
+      if (cardImagePath) {
+        currentY = await this._drawCardImage(canvasContext, canvas, cardImagePath, currentY);
+        currentY += 30;
+      }
+
+      // 5. 绘制卡牌信息（已移除，不显示卡牌名称）
+      // currentY = await this._drawCardInfo(canvasContext, cardName, cardNumber, currentY);
+      // currentY += 40;
+
+      // 6. 绘制卡牌传递的能量
+      if (central) {
+        currentY = await this._drawSection(canvasContext, '今日卡牌传递的能量', central, currentY);
+        currentY += 30;
+      }
+
+      // 7. 绘制印记信息
+      if (seasonMark || talentMark || abilityMark || pathMark) {
+        currentY = await this._drawMarks(canvasContext, {
+          seasonMark,
+          talentMark,
+          abilityMark,
+          pathMark
+        }, currentY);
+        currentY += 30;
+      }
+
+      // 8. 绘制祝福
+      if (blessing) {
+        currentY = await this._drawSection(canvasContext, '卡牌给我的祝福', blessing, currentY);
+        currentY += 30;
+      }
+
+      // 9. 绘制提示
+      if (tip) {
+        currentY = await this._drawSection(canvasContext, '卡牌给我的提示', tip, currentY);
+        currentY += 30;
+      }
+
+      // 10. 绘制通关密码
+      if (password) {
+        currentY = await this._drawPassword(canvasContext, password, currentY);
+        currentY += 40;
+      }
+
+      // 11. 绘制底部信息（包含二维码）
+      await this._drawFooter(canvasContext, canvas, canvasHeight, qrCodePath);
+
+      // 绘制完成，导出为图片
+      return new Promise((resolve, reject) => {
+        wx.canvasToTempFilePath({
+          canvas: canvas,
+          success: (res) => {
+            resolve(res.tempFilePath);
+          },
+          fail: (err) => {
+            log.error('generateDailyInsightPoster', '导出图片失败', err);
+            reject(new Error('导出图片失败'));
+          }
+        });
+      });
+    } catch (error) {
+      log.error('generateDailyInsightPoster', '生成海报失败', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 计算每日愈见海报所需高度
+   */
+  async _calculateDailyInsightHeight(ctx, date, central, seasonMark, talentMark, abilityMark, pathMark, blessing, tip, password) {
+    let totalHeight = 0;
+    
+    // 顶部边距
+    totalHeight += 80;
+    
+    // 标题高度
+    totalHeight += 60;
+    
+    // 日期高度（一行显示）
+    if (date) {
+      totalHeight += 50 + 30;
+    }
+    
+    // 卡牌图片高度
+    totalHeight += 560 + 30;
+    
+    // 卡牌信息高度（已移除，不显示）
+    // totalHeight += 50 + 40;
+    
+    // 卡牌传递的能量
+    if (central) {
+      ctx.font = '28px sans-serif';
+      const centralLines = this._wrapText(ctx, central, this.canvasWidth - 80);
+      totalHeight += 50 + (centralLines.length * this.lineHeight) + 30;
+    }
+    
+    // 印记信息
+    if (seasonMark || talentMark || abilityMark || pathMark) {
+      totalHeight += 50 + (4 * 40) + 30; // 标题 + 4个印记项 + 间距
+    }
+    
+    // 祝福
+    if (blessing) {
+      ctx.font = '28px sans-serif';
+      const blessingLines = this._wrapText(ctx, blessing, this.canvasWidth - 80);
+      totalHeight += 50 + (blessingLines.length * this.lineHeight) + 30;
+    }
+    
+    // 提示
+    if (tip) {
+      ctx.font = '28px sans-serif';
+      const tipLines = this._wrapText(ctx, tip, this.canvasWidth - 80);
+      totalHeight += 50 + (tipLines.length * this.lineHeight) + 30;
+    }
+    
+    // 通关密码
+    if (password) {
+      totalHeight += 60 + 40;
+    }
+    
+    // 底部信息和边距（包含二维码区域）
+    totalHeight += 354;
+    
+    return totalHeight;
+  }
+
+  /**
+   * 绘制每日愈见标题
+   */
+  async _drawDailyInsightTitle(ctx, startY) {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 48px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('每日愈见', this.canvasWidth / 2, startY + 48);
+    
+    return startY + 60;
+  }
+
+  /**
+   * 绘制日期（一行显示）
+   */
+  async _drawDate(ctx, dateStr, startY) {
+    // 解析日期
+    const dateParts = dateStr.split('-');
+    if (dateParts.length !== 3) {
+      return startY;
+    }
+    
+    const year = dateParts[0];
+    const month = dateParts[1];
+    const day = dateParts[2];
+    
+    // 格式化为一行：2024年12月15日
+    const dateText = `${year}年${month}月${day}日`;
+    
+    ctx.fillStyle = '#c896b4';
+    ctx.font = '32px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(dateText, this.canvasWidth / 2, startY + 32);
+    
+    return startY + 50;
+  }
+
+  /**
+   * 绘制章节内容
+   */
+  async _drawSection(ctx, title, content, startY) {
+    let currentY = startY;
+    const maxWidth = this.canvasWidth - 80;
+
+    // 绘制标题
+    ctx.fillStyle = '#c896b4';
+    ctx.font = 'bold 32px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(title, 40, currentY + 32);
+    currentY += 50;
+
+    // 绘制内容
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '28px sans-serif';
+    ctx.textAlign = 'left';
+    
+    const lines = this._wrapText(ctx, content, maxWidth);
+    lines.forEach((line) => {
+      ctx.fillText(line, 40, currentY + 28);
+      currentY += this.lineHeight;
+    });
+
+    return currentY;
+  }
+
+  /**
+   * 绘制印记信息
+   */
+  async _drawMarks(ctx, marks, startY) {
+    let currentY = startY;
+    const maxWidth = this.canvasWidth - 80;
+
+    // 绘制标题
+    ctx.fillStyle = '#c896b4';
+    ctx.font = 'bold 32px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('印记信息', 40, currentY + 32);
+    currentY += 50;
+
+    // 绘制印记项
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '26px sans-serif';
+    ctx.textAlign = 'left';
+    
+    const markLabels = [
+      { label: '季节印记：', value: marks.seasonMark },
+      { label: '天赋印记：', value: marks.talentMark },
+      { label: '才能印记：', value: marks.abilityMark },
+      { label: '路途印记：', value: marks.pathMark }
+    ];
+
+    markLabels.forEach(({ label, value }) => {
+      if (value) {
+        const text = `${label}${value}`;
+        ctx.fillText(text, 40, currentY + 26);
+        currentY += 40;
+      }
+    });
+
+    return currentY;
+  }
+
+  /**
+   * 绘制通关密码
+   */
+  async _drawPassword(ctx, password, startY) {
+    const text = `通关密码：${password}`;
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(text, this.canvasWidth / 2, startY + 36);
+    
+    return startY + 60;
   }
 }
 
