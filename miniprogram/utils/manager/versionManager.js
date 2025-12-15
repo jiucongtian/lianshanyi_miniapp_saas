@@ -16,7 +16,8 @@ class VersionManager {
       userManagement: 'v1_3',
       profileManagement: 'v1_2',
       cozeFunctions: 'v1_3',
-      feedbackManagement: 'v1_4'
+      feedbackManagement: 'v1_4',
+      dailyInsightManagement: 'v1_4'
     }
   };
   
