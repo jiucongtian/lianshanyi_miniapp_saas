@@ -58,48 +58,48 @@ page {
   border-top-right-radius: 16rpx;
 }
 
-/* 日期头部 */
+/* 日期和卡牌图片行容器 */
+.date-card-row {
+  display: flex;
+  align-items: stretch;
+  gap: 24rpx;
+  margin-bottom: 40rpx;
+  height: 360rpx;
+}
+
+/* 日期头部（分三行显示） */
 .date-header {
-  text-align: center;
-  padding: 24rpx 0;
-  border: 3rpx solid #d4a574;
-  border-radius: 12rpx;
-  margin-bottom: 32rpx;
-  background: linear-gradient(135deg, #f9f5ee 0%, #f5efe4 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  margin-left: 94rpx;
   position: relative;
-}
-
-/* 日期装饰角 */
-.date-header::before,
-.date-header::after {
-  content: '';
-  position: absolute;
-  width: 20rpx;
-  height: 20rpx;
-  border: 2rpx solid #c89960;
-}
-
-.date-header::before {
-  bottom: -2rpx;
-  left: -2rpx;
-  border-right: none;
-  border-top: none;
-  border-bottom-left-radius: 12rpx;
-}
-
-.date-header::after {
-  bottom: -2rpx;
-  right: -2rpx;
-  border-left: none;
-  border-top: none;
-  border-bottom-right-radius: 12rpx;
+  min-width: 100rpx;
+  height: 100%;
 }
 
 .date-text {
-  font-size: 32rpx;
   font-weight: 500;
   color: #8b4513;
   letter-spacing: 4rpx;
+  line-height: 1.8;
+  white-space: nowrap;
+}
+
+.date-year {
+  font-size: 32rpx;
+}
+
+.date-month,
+.date-day {
+  font-size: 40rpx;
+}
+
+.date-text:not(:last-child) {
+  margin-bottom: 8rpx;
 }
 
 /* 卡牌图片区域 */
@@ -107,15 +107,16 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 40rpx;
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  height: 100%;
 }
 
 .card-image {
   width: 240rpx;
-  height: 280rpx;
+  height: 100%;
   border-radius: 8rpx;
-  background: #f5efe4;
-  box-shadow: 0 4rpx 12rpx rgba(139, 69, 19, 0.2);
 }
 
 /* 时间轴容器 */
