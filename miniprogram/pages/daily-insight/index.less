@@ -227,20 +227,44 @@ page {
 
 /* 通关密码横幅 */
 .password-banner {
-  background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
-  padding: 24rpx 32rpx;
+  background: #fffef9;
+  padding: 28rpx 32rpx;
   text-align: center;
   border-radius: 8rpx;
   margin: 0;
-  box-shadow: 0 4rpx 16rpx rgba(211, 47, 47, 0.3);
+  border: 3rpx solid #d4a574;
+  position: relative;
+}
+
+.password-banner::before,
+.password-banner::after {
+  content: '';
+  position: absolute;
+  width: 16rpx;
+  height: 16rpx;
+  border: 2rpx solid #c89960;
+}
+
+.password-banner::before {
+  top: -2rpx;
+  left: -2rpx;
+  border-right: none;
+  border-bottom: none;
+}
+
+.password-banner::after {
+  top: -2rpx;
+  right: -2rpx;
+  border-left: none;
+  border-bottom: none;
 }
 
 .password-text {
-  font-size: 32rpx;
+  font-size: 36rpx;
   font-weight: bold;
-  color: #ffffff;
-  letter-spacing: 3rpx;
-  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+  color: #8b4513;
+  letter-spacing: 4rpx;
+  line-height: 1.6;
 }
 
 /* 底部间距 */
