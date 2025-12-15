@@ -20,11 +20,8 @@ class DailyInsightController extends BaseController {
       // 设置加载状态
       this._setData({ loading: true });
       
-      // 并行加载：日期信息（客户端计算）+ 今日卡牌（云端获取）
-      await Promise.all([
-        this._initDateInfo(),
-        this.loadTodayCard()
-      ]);
+      // 先加载卡牌数据，获取服务器返回的北京时间
+      await this.loadTodayCard();
       
       this._setData({ loading: false });
       this._log('initialize', '页面初始化完成');
@@ -36,26 +33,60 @@ class DailyInsightController extends BaseController {
   }
   
   /**
-   * 初始化日期信息（客户端计算）
-   * 注意：只计算页面实际使用的字段（年月日），不计算农历和干支纪年
+   * 初始化日期信息（使用云函数返回的北京时间）
+   * @param {string} dateStr - 日期字符串（YYYY-MM-DD格式，来自云函数返回的北京时间）
+   * @param {string} timeStr - 时间字符串（HH:mm格式，来自云函数返回的北京时间，可选）
    */
-  _initDateInfo() {
-    const now = new Date();
+  _initDateInfo(dateStr, timeStr = null) {
+    if (!dateStr || typeof dateStr !== 'string') {
+      this._warn('_initDateInfo', '日期字符串无效，使用当前时间', { dateStr });
+      // 如果日期无效，使用当前时间作为后备方案
+      const now = new Date();
+      const dateInfo = {
+        year: now.getFullYear(),
+        month: String(now.getMonth() + 1).padStart(2, '0'),
+        day: String(now.getDate()).padStart(2, '0')
+      };
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      this._setData({
+        currentTime: `${hours}:${minutes}`,
+        dateInfo: dateInfo
+      });
+      return;
+    }
     
-    // 计算日期信息（只包含页面实际使用的字段）
+    // 从日期字符串（YYYY-MM-DD）解析年月日
+    const dateParts = dateStr.split('-');
+    if (dateParts.length !== 3) {
+      this._warn('_initDateInfo', '日期格式错误', { dateStr });
+      return;
+    }
+    
     const dateInfo = {
-      year: now.getFullYear(),
-      month: String(now.getMonth() + 1).padStart(2, '0'),
-      day: String(now.getDate()).padStart(2, '0')
+      year: parseInt(dateParts[0], 10),
+      month: dateParts[1],
+      day: dateParts[2]
     };
     
-    // 设置当前时间
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
+    // 使用云函数返回的北京时间，如果没有则使用客户端时间作为后备
+    const currentTime = timeStr || (() => {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    })();
     
     this._setData({
-      currentTime: `${hours}:${minutes}`,
+      currentTime: currentTime,
       dateInfo: dateInfo
+    });
+    
+    this._log('_initDateInfo', '使用服务器返回的北京时间初始化日期和时间', { 
+      dateStr, 
+      timeStr, 
+      dateInfo,
+      currentTime 
     });
   }
   
@@ -71,7 +102,7 @@ class DailyInsightController extends BaseController {
       const response = await dailyInsightService.getTodayCard();
       
       if (response.success && response.data) {
-        const { card, date } = response.data;
+        const { card, date, time } = response.data;
         
         if (card && card.isValid()) {
           // 计算图片路径（与card页面一致的计算方式）
@@ -85,15 +116,16 @@ class DailyInsightController extends BaseController {
             }
           });
           
-          // 可选：如果服务器返回的日期与客户端日期不一致，可以记录日志
+          // 使用云函数返回的北京时间初始化日期和时间信息
           if (date) {
-            const clientDate = this._getTodayDate();
-            if (date !== clientDate) {
-              this._log('loadTodayCard', '服务器日期与客户端日期不一致', {
-                serverDate: date,
-                clientDate: clientDate
-              });
-            }
+            this._initDateInfo(date, time);
+            this._log('loadTodayCard', '使用服务器返回的北京时间', { 
+              serverDate: date, 
+              serverTime: time 
+            });
+          } else {
+            this._warn('loadTodayCard', '服务器未返回日期，使用客户端时间');
+            this._initDateInfo();
           }
         } else {
           this._showError('卡牌数据不完整');
@@ -109,17 +141,6 @@ class DailyInsightController extends BaseController {
     }
   }
   
-  /**
-   * 获取今天的日期（YYYY-MM-DD格式，客户端时间，仅用于对比）
-   * @returns {string} 日期字符串
-   */
-  _getTodayDate() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
   
   /**
    * 查看卡牌大图

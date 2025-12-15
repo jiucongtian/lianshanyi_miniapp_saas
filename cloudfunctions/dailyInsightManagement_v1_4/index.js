@@ -224,11 +224,18 @@ async function getTodayCard() {
     const cardData = result.data[0]
     console.log('[getTodayCard] 找到卡牌数据:', cardData)
     
+    // 提取时间信息（北京时间）
+    const hours = String(beijingTime.getHours()).padStart(2, '0')
+    const minutes = String(beijingTime.getMinutes()).padStart(2, '0')
+    const timeStr = `${hours}:${minutes}`
+    
     // 返回卡牌信息、实际查询的日期和干支信息
     return success({
       card: cardData,
-      date: dateStr,
-      ganZhi: ganZhiName,
+      date: dateStr,        // 日期（YYYY-MM-DD格式，北京时间）
+      time: timeStr,        // 时间（HH:mm格式，北京时间）
+      ganZhi: ganZhiName,   // 干支名称（如"戊午"）
+      cardName: ganZhiName, // 卡牌名称（干支名称，与ganZhi相同）
       cardNumber: cardNumber
     }, '获取成功')
   } catch (err) {
