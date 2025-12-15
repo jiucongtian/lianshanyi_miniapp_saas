@@ -2,6 +2,7 @@
 const { DailyInsightController } = require('../../controllers/DailyInsightController');
 const { createModuleLogger } = require('../../utils/logger/index');
 const logger = createModuleLogger('DailyInsightPage');
+const app = getApp();
 
 Page({
   data: {
@@ -22,7 +23,30 @@ Page({
   onLoad(options) {
     logger.info('onLoad', '页面加载');
     this.controller = new DailyInsightController(this);
-    this.controller.initialize();
+    
+    // 检查是否有预加载的数据
+    const preloadData = app.globalData.dailyInsightPreloadData;
+    if (preloadData && preloadData.timestamp) {
+      // 检查数据是否过期（5分钟内有效）
+      const dataAge = Date.now() - preloadData.timestamp;
+      const MAX_AGE = 5 * 60 * 1000; // 5分钟
+      
+      if (dataAge < MAX_AGE) {
+        logger.info('onLoad', '使用预加载的数据');
+        // 使用预加载的数据初始化
+        this.controller.initialize(preloadData);
+        // 清除预加载数据，避免下次误用
+        delete app.globalData.dailyInsightPreloadData;
+      } else {
+        logger.warn('onLoad', '预加载数据已过期，重新获取');
+        delete app.globalData.dailyInsightPreloadData;
+        this.controller.initialize();
+      }
+    } else {
+      // 没有预加载数据，正常初始化
+      logger.info('onLoad', '没有预加载数据，正常初始化');
+      this.controller.initialize();
+    }
   },
 
   onShow() {

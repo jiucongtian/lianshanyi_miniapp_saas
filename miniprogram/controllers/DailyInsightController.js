@@ -4,6 +4,7 @@
  */
 const { BaseController } = require('./BaseController');
 const { dailyInsightService } = require('../services/DailyInsightService');
+const { DailyInsightBean } = require('../beans/DailyInsightBean');
 
 class DailyInsightController extends BaseController {
   constructor(page) {
@@ -12,16 +13,27 @@ class DailyInsightController extends BaseController {
   
   /**
    * 初始化页面
+   * @param {Object} preloadData - 预加载的数据（可选）
+   * @param {Object} preloadData.card - 卡牌原始数据
+   * @param {string} preloadData.date - 日期字符串（YYYY-MM-DD）
+   * @param {string} preloadData.time - 时间字符串（HH:mm）
    */
-  async initialize() {
-    this._log('initialize', '开始初始化页面');
+  async initialize(preloadData = null) {
+    this._log('initialize', '开始初始化页面', { hasPreloadData: !!preloadData });
     
     try {
       // 设置加载状态
       this._setData({ loading: true });
       
-      // 先加载卡牌数据，获取服务器返回的北京时间
-      await this.loadTodayCard();
+      if (preloadData && preloadData.card) {
+        // 使用预加载的数据
+        this._log('initialize', '使用预加载数据初始化');
+        await this._loadFromPreloadData(preloadData);
+      } else {
+        // 从云端加载数据
+        this._log('initialize', '从云端加载数据');
+        await this.loadTodayCard();
+      }
       
       this._setData({ loading: false });
       this._log('initialize', '页面初始化完成');
@@ -29,6 +41,55 @@ class DailyInsightController extends BaseController {
       this._error('initialize', '页面初始化失败:', error);
       this._setData({ loading: false });
       this._handleError(error, '页面初始化');
+    }
+  }
+  
+  /**
+   * 从预加载数据初始化页面
+   * @param {Object} preloadData - 预加载的数据
+   * @param {Object} preloadData.card - 卡牌原始数据
+   * @param {string} preloadData.date - 日期字符串（YYYY-MM-DD）
+   * @param {string} preloadData.time - 时间字符串（HH:mm）
+   */
+  async _loadFromPreloadData(preloadData) {
+    try {
+      const { card: cardData, date, time } = preloadData;
+      
+      // 将原始数据转换为 Bean 实例
+      const card = new DailyInsightBean(cardData);
+      
+      if (card && card.isValid()) {
+        // 计算图片路径（与card页面一致的计算方式）
+        const imageUrl = card.getImageUrl();
+        
+        // 设置卡牌信息，包含计算出的图片路径
+        this._setData({
+          cardInfo: {
+            ...card,
+            imageUrl: imageUrl  // 计算出的图片路径，供WXML使用
+          }
+        });
+        
+        // 使用预加载的日期和时间信息
+        if (date) {
+          this._initDateInfo(date, time);
+          this._log('_loadFromPreloadData', '使用预加载的日期和时间', { 
+            date, 
+            time 
+          });
+        } else {
+          this._warn('_loadFromPreloadData', '预加载数据未包含日期，使用客户端时间');
+          this._initDateInfo();
+        }
+      } else {
+        this._warn('_loadFromPreloadData', '预加载的卡牌数据不完整，重新从云端加载');
+        // 如果预加载数据不完整，回退到从云端加载
+        await this.loadTodayCard();
+      }
+    } catch (error) {
+      this._error('_loadFromPreloadData', '处理预加载数据异常:', error);
+      // 如果处理预加载数据失败，回退到从云端加载
+      await this.loadTodayCard();
     }
   }
   
