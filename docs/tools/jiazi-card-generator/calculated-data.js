@@ -1,6 +1,6 @@
 /**
  * 组合计算模块
- * 根据天干地支的五行属性等计算季节标记、卦象、爻位等
+ * 根据天干地支的五行属性等计算季节标记、爻位等
  */
 
 const { getGanWuxing, getZhiWuxing } = require('./base-data');
@@ -12,17 +12,6 @@ const WUXING_SEASON = {
   '土': '长夏',  // 土对应长夏，但显示时可能简化为"夏"
   '金': '秋',
   '水': '冬'
-};
-
-// 卦象映射表（需要根据实际数据补充完整）
-// 从数据中看到的卦象：坎卦、艮卦、离卦、乾卦、坤卦等
-const GUA_MAP = {
-  '甲子': { name: '坎卦', yao: '初爻', position: '初爻' },
-  '乙丑': { name: '艮卦', yao: '四爻', position: '四爻' },
-  '丙寅': { name: '离卦', yao: '上爻', position: '上爻' },
-  '壬戌': { name: '乾卦', yao: '六爻', position: '宗庙位' },
-  '癸亥': { name: '坤卦', yao: '六五', position: '尊位' }
-  // 其他干支的卦象需要根据实际数据补充
 };
 
 // 爻位映射表（abilityMark对应的爻位信息）
@@ -61,15 +50,6 @@ function calculateSeasonMark(gan, zhi) {
   // 如果不同，组合显示，如"春冬"、"夏春"等
   // 注意：可能需要根据实际数据调整顺序
   return ganSeason + zhiSeason;
-}
-
-/**
- * 获取卦象信息
- * @param {string} ganZhi - 干支名称
- * @returns {Object|null} 卦象信息 {name, yao, position}
- */
-function getGuaInfo(ganZhi) {
-  return GUA_MAP[ganZhi] || null;
 }
 
 /**
@@ -123,10 +103,8 @@ function calculateWuxingRelation(wuxing1, wuxing2) {
 
 module.exports = {
   WUXING_SEASON,
-  GUA_MAP,
   YAO_POSITION_MAP,
   calculateSeasonMark,
-  getGuaInfo,
   getYaoInfo,
   calculateWuxingRelation
 };

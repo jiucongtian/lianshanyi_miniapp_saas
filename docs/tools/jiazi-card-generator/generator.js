@@ -49,7 +49,6 @@ function generateCardData(ganZhi, options = {}) {
   const seasonMark = calculatedData.calculateSeasonMark(gan, zhi);
   const wuxingRelation = calculatedData.calculateWuxingRelation(ganWuxing, zhiWuxing);
   const yaoInfo = calculatedData.getYaoInfo(abilityMark);
-  const guaInfo = calculatedData.getGuaInfo(ganZhi);
   
   // 生成密码（如果提供了则使用，否则通过生成器生成）
   const password = options.password !== undefined 
