@@ -66,6 +66,7 @@ function error(errorMessage, code = -1) {
   }
 }
 
+
 /**
  * 获取当天的干支名称
  * 通过调用 localCalculateBazi_v1_2 云函数，输入日期及子时的时间先得到八字，然后取其中日柱的干支
@@ -194,13 +195,14 @@ async function getTodayCard() {
       return error('获取今日卡牌失败: 八字数据格式错误', -3)
     }
     
-    const cardNumber = baziData.day.ganzhiIndex
     const dayGan = baziData.day.gan || ''
     const dayZhi = baziData.day.zhi || ''
     const ganZhiName = dayGan + dayZhi
+    const cardNumber = baziData.day.ganzhiIndex
     
-    console.log('[getTodayCard] 提取的日柱干支:', { ganZhiName, cardNumber })
+    console.log('[getTodayCard] 提取的日柱干支:', { ganZhiName, cardNumber, dayGan, dayZhi })
     
+    // 验证cardNumber是否有效
     if (!cardNumber || cardNumber < 1 || cardNumber > 60) {
       console.error('[getTodayCard] 卡牌编号无效:', cardNumber)
       return error('获取今日卡牌失败: 卡牌编号无效', -4)
