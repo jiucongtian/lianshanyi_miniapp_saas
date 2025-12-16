@@ -218,8 +218,8 @@ App({
         
         log.info('loadAllProfiles', 'ProfileManager初始化完成');
         
-        // 触发ProfileManager初始化完成事件
-        this.eventBus.emit(SYSTEM_EVENTS.PROFILE_MANAGER_READY);
+        // 触发ProfileManager初始化完成事件（静默模式：允许没有监听器）
+        this.eventBus.emit(SYSTEM_EVENTS.PROFILE_MANAGER_READY, { __emitOptions__: true, silent: true });
       } else {
         log.warn('loadAllProfiles', '获取档案列表失败，初始化空的ProfileManager');
         profileManager.initialize([]);

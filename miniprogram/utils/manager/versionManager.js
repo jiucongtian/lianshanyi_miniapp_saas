@@ -36,7 +36,8 @@ class VersionManager {
       }
       
       // 如果无法获取版本信息，返回 null（由调用方决定如何处理）
-      log.warn('getCurrentVersion', 'App实例未完全初始化，无法获取版本', {
+      // 注意：在 App 初始化过程中，版本暂时不可用是预期的行为，BaseService 会等待版本可用
+      log.debug('getCurrentVersion', 'App实例未完全初始化，无法获取版本（这是预期的，调用方会等待）', {
         hasAppConfig: !!appConfig,
         hasGlobalData: !!(appConfig && appConfig.globalData)
       });
