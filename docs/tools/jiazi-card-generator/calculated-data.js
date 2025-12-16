@@ -5,13 +5,44 @@
 
 const { getGanWuxing, getZhiWuxing } = require('./base-data');
 
-// 五行对应的季节
+// 五行对应的季节（保留用于其他用途）
 const WUXING_SEASON = {
   '木': '春',
   '火': '夏',
   '土': '长夏',  // 土对应长夏，但显示时可能简化为"夏"
   '金': '秋',
   '水': '冬'
+};
+
+// 天干对应的季节
+// 规则：甲、乙→春，丙、丁→夏，戊、己→夏，庚、辛→秋，壬、癸→冬
+const GAN_SEASON = {
+  '甲': '春',
+  '乙': '春',
+  '丙': '夏',
+  '丁': '夏',
+  '戊': '夏',
+  '己': '夏',
+  '庚': '秋',
+  '辛': '秋',
+  '壬': '冬',
+  '癸': '冬'
+};
+
+// 地支对应的季节
+const ZHI_SEASON = {
+  '子': '冬',
+  '丑': '冬',
+  '寅': '春',
+  '卯': '春',
+  '辰': '春',
+  '巳': '夏',
+  '午': '夏',
+  '未': '夏',
+  '申': '秋',
+  '酉': '秋',
+  '戌': '秋',
+  '亥': '冬'
 };
 
 // 爻位映射表（abilityMark对应的爻位信息）
@@ -28,27 +59,20 @@ const YAO_POSITION_MAP = {
 
 /**
  * 计算季节标记
- * 根据天干和地支的五行属性组合
+ * 根据天干和地支的季节组合
+ * 天干：甲、乙→春，丙、丁→夏，戊、己、庚、辛→秋，壬、癸→冬
+ * 地支：子、丑、亥→冬，寅、卯、辰→春，巳、午、未→夏，申、酉、戌→秋
  * @param {string} gan - 天干
  * @param {string} zhi - 地支
  * @returns {string} 季节标记，如"春冬"、"夏春"等
  */
 function calculateSeasonMark(gan, zhi) {
-  const ganWuxing = getGanWuxing(gan);
-  const zhiWuxing = getZhiWuxing(zhi);
+  const ganSeason = GAN_SEASON[gan];
+  const zhiSeason = ZHI_SEASON[zhi];
   
-  if (!ganWuxing || !zhiWuxing) return '';
+  if (!ganSeason || !zhiSeason) return '';
   
-  const ganSeason = WUXING_SEASON[ganWuxing];
-  const zhiSeason = WUXING_SEASON[zhiWuxing];
-  
-  // 如果天干和地支的五行相同，显示为"春春"、"夏夏"等
-  if (ganSeason === zhiSeason) {
-    return ganSeason + ganSeason;
-  }
-  
-  // 如果不同，组合显示，如"春冬"、"夏春"等
-  // 注意：可能需要根据实际数据调整顺序
+  // 组合天干和地支的季节
   return ganSeason + zhiSeason;
 }
 
@@ -103,6 +127,8 @@ function calculateWuxingRelation(wuxing1, wuxing2) {
 
 module.exports = {
   WUXING_SEASON,
+  GAN_SEASON,
+  ZHI_SEASON,
   YAO_POSITION_MAP,
   calculateSeasonMark,
   getYaoInfo,
