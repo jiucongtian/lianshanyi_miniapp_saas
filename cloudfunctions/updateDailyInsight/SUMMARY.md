@@ -52,50 +52,21 @@
 | updatedAt | 自动生成 | ✅ 完成 |
 | isActive | 默认true | ✅ 完成 |
 
-## ⚠️ 待完善的部分
+## ✅ 已完成的功能
 
-### 1. `central` 字段（卡牌中央描述）
+### `central` 字段（卡牌中央描述）
 
-**当前状态：** 使用默认值 `${cardName}卡牌`（如"己未卡牌"）
+**当前状态：** ✅ 已完成，从硬编码映射表获取
 
-**需要确认：**
-- [ ] 是否有60甲子的 `central` 固定数据？
-- [ ] 数据存储在哪里？（数据库表？JSON文件？）
-- [ ] 还是需要通过 Coze 生成？
+**实现方式：**
+- 从 `docs/六十甲子卡牌完整数据.json` 提取所有60个甲子的 `central` 字段
+- 创建 `CARD_CENTRAL_MAP` 映射表硬编码到代码中
+- 通过 `getCardCentral()` 函数获取对应干支的 `central` 描述
+- 生成数据时自动填充 `central` 字段
 
-**实现方案：**
+**数据来源：** `docs/六十甲子卡牌完整数据.json`
 
-**方案A：从数据库查询**
-```javascript
-// 在 generateCardBaseInfo 函数中添加
-const cardBaseResult = await db.collection('jiazi_cards_base')
-  .where({ cardNumber: cardNumber })
-  .get();
-
-const cardBase = cardBaseResult.data[0];
-return {
-  ...baseInfo,
-  central: cardBase.central
-};
-```
-
-**方案B：代码中定义映射表**
-```javascript
-const CARD_CENTRAL_MAP = {
-  '甲子': '一只身着兽皮，手拿令牌的鼠官。',
-  '乙丑': '一头背负重物的牛。',
-  // ... 其他58个
-};
-
-// 使用时
-central: CARD_CENTRAL_MAP[ganZhiName] || `${ganZhiName}卡牌`
-```
-
-**方案C：通过Coze工作流生成**
-- 创建新的工作流专门生成 `central` 描述
-- 在云函数中额外调用该工作流
-
-**注：** `central` 字段暂时留空，`description` 字段已移除（不需要）
+**注：** `description` 字段已移除（不需要）
 
 ### 定时触发器配置
 

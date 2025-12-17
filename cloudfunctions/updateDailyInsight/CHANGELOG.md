@@ -2,6 +2,14 @@
 
 ## 2025-01-17 (最新)
 
+### ✅ 添加 central 字段映射
+
+**硬编码 central 数据：**
+- 从 `docs/六十甲子卡牌完整数据.json` 提取所有60个甲子的 `central` 字段
+- 创建 `CARD_CENTRAL_MAP` 映射表硬编码到代码中
+- 添加 `getCardCentral()` 函数用于获取 central 描述
+- 生成数据时自动填充 `central` 字段
+
 ### ✅ 性能优化 - 并发调用
 
 **并发处理模式：**
