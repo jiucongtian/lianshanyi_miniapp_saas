@@ -214,18 +214,42 @@ async function callCozeWorkflow(caiNeng, ganZhi) {
       throw new Error(`Coze API 返回错误: ${response.data.msg || '未知错误'}`);
     }
     
-    // 解析 output 字段
-    if (response.data.data && response.data.data.output) {
+    // 解析返回数据（data字段可能是字符串或对象）
+    let dataObj = response.data.data;
+    
+    // 如果data是字符串，先解析第一层
+    if (typeof dataObj === 'string') {
       try {
-        const parsedOutput = JSON.parse(response.data.data.output);
+        dataObj = JSON.parse(dataObj);
+        console.log('[callCozeWorkflow] 第一层解析结果:', dataObj);
+      } catch (parseError) {
+        console.error('[callCozeWorkflow] 第一层JSON解析失败:', parseError);
+        throw new Error('解析Coze返回数据失败：第一层JSON解析错误');
+      }
+    }
+    
+    // 提取output字段（可能是字符串或对象）
+    let output = dataObj.output;
+    
+    if (!output) {
+      throw new Error('Coze返回数据格式错误：缺少output字段');
+    }
+    
+    // 如果output是字符串，需要再次解析
+    if (typeof output === 'string') {
+      try {
+        const parsedOutput = JSON.parse(output);
         console.log('[callCozeWorkflow] 解析的output内容:', parsedOutput);
         return parsedOutput;
       } catch (parseError) {
-        console.error('[callCozeWorkflow] 解析output失败:', parseError);
-        throw new Error('解析Coze返回数据失败');
+        console.error('[callCozeWorkflow] output JSON解析失败:', parseError);
+        console.error('[callCozeWorkflow] output原始内容:', output);
+        throw new Error('解析Coze返回数据失败：output JSON解析错误');
       }
     } else {
-      throw new Error('Coze返回数据格式错误');
+      // output已经是对象，直接返回
+      console.log('[callCozeWorkflow] output已经是对象:', output);
+      return output;
     }
   } catch (error) {
     console.error('[callCozeWorkflow] 调用Coze工作流失败:', error);
