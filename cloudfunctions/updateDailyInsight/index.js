@@ -443,70 +443,169 @@ async function processSingleGanZhi(ganZhiName, index, total) {
 }
 
 /**
+ * 查询数据库中已有的 cardNumber
+ * @returns {Promise<Set<number>>} 已有的 cardNumber 集合
+ */
+async function getExistingCardNumbers() {
+  try {
+    console.log('[getExistingCardNumbers] 查询数据库中已有的 cardNumber...');
+    
+    // 查询所有有效的记录
+    const result = await db.collection('test_daily_insights')
+      .where({ isActive: true })
+      .field({ cardNumber: true })
+      .get();
+    
+    const existingNumbers = new Set();
+    result.data.forEach(item => {
+      if (item.cardNumber && item.cardNumber >= 1 && item.cardNumber <= 60) {
+        existingNumbers.add(item.cardNumber);
+      }
+    });
+    
+    console.log('[getExistingCardNumbers] 查询完成，已有数量:', existingNumbers.size);
+    console.log('[getExistingCardNumbers] 已有的 cardNumber:', Array.from(existingNumbers).sort((a, b) => a - b));
+    
+    return existingNumbers;
+  } catch (error) {
+    console.error('[getExistingCardNumbers] 查询失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 找出缺失的 cardNumber，并转换为对应的干支名称列表
+ * @param {Set<number>} existingNumbers - 已有的 cardNumber 集合
+ * @param {number} maxGenerateCount - 最多生成的数量（默认5个）
+ * @returns {Array<string>} 需要生成的干支名称列表
+ */
+function findMissingGanZhiList(existingNumbers, maxGenerateCount = 5) {
+  const missingNumbers = [];
+  
+  // 找出所有缺失的编号（1-60）
+  for (let i = 1; i <= 60; i++) {
+    if (!existingNumbers.has(i)) {
+      missingNumbers.push(i);
+    }
+  }
+  
+  console.log('[findMissingGanZhiList] 缺失的 cardNumber 总数:', missingNumbers.length);
+  console.log('[findMissingGanZhiList] 缺失的 cardNumber:', missingNumbers);
+  
+  // 如果缺失数量为0，返回空数组
+  if (missingNumbers.length === 0) {
+    return [];
+  }
+  
+  // 限制生成数量（最多生成 maxGenerateCount 个）
+  const numbersToGenerate = missingNumbers.slice(0, maxGenerateCount);
+  console.log('[findMissingGanZhiList] 本次需要生成的 cardNumber:', numbersToGenerate);
+  
+  // 将编号转换为对应的干支名称
+  const ganZhiList = numbersToGenerate.map(cardNumber => {
+    // 从编号反查干支名称
+    const ganZhiName = Object.keys(CARD_NAME_TO_NUMBER).find(
+      name => CARD_NAME_TO_NUMBER[name] === cardNumber
+    );
+    
+    if (!ganZhiName) {
+      console.error(`[findMissingGanZhiList] 未找到编号 ${cardNumber} 对应的干支名称`);
+      return null;
+    }
+    
+    return ganZhiName;
+  }).filter(name => name !== null);
+  
+  console.log('[findMissingGanZhiList] 需要生成的干支列表:', ganZhiList);
+  
+  return ganZhiList;
+}
+
+/**
  * 并发处理多个干支（控制并发数量）
  */
-async function processBatchConcurrent(ganZhiList, startIndex, concurrency = 5) {
-  const batch = ganZhiList.slice(startIndex, startIndex + concurrency);
+async function processBatchConcurrent(ganZhiList, concurrency = 5) {
   const total = ganZhiList.length;
+  const actualConcurrency = Math.min(concurrency, total);
   
-  console.log(`\n[批次处理] 处理 ${startIndex + 1}-${Math.min(startIndex + concurrency, total)}/${total}`);
+  console.log(`\n[批次处理] 处理 ${total} 个干支，并发数: ${actualConcurrency}`);
   
-  // 并发执行这一批
-  const promises = batch.map((ganZhiName, batchIndex) => {
-    const globalIndex = startIndex + batchIndex;
-    return processSingleGanZhi(ganZhiName, globalIndex, total);
+  // 并发执行
+  const promises = ganZhiList.map((ganZhiName, index) => {
+    return processSingleGanZhi(ganZhiName, index, total);
   });
   
-  // 等待这一批全部完成
+  // 等待全部完成
   const results = await Promise.all(promises);
   
   return results;
 }
 
 /**
- * 主函数：批量更新所有60甲子的日报数据（并发模式）
+ * 主函数：增量更新缺失的60甲子日报数据
  */
 async function updateAllDailyInsights(options = {}) {
   const startTime = Date.now();
   const concurrency = options.concurrency || 5; // 默认并发数5个
+  const maxGenerateCount = concurrency; // 每次最多生成的数量等于并发数
   
   try {
     console.log('========================================');
-    console.log('[updateAllDailyInsights] 开始批量更新所有60甲子日报数据');
-    console.log('[updateAllDailyInsights] 总数:', ALL_GANZHI_LIST.length);
+    console.log('[updateAllDailyInsights] 开始增量更新60甲子日报数据');
     console.log('[updateAllDailyInsights] 并发数:', concurrency);
-    console.log('[updateAllDailyInsights] 预计批次:', Math.ceil(ALL_GANZHI_LIST.length / concurrency));
+    console.log('[updateAllDailyInsights] 每次最多生成数量:', maxGenerateCount);
     console.log('========================================');
     
+    // 1. 查询数据库中已有的 cardNumber
+    const existingNumbers = await getExistingCardNumbers();
+    
+    // 2. 找出缺失的编号，并转换为干支名称列表
+    const ganZhiListToGenerate = findMissingGanZhiList(existingNumbers, maxGenerateCount);
+    
+    // 3. 如果所有数据都已存在，直接返回成功
+    if (ganZhiListToGenerate.length === 0) {
+      console.log('[updateAllDailyInsights] 所有60个甲子数据都已存在，无需生成');
+      return {
+        success: true,
+        message: '所有数据都已存在，无需生成',
+        data: {
+          total: 60,
+          existingCount: existingNumbers.size,
+          missingCount: 0,
+          generatedCount: 0,
+          successCount: 0,
+          errorCount: 0,
+          totalTime: ((Date.now() - startTime) / 1000).toFixed(2),
+          concurrency: concurrency,
+          results: [],
+          errors: []
+        },
+        timestamp: new Date().getTime()
+      };
+    }
+    
+    console.log(`[updateAllDailyInsights] 需要生成 ${ganZhiListToGenerate.length} 个干支数据`);
+    
+    // 4. 并发处理需要生成的干支
+    const results = await processBatchConcurrent(ganZhiListToGenerate, concurrency);
+    
+    // 5. 分类结果
     const allResults = [];
     const allErrors = [];
     
-    // 分批并发处理
-    for (let i = 0; i < ALL_GANZHI_LIST.length; i += concurrency) {
-      const batchResults = await processBatchConcurrent(ALL_GANZHI_LIST, i, concurrency);
-      
-      // 分类结果
-      batchResults.forEach(result => {
-        if (result.success) {
-          allResults.push(result);
-        } else {
-          allErrors.push(result);
-        }
-      });
-      
-      // 批次间延迟（避免过快触发频率限制）
-      if (i + concurrency < ALL_GANZHI_LIST.length) {
-        const delayMs = options.batchDelayMs || 1000; // 批次间延迟1秒
-        console.log(`[批次完成] 等待 ${delayMs}ms 后继续下一批...`);
-        await delay(delayMs);
+    results.forEach(result => {
+      if (result.success) {
+        allResults.push(result);
+      } else {
+        allErrors.push(result);
       }
-    }
+    });
     
     const endTime = Date.now();
     const totalTime = ((endTime - startTime) / 1000).toFixed(2);
     
     console.log('\n========================================');
-    console.log('[updateAllDailyInsights] 批量更新完成');
+    console.log('[updateAllDailyInsights] 增量更新完成');
     console.log('[updateAllDailyInsights] 总耗时:', totalTime, '秒');
     console.log('[updateAllDailyInsights] 成功:', allResults.length);
     console.log('[updateAllDailyInsights] 失败:', allErrors.length);
@@ -514,9 +613,12 @@ async function updateAllDailyInsights(options = {}) {
     
     return {
       success: allErrors.length === 0,
-      message: `批量更新完成，成功${allResults.length}条，失败${allErrors.length}条`,
+      message: `增量更新完成，成功${allResults.length}条，失败${allErrors.length}条`,
       data: {
-        total: ALL_GANZHI_LIST.length,
+        total: 60,
+        existingCount: existingNumbers.size,
+        missingCount: 60 - existingNumbers.size,
+        generatedCount: ganZhiListToGenerate.length,
         successCount: allResults.length,
         errorCount: allErrors.length,
         totalTime: totalTime,
@@ -528,12 +630,12 @@ async function updateAllDailyInsights(options = {}) {
     };
   } catch (error) {
     console.error('\n========================================');
-    console.error('[updateAllDailyInsights] 批量更新失败:', error);
+    console.error('[updateAllDailyInsights] 增量更新失败:', error);
     console.error('========================================');
     
     return {
       success: false,
-      error: error.message || '批量更新失败',
+      error: error.message || '增量更新失败',
       timestamp: new Date().getTime()
     };
   }
@@ -547,12 +649,18 @@ exports.main = async (event, context) => {
   
   try {
     // 支持传入并发参数（用于控制并发数量）
-    // 格式: { concurrency: 5, batchDelayMs: 1000 }
-    // - concurrency: 并发数量（默认5个）
-    // - batchDelayMs: 批次间延迟（默认1秒）
+    // 格式: { concurrency: 5 }
+    // - concurrency: 并发数量（默认5个），也是每次调用最多生成的数量
+    // 
+    // 执行逻辑：
+    // 1. 查询数据库中已有的 cardNumber
+    // 2. 找出缺失的编号（1-60中不在数据库中的）
+    // 3. 如果缺失数量 > 0：
+    //    - 如果缺失数量 <= concurrency：生成所有缺失的
+    //    - 如果缺失数量 > concurrency：只生成前 concurrency 个缺失的
+    // 4. 如果缺失数量 = 0：返回成功，不生成任何数据
     const result = await updateAllDailyInsights({
-      concurrency: event.concurrency || 5,
-      batchDelayMs: event.batchDelayMs || 1000
+      concurrency: event.concurrency || 5
     });
     
     return result;
