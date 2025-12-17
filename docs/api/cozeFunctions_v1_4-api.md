@@ -64,8 +64,8 @@
 
 | 参数名 | 类型 | 必填 | 说明 | 示例 |
 |--------|------|------|------|------|
-| caning | string | 是 | 参数值（字符串格式） | "5" |
-| ganzhiname | string | 是 | 干支名称（60甲子之一） | "己未" |
+| cai_neng | string | 是 | 爻位数字（字符串格式） | "2" 或 "5" |
+| gan_zhi | string | 是 | 干支名称（60甲子之一） | "己未" |
 
 ## 返回数据
 
@@ -86,8 +86,8 @@
   "workflowType": "GET_DAILY_INSIGHT",
   "workflowId": "7583167143870382106",
   "parameters": {
-    "caning": "5",
-    "ganzhiname": "己未"
+    "cai_neng": "2",
+    "gan_zhi": "己未"
   },
   "openid": "用户openid",
   "appid": "小程序appid",
@@ -154,7 +154,43 @@
 
 ## 使用示例
 
-### GET_DAILY_INSIGHT 工作流调用示例
+### 方式1：通过 Service 层调用（推荐）
+
+```javascript
+// 引入 DailyInsightService
+const { dailyInsightService } = require('../../services/DailyInsightService');
+
+// 调用 getDailyInsightFromCoze 方法
+const result = await dailyInsightService.getDailyInsightFromCoze('2', '己未');
+
+// 处理返回结果
+if (result.success) {
+  console.log('✅ 获取成功');
+  
+  // 方式1：使用Service自动解析的数据
+  if (result.data.parsedOutput) {
+    console.log('祝福语:', result.data.parsedOutput.blessing);
+    console.log('通关密码:', result.data.parsedOutput.password);
+    console.log('提示:', result.data.parsedOutput.tip);
+  }
+  
+  // 方式2：手动解析（如果Service未解析）
+  if (result.data.data && result.data.data.output) {
+    try {
+      const dailyInsight = JSON.parse(result.data.data.output);
+      console.log('祝福语:', dailyInsight.blessing);
+      console.log('通关密码:', dailyInsight.password);
+      console.log('提示:', dailyInsight.tip);
+    } catch (parseError) {
+      console.error('解析失败:', parseError);
+    }
+  }
+} else {
+  console.error('❌ 获取失败:', result.error);
+}
+```
+
+### 方式2：直接调用云函数
 
 ```javascript
 const { VersionManager } = require('../../utils/manager/versionManager');
@@ -168,8 +204,8 @@ const result = await wx.cloud.callFunction({
   data: {
     workflowType: 'GET_DAILY_INSIGHT',
     parameters: {
-      caning: '5',
-      ganzhiname: '己未'
+      cai_neng: '2',  // 爻位数字
+      gan_zhi: '己未'  // 干支名称
     }
   }
 });
