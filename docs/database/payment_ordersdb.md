@@ -17,8 +17,21 @@
 | prepay_id | string | 否 | - | 预支付交易会话ID，微信支付统一下单接口返回 |
 | description | string | 是 | - | 商品描述，最多127个字符 |
 | amount | number | 是 | - | 订单金额，单位：分 |
-| orderType | string | 否 | 索引 | 订单类型，用于业务区分（如：upgrade_premium、recharge_quota等），默认"default" |
+| orderType | string | 否 | 索引 | 订单类型，用于业务区分（如：upgrade_premium、function_payment等），默认"default" |
 | orderData | object | 否 | - | 订单附加数据，用于存储业务相关信息（如：targetUserType、quota等） |
+| functionCode | string | 否 | 索引 | 功能编码（功能付费订单专用，如：wisdom_insight、ai_report） |
+| functionName | string | 否 | - | 功能名称（功能付费订单专用） |
+| grantData | object | 否 | - | 权益发放配置（快照商品信息，用于支付成功后发放权益） |
+| grantData.type | string | 否 | - | 发货类型（如：grant_function_quota） |
+| grantData.functionCode | string | 否 | - | 功能编码 |
+| grantData.quantity | number | 否 | - | 发放次数 |
+| grantInfo | object | 否 | - | 权益发放信息（记录发放状态和结果） |
+| grantInfo.status | string | 否 | - | 发放状态：pending（待发放）/ granted（已发放）/ failed（发放失败） |
+| grantInfo.grantTime | date | 否 | - | 权益发放时间 |
+| grantInfo.grantResult | object | 否 | - | 发放结果对象 |
+| grantInfo.grantResult.success | boolean | 否 | - | 发放是否成功 |
+| grantInfo.grantResult.message | string | 否 | - | 发放结果消息 |
+| grantInfo.errorMessage | string | 否 | - | 发放失败时的错误信息 |
 | status | string | 是 | 索引 | 订单状态（NOTPAY/SUCCESS/CLOSED/REFUND/REVOKED/USERPAYING/PAYERROR），默认"NOTPAY" |
 | transaction_id | string | 否 | - | 微信支付交易号，支付成功后由微信支付回调返回 |
 | createTime | date | 是 | 索引 | 订单创建时间 |
@@ -114,7 +127,46 @@
 |-----------|------|---------------|
 | upgrade_premium | 升级为高级用户 | `{ "targetUserType": "premium" }` |
 | recharge_quota | 充值配额 | `{ "quota": 10 }` |
+| function_payment | 功能按次付费 | `{}` (使用 grantData 字段) |
 | default | 默认订单类型 | `{}` |
+
+### 功能付费订单示例
+
+```json
+{
+  "_id": "order_func_pay_001",
+  "openid": "oABCD1234567890abcdef1234567890ab",
+  "appid": "wx1234567890abcdef",
+  "out_trade_no": "ORDER_1702886400000_func123",
+  "prepay_id": "wx1234567890abcdef1234567890",
+  "description": "智慧洞见",
+  "amount": 190,
+  "orderType": "function_payment",
+  "orderData": {},
+  "functionCode": "wisdom_insight",
+  "functionName": "智慧洞见",
+  "grantData": {
+    "type": "grant_function_quota",
+    "functionCode": "wisdom_insight",
+    "quantity": 1
+  },
+  "grantInfo": {
+    "status": "granted",
+    "grantTime": "2024-12-18T08:00:15.000Z",
+    "grantResult": {
+      "success": true,
+      "message": "配额发放成功"
+    },
+    "errorMessage": ""
+  },
+  "status": "SUCCESS",
+  "transaction_id": "4200001234567890123456789",
+  "createTime": "2024-12-18T08:00:00.000Z",
+  "updateTime": "2024-12-18T08:00:15.000Z",
+  "payTime": "2024-12-18T08:00:10.000Z",
+  "isActive": true
+}
+```
 
 ## 支付流程
 
@@ -124,6 +176,62 @@
 4. **支付回调**: 微信支付发送回调通知，更新订单状态为SUCCESS
 5. **业务处理**: 根据orderType执行相应的业务逻辑
 
+## 功能付费订单处理流程
+
+### 订单创建流程
+1. 客户端调用 `paymentManagement.createFunctionOrder({ functionCode })`
+2. 云函数从 `function_products` 表查询商品信息
+3. 创建订单，快照商品信息到 `grantData` 字段
+4. 初始化 `grantInfo.status = 'pending'`
+5. 调用微信支付统一下单接口
+6. 返回支付参数给客户端
+
+### 支付成功处理流程
+1. 微信支付回调通知
+2. 验证签名，更新订单状态为 SUCCESS
+3. 根据 `grantData.type` 执行权益发放：
+   - 如果 `type = 'grant_function_quota'`，调用 `functionQuotaManagement.grantQuota`
+   - 传递参数：functionCode, quantity, orderId
+4. 更新 `grantInfo` 字段：
+   - 成功：`status='granted'`, `grantTime`, `grantResult`
+   - 失败：`status='failed'`, `errorMessage`
+
+### 权益发放状态说明
+
+| 状态 | 说明 | 后续操作 |
+|-----|------|---------|
+| pending | 待发放 | 支付成功后自动发放 |
+| granted | 已发放 | 无需操作，用户可使用 |
+| failed | 发放失败 | 需要人工介入，手动补发或退款 |
+
+### 查询发放失败的订单
+```javascript
+// 查询需要人工处理的订单
+const failedOrders = await db.collection('payment_orders')
+  .where({
+    orderType: 'function_payment',
+    status: 'SUCCESS',
+    'grantInfo.status': 'failed'
+  })
+  .get();
+
+console.log('需要处理的失败订单:', failedOrders.data);
+```
+
+## 与其他表的关联（功能付费）
+
+### 关联表
+- **function_products表**: 多对一关系
+  - 外键: `payment_orders.functionCode` 关联 `function_products.functionCode`
+  - 关系描述: 订单关联到具体的功能商品
+
+- **function_quotas表**: 间接关联
+  - 关系描述: 支付成功后，根据 grantData 发放配额到 function_quotas 表
+
+- **function_usage_records表**: 一对多关系
+  - 外键: `function_usage_records.orderId` 关联 `payment_orders._id`
+  - 关系描述: 使用付费配额时，记录关联的订单ID
+
 ## 扩展性考虑
 
 1. **订单查询**: 支持按时间范围、状态、订单类型等条件查询
@@ -132,4 +240,14 @@
 4. **订单超时**: 可添加定时任务自动关闭超时订单
 5. **订单日志**: 可添加订单操作日志记录订单状态变更历史
 6. **多支付方式**: 可扩展支持其他支付方式（如：支付宝、银行卡等）
+7. **权益补发**: 支持手动重新发放失败的权益
+
+## 注意事项（功能付费）
+
+⚠️ **重要**：
+1. `grantData` 字段快照商品信息，价格调整不影响已创建订单
+2. `grantInfo` 字段记录权益发放状态，便于问题排查
+3. 权益发放失败时，需要人工介入处理（补发或退款）
+4. 查询功能付费订单时，通过 `orderType='function_payment'` 筛选
+5. `functionCode` 字段用于关联功能商品和使用记录
 

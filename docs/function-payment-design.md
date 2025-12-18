@@ -1462,21 +1462,29 @@ exports.main = async (event) => {
 - ✅ **不需要调整数据表**，沿用现有机制
 
 **实现方式**（参考抽卡功能的实现）：
-1. **免费配额配置**：在 `static_user_types` 表中新增字段配置免费配额
-   - 字段名：`dailyWisdomInsightQuota`（智慧洞见）、`dailyAiReportQuota`（AI出报告）
-   - 配置方式：类似 `dailyDrawQuota`，0=不可用，正整数=每日次数，-1=无限
+1. **免费配额配置**：在 `static_user_types` 表中配置免费配额
+   - **智慧洞见**：复用现有的 `dailyDrawQuota` 字段（⚠️ 抽卡功能和智慧洞见是同一个功能）
+     - guest: 0次（不可用）
+     - normal: 1次/天
+     - premium: 无限（-1）
+   - **AI出报告**：新增 `dailyAiReportQuota` 字段
+     - guest: 0次（不可用）
+     - normal: 1次/天
+     - premium: 无限（-1）
+   - 配置方式：0=不可用，正整数=每日次数，-1=无限
 
 2. **使用记录**：通过 `function_usage_records` 表记录每次使用
    - 记录字段：`functionCode`、`usageTime`、`usageDate`（YYYY-MM-DD格式）
 
 3. **配额检查**：查询 `function_usage_records` 表统计每日使用次数
-   - 免费配额 = 用户类型配置的每日配额
+   - 智慧洞见免费配额 = `dailyDrawQuota`（复用现有字段）
+   - AI出报告免费配额 = `dailyAiReportQuota`（新增字段）
    - 已使用次数 = 查询当日使用记录数
    - 剩余配额 = 免费配额 - 已使用次数
 
 **数据表调整**：
 - ✅ **不需要新增数据表**
-- ✅ 在 `static_user_types` 表中新增字段（类似 `dailyDrawQuota`）
+- ✅ 在 `static_user_types` 表中新增 `dailyAiReportQuota` 字段（智慧洞见复用 `dailyDrawQuota`）
 - ✅ 使用 `function_usage_records` 表记录使用记录
 
 ### 3. 配额有效期 ✅
