@@ -66,35 +66,43 @@ graph TD
 
 #### 1.1 创建数据库文档
 
-- [ ] **创建 `function_products_db.md`**
-  - 位置：`docs/database/function_products_db.md`
+- [x] **创建 `function_products_db.md`** ✅
+  - 位置：`docs/database/function_productsdb.md`
   - 内容：功能商品表的完整结构定义
   - 包含：字段说明、索引设计、数据示例
+  - **状态**：已完成
 
-- [ ] **创建 `function_quotas_db.md`**
-  - 位置：`docs/database/function_quotas_db.md`
+- [x] **创建 `function_quotas_db.md`** ✅
+  - 位置：`docs/database/function_quotasdb.md`
   - 内容：用户功能配额表的结构定义
   - 包含：字段说明、索引设计、配额计算逻辑
+  - **状态**：已完成
 
-- [ ] **创建 `function_usage_records_db.md`**
-  - 位置：`docs/database/function_usage_records_db.md`
+- [x] **创建 `function_usage_records_db.md`** ✅
+  - 位置：`docs/database/function_usage_recordsdb.md`
   - 内容：功能使用记录表的结构定义
   - 包含：字段说明、索引设计、统计查询示例
+  - **状态**：已完成
 
-- [ ] **更新 `payment_orders_db.md`**
+- [x] **更新 `payment_orders_db.md`** ✅
   - 新增：功能付费相关字段（`orderType`, `functionCode`, `grantInfo`）
   - 更新：字段说明和示例数据
+  - **状态**：已完成
 
-- [ ] **更新 `static_user_types_db.md`**
-  - 新增：免费配额字段（`dailyWisdomInsightQuota`, `dailyAiReportQuota`）
+- [x] **更新 `user_types_db.md`** ✅
+  - 更新：字段复用说明（智慧洞见复用 `dailyDrawQuota`，新增 `dailyAiReportQuota`）
   - 更新：字段说明和配置示例
+  - **配置值**：guest=0次, normal=1次/天, premium=无限
+  - **状态**：已完成
 
 #### 1.2 准备初始化数据
 
-- [ ] **创建商品初始化脚本**
-  - 文件：`docs/tools/init_function_products.js`
+- [x] **创建商品初始化脚本** ✅
+  - 文件：`docs/tools/init_function_products.js`（独立版本）
+  - 云函数：`cloudfunctions/tempInitFunctionPayment/index.js`（推荐使用）
   - 内容：初始化 2 个功能商品（智慧洞见、AI出报告）
   - 包含：完整的 `callConfig` 和 `grantData` 配置
+  - **状态**：已完成
 
 ```javascript
 // 初始化数据示例
@@ -148,60 +156,148 @@ const products = [
 ];
 ```
 
-- [ ] **创建用户类型配置脚本**
-  - 文件：`docs/tools/update_user_types_config.js`
-  - 内容：为所有用户类型添加免费配额配置
-
-```javascript
-// 用户类型配置示例
-const userTypeConfigs = {
-  guest: {
-    dailyWisdomInsightQuota: 1,  // 游客每天1次
-    dailyAiReportQuota: 0        // 游客不可用
-  },
-  normal: {
-    dailyWisdomInsightQuota: 3,  // 普通用户每天3次
-    dailyAiReportQuota: 1        // 普通用户每天1次
-  },
-  premium: {
-    dailyWisdomInsightQuota: -1, // 高级用户无限
-    dailyAiReportQuota: -1       // 高级用户无限
-  }
-};
-```
+- [x] **创建用户类型配置脚本** ✅
+  - 文件：`docs/tools/update_user_types_config.js`（独立版本）
+  - 云函数：`cloudfunctions/tempInitFunctionPayment/index.js`（推荐使用）
+  - 内容：为所有用户类型添加 `dailyAiReportQuota` 字段
+  - **重要**：智慧洞见复用现有的 `dailyDrawQuota` 字段，不新增字段
+  - **配置值**：
+    - guest: dailyDrawQuota=0（不可用）, dailyAiReportQuota=0（不可用）
+    - normal: dailyDrawQuota=1次/天, dailyAiReportQuota=1次/天
+    - premium: dailyDrawQuota=-1（无限）, dailyAiReportQuota=-1（无限）
+  - **状态**：已完成
 
 #### 1.3 执行数据库初始化
 
-- [ ] **云端创建数据库集合**
+- [x] **云端创建数据库集合** ✅
   - 集合名：`function_products`
   - 权限设置：仅管理端可读写
   - 索引：`functionCode` (唯一索引), `status`
+  - **状态**：已完成，数据已初始化
 
-- [ ] **云端创建数据库集合**
+- [ ] **云端创建数据库集合** ⏳
   - 集合名：`function_quotas`
   - 权限设置：仅管理端可读写
-  - 索引：`openid` (唯一索引), `userId`
+  - 索引：`openid` (唯一索引) ⚠️ **必须创建**, `userId` (普通索引)
+  - **状态**：待执行
 
-- [ ] **云端创建数据库集合**
+- [ ] **云端创建数据库集合** ⏳
   - 集合名：`function_usage_records`
   - 权限设置：仅管理端可读写
-  - 索引：`openid`, `functionCode`, `usageTime` (降序), `orderId`
+  - 索引：`openid`, `functionCode`, `usageTime` (降序), `usageDate`, `orderId`
+  - **状态**：待执行
 
-- [ ] **导入初始化数据**
-  - 执行商品初始化脚本
-  - 更新用户类型配置
+- [x] **导入初始化数据** ✅（部分完成）
+  - ✅ 执行商品初始化脚本 - 已完成，商品数据验证通过
+  - ⏳ 更新用户类型配置 - 待执行（需要执行 `updateUserTypes` action）
+  - **下一步**：执行云函数 `tempInitFunctionPayment`，action: `updateUserTypes`
 
 ### ✅ 验收标准
 
-- [ ] 所有数据库文档已创建并提交到 `docs/database/`
-- [ ] 初始化脚本可正常运行
-- [ ] 云端数据库集合已创建，索引已设置
-- [ ] 商品数据已导入，查询正常
-- [ ] 用户类型配置已更新
+- [x] 所有数据库文档已创建并提交到 `docs/database/` ✅
+  - function_productsdb.md ✅
+  - function_quotasdb.md ✅
+  - function_usage_recordsdb.md ✅
+  - payment_ordersdb.md（已更新）✅
+  - user_typesdb.md（已更新）✅
+
+- [x] 初始化脚本可正常运行 ✅
+  - tempInitFunctionPayment 云函数已创建 ✅
+  - 支持一键初始化和分步执行 ✅
+
+- [x] 云端数据库集合已创建，索引已设置（部分完成）✅⏳
+  - function_products ✅ 已创建并初始化
+  - function_quotas ⏳ 待创建
+  - function_usage_records ⏳ 待创建
+
+- [x] 商品数据已导入，查询正常 ✅
+  - 智慧洞见（1.9元）✅
+  - AI出报告（9.9元）✅
+  - 验证通过 ✅
+
+- [ ] 用户类型配置已更新 ⏳
+  - 需要执行 `updateUserTypes` action 添加 `dailyAiReportQuota` 字段
+  - 智慧洞见使用现有的 `dailyDrawQuota` 字段（已确认配置值正确）
 
 ### ⏱️ 预计工时
 
 **2个工作日**
+
+### 📊 Phase 1 当前进度
+
+**完成度：约 70%**
+
+#### ✅ 已完成任务
+1. ✅ **数据库文档**（5个文档全部完成）
+   - function_productsdb.md
+   - function_quotasdb.md
+   - function_usage_recordsdb.md
+   - payment_ordersdb.md（已更新功能付费字段）
+   - user_typesdb.md（已更新字段复用说明）
+
+2. ✅ **初始化脚本**（tempInitFunctionPayment 云函数）
+   - 支持一键初始化（`initAll`）
+   - 支持分步执行和验证
+   - 自动检测用户类型表名
+   - 智能跳过已存在数据
+
+3. ✅ **数据库集合创建**（部分完成）
+   - function_products ✅ 已创建并初始化
+   - function_quotas ⏳ 待创建
+   - function_usage_records ⏳ 待创建
+
+4. ✅ **商品数据初始化**
+   - 智慧洞见（1.9元/次）✅ 已导入并验证通过
+   - AI出报告（9.9元/次）✅ 已导入并验证通过
+
+5. ✅ **字段复用方案确认**
+   - 智慧洞见复用 `dailyDrawQuota` 字段 ✅
+   - 配置值已更新：guest=0, normal=1, premium=-1 ✅
+
+#### ⏳ 待执行任务
+1. ⏳ **更新用户类型配置**
+   - 执行云函数：`{ "action": "updateUserTypes" }`
+   - 为每个用户类型添加 `dailyAiReportQuota` 字段
+   - 验证配置正确性
+
+2. ⏳ **创建 function_quotas 集合**
+   - 集合名称：`function_quotas`
+   - 权限：仅管理端可读写
+   - **必须创建唯一索引**：`openid`
+
+3. ⏳ **创建 function_usage_records 集合**
+   - 集合名称：`function_usage_records`
+   - 权限：仅管理端可读写
+   - 创建索引：`openid`, `functionCode`, `usageTime`(降序), `usageDate`, `orderId`
+
+4. ⏳ **完整验证**
+   - 执行云函数：`{ "action": "validateAll" }`
+   - 验证商品数据、用户类型配置、数据完整性
+
+#### 📝 下一步操作指南
+
+**步骤1：更新用户类型配置**
+```json
+// 在云函数测试中执行
+{
+  "action": "updateUserTypes"
+}
+```
+
+**步骤2：创建数据库集合**
+- 云开发控制台 → 数据库 → 创建集合
+- function_quotas（设置唯一索引：openid）
+- function_usage_records（设置多个索引）
+
+**步骤3：验证所有数据**
+```json
+// 在云函数测试中执行
+{
+  "action": "validateAll"
+}
+```
+
+**详细步骤请参考：** `docs/QUICK-START-PHASE1.md`
 
 ---
 
