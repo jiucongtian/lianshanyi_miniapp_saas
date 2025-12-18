@@ -1,0 +1,11 @@
+{
+  "name": "auto_updateDailyInsight",
+  "version": "1.0.0",
+  "description": "定时更新日报数据云函数 - 调用Coze工作流生成每日卡牌解读",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "axios": "^0.27.2"
+  }
+}
+

@@ -1,4 +1,4 @@
-// 云函数入口文件
+ // 云函数入口文件
 const cloud = require('wx-server-sdk')
 const axios = require('axios')
 
@@ -32,6 +32,9 @@ const COZE_CONFIG = {
 const WORKFLOW_TYPES = {
   DRAW_CARD: '7565131575660003366',        // 抽卡牌工作流
   GEN_BAZI: '7544388114807095337',         // 生成八字工作流
+  GET_DAILY_INSIGHT: '7583167143870382106', // 获取日报工作流
+  // 参数格式: { caning: "5", ganzhiname: "己未" }
+  // 返回值: { output: "{\"blessing\":\"...\",\"password\":\"...\",\"tip\":\"...\"}" }
   // 后续可以在这里添加更多工作流
   // WORKFLOW_NAME: 'workflow_id',
 }
