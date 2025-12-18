@@ -1,0 +1,10 @@
+{
+  "name": "functionQuotaManagement_v1_4",
+  "version": "1.4.0",
+  "description": "功能配额管理云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
+
