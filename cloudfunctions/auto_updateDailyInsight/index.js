@@ -348,7 +348,7 @@ async function saveDailyInsight(cardData) {
     });
     
     // 使用 cardNumber 作为唯一标识（因为每个干支对应一个固定的卡牌编号）
-    const existingResult = await db.collection('test_daily_insights')
+    const existingResult = await db.collection('daily_insights')
       .where({ cardNumber: cardData.cardNumber })
       .get();
     
@@ -359,7 +359,7 @@ async function saveDailyInsight(cardData) {
       const existingId = existingResult.data[0]._id;
       console.log('[saveDailyInsight] 更新现有记录:', existingId);
       
-      await db.collection('test_daily_insights')
+      await db.collection('daily_insights')
         .doc(existingId)
         .update({
           data: {
@@ -375,7 +375,7 @@ async function saveDailyInsight(cardData) {
       // 插入新记录
       console.log('[saveDailyInsight] 插入新记录');
       
-      const addResult = await db.collection('test_daily_insights')
+      const addResult = await db.collection('daily_insights')
         .add({
           data: {
             ...cardData,
@@ -451,7 +451,7 @@ async function getExistingCardNumbers() {
     console.log('[getExistingCardNumbers] 查询数据库中已有的 cardNumber...');
     
     // 查询所有有效的记录
-    const result = await db.collection('test_daily_insights')
+    const result = await db.collection('daily_insights')
       .where({ isActive: true })
       .field({ cardNumber: true })
       .get();
