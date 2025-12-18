@@ -44,9 +44,9 @@ async function batchUpdateDailyInsight(startDate, days, delayMs = 2000) {
       
       console.log(`\n[${i + 1}/${days}] 开始处理日期: ${dateStr}`);
       
-      // 调用 updateDailyInsight 云函数
+      // 调用 auto_updateDailyInsight 云函数
       const result = await cloud.callFunction({
-        name: 'updateDailyInsight',
+        name: 'auto_updateDailyInsight',
         data: {
           date: dateStr
         }

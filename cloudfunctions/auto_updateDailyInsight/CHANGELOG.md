@@ -1,4 +1,4 @@
-# updateDailyInsight 云函数 - 更新日志
+# auto_updateDailyInsight 云函数 - 更新日志
 
 ## 2025-01-17 (最新)
 
@@ -24,7 +24,7 @@
 - 新方式（并发10个）：6批 × 1-2分钟 = 6-12分钟 ✅
 
 **参数调整：**
-- `concurrency`: 并发数量（默认5个）
+- `concurrency`: 并发数量（默认3个）
 - `batchDelayMs`: 批次间延迟（默认1秒）
 - 移除了 `delayMs` 参数（不再需要）
 

@@ -1,4 +1,4 @@
-# updateDailyInsight 云函数
+# auto_updateDailyInsight 云函数
 
 ## 功能概述
 
@@ -56,11 +56,11 @@
 
 ## 调用方式
 
-### 方式1：批量更新所有60甲子（默认并发5个）
+### 方式1：批量更新所有60甲子（默认并发3个）
 
 ```javascript
 wx.cloud.callFunction({
-  name: 'updateDailyInsight',
+  name: 'auto_updateDailyInsight',
   data: {}
 });
 ```
@@ -69,9 +69,9 @@ wx.cloud.callFunction({
 
 ```javascript
 wx.cloud.callFunction({
-  name: 'updateDailyInsight',
+  name: 'auto_updateDailyInsight',
   data: {
-    concurrency: 10  // 每批并发10个（默认5个）
+    concurrency: 10  // 每批并发10个（默认3个）
   }
 });
 ```
@@ -80,9 +80,9 @@ wx.cloud.callFunction({
 
 ```javascript
 wx.cloud.callFunction({
-  name: 'updateDailyInsight',
+  name: 'auto_updateDailyInsight',
   data: {
-    concurrency: 5,      // 每批并发5个
+    concurrency: 3,      // 每批并发3个（默认值）
     batchDelayMs: 2000   // 批次间延迟2秒（默认1秒）
   }
 });
@@ -90,9 +90,10 @@ wx.cloud.callFunction({
 
 **说明：**
 - **并发模式**：每批同时处理多个干支，大大缩短总时间
-- **默认并发数**：5个（可根据 Coze API 频率限制调整）
+- **默认并发数**：3个（可根据 Coze API 频率限制调整）
 - **超时设置**：每个请求3分钟超时（Coze接口可能需要1-2分钟）
 - **预计时间**：
+  - 并发3个：60 ÷ 3 = 20批，每批约1-2分钟 = 约20-40分钟
   - 并发5个：60 ÷ 5 = 12批，每批约1-2分钟 = 约12-24分钟
   - 并发10个：60 ÷ 10 = 6批，每批约1-2分钟 = 约6-12分钟
 - **批次延迟**：批次之间延迟1秒，避免触发频率限制
@@ -156,7 +157,7 @@ Cron 表达式: 0 1 * * *
 ### 配置步骤
 
 1. 进入云开发控制台
-2. 选择"云函数" → "updateDailyInsight"
+2. 选择"云函数" → "auto_updateDailyInsight"
 3. 点击"触发器"选项卡
 4. 点击"新建触发器"
 5. 选择"定时触发器"
@@ -185,7 +186,7 @@ Cron 表达式: 0 1 * * *
 云函数执行时会输出详细日志，便于调试：
 
 ```
-[updateDailyInsight] 开始更新日报数据
+[auto_updateDailyInsight] 开始更新日报数据
 [步骤1] 获取干支信息...
 [getGanZhiForDate] 八字计算结果: {...}
 [步骤2] 生成卡牌基础信息...
@@ -195,7 +196,7 @@ Cron 表达式: 0 1 * * *
 [步骤4] 合并数据...
 [步骤5] 保存到数据库...
 [saveDailyInsight] 更新现有记录 / 插入新记录
-[updateDailyInsight] 更新日报数据成功
+[auto_updateDailyInsight] 更新日报数据成功
 ```
 
 ## 错误处理
@@ -209,19 +210,19 @@ Cron 表达式: 0 1 * * *
 
 ## 性能说明
 
-1. **执行模式**：并发处理（默认每批5个）
-2. **执行时间**：约12-24分钟（60个干支 ÷ 5并发 × 1-2分钟/批）
+1. **执行模式**：并发处理（默认每批3个）
+2. **执行时间**：约20-40分钟（60个干支 ÷ 3并发 × 1-2分钟/批）
 3. **API调用**：60次 Coze API 调用（每个干支一次，并发执行）
 4. **数据库操作**：60次写操作（新增或更新）
 5. **超时设置**：每个请求3分钟超时（Coze接口可能需要1-2分钟）
 6. **并发控制**：
-   - 批次内并发执行（默认5个）
+   - 批次内并发执行（默认3个）
    - 批次间延迟1秒，避免触发频率限制
    - 可根据 Coze API 频率限制调整并发数
 
 ## 相关文件
 
-- 云函数：`/cloudfunctions/updateDailyInsight/index.js`
+- 云函数：`/cloudfunctions/auto_updateDailyInsight/index.js`
 - 数据表文档：`/docs/database/daily_insightsdb.md`
 - 工具代码：`/docs/tools/jiazi-card-generator/`
 - Coze API 文档：`/docs/api/cozeFunctions_v1_4-api.md`

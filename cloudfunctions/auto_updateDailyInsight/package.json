@@ -1,5 +1,5 @@
 {
-  "name": "updateDailyInsight",
+  "name": "auto_updateDailyInsight",
   "version": "1.0.0",
   "description": "定时更新日报数据云函数 - 调用Coze工作流生成每日卡牌解读",
   "main": "index.js",

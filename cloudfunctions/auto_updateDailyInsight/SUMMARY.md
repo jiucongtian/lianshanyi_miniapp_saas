@@ -1,10 +1,10 @@
-# updateDailyInsight 云函数 - 实现总结
+# auto_updateDailyInsight 云函数 - 实现总结
 
 ## ✅ 已完成的工作
 
 ### 1. 云函数实现
 
-**文件：** `cloudfunctions/updateDailyInsight/index.js`
+**文件：** `cloudfunctions/auto_updateDailyInsight/index.js`
 
 **功能模块：**
 - ✅ 基础数据模块（从 `docs/tools/jiazi-card-generator/base-data.js` 复制）
@@ -21,7 +21,7 @@
 
 ### 2. 依赖配置
 
-**文件：** `cloudfunctions/updateDailyInsight/package.json`
+**文件：** `cloudfunctions/auto_updateDailyInsight/package.json`
 
 **依赖：**
 - `wx-server-sdk`: ~2.6.3
@@ -75,7 +75,7 @@
 - [ ] Cron 表达式建议：`10 0 * * *`（每天凌晨0:10执行）
 
 **配置步骤：**
-1. 云开发控制台 → 云函数 → updateDailyInsight
+1. 云开发控制台 → 云函数 → auto_updateDailyInsight
 2. 触发器选项卡 → 新建触发器
 3. 选择"定时触发器"
 4. 输入 Cron 表达式和触发器名称
@@ -94,7 +94,7 @@
 
 ```bash
 # 1. 进入云函数目录
-cd cloudfunctions/updateDailyInsight
+cd cloudfunctions/auto_updateDailyInsight
 
 # 2. 安装依赖
 npm install
@@ -165,7 +165,7 @@ npm install
 
 1. **部署云函数**
    ```bash
-   cd cloudfunctions/updateDailyInsight
+   cd cloudfunctions/auto_updateDailyInsight
    npm install
    # 然后在开发者工具中右键上传
    ```
@@ -189,7 +189,7 @@ npm install
 ## 📝 相关文件索引
 
 ```
-cloudfunctions/updateDailyInsight/
+cloudfunctions/auto_updateDailyInsight/
 ├── index.js           # 主云函数代码（✅ 已完成）
 ├── package.json       # 依赖配置（✅ 已完成）
 ├── batch-update.js    # 批量更新脚本（✅ 已完成）

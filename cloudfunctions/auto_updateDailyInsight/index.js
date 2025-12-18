@@ -476,7 +476,7 @@ async function getExistingCardNumbers() {
 /**
  * 找出缺失的 cardNumber，并转换为对应的干支名称列表
  * @param {Set<number>} existingNumbers - 已有的 cardNumber 集合
- * @param {number} maxGenerateCount - 最多生成的数量（默认5个）
+ * @param {number} maxGenerateCount - 最多生成的数量（默认3个）
  * @returns {Array<string>} 需要生成的干支名称列表
  */
 function findMissingGanZhiList(existingNumbers, maxGenerateCount = 5) {
@@ -524,7 +524,7 @@ function findMissingGanZhiList(existingNumbers, maxGenerateCount = 5) {
 /**
  * 并发处理多个干支（控制并发数量）
  */
-async function processBatchConcurrent(ganZhiList, concurrency = 5) {
+async function processBatchConcurrent(ganZhiList, concurrency = 3) {
   const total = ganZhiList.length;
   const actualConcurrency = Math.min(concurrency, total);
   
@@ -546,7 +546,7 @@ async function processBatchConcurrent(ganZhiList, concurrency = 5) {
  */
 async function updateAllDailyInsights(options = {}) {
   const startTime = Date.now();
-  const concurrency = options.concurrency || 5; // 默认并发数5个
+  const concurrency = options.concurrency || 3; // 默认并发数3个
   const maxGenerateCount = concurrency; // 每次最多生成的数量等于并发数
   
   try {
@@ -644,13 +644,13 @@ async function updateAllDailyInsights(options = {}) {
 // ==================== 云函数入口 ====================
 
 exports.main = async (event, context) => {
-  console.log('[updateDailyInsight] 云函数被调用');
-  console.log('[updateDailyInsight] 接收参数:', JSON.stringify(event, null, 2));
+  console.log('[auto_updateDailyInsight] 云函数被调用');
+  console.log('[auto_updateDailyInsight] 接收参数:', JSON.stringify(event, null, 2));
   
   try {
     // 支持传入并发参数（用于控制并发数量）
-    // 格式: { concurrency: 5 }
-    // - concurrency: 并发数量（默认5个），也是每次调用最多生成的数量
+    // 格式: { concurrency: 3 }
+    // - concurrency: 并发数量（默认3个），也是每次调用最多生成的数量
     // 
     // 执行逻辑：
     // 1. 查询数据库中已有的 cardNumber
@@ -660,12 +660,12 @@ exports.main = async (event, context) => {
     //    - 如果缺失数量 > concurrency：只生成前 concurrency 个缺失的
     // 4. 如果缺失数量 = 0：返回成功，不生成任何数据
     const result = await updateAllDailyInsights({
-      concurrency: event.concurrency || 5
+      concurrency: event.concurrency || 3
     });
     
     return result;
   } catch (error) {
-    console.error('[updateDailyInsight] 云函数执行异常:', error);
+    console.error('[auto_updateDailyInsight] 云函数执行异常:', error);
     return {
       success: false,
       error: error.message || '云函数执行失败',
