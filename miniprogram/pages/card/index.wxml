@@ -98,11 +98,16 @@
   <!-- 图片预览悬浮窗 -->
   <view class="image-preview-overlay" wx:if="{{showImagePreview}}" bindtap="closeImagePreview">
     <image 
-      class="preview-image" 
+      class="preview-image {{previewImageTouching ? 'touching' : ''}}" 
+      style="transform: {{previewImageTransformStyle}}"
       src="{{previewImagePath}}" 
-      mode="aspectFit" 
+      mode="aspectFill" 
       bindload="onImageLoad" 
       binderror="onImageError"
+      bindtouchstart="onPreviewTouchStart"
+      bindtouchmove="onPreviewTouchMove"
+      bindtouchend="onPreviewTouchEnd"
+      catchtouchmove="onPreviewTouchMove"
       lazy-load="{{false}}"
     />
     <!-- 卡牌描述信息 -->

@@ -65,6 +65,12 @@ class CardController extends BaseController {
     this.previewImagePath = '';
     this.previewCardDescription = null;
     
+    // 3D倾斜效果相关
+    this.previewImageTransformStyle = '';
+    this.touchStartX = 0;
+    this.touchStartY = 0;
+    this.isTouching = false;
+    
     // 卡牌描述数据
     this.cardDescriptions = this._loadCardDescriptions();
     
@@ -422,10 +428,16 @@ class CardController extends BaseController {
       this._log('previewCard', '获取到的日柱卡牌描述:', cardDescription);
     }
     
+    // 重置3D倾斜效果状态
+    this.previewImageTransformStyle = '';
+    this.isTouching = false;
+    
     this._setData({
       showImagePreview: true,
       previewImagePath: baziImagePath,
-      previewCardDescription: cardDescription
+      previewCardDescription: cardDescription,
+      previewImageTransformStyle: '',
+      previewImageTouching: false
     });
   }
 
@@ -433,11 +445,124 @@ class CardController extends BaseController {
    * 关闭图片预览
    */
   closeImagePreview() {
+    // 重置3D倾斜效果
+    this.previewImageTransformStyle = '';
+    this.isTouching = false;
+    
     this._setData({
       showImagePreview: false,
       previewImagePath: '',
-      previewCardDescription: null
+      previewCardDescription: null,
+      previewImageTransformStyle: '',
+      previewImageTouching: false
     });
+  }
+
+  /**
+   * 预览图片触摸开始
+   * @param {Object} e - 触摸事件对象
+   */
+  onPreviewTouchStart(e) {
+    if (!e.touches || e.touches.length === 0) return;
+    
+    // 阻止事件冒泡，避免触发关闭预览
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    }
+    
+    const touch = e.touches[0];
+    this.touchStartX = touch.clientX;
+    this.touchStartY = touch.clientY;
+    this.isTouching = true;
+    
+    // 添加触摸中类名，禁用过渡效果
+    this._setData({
+      previewImageTouching: true
+    });
+    
+    this._log('onPreviewTouchStart', '触摸开始', {
+      x: this.touchStartX,
+      y: this.touchStartY
+    });
+  }
+
+  /**
+   * 预览图片触摸移动
+   * @param {Object} e - 触摸事件对象
+   */
+  onPreviewTouchMove(e) {
+    if (!this.isTouching || !e.touches || e.touches.length === 0) return;
+    
+    // 阻止事件冒泡，避免触发关闭预览
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    }
+    
+    const touch = e.touches[0];
+    const currentX = touch.clientX;
+    const currentY = touch.clientY;
+    
+    // 获取屏幕尺寸（使用新的API）
+    const windowInfo = wx.getWindowInfo();
+    const screenWidth = windowInfo.windowWidth;
+    const screenHeight = windowInfo.windowHeight;
+    
+    // 图片占据90%的屏幕，计算图片中心位置
+    const imageWidth = screenWidth * 0.9;
+    const imageHeight = screenHeight * 0.9;
+    const centerX = screenWidth / 2;
+    const centerY = screenHeight / 2;
+    
+    // 计算触摸点相对于图片中心的偏移（归一化到-1到1之间）
+    const deltaX = (currentX - centerX) / (imageWidth / 2);
+    const deltaY = (currentY - centerY) / (imageHeight / 2);
+    
+    // 限制偏移范围在-1到1之间
+    const clampedDeltaX = Math.max(-1, Math.min(1, deltaX));
+    const clampedDeltaY = Math.max(-1, Math.min(1, deltaY));
+    
+    // 计算倾斜角度（最大15度）
+    const maxTilt = 15;
+    const rotateY = clampedDeltaX * maxTilt;
+    const rotateX = -clampedDeltaY * maxTilt; // Y轴方向相反，所以取负值
+    
+    // 计算透视距离，使效果更自然
+    const perspective = 1000;
+    
+    // 构建3D变换样式
+    const transformStyle = `perspective(${perspective}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    
+    this.previewImageTransformStyle = transformStyle;
+    
+    this._setData({
+      previewImageTransformStyle: transformStyle
+    });
+  }
+
+  /**
+   * 预览图片触摸结束
+   * @param {Object} e - 触摸事件对象
+   */
+  onPreviewTouchEnd(e) {
+    if (!this.isTouching) return;
+    
+    // 阻止事件冒泡
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    }
+    
+    this.isTouching = false;
+    
+    // 移除触摸中类名，启用过渡效果
+    // 平滑恢复到原始状态
+    this.previewImageTransformStyle = '';
+    
+    this._setData({
+      previewImageTransformStyle: '',
+      previewImageTouching: false
+    });
+    
+    this._log('onPreviewTouchEnd', '触摸结束，恢复原始状态');
   }
 
   // ==================== 私有方法 ====================

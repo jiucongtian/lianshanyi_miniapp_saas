@@ -7,6 +7,7 @@
 const { BaseService } = require('./BaseService');
 const { UserService, userService } = require('./UserService');
 const { ProfileService, profileService } = require('./ProfileService');
+const { FeedbackService, feedbackService } = require('./FeedbackService');
 
 // 延迟加载 DrawCardService，避免初始化时的循环依赖问题
 let DrawCardService = null;
@@ -35,16 +36,19 @@ module.exports = {
   UserService,
   ProfileService,
   DrawCardService,
+  FeedbackService,
   
   // 服务单例实例
   userService,
   profileService,
   drawCardService,
+  feedbackService,
   
   // 服务列表（用于批量操作）
   services: {
     userService,
     profileService,
-    drawCardService
+    drawCardService,
+    feedbackService
   }
 };

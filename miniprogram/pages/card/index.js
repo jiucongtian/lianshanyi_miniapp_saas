@@ -131,6 +131,27 @@ Page({
     // 预览图片加载失败，可以在这里添加一些逻辑
   },
 
+  // 预览图片触摸开始
+  onPreviewTouchStart: function(e) {
+    if (this.controller) {
+      this.controller.onPreviewTouchStart(e);
+    }
+  },
+
+  // 预览图片触摸移动
+  onPreviewTouchMove: function(e) {
+    if (this.controller) {
+      this.controller.onPreviewTouchMove(e);
+    }
+  },
+
+  // 预览图片触摸结束
+  onPreviewTouchEnd: function(e) {
+    if (this.controller) {
+      this.controller.onPreviewTouchEnd(e);
+    }
+  },
+
   // 分享功能 - 激活右上角分享按钮
   onShareAppMessage: function() {
     const { yearPillar, monthPillar, dayPillar, timePillar } = this.data;

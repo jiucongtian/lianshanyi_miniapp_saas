@@ -370,5 +370,15 @@ Page({
         confirmText: '知道了'
       });
     }
+  },
+
+  /**
+   * 点击反馈与建议
+   */
+  onFeedbackTap() {
+    log.info('onFeedbackTap', '跳转到反馈页面');
+    wx.navigateTo({
+      url: '/pages/feedback/index'
+    });
   }
 })

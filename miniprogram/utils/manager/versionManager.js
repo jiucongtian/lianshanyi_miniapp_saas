@@ -11,28 +11,14 @@ class VersionManager {
    * 格式：{ 客户端版本: { 云函数名: 云函数版本 } }
    */
   static VERSION_CONFIG = {
-    '1.0.0': {
-      calculateBazi: 'v1_0',
-      userManagement: 'v1_0',
-      profileManagement: 'v1_0'
-    },
-    '1.1.0': {
-      calculateBazi: 'v1_1',
-      userManagement: 'v1_0',
-      profileManagement: 'v1_1'
-    },
-    '1.2.0': {
-      calculateBazi: 'v1_1',
-      userManagement: 'v1_0',
-      profileManagement: 'v1_2',
-      cozeFunctions: 'v1_3'
-    },
-    '1.3.0': {
+    '1.4.0': {
       calculateBazi: 'v1_1',
       userManagement: 'v1_3',
       profileManagement: 'v1_2',
-      cozeFunctions: 'v1_3',
-      paymentManagement: 'v1_3'
+      cozeFunctions: 'v1_4',
+      paymentManagement: 'v1_3',
+      feedbackManagement: 'v1_4',
+      dailyInsightManagement: 'v1_4'
     }
   };
   
@@ -51,7 +37,8 @@ class VersionManager {
       }
       
       // 如果无法获取版本信息，返回 null（由调用方决定如何处理）
-      log.warn('getCurrentVersion', 'App实例未完全初始化，无法获取版本', {
+      // 注意：在 App 初始化过程中，版本暂时不可用是预期的行为，BaseService 会等待版本可用
+      log.debug('getCurrentVersion', 'App实例未完全初始化，无法获取版本（这是预期的，调用方会等待）', {
         hasAppConfig: !!appConfig,
         hasGlobalData: !!(appConfig && appConfig.globalData)
       });

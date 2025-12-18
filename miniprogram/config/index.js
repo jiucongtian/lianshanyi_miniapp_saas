@@ -11,7 +11,9 @@ export const config = {
     // fileID格式：cloud://环境ID.存储桶ID/路径/文件名
     cloudStorageId: '636c-cloudbase-8g06skyf81a65a87-1378890368', // 临时使用环境ID，需要根据实际情况调整
     // 卡牌图片云存储路径
-    cardImagesPath: 'cards', // 云存储中卡牌图片的文件夹路径
+    cardImagesPath: 'cards_v2', // 云存储中卡牌图片的文件夹路径
+    // 二维码图片路径（支持 HTTP URL、云存储 fileID 或静态资源路径）
+    qrCodePath: 'https://636c-cloudbase-8g06skyf81a65a87-1378890368.tcb.qcloud.la/res-img/erweima.jpg', // 二维码图片 URL
   },
   // 微信小店配置
   store: {

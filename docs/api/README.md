@@ -14,6 +14,7 @@
 | 档案管理 v1.1 | [profileManagement_v1_1-api.md](./profileManagement_v1_1-api.md) | ✅ 已完成 | 档案管理增强版，集成八字计算功能 |
 | 档案管理 v1.2 | [profileManagement_v1_2-api.md](./profileManagement_v1_2-api.md) | ✅ 已完成 | 支持公历/农历和农历闰月标记 |
 | 抽卡管理 | [drawCardManagement-api.md](./drawCardManagement-api.md) | 📋 待实现 | 抽卡配额检查和使用记录管理 |
+| 用户反馈管理 | [feedbackManagementAPI.md](./feedbackManagementAPI.md) | ✅ 已完成 | 用户反馈提交和查询功能 |
 
 ### 待添加接口
 
@@ -87,6 +88,7 @@ docs/api/
 ├── profileManagement_v1_2-api.md # 档案管理云函数接口v1.2（支持农历闰月）
 ├── drawCardManagement-api.md   # 抽卡管理云函数接口（配额检查和记录）
 ├── userClassification-api.md   # 用户分类接口
+├── feedbackManagementAPI.md    # 用户反馈管理云函数接口
 └── [future-api].md             # 未来的其他接口文档
 ```
 
@@ -103,4 +105,4 @@ docs/api/
 
 ---
 
-*最后更新时间：2025年10月*
+*最后更新时间：2024年12月*

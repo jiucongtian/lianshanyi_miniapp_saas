@@ -5,11 +5,31 @@
 
   <!-- 主内容卡片 -->
   <view class="main-card">
-    <!-- 卡片标题 -->
-    <view class="card-title">
-      <text class="title-main">智慧洞见</text>
-      <text class="title-sub">Wisdom and Insight</text>
+    <!-- Tab导航 -->
+    <view class="tab-nav">
+      <view 
+        class="tab-item {{currentTab === 'wisdom' ? 'active' : ''}}"
+        bindtap="onTabChange"
+        data-tab="wisdom"
+      >
+        <text class="tab-text">智慧洞见</text>
+      </view>
+      <view 
+        class="tab-item {{currentTab === 'daily' ? 'active' : ''}}"
+        bindtap="onTabChange"
+        data-tab="daily"
+      >
+        <text class="tab-text">每日愈见</text>
+      </view>
     </view>
+
+    <!-- 智慧洞见内容 -->
+    <view class="tab-content {{currentTab === 'wisdom' ? 'show' : 'hide'}}">
+      <!-- 卡片标题 -->
+      <view class="card-title">
+        <text class="title-main">智慧洞见</text>
+        <text class="title-sub">Wisdom and Insight</text>
+      </view>
 
     <!-- 圆形装饰图案 -->
     <view class="mandala-container">
@@ -69,6 +89,43 @@
         <text wx:if="{{!isSearching}}">寻找答案</text>
         <text wx:else>寻找中...</text>
       </button>
+    </view>
+    </view>
+
+    <!-- 每日愈见内容 -->
+    <view class="tab-content {{currentTab === 'daily' ? 'show' : 'hide'}}">
+      <!-- 卡片标题 -->
+      <view class="card-title">
+        <text class="title-main">每日愈见</text>
+        <text class="title-sub">Daily Healing</text>
+      </view>
+
+      <!-- 每日愈见入口 -->
+      <view class="daily-content" bindtap="onNavigateToDailyInsight">
+        <view class="daily-entry-card">
+          <!-- 顶部装饰 -->
+          <view class="daily-entry-decoration">
+            <view class="decoration-circle circle-1"></view>
+            <view class="decoration-circle circle-2"></view>
+            <view class="decoration-circle circle-3"></view>
+          </view>
+          
+          <!-- 主要内容 -->
+          <view class="daily-entry-content">
+            <view class="daily-entry-icon">🌸</view>
+            <view class="daily-entry-text-wrapper">
+              <text class="daily-entry-title">今日治愈</text>
+              <text class="daily-entry-subtitle">获取今日的治愈与启发</text>
+            </view>
+          </view>
+          
+          <!-- 底部提示 -->
+          <view class="daily-entry-footer">
+            <text class="daily-entry-hint">点击进入</text>
+            <view class="daily-entry-arrow">→</view>
+          </view>
+        </view>
+      </view>
     </view>
   </view>
 

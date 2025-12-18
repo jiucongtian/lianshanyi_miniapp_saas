@@ -1,0 +1,309 @@
+page {
+  height: 100vh;
+  background: linear-gradient(180deg, #3a2540 0%, #4a2f4f 50%, #5a3a5f 100%);
+}
+
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #3a2540 0%, #4a2f4f 50%, #5a3a5f 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 主内容区 */
+.content-wrapper {
+  flex: 1;
+  position: relative;
+  z-index: 10;
+  overflow-y: auto;
+}
+
+/* 紫色风格卡牌容器 */
+.card-container {
+  width: 686rpx;
+  background: rgba(45, 26, 46, 0.4);
+  backdrop-filter: blur(4rpx);
+  border: 4rpx solid rgba(200, 150, 180, 0.6);
+  border-radius: 24rpx;
+  margin: 25rpx auto;
+  padding: 32rpx;
+  box-shadow: 
+    0 0 30rpx rgba(200, 150, 180, 0.2),
+    inset 0 0 40rpx rgba(133, 76, 101, 0.05);
+  position: relative;
+}
+
+/* 装饰角 - 紫色风格 */
+.card-container::before,
+.card-container::after {
+  content: '';
+  position: absolute;
+  width: 32rpx;
+  height: 32rpx;
+  border: 3rpx solid rgba(200, 150, 180, 0.6);
+}
+
+.card-container::before {
+  top: -2rpx;
+  left: -2rpx;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 24rpx;
+}
+
+.card-container::after {
+  top: -2rpx;
+  right: -2rpx;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 24rpx;
+}
+
+/* 日期和卡牌图片行容器 */
+.date-card-row {
+  display: flex;
+  align-items: stretch;
+  gap: 24rpx;
+  margin-bottom: 40rpx;
+  height: 360rpx;
+}
+
+/* 日期头部（分三行显示） */
+.date-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  margin-left: 94rpx;
+  position: relative;
+  min-width: 100rpx;
+  height: 100%;
+}
+
+.date-text {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 4rpx;
+  line-height: 1.8;
+  white-space: nowrap;
+  text-shadow: 0 0 6rpx rgba(200, 150, 180, 0.3);
+}
+
+.date-year {
+  font-size: 32rpx;
+}
+
+.date-month,
+.date-day {
+  font-size: 40rpx;
+}
+
+.date-text:not(:last-child) {
+  margin-bottom: 8rpx;
+}
+
+/* 卡牌图片区域 */
+.card-image-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  height: 100%;
+}
+
+.card-image {
+  width: 240rpx;
+  height: 100%;
+  border-radius: 12rpx;
+}
+
+/* 时间轴容器 */
+.timeline {
+  position: relative;
+  padding-left: 30rpx;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 10rpx;
+  top: 0;
+  bottom: 0;
+  width: 2rpx;
+  background: linear-gradient(180deg, rgba(200, 150, 180, 0.6) 0%, rgba(200, 150, 180, 0.3) 100%);
+}
+
+/* 时间轴节点 */
+.timeline-item {
+  position: relative;
+  margin-bottom: 25rpx;
+  padding-left: 20rpx;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -25rpx;
+  top: 5rpx;
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: rgba(200, 150, 180, 0.7);
+  border: 3rpx solid rgba(45, 26, 46, 0.4);
+  box-shadow: 
+    0 0 0 2rpx rgba(200, 150, 180, 0.5),
+    0 0 8rpx rgba(200, 150, 180, 0.3);
+  z-index: 1;
+}
+
+/* 通用section样式 - 紫色风格 */
+.section {
+  padding: 24rpx;
+  background: rgba(45, 26, 46, 0.3);
+  backdrop-filter: blur(2rpx);
+  border-radius: 12rpx;
+  border: 2rpx solid rgba(200, 150, 180, 0.4);
+  margin-bottom: 0;
+  box-shadow: 
+    0 0 15rpx rgba(200, 150, 180, 0.15),
+    inset 0 0 20rpx rgba(133, 76, 101, 0.03);
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: rgba(200, 150, 180, 0.9);
+  margin-bottom: 16rpx;
+  letter-spacing: 1rpx;
+  text-shadow: 0 0 6rpx rgba(200, 150, 180, 0.3);
+}
+
+.section-content {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.8;
+  letter-spacing: 0.5rpx;
+}
+
+/* 卡牌中央描述 */
+.central-desc {
+  margin-bottom: 20rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid rgba(200, 150, 180, 0.25);
+}
+
+.desc-label {
+  font-size: 26rpx;
+  color: rgba(200, 150, 180, 0.9);
+  font-weight: 500;
+  margin-right: 8rpx;
+}
+
+.desc-value {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.8;
+}
+
+/* 印记项 */
+.mark-item {
+  display: flex;
+  align-items: baseline;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid rgba(200, 150, 180, 0.25);
+}
+
+.mark-item:last-child {
+  border-bottom: none;
+}
+
+.mark-label {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.75);
+  margin-right: 8rpx;
+  min-width: 140rpx;
+}
+
+.mark-value {
+  font-size: 26rpx;
+  color: rgba(200, 150, 180, 0.9);
+  font-weight: 500;
+  flex: 1;
+  text-shadow: 0 0 4rpx rgba(200, 150, 180, 0.25);
+}
+
+/* 通关密码横幅 - 紫色风格 */
+.password-banner {
+  background: rgba(45, 26, 46, 0.4);
+  backdrop-filter: blur(2rpx);
+  padding: 28rpx 32rpx;
+  text-align: center;
+  border-radius: 12rpx;
+  margin: 0;
+  border: 3rpx solid rgba(200, 150, 180, 0.6);
+  position: relative;
+  box-shadow: 
+    0 0 20rpx rgba(200, 150, 180, 0.25),
+    inset 0 0 30rpx rgba(133, 76, 101, 0.05);
+}
+
+.password-banner::before,
+.password-banner::after {
+  content: '';
+  position: absolute;
+  width: 16rpx;
+  height: 16rpx;
+  border: 2rpx solid rgba(200, 150, 180, 0.6);
+}
+
+.password-banner::before {
+  top: -2rpx;
+  left: -2rpx;
+  border-right: none;
+  border-bottom: none;
+}
+
+.password-banner::after {
+  top: -2rpx;
+  right: -2rpx;
+  border-left: none;
+  border-bottom: none;
+}
+
+.password-text {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 4rpx;
+  line-height: 1.6;
+  text-shadow: 
+    0 0 8rpx rgba(200, 150, 180, 0.5),
+    0 0 15rpx rgba(200, 150, 180, 0.25);
+}
+
+/* 底部间距 */
+.bottom-spacing {
+  height: 40rpx;
+}
+
+/* 分享按钮容器 */
+.share-button-container {
+  padding: 32rpx;
+  padding-top: 0;
+}
+
+/* 隐藏的Canvas画布 */
+.poster-canvas {
+  position: fixed;
+  top: -9999rpx;
+  left: -9999rpx;
+  width: 750rpx;
+  height: 1334rpx;
+  z-index: -1;
+}

@@ -1,0 +1,108 @@
+<t-navbar title="每日愈见" left-arrow bind:click-left="onBack" />
+
+<view class="page-container">
+  <!-- 主内容区 -->
+  <scroll-view class="content-wrapper" scroll-y>
+    <!-- 古风卡牌容器 -->
+    <view class="card-container">
+      <!-- 日期和卡牌图片区域 -->
+      <view class="date-card-row">
+        <!-- 日期头部（分三行显示） -->
+        <view class="date-header">
+          <view class="date-text date-year">{{dateInfo.year}}年</view>
+          <view class="date-text date-month">{{dateInfo.month}}月</view>
+          <view class="date-text date-day">{{dateInfo.day}}日</view>
+        </view>
+
+        <!-- 卡牌图片 -->
+        <view class="card-image-wrapper">
+          <image 
+            class="card-image" 
+            src="{{cardInfo.imageUrl}}" 
+            mode="aspectFit"
+            bindtap="onViewCardImage"
+          />
+        </view>
+      </view>
+
+      <!-- 时间轴 -->
+      <view class="timeline">
+        <!-- 卡牌传递的能量 -->
+        <view class="timeline-item">
+          <view class="section">
+            <view class="section-title">今日卡牌传递的能量</view>
+            <view class="section-content">
+              <view class="central-desc">
+                <text class="desc-value">{{cardInfo.central}}</text>
+              </view>
+              <view class="mark-item">
+                <text class="mark-label">季节印记：</text>
+                <text class="mark-value">{{cardInfo.seasonMark}}</text>
+              </view>
+              <view class="mark-item">
+                <text class="mark-label">天赋印记：</text>
+                <text class="mark-value">{{cardInfo.talentMark}}</text>
+              </view>
+              <view class="mark-item">
+                <text class="mark-label">才能印记：</text>
+                <text class="mark-value">{{cardInfo.abilityMark}}</text>
+              </view>
+              <view class="mark-item">
+                <text class="mark-label">路途印记：</text>
+                <text class="mark-value">{{cardInfo.pathMark}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 卡牌给我的祝福 -->
+        <view class="timeline-item">
+          <view class="section">
+            <view class="section-title">卡牌给我的祝福</view>
+            <view class="section-content">{{cardInfo.blessing}}</view>
+          </view>
+        </view>
+
+        <!-- 卡牌给我的提示 -->
+        <view class="timeline-item">
+          <view class="section">
+            <view class="section-title">卡牌给我的提示</view>
+            <view class="section-content">{{cardInfo.tip}}</view>
+          </view>
+        </view>
+
+        <!-- 通关密码 -->
+        <view class="timeline-item">
+          <view class="password-banner">
+            <text class="password-text">通关密码：{{cardInfo.password}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部间距 -->
+    <view class="bottom-spacing"></view>
+    
+    <!-- 生成分享海报按钮 -->
+    <view class="share-button-container" wx:if="{{cardInfo}}">
+      <loading-button
+        id="loading-button-share"
+        theme="secondary"
+        size="medium"
+        block="{{true}}"
+        button-text="生成分享海报"
+        loading-text="生成中..."
+        prevent-duplicate="{{true}}"
+        bind:tap="onGeneratePoster"
+      />
+    </view>
+  </scroll-view>
+</view>
+
+<!-- 隐藏的Canvas画布，用于生成海报 -->
+<canvas 
+  type="2d" 
+  id="posterCanvas" 
+  class="poster-canvas"
+></canvas>
+

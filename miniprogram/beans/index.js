@@ -9,6 +9,7 @@ const { UserBean } = require('./UserBean');
 const { ProfileBean } = require('./ProfileBean');
 const { BaziBean } = require('./BaziBean');
 const { PaymentBean } = require('./PaymentBean');
+const { FeedbackBean } = require('./FeedbackBean');
 
 module.exports = {
   BaseBean,
@@ -16,5 +17,6 @@ module.exports = {
   UserBean,
   ProfileBean,
   BaziBean,
-  PaymentBean
+  PaymentBean,
+  FeedbackBean
 };

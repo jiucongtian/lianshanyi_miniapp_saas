@@ -1,7 +1,12 @@
+const { dailyInsightService } = require('../../services/DailyInsightService');
+const app = getApp();
+
 Page({
   data: {
+    currentTab: 'wisdom', // 当前激活的Tab: 'wisdom' | 'daily'
     question: '',
     isSearching: false,
+    isLoadingDailyInsight: false, // 加载每日愈见数据的状态
     // 用于生成装饰图案的数组
     outerPatterns: Array.from({ length: 36 }, (_, i) => i),
     middlePatterns: Array.from({ length: 16 }, (_, i) => i),
@@ -31,6 +36,119 @@ Page({
 
   onShow() {
     console.log('[HomePage] 页面显示');
+  },
+
+  /**
+   * Tab切换事件
+   */
+  onTabChange(e) {
+    const tab = e.currentTarget.dataset.tab;
+    console.log('[HomePage] 切换Tab:', tab);
+    
+    if (this.data.currentTab === tab) {
+      return; // 已经是当前Tab，无需切换
+    }
+    
+    this.setData({
+      currentTab: tab
+    });
+  },
+
+  /**
+   * 跳转到每日愈见页面
+   * 在跳转前先调用云函数获取数据，如果成功则传递数据，如果失败则不跳转
+   */
+  async onNavigateToDailyInsight() {
+    console.log('[HomePage] 准备跳转到每日愈见页面');
+    
+    // 防止重复点击
+    if (this.data.isLoadingDailyInsight) {
+      return;
+    }
+    
+    // 设置加载状态
+    this.setData({
+      isLoadingDailyInsight: true
+    });
+    
+    // 显示加载提示
+    wx.showLoading({
+      title: '加载中...',
+      mask: true
+    });
+    
+    try {
+      // 调用云函数获取今日卡牌数据
+      const response = await dailyInsightService.getTodayCard();
+      
+      wx.hideLoading();
+      
+      if (response.success && response.data) {
+        const { card, date, time } = response.data;
+        
+        // 验证卡牌数据是否完整
+        if (card && card.isValid()) {
+          // 将数据存储到 globalData，供 daily-insight 页面使用
+          // 存储原始数据（因为 Bean 实例不能直接序列化）
+          // 使用 _rawData 获取原始数据，如果没有则使用 toObject() 方法
+          const cardRawData = card._rawData || card.toObject();
+          app.globalData.dailyInsightPreloadData = {
+            card: cardRawData,
+            date: date,
+            time: time,
+            timestamp: Date.now() // 添加时间戳，用于判断数据是否过期
+          };
+          
+          console.log('[HomePage] 数据预加载成功，准备跳转');
+          
+          // 跳转到每日愈见页面
+          wx.navigateTo({
+            url: '/pages/daily-insight/index',
+            success: () => {
+              console.log('[HomePage] 跳转到每日愈见页面成功');
+            },
+            fail: (err) => {
+              console.error('[HomePage] 跳转失败:', err);
+              // 清除预加载数据
+              delete app.globalData.dailyInsightPreloadData;
+              wx.showToast({
+                title: '跳转失败',
+                icon: 'none'
+              });
+            }
+          });
+        } else {
+          // 卡牌数据不完整
+          console.error('[HomePage] 卡牌数据不完整');
+          wx.showToast({
+            title: '获取数据失败，请重试',
+            icon: 'none',
+            duration: 2000
+          });
+        }
+      } else {
+        // 云函数返回错误
+        console.error('[HomePage] 获取每日愈见数据失败:', response.error);
+        wx.showToast({
+          title: response.error || '获取数据失败，请重试',
+          icon: 'none',
+          duration: 2000
+        });
+      }
+    } catch (error) {
+      wx.hideLoading();
+      console.error('[HomePage] 获取每日愈见数据异常:', error);
+      wx.showToast({
+        title: '网络错误，请重试',
+        icon: 'none',
+        duration: 2000
+      });
+    } finally {
+      // 重置加载状态
+      this.setData({
+        isLoadingDailyInsight: false
+      });
+    }
   },
 
   /**
