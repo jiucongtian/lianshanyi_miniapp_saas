@@ -98,19 +98,20 @@
       </view>
     </view>
     
-    <!-- 支付测试按钮（开发调试用） -->
+    <!-- 调试功能区域（开发调试用） -->
     <view class="test-section">
+      <!-- 调试页面入口 -->
       <view class="test-card">
         <view class="test-header">
-          <text class="test-icon">🧪</text>
-          <text class="test-title">支付功能测试</text>
+          <text class="test-icon">🔧</text>
+          <text class="test-title">调试页面</text>
         </view>
         <view class="test-info">
-          <text class="test-desc">测试微信支付V3 API完整流程</text>
-          <text class="test-amount">测试金额：¥0.01</text>
+          <text class="test-desc">进入调试页面测试各种功能</text>
+          <text class="test-amount">包含：配额管理、支付等测试</text>
         </view>
-        <button class="test-button" bindtap="onTestPayment">
-          <text class="test-button-text">🚀 发起测试支付</text>
+        <button class="test-button" bindtap="onDebugTap">
+          <text class="test-button-text">🚀 进入调试页面</text>
         </button>
       </view>
     </view>

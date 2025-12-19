@@ -13,7 +13,8 @@
     "pages/cardViewer/index",
     "pages/webview/index",
     "pages/feedback/index",
-    "pages/daily-insight/index"
+    "pages/daily-insight/index",
+    "pages/debug/index"
   ],
   "usingComponents": {},
   "subpackages": [],

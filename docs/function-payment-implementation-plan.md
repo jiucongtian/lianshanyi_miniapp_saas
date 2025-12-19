@@ -524,14 +524,19 @@ const products = [
 
 #### ⏳ 待完成任务
 
-- [ ] **云函数部署**
-  - 上传到云端
-  - 云端安装依赖
+- [x] **云函数部署** ✅
+  - 上传到云端 ✅
+  - 云端安装依赖 ✅
+  - **状态**：已完成
 
-- [ ] **接口测试**
+- [ ] **接口测试** ⏳
   - 测试所有 5 个接口
   - 并发测试
   - 边界条件测试
+  - **测试工具**：`docs/tools/test-quota-management.js` ✅
+  - **测试指南**：`docs/function-quota-management-test-guide.md` ✅
+  - **测试工具**：`docs/tools/test-quota-management.js` ✅
+  - **测试指南**：`docs/function-quota-management-test-guide.md` ✅
 
 #### 🎉 Phase 2 完成总结
 
@@ -544,12 +549,16 @@ const products = [
 - ✅ 文档完整（README + API 文档）
 - ✅ 代码符合项目规范
 
-**Phase 2 状态：开发完成，待部署测试** ✅
+**Phase 2 状态：开发完成，已部署，待测试验证** ✅
+
+**测试工具已准备：**
+- ✅ 测试脚本：`docs/tools/test-quota-management.js`
+- ✅ 测试指南：`docs/function-quota-management-test-guide.md`
 
 **下一步：**
-1. 提示用户部署云函数
-2. 部署后进行接口测试
-3. 测试通过后进入 Phase 3
+1. ✅ 云函数已部署到云端
+2. ⏳ **执行接口测试**（使用测试工具验证所有接口）
+3. ⏳ 测试通过后进入 Phase 3
 
 ---
 
