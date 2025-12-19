@@ -752,6 +752,729 @@ Page({
         confirmText: '知道了'
       });
     }
+  },
+
+  /**
+   * 测试功能付费订单
+   */
+  async onTestFunctionPayment(e) {
+    console.log('[DebugPage] onTestFunctionPayment 被调用', e);
+    log.info('onTestFunctionPayment', '开始测试功能付费订单');
+    
+    try {
+      // 显示测试选项
+      const testOption = await new Promise((resolve) => {
+        wx.showActionSheet({
+          itemList: [
+            '🚀 完整流程测试',
+            '⚡ 快速测试（创建+查询）',
+            '📝 创建功能付费订单',
+            '🔍 查询订单状态',
+            '✅ 验证配额发放',
+            '📊 查看配额信息'
+          ],
+          success: (res) => {
+            console.log('[DebugPage] 用户选择了测试选项:', res.tapIndex);
+            resolve(res.tapIndex);
+          },
+          fail: (err) => {
+            console.log('[DebugPage] 用户取消选择或出错:', err);
+            resolve(-1);
+          }
+        });
+      });
+
+      if (testOption === -1) {
+        console.log('[DebugPage] 用户取消或出错，退出');
+        return;
+      }
+
+      console.log('[DebugPage] 开始执行测试，选项:', testOption);
+      await this._executeFunctionPaymentTest(testOption);
+    } catch (error) {
+      console.error('[DebugPage] 测试执行异常:', error);
+      log.error('onTestFunctionPayment', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
+    }
+  },
+
+  /**
+   * 执行功能付费订单测试
+   */
+  async _executeFunctionPaymentTest(testOption) {
+    const functionCode = 'wisdom_insight';
+    
+    switch (testOption) {
+      case 0: // 完整流程测试
+        await this._testFullFunctionPaymentFlow(functionCode);
+        break;
+      case 1: // 快速测试
+        await this._testQuickFunctionPayment(functionCode);
+        break;
+      case 2: // 创建订单
+        await this._testCreateFunctionOrder(functionCode);
+        break;
+      case 3: // 查询订单
+        await this._testQueryFunctionOrder();
+        break;
+      case 4: // 验证配额发放
+        await this._testVerifyQuotaGrant(functionCode);
+        break;
+      case 5: // 查看配额信息
+        await this._testGetQuotaInfo(functionCode);
+        break;
+      default:
+        console.warn('[DebugPage] 未知的测试选项:', testOption);
+        wx.showToast({
+          title: '未知的测试选项',
+          icon: 'none',
+          duration: 2000
+        });
+    }
+  },
+
+  /**
+   * 完整流程测试
+   */
+  async _testFullFunctionPaymentFlow(functionCode) {
+    wx.showLoading({ title: '完整流程测试中...', mask: true });
+    
+    try {
+      console.log('========== 步骤1: 创建功能付费订单 ==========');
+      const createResult = await this._testCreateFunctionOrder(functionCode, false);
+      
+      if (!createResult || !createResult.success) {
+        throw new Error('创建订单失败');
+      }
+      
+      const orderId = createResult.data.orderId;
+      const out_trade_no = createResult.data.out_trade_no;
+      
+      console.log('========== 步骤2: 查询订单（验证 grantInfo） ==========');
+      const queryResult1 = await this._testQueryFunctionOrder(orderId, null, false);
+      
+      if (!queryResult1 || !queryResult1.success) {
+        throw new Error('查询订单失败');
+      }
+      
+      const orderInfo = queryResult1.data;
+      console.log('订单信息:', orderInfo);
+      
+      if (orderInfo.grantInfo && orderInfo.grantInfo.status === 'pending') {
+        console.log('✅ grantInfo 初始状态正确（pending）');
+      }
+      
+      console.log('========== 步骤3: 调起真实支付 ==========');
+      console.log('⚠️ 注意：此步骤将调起真实的微信支付，请完成支付');
+      
+      const paymentResult = await this._testRealPayment(createResult.data);
+      
+      if (!paymentResult || !paymentResult.success) {
+        console.warn('⚠️ 支付失败或取消，但继续测试');
+        wx.hideLoading();
+        wx.showModal({
+          title: '⚠️ 支付未完成',
+          content: '支付未完成，无法验证后续流程。\n\n如需完整测试，请重新运行测试并完成支付。',
+          showCancel: false,
+          confirmText: '知道了'
+        });
+        return;
+      }
+      
+      console.log('✅ 支付成功，等待支付回调处理...');
+      
+      // 等待支付回调处理（通常需要几秒钟）
+      console.log('========== 步骤4: 等待支付回调处理 ==========');
+      wx.showLoading({ title: '等待回调处理中...', mask: true });
+      
+      // 等待5秒，让支付回调有时间处理
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      wx.hideLoading();
+      
+      console.log('========== 步骤5: 查询订单（验证 grantInfo 更新） ==========');
+      
+      // 多次查询，直到 grantInfo 更新或超时
+      let queryAttempts = 0;
+      const maxAttempts = 6; // 最多查询6次（30秒）
+      let orderInfoAfter = null;
+      
+      while (queryAttempts < maxAttempts) {
+        queryAttempts++;
+        console.log(`查询订单（第 ${queryAttempts} 次）...`);
+        
+        const queryResult = await this._testQueryFunctionOrder(orderId, null, false);
+        
+        if (queryResult && queryResult.success) {
+          orderInfoAfter = queryResult.data;
+          
+          if (orderInfoAfter.status === 'SUCCESS') {
+            console.log('✅ 订单状态已更新为 SUCCESS');
+            
+            if (orderInfoAfter.grantInfo) {
+              console.log('grantInfo 当前状态:', orderInfoAfter.grantInfo);
+              
+              if (orderInfoAfter.grantInfo.status === 'granted') {
+                console.log('✅ grantInfo 状态已更新为 granted');
+                break; // 成功，退出循环
+              } else if (orderInfoAfter.grantInfo.status === 'failed') {
+                console.error('❌ grantInfo 状态为 failed:', orderInfoAfter.grantInfo.errorMessage);
+                break; // 失败，退出循环
+              } else {
+                console.log('grantInfo 状态仍为 pending，继续等待...');
+              }
+            } else {
+              console.log('grantInfo 字段不存在，继续等待...');
+            }
+          } else {
+            console.log(`订单状态仍为 ${orderInfoAfter.status}，继续等待...`);
+          }
+        }
+        
+        // 如果不是最后一次，等待5秒后继续查询
+        if (queryAttempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+      }
+      
+      console.log('========== 步骤6: 验证配额发放 ==========');
+      
+      // 查询当前配额，验证是否已经发放（而不是手动发放）
+      const quotaBeforeTest = await wx.cloud.callFunction({
+        name: 'functionQuotaManagement_v1_4',
+        data: {
+          action: 'getQuotaInfo',
+          data: { functionCode }
+        }
+      });
+      
+      if (quotaBeforeTest.result && quotaBeforeTest.result.success) {
+        const currentQuota = quotaBeforeTest.result.data;
+        console.log('当前配额:', currentQuota);
+        
+        if (orderInfoAfter && orderInfoAfter.status === 'SUCCESS' && orderInfoAfter.grantInfo?.status === 'granted') {
+          console.log('✅ 支付回调已处理，配额应该已经发放');
+          console.log('当前付费配额:', currentQuota.paidRemaining);
+        } else {
+          console.warn('⚠️ 支付回调未处理或处理失败，配额可能未发放');
+          console.warn('⚠️ 请检查：');
+          console.warn('1. 云函数是否配置了 HTTP 触发器');
+          console.warn('2. WECHAT_PAY_NOTIFY_URL 环境变量是否正确配置');
+          console.warn('3. 支付回调日志中是否有错误');
+        }
+      }
+      
+      wx.hideLoading();
+      
+      // 构建测试结果内容
+      let resultContent = `订单号：${out_trade_no}\n订单ID：${orderId}\n\n`;
+      
+      if (orderInfoAfter) {
+        resultContent += `订单状态：${orderInfoAfter.status}\n`;
+        
+        if (orderInfoAfter.status === 'SUCCESS') {
+          resultContent += `✅ 支付回调已处理\n`;
+        } else {
+          resultContent += `❌ 支付回调未处理（状态仍为 ${orderInfoAfter.status}）\n`;
+        }
+        
+        if (orderInfoAfter.grantInfo) {
+          resultContent += `grantInfo状态：${orderInfoAfter.grantInfo.status}\n`;
+          if (orderInfoAfter.grantInfo.status === 'granted') {
+            resultContent += `✅ 权益发放成功\n`;
+            resultContent += `发放时间：${orderInfoAfter.grantInfo.grantTime ? new Date(orderInfoAfter.grantInfo.grantTime).toLocaleString() : '未知'}\n`;
+          } else if (orderInfoAfter.grantInfo.status === 'failed') {
+            resultContent += `❌ 权益发放失败\n`;
+            resultContent += `错误信息：${orderInfoAfter.grantInfo.errorMessage || '未知'}\n`;
+          } else {
+            resultContent += `⚠️ grantInfo 仍为 pending（支付回调可能未处理）\n`;
+          }
+        } else {
+          resultContent += `grantInfo：未更新（可能回调未处理）\n`;
+        }
+      } else {
+        resultContent += `订单状态：查询失败\n`;
+      }
+      
+      // 添加排查建议
+      if (!orderInfoAfter || orderInfoAfter.status !== 'SUCCESS' || orderInfoAfter.grantInfo?.status !== 'granted') {
+        resultContent += `\n⚠️ 排查建议：\n`;
+        resultContent += `1. 检查云函数是否配置了 HTTP 触发器\n`;
+        resultContent += `2. 检查 WECHAT_PAY_NOTIFY_URL 环境变量\n`;
+        resultContent += `3. 查看云函数日志中的支付回调记录\n`;
+        resultContent += `4. 确认支付是否真的成功（微信支付记录）\n`;
+      }
+      
+      resultContent += `\n请检查：\n1. 云函数日志\n2. payment_orders 数据表\n3. function_quotas 数据表`;
+      
+      wx.showModal({
+        title: orderInfoAfter?.status === 'SUCCESS' && orderInfoAfter?.grantInfo?.status === 'granted' ? '✅ 完整流程测试完成' : '⚠️ 测试完成（请检查结果）',
+        content: resultContent,
+        showCancel: false,
+        confirmText: '知道了'
+      });
+      
+    } catch (error) {
+      wx.hideLoading();
+      console.error('完整流程测试失败:', error);
+      wx.showModal({
+        title: '❌ 测试失败',
+        content: error.message || '未知错误',
+        showCancel: false,
+        confirmText: '知道了'
+      });
+    }
+  },
+
+  /**
+   * 快速测试（创建订单 + 查询订单）
+   */
+  async _testQuickFunctionPayment(functionCode) {
+    wx.showLoading({ title: '快速测试中...', mask: true });
+    
+    try {
+      // 创建订单
+      const createResult = await this._testCreateFunctionOrder(functionCode, false);
+      
+      if (!createResult || !createResult.success) {
+        throw new Error('创建订单失败');
+      }
+      
+      // 查询订单
+      const queryResult = await this._testQueryFunctionOrder(createResult.data.orderId, null, false);
+      
+      wx.hideLoading();
+      
+      if (queryResult && queryResult.success) {
+        wx.showModal({
+          title: '✅ 快速测试完成',
+          content: `订单创建成功\n订单号：${createResult.data.out_trade_no}\n\n请查看控制台日志获取详细信息`,
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      }
+      
+    } catch (error) {
+      wx.hideLoading();
+      console.error('快速测试失败:', error);
+      wx.showModal({
+        title: '❌ 测试失败',
+        content: error.message || '未知错误',
+        showCancel: false,
+        confirmText: '知道了'
+      });
+    }
+  },
+
+  /**
+   * 创建功能付费订单
+   */
+  async _testCreateFunctionOrder(functionCode, showLoading = true) {
+    if (showLoading) {
+      wx.showLoading({ title: '创建订单中...', mask: true });
+    }
+    
+    try {
+      console.log('[testCreateFunctionOrder] 开始创建功能付费订单:', functionCode);
+      
+      const result = await wx.cloud.callFunction({
+        name: 'paymentManagement_v1_3',
+        data: {
+          action: 'createFunctionOrder',
+          data: {
+            functionCode: functionCode
+          }
+        }
+      });
+      
+      console.log('[testCreateFunctionOrder] 云函数返回:', result);
+      
+      if (!result.result) {
+        throw new Error('云函数返回结果为空');
+      }
+      
+      const response = result.result;
+      
+      if (!response.success) {
+        throw new Error(response.error || '创建订单失败');
+      }
+      
+      const orderData = response.data;
+      
+      // 验证必需字段
+      const requiredFields = ['orderId', 'out_trade_no', 'prepay_id', 'paymentParams', 'functionCode', 'functionName', 'price'];
+      const missingFields = requiredFields.filter(field => !orderData[field]);
+      
+      if (missingFields.length > 0) {
+        throw new Error(`缺少必需字段: ${missingFields.join(', ')}`);
+      }
+      
+      console.log('✅ 订单创建成功！');
+      console.log('订单信息:', {
+        orderId: orderData.orderId,
+        out_trade_no: orderData.out_trade_no,
+        functionCode: orderData.functionCode,
+        functionName: orderData.functionName,
+        price: orderData.price,
+        prepay_id: orderData.prepay_id
+      });
+      
+      if (showLoading) {
+        wx.hideLoading();
+        wx.showModal({
+          title: '✅ 订单创建成功',
+          content: `功能：${orderData.functionName}\n价格：¥${(orderData.price / 100).toFixed(2)}\n订单号：${orderData.out_trade_no}\n\n请查看控制台日志获取详细信息`,
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      }
+      
+      return {
+        success: true,
+        data: orderData
+      };
+      
+    } catch (error) {
+      if (showLoading) {
+        wx.hideLoading();
+      }
+      console.error('[testCreateFunctionOrder] 测试异常:', error);
+      
+      if (showLoading) {
+        wx.showModal({
+          title: '❌ 创建订单失败',
+          content: error.message || '未知错误',
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      }
+      
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * 查询订单状态
+   */
+  async _testQueryFunctionOrder(orderId = null, out_trade_no = null, showLoading = true) {
+    // 如果没有提供订单ID或订单号，提示用户输入
+    if (!orderId && !out_trade_no) {
+      const inputResult = await new Promise((resolve) => {
+        wx.showModal({
+          title: '查询订单',
+          content: '请输入订单ID或订单号',
+          editable: true,
+          placeholderText: '订单ID或订单号',
+          success: (res) => {
+            if (res.confirm && res.content) {
+              resolve(res.content);
+            } else {
+              resolve(null);
+            }
+          }
+        });
+      });
+      
+      if (!inputResult) {
+        return { success: false, error: '用户取消输入' };
+      }
+      
+      // 判断是订单ID还是订单号（订单号通常以 ORDER_ 开头）
+      if (inputResult.startsWith('ORDER_')) {
+        out_trade_no = inputResult;
+      } else {
+        orderId = inputResult;
+      }
+    }
+    
+    if (showLoading) {
+      wx.showLoading({ title: '查询订单中...', mask: true });
+    }
+    
+    try {
+      const queryData = orderId ? { orderId } : { out_trade_no };
+      
+      console.log('[testQueryOrderStatus] 查询订单:', queryData);
+      
+      const result = await wx.cloud.callFunction({
+        name: 'paymentManagement_v1_3',
+        data: {
+          action: 'queryOrderStatus',
+          data: queryData
+        }
+      });
+      
+      console.log('[testQueryOrderStatus] 云函数返回:', result);
+      
+      if (!result.result) {
+        throw new Error('云函数返回结果为空');
+      }
+      
+      const response = result.result;
+      
+      if (!response.success) {
+        throw new Error(response.error || '查询订单失败');
+      }
+      
+      const orderData = response.data;
+      
+      // 验证功能付费订单字段
+      if (orderData.functionCode) {
+        console.log('功能付费订单字段:', {
+          functionCode: orderData.functionCode,
+          functionName: orderData.functionName,
+          hasGrantData: !!orderData.grantData,
+          hasGrantInfo: !!orderData.grantInfo
+        });
+        
+        if (orderData.grantInfo) {
+          console.log('grantInfo 详情:', orderData.grantInfo);
+        }
+      }
+      
+      console.log('✅ 订单查询成功！');
+      console.log('订单状态:', orderData.status);
+      
+      if (showLoading) {
+        wx.hideLoading();
+        
+        let content = `订单状态：${orderData.status}\n订单金额：¥${(orderData.amount / 100).toFixed(2)}`;
+        
+        if (orderData.functionCode) {
+          content += `\n功能：${orderData.functionName}`;
+          if (orderData.grantInfo) {
+            content += `\ngrantInfo状态：${orderData.grantInfo.status}`;
+          }
+        }
+        
+        wx.showModal({
+          title: '✅ 订单查询成功',
+          content: content + '\n\n请查看控制台日志获取详细信息',
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      }
+      
+      return {
+        success: true,
+        data: orderData
+      };
+      
+    } catch (error) {
+      if (showLoading) {
+        wx.hideLoading();
+      }
+      console.error('[testQueryOrderStatus] 测试异常:', error);
+      
+      if (showLoading) {
+        wx.showModal({
+          title: '❌ 查询订单失败',
+          content: error.message || '未知错误',
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      }
+      
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * 验证配额发放
+   */
+  async _testVerifyQuotaGrant(functionCode, showLoading = true) {
+    if (showLoading) {
+      wx.showLoading({ title: '验证配额发放中...', mask: true });
+    }
+    
+    try {
+      console.log('[testVerifyQuotaGrant] 开始验证配额发放:', functionCode);
+      
+      // 1. 查询发放前的配额
+      console.log('步骤1: 查询发放前的配额');
+      const quotaBeforeResult = await wx.cloud.callFunction({
+        name: 'functionQuotaManagement_v1_4',
+        data: {
+          action: 'getQuotaInfo',
+          data: { functionCode }
+        }
+      });
+      
+      if (!quotaBeforeResult.result || !quotaBeforeResult.result.success) {
+        throw new Error('查询配额失败');
+      }
+      
+      const quotaBefore = quotaBeforeResult.result.data;
+      console.log('发放前配额:', quotaBefore);
+      
+      // 2. 手动发放配额（模拟支付成功后的发放）
+      console.log('步骤2: 手动发放配额（模拟支付成功）');
+      const grantResult = await wx.cloud.callFunction({
+        name: 'functionQuotaManagement_v1_4',
+        data: {
+          action: 'grantQuota',
+          data: {
+            functionCode: functionCode,
+            quantity: 1,
+            orderId: 'test_order_' + Date.now()
+          }
+        }
+      });
+      
+      if (!grantResult.result || !grantResult.result.success) {
+        throw new Error(grantResult.result?.error || '发放配额失败');
+      }
+      
+      console.log('✅ 配额发放成功');
+      console.log('发放结果:', grantResult.result.data);
+      
+      // 3. 查询发放后的配额
+      console.log('步骤3: 查询发放后的配额');
+      const quotaAfterResult = await wx.cloud.callFunction({
+        name: 'functionQuotaManagement_v1_4',
+        data: {
+          action: 'getQuotaInfo',
+          data: { functionCode }
+        }
+      });
+      
+      if (!quotaAfterResult.result || !quotaAfterResult.result.success) {
+        throw new Error('查询配额失败');
+      }
+      
+      const quotaAfter = quotaAfterResult.result.data;
+      console.log('发放后配额:', quotaAfter);
+      
+      // 4. 验证配额变化
+      const paidRemainingBefore = quotaBefore.paidRemaining || 0;
+      const paidRemainingAfter = quotaAfter.paidRemaining || 0;
+      
+      if (paidRemainingAfter === paidRemainingBefore + 1) {
+        console.log('✅ 配额增加正确（+1）');
+      } else {
+        console.error('❌ 配额增加不正确', {
+          before: paidRemainingBefore,
+          after: paidRemainingAfter,
+          expected: paidRemainingBefore + 1
+        });
+        throw new Error('配额增加不正确');
+      }
+      
+      if (showLoading) {
+        wx.hideLoading();
+        wx.showModal({
+          title: '✅ 配额发放验证成功',
+          content: `发放前：${paidRemainingBefore}次\n发放后：${paidRemainingAfter}次\n增加：+1次\n\n请查看控制台日志获取详细信息`,
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      }
+      
+      return {
+        success: true,
+        data: {
+          quotaBefore,
+          quotaAfter,
+          grantResult: grantResult.result.data
+        }
+      };
+      
+    } catch (error) {
+      if (showLoading) {
+        wx.hideLoading();
+      }
+      console.error('[testVerifyQuotaGrant] 测试异常:', error);
+      
+      if (showLoading) {
+        wx.showModal({
+          title: '❌ 配额发放验证失败',
+          content: error.message || '未知错误',
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      }
+      
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * 调起真实支付
+   */
+  async _testRealPayment(orderData) {
+    console.log('[testRealPayment] 开始调起真实支付:', orderData);
+    
+    try {
+      const { paymentParams, functionName, price, out_trade_no } = orderData;
+      
+      // 验证支付参数
+      if (!paymentParams) {
+        throw new Error('支付参数为空');
+      }
+      
+      const requiredFields = ['timeStamp', 'nonceStr', 'package', 'signType', 'paySign'];
+      const missingFields = requiredFields.filter(field => !paymentParams[field]);
+      
+      if (missingFields.length > 0) {
+        throw new Error('支付参数不完整：' + missingFields.join(', '));
+      }
+      
+      // 显示确认对话框
+      const confirmResult = await new Promise((resolve) => {
+        wx.showModal({
+          title: '确认支付',
+          content: `功能：${functionName}\n金额：¥${(price / 100).toFixed(2)}\n订单号：${out_trade_no}\n\n确认要调起微信支付吗？`,
+          confirmText: '确认支付',
+          cancelText: '取消',
+          success: (res) => resolve(res.confirm)
+        });
+      });
+      
+      if (!confirmResult) {
+        console.log('用户取消支付');
+        return { success: false, error: '用户取消支付' };
+      }
+      
+      wx.showLoading({ title: '调起支付中...', mask: true });
+      
+      // 延迟一下，让用户看到提示
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      wx.hideLoading();
+      
+      // 调起微信支付
+      const paymentResult = await new Promise((resolve, reject) => {
+        wx.requestPayment({
+          timeStamp: paymentParams.timeStamp,
+          nonceStr: paymentParams.nonceStr,
+          package: paymentParams.package,
+          signType: paymentParams.signType,
+          paySign: paymentParams.paySign,
+          success: (res) => {
+            console.log('✅ 支付成功', res);
+            resolve({ success: true, data: res });
+          },
+          fail: (err) => {
+            console.error('❌ 支付失败', err);
+            if (err.errMsg && err.errMsg.includes('cancel')) {
+              resolve({ success: false, error: '用户取消支付' });
+            } else {
+              resolve({ success: false, error: err.errMsg || '支付失败' });
+            }
+          }
+        });
+      });
+      
+      return paymentResult;
+      
+    } catch (error) {
+      console.error('[testRealPayment] 测试异常:', error);
+      return { success: false, error: error.message };
+    }
   }
 });
 

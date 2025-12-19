@@ -92,7 +92,116 @@ POST（云函数调用）
 | data.paymentParams.signType | string | 签名类型，固定为"RSA" |
 | data.paymentParams.paySign | string | 签名值 |
 
-### 2. 查询订单状态
+### 2. 创建功能付费订单
+
+#### 接口名称
+创建功能按次付费订单，从 `function_products` 表查询商品信息，自动创建订单并调用微信支付统一下单接口。
+
+#### 请求参数
+```javascript
+{
+  "action": "createFunctionOrder",
+  "data": {
+    "functionCode": "wisdom_insight"
+  }
+}
+```
+
+#### 参数说明
+| 参数名 | 类型 | 必填 | 说明 |
+|-----|---|---|---|
+| action | string | 是 | 操作类型，固定为"createFunctionOrder" |
+| data | object | 是 | 订单数据对象 |
+| data.functionCode | string | 是 | 功能编码（如：wisdom_insight、ai_report） |
+
+#### 成功响应
+```json
+{
+  "success": true,
+  "message": "功能付费订单创建成功",
+  "data": {
+    "orderId": "order_60a1b2c3d4e5f6789abcdef0",
+    "out_trade_no": "ORDER_1694678400000_abc12345",
+    "prepay_id": "wx1234567890abcdef1234567890",
+    "paymentParams": {
+      "timeStamp": "1694678400",
+      "nonceStr": "abc123def456",
+      "package": "prepay_id=wx1234567890abcdef1234567890",
+      "signType": "RSA",
+      "paySign": "签名值"
+    },
+    "functionCode": "wisdom_insight",
+    "functionName": "智慧洞见",
+    "price": 190
+  }
+}
+```
+
+#### 返回字段说明
+| 字段名 | 类型 | 说明 |
+|-----|---|---|
+| success | boolean | 操作是否成功 |
+| message | string | 操作结果消息 |
+| data.orderId | string | 订单ID（数据库_id） |
+| data.out_trade_no | string | 商户订单号 |
+| data.prepay_id | string | 预支付交易会话ID |
+| data.paymentParams | object | 小程序支付参数，用于调起支付 |
+| data.functionCode | string | 功能编码 |
+| data.functionName | string | 功能名称 |
+| data.price | number | 价格（单位：分） |
+
+#### 错误响应
+```json
+{
+  "success": false,
+  "error": "功能商品不存在或已下架",
+  "code": -1
+}
+```
+
+#### 功能说明
+1. 从 `function_products` 表查询商品信息（根据 `functionCode` 和 `status='active'`）
+2. 如果商品不存在或已下架，返回错误
+3. 创建订单，快照商品信息到 `grantData` 字段
+4. 初始化 `grantInfo.status = 'pending'`
+5. 调用微信支付统一下单接口
+6. 返回支付参数给客户端
+
+#### 使用示例
+```javascript
+// 创建功能付费订单
+const result = await wx.cloud.callFunction({
+  name: 'paymentManagement',
+  data: {
+    action: 'createFunctionOrder',
+    data: {
+      functionCode: 'wisdom_insight'
+    }
+  }
+});
+
+if (result.result.success) {
+  const orderData = result.result.data;
+  
+  // 调起支付
+  wx.requestPayment({
+    timeStamp: orderData.paymentParams.timeStamp,
+    nonceStr: orderData.paymentParams.nonceStr,
+    package: orderData.paymentParams.package,
+    signType: orderData.paymentParams.signType,
+    paySign: orderData.paymentParams.paySign,
+    success: (res) => {
+      console.log('支付成功');
+      // 支付成功后，配额会自动发放（通过支付回调）
+    },
+    fail: (err) => {
+      console.error('支付失败', err);
+    }
+  });
+}
+```
+
+### 3. 查询订单状态
 
 #### 接口名称
 查询订单支付状态，支持通过商户订单号或订单ID查询。
@@ -144,6 +253,40 @@ POST（云函数调用）
 }
 ```
 
+功能付费订单的响应示例：
+```json
+{
+  "success": true,
+  "message": "查询成功",
+  "data": {
+    "orderId": "order_func_pay_001",
+    "out_trade_no": "ORDER_1702886400000_func123",
+    "status": "SUCCESS",
+    "amount": 190,
+    "description": "智慧洞见",
+    "functionCode": "wisdom_insight",
+    "functionName": "智慧洞见",
+    "grantData": {
+      "type": "grant_function_quota",
+      "functionCode": "wisdom_insight",
+      "quantity": 1
+    },
+    "grantInfo": {
+      "status": "granted",
+      "grantTime": "2024-12-18T08:00:15.000Z",
+      "grantResult": {
+        "success": true,
+        "message": "配额发放成功"
+      },
+      "errorMessage": ""
+    },
+    "createTime": "2024-12-18T08:00:00.000Z",
+    "updateTime": "2024-12-18T08:00:15.000Z",
+    "payTime": "2024-12-18T08:00:10.000Z"
+  }
+}
+```
+
 #### 返回字段说明
 | 字段名 | 类型 | 说明 |
 |-----|---|---|
@@ -157,6 +300,19 @@ POST（云函数调用）
 | data.createTime | string | 订单创建时间 |
 | data.updateTime | string | 订单更新时间 |
 | data.payTime | string | 支付时间（如果已支付） |
+| data.functionCode | string | 功能编码（功能付费订单） |
+| data.functionName | string | 功能名称（功能付费订单） |
+| data.grantData | object | 权益发放配置（功能付费订单） |
+| data.grantData.type | string | 发货类型（grant_function_quota） |
+| data.grantData.functionCode | string | 功能编码 |
+| data.grantData.quantity | number | 发放次数 |
+| data.grantInfo | object | 权益发放信息（功能付费订单） |
+| data.grantInfo.status | string | 发放状态：pending（待发放）/ granted（已发放）/ failed（发放失败） |
+| data.grantInfo.grantTime | string | 权益发放时间 |
+| data.grantInfo.grantResult | object | 发放结果对象 |
+| data.grantInfo.grantResult.success | boolean | 发放是否成功 |
+| data.grantInfo.grantResult.message | string | 发放结果消息 |
+| data.grantInfo.errorMessage | string | 发放失败时的错误信息 |
 
 ### 3. 处理支付回调
 
@@ -311,10 +467,51 @@ const queryResult = await wx.cloud.callFunction({
 
 ### 完整支付流程
 
-1. **创建订单**：调用`createPaymentOrder`创建支付订单，获取`prepay_id`和支付参数
+1. **创建订单**：调用`createPaymentOrder`或`createFunctionOrder`创建支付订单，获取`prepay_id`和支付参数
 2. **调起支付**：使用`wx.requestPayment`调起微信支付
 3. **查询订单**：支付完成后调用`queryOrderStatus`确认支付结果
 4. **处理回调**：微信支付会发送回调通知到配置的`notify_url`，更新订单状态
+
+### 功能付费订单流程
+
+#### 订单创建流程
+1. 客户端调用 `createFunctionOrder({ functionCode })`
+2. 云函数从 `function_products` 表查询商品信息
+3. 创建订单，快照商品信息到 `grantData` 字段
+4. 初始化 `grantInfo.status = 'pending'`
+5. 调用微信支付统一下单接口
+6. 返回支付参数给客户端
+
+#### 支付成功处理流程
+1. 用户完成支付，微信支付发送回调通知
+2. 云函数验证签名，更新订单状态为 `SUCCESS`
+3. 根据 `grantData.type` 执行权益发放：
+   - 如果 `type = 'grant_function_quota'`，调用 `functionQuotaManagement_v1_4.grantQuota`
+   - 传递参数：`functionCode`, `quantity`, `orderId`
+4. 更新 `grantInfo` 字段：
+   - 成功：`status='granted'`, `grantTime`, `grantResult={success: true, message: '配额发放成功'}`
+   - 失败：`status='failed'`, `errorMessage`, `grantResult={success: false, message: '错误信息'}`
+
+#### 权益发放状态说明
+| 状态 | 说明 | 后续操作 |
+|-----|------|---------|
+| pending | 待发放 | 支付成功后自动发放 |
+| granted | 已发放 | 无需操作，用户可使用 |
+| failed | 发放失败 | 需要人工介入，手动补发或退款 |
+
+#### 查询发放失败的订单
+```javascript
+// 查询需要人工处理的订单
+const failedOrders = await db.collection('payment_orders')
+  .where({
+    orderType: 'function_payment',
+    status: 'SUCCESS',
+    'grantInfo.status': 'failed'
+  })
+  .get();
+
+console.log('需要处理的失败订单:', failedOrders.data);
+```
 
 ### 支付流程图
 
@@ -345,7 +542,17 @@ const queryResult = await wx.cloud.callFunction({
 7. **签名算法**：微信支付V3使用RSA-SHA256签名，需要配置商户私钥
 8. **错误处理**：所有支付相关操作都应该有完善的错误处理和用户提示
 9. **订单超时**：订单默认7天有效，可以通过`time_expire`参数设置自定义过期时间
-10. **业务逻辑**：支付回调成功后，需要根据`orderType`执行相应的业务逻辑（如升级用户类型）
+10. **业务逻辑**：支付回调成功后，需要根据`orderType`执行相应的业务逻辑（如升级用户类型、发放配额等）
+11. **功能付费订单**：
+    - 使用 `createFunctionOrder` 创建功能付费订单，会自动从 `function_products` 表查询商品信息
+    - `grantData` 字段快照商品信息，价格调整不影响已创建订单
+    - `grantInfo` 字段记录权益发放状态，便于问题排查
+    - 权益发放失败时，需要人工介入处理（补发或退款）
+    - 查询功能付费订单时，通过 `orderType='function_payment'` 筛选
+12. **配额发放**：
+    - 支付成功后自动调用 `functionQuotaManagement_v1_4.grantQuota` 发放配额
+    - 发放失败时会在 `grantInfo` 中记录错误信息
+    - 建议定期检查 `grantInfo.status='failed'` 的订单，及时处理
 
 ## 相关文件
 

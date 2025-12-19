@@ -816,65 +816,72 @@ const products = [
 
 #### 4.1 扩展支付云函数
 
-- [ ] **新增 createFunctionOrder 接口**
+- [x] **新增 createFunctionOrder 接口** ✅
   - 功能：创建功能付费订单
   - 参数：`{ functionCode: 'wisdom_insight' }`
   - 逻辑：
-    1. 验证 functionCode
-    2. 从 `function_products` 查询商品信息
-    3. 创建订单（orderType='function_payment'）
-    4. 快照商品信息到订单（price, grantData, callConfig）
-    5. 初始化 grantInfo（status='pending'）
-    6. 调用微信支付统一下单
-    7. 返回支付参数
+    1. 验证 functionCode ✅
+    2. 从 `function_products` 查询商品信息 ✅
+    3. 创建订单（orderType='function_payment'）✅
+    4. 快照商品信息到订单（price, grantData, callConfig）✅
+    5. 初始化 grantInfo（status='pending'）✅
+    6. 调用微信支付统一下单 ✅
+    7. 返回支付参数 ✅
   - 位置：`cloudfunctions/paymentManagement_v1_3/index.js`
+  - **状态**：已完成
 
-- [ ] **扩展 handlePaymentSuccess（支付成功处理）**
-  - 新增 case：`grant_function_quota`
+- [x] **扩展 handlePaymentSuccess（支付成功处理）** ✅
+  - 新增 case：`grant_function_quota` ✅
   - 逻辑：
-    1. 从订单的 grantData 获取 functionCode 和 quantity
-    2. 调用 `functionQuotaManagement.grantQuota` 发放配额
-    3. 更新订单的 `grantInfo` 字段
-      - 成功：`status='granted'`, `grantTime`, `grantResult`
-      - 失败：`status='failed'`, `errorMessage`
+    1. 从订单的 grantData 获取 functionCode 和 quantity ✅
+    2. 调用 `functionQuotaManagement_v1_4.grantQuota` 发放配额 ✅
+    3. 更新订单的 `grantInfo` 字段 ✅
+      - 成功：`status='granted'`, `grantTime`, `grantResult` ✅
+      - 失败：`status='failed'`, `errorMessage` ✅
   - 位置：`cloudfunctions/paymentManagement_v1_3/index.js`
+  - **状态**：已完成
 
-- [ ] **订单查询接口支持 grantInfo**
-  - 返回订单时包含 grantInfo 字段
-  - 客户端可查询权益发放状态
+- [x] **订单查询接口支持 grantInfo** ✅
+  - 返回订单时包含 grantInfo 字段 ✅
+  - 客户端可查询权益发放状态 ✅
+  - **状态**：已完成
 
 #### 4.2 更新订单表
 
-- [ ] **确认订单表字段**
-  - `orderType`: 'function_payment'
-  - `functionCode`: 功能编码
-  - `functionName`: 功能名称
-  - `grantData`: 权益发放配置
-  - `grantInfo`: 权益发放信息
-    - `status`: 'pending' | 'granted' | 'failed'
-    - `grantTime`: Date
-    - `grantResult`: { success, message }
-    - `errorMessage`: string
+- [x] **确认订单表字段** ✅
+  - `orderType`: 'function_payment' ✅
+  - `functionCode`: 功能编码 ✅
+  - `functionName`: 功能名称 ✅
+  - `grantData`: 权益发放配置 ✅
+  - `grantInfo`: 权益发放信息 ✅
+    - `status`: 'pending' | 'granted' | 'failed' ✅
+    - `grantTime`: Date ✅
+    - `grantResult`: { success, message } ✅
+    - `errorMessage`: string ✅
+  - **状态**：已完成（数据库文档已更新）
 
 #### 4.3 更新文档
 
-- [ ] **更新支付API文档**
-  - 位置：`docs/api/paymentManagementAPI.md`
-  - 新增：createFunctionOrder 接口说明
-  - 更新：权益发放流程说明
+- [x] **更新支付API文档** ✅
+  - 位置：`docs/api/paymentManagement-api.md`
+  - 新增：createFunctionOrder 接口说明 ✅
+  - 更新：权益发放流程说明 ✅
+  - **状态**：已完成
 
-- [ ] **更新数据库文档**
-  - 位置：`docs/database/payment_orders_db.md`
-  - 新增：功能付费相关字段说明
+- [x] **更新数据库文档** ✅
+  - 位置：`docs/database/payment_ordersdb.md`
+  - 新增：功能付费相关字段说明 ✅
+  - **状态**：已完成（Phase 1 已完成）
 
 ### ✅ 验收标准
 
-- [ ] createFunctionOrder 接口测试通过
-- [ ] 订单创建成功，包含完整的商品快照
-- [ ] 支付成功后配额正确发放
-- [ ] grantInfo 字段正确更新
-- [ ] 发放失败时记录错误信息
-- [ ] API 文档更新完整
+- [x] createFunctionOrder 接口代码完成 ✅
+- [x] 订单创建成功，包含完整的商品快照 ✅
+- [x] 支付成功后配额正确发放（代码逻辑完成）✅
+- [x] grantInfo 字段正确更新 ✅
+- [x] 发放失败时记录错误信息 ✅
+- [x] API 文档更新完整 ✅
+- [ ] ⏳ 接口测试通过（待部署后测试）
 
 ### 🧪 测试用例
 
@@ -893,6 +900,76 @@ const products = [
 ### ⏱️ 预计工时
 
 **2个工作日**
+
+### 📊 Phase 4 当前进度
+
+**完成度：100%** ✅（开发完成）
+
+#### ✅ 已完成任务
+
+1. ✅ **新增 createFunctionOrder 接口**
+   - 验证 functionCode ✅
+   - 从 function_products 查询商品信息 ✅
+   - 创建订单，快照商品信息 ✅
+   - 初始化 grantInfo ✅
+   - 调用微信支付统一下单 ✅
+   - 返回支付参数 ✅
+
+2. ✅ **扩展 handlePaymentSuccess**
+   - 新增 grant_function_quota case ✅
+   - 调用 functionQuotaManagement_v1_4.grantQuota ✅
+   - 更新 grantInfo 字段（成功/失败）✅
+   - 错误处理完善 ✅
+
+3. ✅ **更新 queryOrderStatus**
+   - 返回 grantInfo 字段 ✅
+   - 返回功能付费订单专用字段 ✅
+
+4. ✅ **文档更新**
+   - API 文档已更新 ✅
+   - 添加 createFunctionOrder 接口说明 ✅
+   - 添加权益发放流程说明 ✅
+   - 添加注意事项 ✅
+
+#### ✨ 核心特性
+
+1. **功能付费订单创建**
+   - ✅ 自动查询商品信息
+   - ✅ 快照商品配置到订单
+   - ✅ 初始化权益发放状态
+
+2. **权益自动发放**
+   - ✅ 支付成功后自动发放配额
+   - ✅ 发放状态记录完整
+   - ✅ 失败时记录错误信息
+
+3. **错误处理**
+   - ✅ 商品不存在或已下架提示
+   - ✅ 配额发放失败记录
+   - ✅ 详细错误日志
+
+#### ⚠️ 注意事项
+
+1. **云函数调用**：需要确保 `functionQuotaManagement_v1_4` 云函数已部署
+2. **测试**：需要部署到云端后进行完整测试
+3. **权益发放失败**：需要定期检查 `grantInfo.status='failed'` 的订单
+
+#### 🎉 Phase 4 完成总结
+
+- ✅ 云函数代码已完成
+- ✅ createFunctionOrder 接口实现完成
+- ✅ handlePaymentSuccess 扩展完成
+- ✅ queryOrderStatus 更新完成
+- ✅ 文档完整（API 文档已更新）
+- ✅ 代码符合项目规范
+- ✅ 错误处理完善
+
+**Phase 4 状态：开发完成** ✅
+
+**下一步：**
+1. ⏳ **部署云函数到云端**
+2. ⏳ **进行接口测试**（创建订单、支付回调、配额发放）
+3. ⏳ **进入 Phase 5**：客户端开发
 
 ---
 

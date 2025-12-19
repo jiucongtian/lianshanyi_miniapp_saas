@@ -349,6 +349,92 @@ function generatePaymentParams(prepayId, appid, privateKey) {
 }
 
 /**
+ * 创建功能付费订单
+ * @param {Object} wxContext - 微信上下文
+ * @param {Object} data - 订单数据
+ * @returns {Promise<Object>} 订单创建结果
+ */
+async function createFunctionOrder(wxContext, data) {
+  const { OPENID, APPID } = wxContext;
+  const { functionCode } = data;
+  
+  console.log('[createFunctionOrder] 开始创建功能付费订单', { functionCode, openid: OPENID });
+  
+  try {
+    // 1. 验证参数
+    if (!functionCode) {
+      return error('缺少必需参数：functionCode');
+    }
+    
+    // 2. 从 function_products 查询商品信息
+    const productResult = await db.collection('function_products')
+      .where({
+        functionCode: functionCode,
+        status: 'active'
+      })
+      .get();
+    
+    if (productResult.data.length === 0) {
+      console.error('[createFunctionOrder] 商品不存在或已下架', { functionCode });
+      return error('功能商品不存在或已下架');
+    }
+    
+    const product = productResult.data[0];
+    console.log('[createFunctionOrder] 查询到商品信息', {
+      functionCode: product.functionCode,
+      functionName: product.functionName,
+      price: product.price
+    });
+    
+    // 3. 创建订单（使用 createPaymentOrder 的通用逻辑）
+    const orderData = {
+      description: product.functionName || product.description || `购买${product.functionName}`,
+      amount: product.price,
+      orderType: 'function_payment',
+      orderData: {},
+      functionCode: product.functionCode,
+      functionName: product.functionName,
+      grantData: product.grantData,  // 快照商品信息
+      callConfig: product.callConfig  // 快照调用配置（可选，用于记录）
+    };
+    
+    // 初始化 grantInfo
+    orderData.grantInfo = {
+      status: 'pending',
+      grantTime: null,
+      grantResult: null,
+      errorMessage: ''
+    };
+    
+    // 调用通用的创建订单函数
+    const createResult = await createPaymentOrder(wxContext, orderData);
+    
+    if (!createResult.success) {
+      return createResult;
+    }
+    
+    console.log('[createFunctionOrder] 功能付费订单创建成功', {
+      orderId: createResult.data.orderId,
+      functionCode
+    });
+    
+    return success({
+      orderId: createResult.data.orderId,
+      out_trade_no: createResult.data.out_trade_no,
+      prepay_id: createResult.data.prepay_id,
+      paymentParams: createResult.data.paymentParams,
+      functionCode: product.functionCode,
+      functionName: product.functionName,
+      price: product.price
+    }, '功能付费订单创建成功');
+    
+  } catch (err) {
+    console.error('[createFunctionOrder] 创建功能付费订单失败:', err);
+    return error('创建功能付费订单失败: ' + err.message);
+  }
+}
+
+/**
  * 创建支付订单
  */
 async function createPaymentOrder(wxContext, data) {
@@ -357,7 +443,12 @@ async function createPaymentOrder(wxContext, data) {
     description,     // 商品描述
     amount,          // 订单金额（分）
     orderType,       // 订单类型（用于业务区分）
-    orderData        // 订单附加数据
+    orderData,       // 订单附加数据
+    functionCode,   // 功能编码（功能付费订单）
+    functionName,   // 功能名称（功能付费订单）
+    grantData,       // 权益发放配置（功能付费订单）
+    grantInfo,       // 权益发放信息（功能付费订单）
+    callConfig       // 调用配置（功能付费订单，可选）
   } = data;
   
   try {
@@ -403,6 +494,15 @@ async function createPaymentOrder(wxContext, data) {
       createTime: new Date(),
       updateTime: new Date()
     };
+    
+    // 功能付费订单专用字段
+    if (orderType === 'function_payment') {
+      if (functionCode) orderRecord.functionCode = functionCode;
+      if (functionName) orderRecord.functionName = functionName;
+      if (grantData) orderRecord.grantData = grantData;
+      if (grantInfo) orderRecord.grantInfo = grantInfo;
+      if (callConfig) orderRecord.callConfig = callConfig; // 可选，用于记录
+    }
     
     // 保存订单到数据库
     const dbResult = await db.collection('payment_orders').add({
@@ -513,7 +613,8 @@ async function queryOrderStatus(wxContext, data) {
     // TODO: 如果订单状态为NOTPAY，可以调用微信支付查询接口确认最新状态
     // 参考文档：https://pay.weixin.qq.com/docs/merchant/apis/china-transaction-query/query-by-out-trade-no.html
     
-    return success({
+    // 构建返回数据
+    const orderData = {
       orderId: order._id,
       out_trade_no: order.out_trade_no,
       status: order.status,
@@ -522,7 +623,17 @@ async function queryOrderStatus(wxContext, data) {
       createTime: order.createTime,
       updateTime: order.updateTime,
       payTime: order.payTime || null
-    }, '查询成功');
+    };
+    
+    // 功能付费订单专用字段
+    if (order.orderType === 'function_payment') {
+      if (order.functionCode) orderData.functionCode = order.functionCode;
+      if (order.functionName) orderData.functionName = order.functionName;
+      if (order.grantData) orderData.grantData = order.grantData;
+      if (order.grantInfo) orderData.grantInfo = order.grantInfo;
+    }
+    
+    return success(orderData, '查询成功');
     
   } catch (err) {
     console.error('[queryOrderStatus] 查询订单状态失败:', err);
@@ -535,12 +646,13 @@ async function queryOrderStatus(wxContext, data) {
  * @param {Object} order - 订单对象
  */
 async function handlePaymentSuccess(order) {
-  const { orderType, orderData, openid } = order;
+  const { orderType, orderData, openid, grantData, grantInfo, _id } = order;
   
   console.log('[handlePaymentSuccess] 开始处理支付成功业务逻辑', {
     orderType,
     orderData,
-    openid
+    openid,
+    hasGrantData: !!grantData
   });
   
   try {
@@ -559,6 +671,18 @@ async function handlePaymentSuccess(order) {
         console.log('[handlePaymentSuccess] 充值配额功能待实现', { orderData });
         break;
         
+      case 'function_payment':
+        // 功能付费订单：发放功能配额
+        if (grantData && grantData.type === 'grant_function_quota') {
+          await grantFunctionQuota(openid, grantData, _id);
+        } else {
+          console.warn('[handlePaymentSuccess] 功能付费订单缺少 grantData 或 type 不正确', {
+            grantData,
+            orderId: _id
+          });
+        }
+        break;
+        
       default:
         console.log('[handlePaymentSuccess] 未知订单类型，跳过业务逻辑处理', { orderType });
     }
@@ -570,6 +694,135 @@ async function handlePaymentSuccess(order) {
     throw error;
   }
 }
+
+/**
+ * 发放功能配额
+ * @param {string} openid - 用户openid
+ * @param {Object} grantData - 权益发放配置
+ * @param {string} orderId - 订单ID
+ */
+async function grantFunctionQuota(openid, grantData, orderId) {
+  const { functionCode, quantity } = grantData;
+  
+  console.log('[grantFunctionQuota] 开始发放功能配额', {
+    openid,
+    functionCode,
+    quantity,
+    orderId
+  });
+  
+  if (!functionCode || !quantity) {
+    throw new Error('grantData 缺少必需字段：functionCode 或 quantity');
+  }
+  
+  try {
+    // 调用配额管理云函数发放配额
+    const grantResult = await cloud.callFunction({
+      name: 'functionQuotaManagement_v1_4',
+      data: {
+        action: 'grantQuota',
+        data: {
+          functionCode: functionCode,
+          quantity: quantity,
+          orderId: orderId
+        }
+      }
+    });
+    
+    const result = grantResult.result;
+    
+    if (!result || !result.success) {
+      const errorMsg = result?.error || '发放配额失败';
+      console.error('[grantFunctionQuota] 配额发放失败', {
+        functionCode,
+        quantity,
+        error: errorMsg
+      });
+      
+      // 更新订单的 grantInfo 为失败状态
+      await updateGrantInfo(orderId, {
+        status: 'failed',
+        grantTime: new Date(),
+        grantResult: {
+          success: false,
+          message: errorMsg
+        },
+        errorMessage: errorMsg
+      });
+      
+      throw new Error(errorMsg);
+    }
+    
+    console.log('[grantFunctionQuota] 配额发放成功', {
+      functionCode,
+      quantity,
+      result: result.data
+    });
+    
+    // 更新订单的 grantInfo 为成功状态
+    await updateGrantInfo(orderId, {
+      status: 'granted',
+      grantTime: new Date(),
+      grantResult: {
+        success: true,
+        message: '配额发放成功'
+      },
+      errorMessage: ''
+    });
+    
+  } catch (error) {
+    console.error('[grantFunctionQuota] 发放功能配额异常', {
+      functionCode,
+      quantity,
+      error: error.message
+    });
+    
+    // 更新订单的 grantInfo 为失败状态
+    try {
+      await updateGrantInfo(orderId, {
+        status: 'failed',
+        grantTime: new Date(),
+        grantResult: {
+          success: false,
+          message: error.message
+        },
+        errorMessage: error.message
+      });
+    } catch (updateError) {
+      console.error('[grantFunctionQuota] 更新 grantInfo 失败', updateError);
+    }
+    
+    throw error;
+  }
+}
+
+/**
+ * 更新订单的 grantInfo 字段
+ * @param {string} orderId - 订单ID
+ * @param {Object} grantInfo - 权益发放信息
+ */
+async function updateGrantInfo(orderId, grantInfo) {
+  try {
+    await db.collection('payment_orders').doc(orderId).update({
+      data: {
+        grantInfo: grantInfo,
+        updateTime: new Date()
+      }
+    });
+    
+    console.log('[updateGrantInfo] grantInfo 更新成功', {
+      orderId,
+      status: grantInfo.status
+    });
+  } catch (error) {
+    console.error('[updateGrantInfo] 更新 grantInfo 失败', {
+      orderId,
+      error: error.message
+    });
+    throw error;
+  }
+}
+
 
 /**
  * 升级用户为高级用户
@@ -722,11 +975,30 @@ async function handlePaymentNotify(event) {
     // 根据订单类型执行相应的业务逻辑
     if (trade_state === 'SUCCESS') {
       try {
-        await handlePaymentSuccess(order);
+        // 重新查询订单，获取最新的订单数据（包含 grantData）
+        const updatedOrderResult = await db.collection('payment_orders')
+          .doc(order._id)
+          .get();
+        
+        const updatedOrder = updatedOrderResult.data;
+        
+        console.log('[handlePaymentNotify] 准备处理支付成功业务逻辑', {
+          orderId: order._id,
+          orderType: updatedOrder.orderType,
+          hasGrantData: !!updatedOrder.grantData
+        });
+        
+        await handlePaymentSuccess(updatedOrder);
+        
+        console.log('[handlePaymentNotify] 支付成功业务逻辑处理完成', {
+          orderId: order._id
+        });
       } catch (businessError) {
         console.error('[handlePaymentNotify] 业务逻辑处理失败', {
           out_trade_no,
-          error: businessError.message
+          orderId: order._id,
+          error: businessError.message,
+          stack: businessError.stack
         });
         // 业务逻辑失败不影响支付回调响应，记录日志即可
       }
@@ -831,6 +1103,8 @@ exports.main = async (event, context) => {
     switch (action) {
       case 'createPaymentOrder':
         return await createPaymentOrder(wxContext, data);
+      case 'createFunctionOrder':
+        return await createFunctionOrder(wxContext, data);
       case 'queryOrderStatus':
         return await queryOrderStatus(wxContext, data);
       default:

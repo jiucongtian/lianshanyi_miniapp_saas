@@ -37,6 +37,21 @@
         <text class="test-button-text">🚀 发起测试支付</text>
       </button>
     </view>
+
+    <!-- 功能付费订单测试 -->
+    <view class="test-card">
+      <view class="test-header">
+        <text class="test-icon">💰</text>
+        <text class="test-title">功能付费订单测试</text>
+      </view>
+      <view class="test-info">
+        <text class="test-desc">测试功能付费订单创建、支付回调、配额发放</text>
+        <text class="test-detail">包含：创建订单、查询订单、配额发放验证</text>
+      </view>
+      <button class="test-button" bindtap="onTestFunctionPayment" hover-class="button-hover">
+        <text class="test-button-text">🚀 开始测试功能付费</text>
+      </button>
+    </view>
   </view>
 
   <!-- 提示信息 -->
