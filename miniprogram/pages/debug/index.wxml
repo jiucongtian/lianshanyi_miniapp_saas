@@ -18,7 +18,7 @@
         <text class="test-desc">测试功能配额管理云函数所有接口</text>
         <text class="test-detail">包含：检查、扣除、发放、回滚</text>
       </view>
-      <button class="test-button" bindtap="onTestQuotaManagement">
+      <button class="test-button" bindtap="onTestQuotaManagement" hover-class="button-hover">
         <text class="test-button-text">🚀 开始测试配额</text>
       </button>
     </view>

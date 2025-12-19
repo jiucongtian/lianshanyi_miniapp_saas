@@ -18,36 +18,45 @@ Page({
   /**
    * 测试配额管理功能
    */
-  async onTestQuotaManagement() {
+  async onTestQuotaManagement(e) {
+    console.log('[DebugPage] onTestQuotaManagement 被调用', e);
     log.info('onTestQuotaManagement', '开始测试配额管理功能');
     
-    // 显示测试选项
-    const testOption = await new Promise((resolve) => {
-      wx.showActionSheet({
-        itemList: [
-          '⚡ 快速测试（检查配额）',
-          '🚀 完整测试（所有接口）',
-          '📋 检查配额',
-          '➕ 发放配额',
-          '➖ 扣除配额',
-          '↩️ 回滚配额',
-          '📊 获取配额信息'
-        ],
-        success: (res) => resolve(res.tapIndex),
-        fail: () => resolve(-1)
-      });
-    });
-
-    if (testOption === -1) {
-      return;
-    }
-
     try {
+      // 显示测试选项（注意：wx.showActionSheet 最多支持 6 个选项）
+      const testOption = await new Promise((resolve) => {
+        wx.showActionSheet({
+          itemList: [
+            '🚀 完整测试（所有接口）',
+            '⚡ 快速测试（检查配额）',
+            '📋 检查配额',
+            '➕ 发放配额',
+            '➖ 扣除配额',
+            '↩️ 回滚配额'
+          ],
+          success: (res) => {
+            console.log('[DebugPage] 用户选择了测试选项:', res.tapIndex);
+            resolve(res.tapIndex);
+          },
+          fail: (err) => {
+            console.log('[DebugPage] 用户取消选择或出错:', err);
+            resolve(-1);
+          }
+        });
+      });
+
+      if (testOption === -1) {
+        console.log('[DebugPage] 用户取消或出错，退出');
+        return;
+      }
+
+      console.log('[DebugPage] 开始执行测试，选项:', testOption);
       await this._executeQuotaTest(testOption);
     } catch (error) {
+      console.error('[DebugPage] 测试执行异常:', error);
       log.error('onTestQuotaManagement', '测试执行失败', error);
       wx.showToast({
-        title: '测试失败: ' + error.message,
+        title: '测试失败: ' + (error.message || '未知错误'),
         icon: 'error',
         duration: 3000
       });
@@ -61,11 +70,11 @@ Page({
     const functionCode = 'wisdom_insight';
     
     switch (testOption) {
-      case 0: // 快速测试
-        await this._runQuickTest(functionCode);
-        break;
-      case 1: // 完整测试
+      case 0: // 完整测试
         await this._runFullTest(functionCode);
+        break;
+      case 1: // 快速测试
+        await this._runQuickTest(functionCode);
         break;
       case 2: // 检查配额
         await this._testCheckQuota(functionCode);
@@ -79,9 +88,13 @@ Page({
       case 5: // 回滚配额
         await this._testRollbackQuota(functionCode, false);
         break;
-      case 6: // 获取配额信息
-        await this._testGetQuotaInfo(functionCode);
-        break;
+      default:
+        console.warn('[DebugPage] 未知的测试选项:', testOption);
+        wx.showToast({
+          title: '未知的测试选项',
+          icon: 'none',
+          duration: 2000
+        });
     }
   },
 
