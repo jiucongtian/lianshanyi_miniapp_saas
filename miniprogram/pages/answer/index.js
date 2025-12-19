@@ -12,6 +12,8 @@ const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
 // const { drawCardService } = require('../../services/DrawCardService');
 // 引入海报生成器
 const { posterGenerator } = require('../../utils/posterGenerator');
+// 引入功能控制器（用于智慧洞见按次付费）
+const { FunctionController } = require('../../controllers/FunctionController');
 
 Page({
   data: {
@@ -52,6 +54,9 @@ Page({
   async onLoad(options) {
     console.log('[AnswerPage] 页面加载');
     
+    // 初始化功能控制器
+    this.functionController = new FunctionController(this);
+    
     // 准备初始数据（合并所有 setData 调用）
     const initialData = {};
     
@@ -69,7 +74,10 @@ Page({
       ...cardListData
     });
     
-    // 预加载用户配额信息
+    // 预加载智慧洞见配额信息
+    this._loadQuotaInfo();
+    
+    // 预加载用户配额信息（旧的抽卡配额，暂时保留）
     await this._loadUserQuota();
   },
   
@@ -434,7 +442,7 @@ Page({
   },
 
   /**
-   * AI解读按钮点击事件
+   * AI解读按钮点击事件（使用功能按次付费系统）
    * @param {boolean} isAutoCall - 是否为自动调用（抽卡后自动调用）
    */
   async onAIInterpret(isAutoCall = false) {
@@ -474,44 +482,43 @@ Page({
     // 获取按钮组件引用（用于错误时重置状态）
     const buttonComponent = this.selectComponent('#loading-button-interpret');
     
-    // 显示加载提示（使用标志确保只显示一次）
-    let loadingShown = false;
     try {
-      wx.showLoading({
-        title: 'AI解读中...',
-        mask: true
-      });
-      loadingShown = true;
-    } catch (e) {
-      log.warn('onAIInterpret', 'showLoading 失败', { error: e.message });
-    }
-    
-    try {
-      // 通过版本管理器获取云函数名称
-      const functionName = VersionManager.getFunctionName('cozeFunctions');
-      log.info('onAIInterpret', '调用云函数', { 
-        functionName, 
+      // 使用功能控制器调用智慧洞见功能（自动处理配额检查、扣除、支付等）
+      log.info('onAIInterpret', '调用智慧洞见功能', { 
         bazi_name: baziName,
         question: this.data.question 
       });
       
-      // 调用云函数
-      const result = await wx.cloud.callFunction({
-        name: functionName,
-        data: {
-          workflowType: 'DRAW_CARD', // 使用抽卡工作流，如需专门的解读工作流请修改此处
-          parameters: {
-            bazi_name: baziName, // DRAW_CARD工作流需要bazi_name参数，使用抽中的卡牌名称
-            question: this.data.question || '' // question为可选参数
-          }
+      const result = await this.functionController.useFunction('wisdom_insight', {
+        bazi_name: baziName,
+        question: this.data.question || ''
+      }, {
+        showLoading: false, // 不使用自动加载提示，手动控制
+        autoPayment: true,
+        onQuotaInsufficient: () => {
+          // 配额不足时的自定义处理
+          log.warn('onAIInterpret', '智慧洞见配额不足');
+          // 返回 true 继续显示支付弹窗，返回 false 取消
+          return true;
         }
       });
       
-      log.info('onAIInterpret', '云函数调用结果', result);
+      // 如果返回 null，说明调用失败（配额不足、权限问题等）
+      if (!result) {
+        log.warn('onAIInterpret', '功能调用失败或被取消');
+        // 解读失败：显示AI解读按钮，让用户可以重试
+        this.setData({
+          showInterpretButton: true
+        });
+        return;
+      }
       
-      // 处理返回结果
-      if (result.result && result.result.success) {
-        const data = result.result.data;
+      log.info('onAIInterpret', '功能调用成功', { result });
+      
+      // 提取功能返回结果（网关返回 functionResult 字段）
+      const functionResult = result.functionResult;
+      if (functionResult && functionResult.success && functionResult.data) {
+        const data = functionResult.data;
         
         // 提取并打印 debug_url 和 usage（用于分析）
         if (data.debug_url) {
@@ -571,21 +578,14 @@ Page({
         
         log.info('onAIInterpret', 'AI解读成功', { interpretation, isAutoCall });
         
-        // ========== 记录抽卡历史（暂时注释，只测试配额显示） ==========
-        // if (this.data.selectedCard) {
-        //   await this._recordDrawHistory(
-        //     this.data.selectedCard,
-        //     this.data.question || '',
-        //     interpretation
-        //   );
-        // }
+        // 刷新智慧洞见配额信息
+        await this._loadQuotaInfo();
         
         // 刷新用户信息（包含抽卡配额）
         const app = getApp();
         await app.globalData.globalUserManager.refreshUserInfo();
         // 更新按钮文本
         await this._loadUserQuota();
-        // ==================================
         
         // 如果是自动调用，不显示toast（避免打断用户体验）
         if (!isAutoCall) {
@@ -596,109 +596,19 @@ Page({
           });
         }
       } else {
-        // 云函数调用成功，但返回失败状态
-        // 尝试提取数据，即使 success 为 false 也可能有数据返回
-        const errorMsg = result.result?.error || '解读失败，请重试';
-        const data = result.result?.data;
-        
-        // 如果返回了数据，尝试解析并显示
-        if (data && data.data) {
-          try {
-            const parsedData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
-            let interpretation = '';
-            
-            if (parsedData && parsedData.data) {
-              interpretation = parsedData.data;
-              interpretation = interpretation
-                .replace(/\\n/g, '\n')
-                .replace(/\\"/g, '"')
-                .replace(/\\'/g, "'")
-                .replace(/\\t/g, '\t')
-                .replace(/\\r/g, '\r')
-                .replace(/\\\\/g, '\\');
-            } else {
-              interpretation = parsedData.output || parsedData.result || parsedData.text || JSON.stringify(parsedData);
-            }
-            
-            if (interpretation) {
-              // 有数据，显示数据但记录警告
-              // 拼接卡牌信息到解读结果最前面
-              const cardInfoHint = this._formatCardInfoHint(this.data.selectedCard);
-              const finalInterpretation = cardInfoHint + interpretation;
-              
-              this.setData({
-                aiInterpretation: finalInterpretation,
-                // 虽然返回失败状态但有数据，视为成功，不显示AI解读按钮
-                showInterpretButton: false,
-                // 显示分享海报按钮
-                showShareButton: true
-              });
-              log.warn('onAIInterpret', '云函数返回失败状态但有数据', { error: errorMsg, interpretation, isAutoCall });
-              // 如果是自动调用，不显示toast
-              if (!isAutoCall) {
-                wx.showToast({
-                  title: '解读完成（可能有错误）',
-                  icon: 'none',
-                  duration: 2000
-                });
-              }
-            } else {
-              // 没有数据，显示错误，并显示AI解读按钮让用户重试
-              log.error('onAIInterpret', '云函数返回失败且无数据', { error: errorMsg, isAutoCall });
-              this.setData({
-                // 解读失败：显示AI解读按钮，让用户可以重试
-                showInterpretButton: true
-              });
-              wx.showToast({
-                title: errorMsg,
-                icon: 'none',
-                duration: 2000
-              });
-            }
-          } catch (parseError) {
-            log.error('onAIInterpret', '解析失败数据失败', { error: parseError.message, isAutoCall });
-            // 解析失败：显示AI解读按钮，让用户可以重试
-            this.setData({
-              showInterpretButton: true
-            });
-            wx.showToast({
-              title: errorMsg,
-              icon: 'none',
-              duration: 2000
-            });
-          }
-        } else {
-          // 没有数据，显示错误，并显示AI解读按钮让用户重试
-          log.error('onAIInterpret', '云函数返回失败', { error: errorMsg, isAutoCall });
-          this.setData({
-            // 解读失败：显示AI解读按钮，让用户可以重试
-            showInterpretButton: true
-          });
-          wx.showToast({
-            title: errorMsg,
-            icon: 'none',
-            duration: 2000
-          });
-        }
+        // 功能调用返回了数据但解析失败
+        log.error('onAIInterpret', '功能调用成功但未返回数据', { isAutoCall });
+        this.setData({
+          showInterpretButton: true
+        });
+        wx.showToast({
+          title: '解读失败，请重试',
+          icon: 'none',
+          duration: 2000
+        });
       }
     } catch (error) {
-      log.error('onAIInterpret', '调用云函数失败', { error: error.message, isAutoCall });
-      
-      // 处理超时错误
-      let errorMessage = '网络错误，请重试';
-      if (error.message && error.message.includes('timeout')) {
-        errorMessage = 'AI解读需要较长时间，请稍后再试或检查云函数配置';
-      } else if (error.message && error.message.includes('FUNCTIONS_TIME_LIMIT_EXCEEDED')) {
-        errorMessage = '请求超时，请检查云函数超时配置（建议30秒）';
-      } else if (error.message) {
-        // 提取更友好的错误信息
-        const errorStr = error.message.toString();
-        if (errorStr.includes('errCode')) {
-          errorMessage = '服务暂时不可用，请稍后再试';
-        } else {
-          errorMessage = error.message.length > 30 ? '请求失败，请重试' : error.message;
-        }
-      }
+      log.error('onAIInterpret', '调用功能失败', { error: error.message, isAutoCall });
       
       // 解读失败：显示AI解读按钮，让用户可以重试
       this.setData({
@@ -706,19 +616,11 @@ Page({
       });
       
       wx.showToast({
-        title: errorMessage,
+        title: '功能调用失败，请重试',
         icon: 'none',
-        duration: 3000
+        duration: 2000
       });
     } finally {
-      // 隐藏加载提示（确保配对）
-      if (loadingShown) {
-        try {
-          wx.hideLoading();
-        } catch (e) {
-          log.warn('onAIInterpret', 'hideLoading 失败', { error: e.message });
-        }
-      }
       // 重置按钮状态和解读标志
       if (buttonComponent) {
         buttonComponent.stopLoading();
@@ -1194,6 +1096,26 @@ Page({
         }
       }
     });
+  },
+
+  /**
+   * 加载智慧洞见配额信息
+   * @private
+   */
+  async _loadQuotaInfo() {
+    try {
+      const quotaInfo = await this.functionController.refreshQuotaInfo('wisdom_insight');
+      if (quotaInfo) {
+        log.info('_loadQuotaInfo', '智慧洞见配额信息', quotaInfo.toObject());
+        // 可以在页面上显示配额信息（如果需要）
+        // this.setData({
+        //   wisdomQuotaText: quotaInfo.getDisplayText()
+        // });
+      }
+    } catch (error) {
+      log.error('_loadQuotaInfo', '加载配额信息失败', { error: error.message });
+      // 配额信息加载失败不影响主流程，静默处理
+    }
   }
 });
 
