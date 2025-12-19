@@ -983,81 +983,184 @@ const products = [
 
 #### 5.1 创建 FunctionService
 
-- [ ] **创建 Service 文件**
+- [x] **创建 Service 文件** ✅
   - 位置：`miniprogram/services/FunctionService.js`
   - 继承：`BaseService`
+  - **状态**：已完成
 
-- [ ] **实现接口方法**
+- [x] **实现接口方法** ✅
   - `checkQuota(functionCode)`：预检查配额（可选，用于UI提示）
   - `useFunction(functionCode, functionParams)`：调用功能（通过统一网关）
   - `purchaseFunction(functionCode)`：购买功能
   - `getQuotaInfo(functionCode)`：获取配额信息
+  - **状态**：已完成
 
-- [ ] **导出单例**
+- [x] **导出单例** ✅
   ```javascript
   module.exports = {
     FunctionService,
     functionService: new FunctionService()
   };
   ```
+  - **状态**：已完成
 
 #### 5.2 创建 FunctionController
 
-- [ ] **创建 Controller 文件**
+- [x] **创建 Controller 文件** ✅
   - 位置：`miniprogram/controllers/FunctionController.js`
+  - **状态**：已完成
 
-- [ ] **实现核心方法**
-  - `useFunction(functionCode, functionParams)`：统一的功能使用入口
-    - 调用统一网关
-    - 处理配额不足（弹窗引导支付）
-    - 处理权限不足（提示用户）
-    - 处理成功（提示并返回结果）
-    - 处理失败（提示错误）
-
-  - `_showPaymentDialog(functionCode, quotaInfo)`：显示支付弹窗
-  - `_purchaseFunction(functionCode)`：购买功能（支付流程）
-    - 创建订单
-    - 调起微信支付
-    - 支付成功提示"请点击使用功能"
-  - `_requestPayment(paymentParams)`：调起微信支付
-  - 辅助方法：`_showSuccess()`, `_showError()`
+- [x] **实现核心方法** ✅
+  - `useFunction(functionCode, functionParams, options)`：统一的功能使用入口
+    - 调用统一网关 ✅
+    - 处理配额不足（弹窗引导支付）✅
+    - 处理权限不足（提示用户）✅
+    - 处理成功（提示并返回结果）✅
+    - 处理失败（提示错误）✅
+  - `checkQuota(functionCode, useCache)`：检查配额 ✅
+  - `purchaseFunction(functionCode, options)`：购买功能（支付流程）✅
+    - 创建订单 ✅
+    - 调起微信支付 ✅
+    - 支付成功提示 ✅
+  - `_showPaymentDialog(functionCode, quotaInfo)`：显示支付弹窗 ✅
+  - `_requestPayment(orderData)`：调起微信支付 ✅
+  - 辅助方法：配额缓存管理 ✅
+  - **状态**：已完成
 
 #### 5.3 创建 Bean 类
 
-- [ ] **创建 FunctionQuotaBean**
+- [x] **创建 FunctionQuotaBean** ✅
   - 位置：`miniprogram/beans/FunctionQuotaBean.js`
   - 功能：处理配额数据
   - 方法：
-    - 数据验证
-    - 默认值处理
-    - `canUse()`：是否可用
-    - `getDisplayText()`：获取显示文案
+    - 数据验证 ✅
+    - 默认值处理 ✅
+    - `canUseFunction()`：是否可用 ✅
+    - `getDisplayText()`：获取显示文案 ✅
+    - `getShortDisplayText()`：简短显示文案 ✅
+    - `getInsufficientQuotaMessage()`：配额不足提示 ✅
+  - **状态**：已完成
 
-- [ ] **创建 FunctionProductBean**
+- [x] **创建 FunctionProductBean** ✅
   - 位置：`miniprogram/beans/FunctionProductBean.js`
   - 功能：处理商品数据
   - 方法：
-    - 数据验证
-    - `getPriceText()`：格式化价格显示
+    - 数据验证 ✅
+    - `getPriceText()`：格式化价格显示 ✅
+    - `getOriginalPriceText()`：格式化原价 ✅
+    - `getFullPriceText()`：完整价格显示（含折扣）✅
+    - `isActive()`：检查是否可用 ✅
+    - `hasDiscount()`：是否有折扣 ✅
+  - **状态**：已完成
 
 #### 5.4 更新 Service 文档
 
-- [ ] **创建 Service 说明**
+- [x] **更新 Service 说明** ✅
   - 位置：`miniprogram/services/README.md`
-  - 更新：FunctionService 使用说明
+  - 更新：FunctionService 使用说明 ✅
+  - 更新：PaymentService 使用说明 ✅
+  - 更新：版本日志 ✅
+  - **状态**：已完成
+
+- [x] **更新导出文件** ✅
+  - `miniprogram/services/index.js` - 导出 FunctionService 和 PaymentService ✅
+  - `miniprogram/beans/index.js` - 导出 FunctionQuotaBean 和 FunctionProductBean ✅
+  - **状态**：已完成
 
 ### ✅ 验收标准
 
-- [ ] FunctionService 代码完成
-- [ ] FunctionController 代码完成
-- [ ] Bean 类完成
-- [ ] 代码符合项目架构规范
-- [ ] 错误处理完善
-- [ ] 注释完整
+- [x] FunctionService 代码完成 ✅
+- [x] FunctionController 代码完成 ✅
+- [x] Bean 类完成（2个）✅
+- [x] 代码符合项目架构规范 ✅
+- [x] 错误处理完善 ✅
+- [x] 注释完整 ✅
+- [x] 文档更新完整 ✅
 
 ### ⏱️ 预计工时
 
 **2个工作日**
+
+### 📊 Phase 5 当前进度
+
+**完成度：100%** ✅
+
+#### ✅ 已完成任务
+
+1. ✅ **FunctionService 创建**
+   - 约 250 行代码
+   - 5 个核心接口全部实现
+   - 继承 BaseService，复用通用功能
+   - 统一错误处理和日志记录
+
+2. ✅ **FunctionController 创建**
+   - 约 450 行代码
+   - 统一功能调用入口
+   - 完整的支付流程处理
+   - 配额缓存机制（30秒缓存）
+   - 支持自定义回调函数
+
+3. ✅ **Bean 类创建**
+   - FunctionQuotaBean（约 200 行）
+   - FunctionProductBean（约 200 行）
+   - 完整的数据验证
+   - 丰富的业务方法
+
+4. ✅ **文档更新**
+   - Service README 已更新
+   - 添加 FunctionService API 文档
+   - 添加 PaymentService API 文档
+   - 添加使用示例
+
+5. ✅ **模块导出**
+   - services/index.js 已更新
+   - beans/index.js 已更新
+   - 统一导出接口
+
+#### ✨ 核心特性
+
+1. **统一功能调用**
+   - ✅ 通过 FunctionController.useFunction() 统一入口
+   - ✅ 自动处理配额检查、扣除、回滚
+   - ✅ 配额不足自动弹出支付弹窗
+   - ✅ 支持自定义回调函数
+
+2. **支付流程**
+   - ✅ 一键购买功能
+   - ✅ 自动创建订单
+   - ✅ 调起微信支付
+   - ✅ 支付成功自动刷新配额
+
+3. **配额管理**
+   - ✅ 配额缓存机制（30秒）
+   - ✅ 支持手动刷新配额
+   - ✅ 丰富的配额显示文案
+
+4. **错误处理**
+   - ✅ 统一错误提示
+   - ✅ 详细错误日志
+   - ✅ 用户友好的错误消息
+
+5. **扩展性**
+   - ✅ 支持多种功能类型
+   - ✅ 支持自定义配置
+   - ✅ 易于集成到现有页面
+
+#### 🎉 Phase 5 完成总结
+
+- ✅ FunctionService（约 250 行代码）
+- ✅ FunctionController（约 450 行代码）
+- ✅ FunctionQuotaBean（约 200 行代码）
+- ✅ FunctionProductBean（约 200 行代码）
+- ✅ Service 文档已更新
+- ✅ 模块导出已更新
+- ✅ 代码符合项目规范
+- ✅ 错误处理完善
+- ✅ 注释完整
+
+**Phase 5 状态：已完成** ✅
+
+**下一步：进入 Phase 6 - 功能集成**
 
 ---
 
@@ -1285,9 +1388,10 @@ const products = [
 - [x] ✅ 所有云函数接口测试通过（Phase 2 已完成）
 - [x] ✅ 配额检查逻辑正确（免费+付费）
 - [x] ✅ 配额扣除使用原子操作，无并发问题
-- [ ] ⏳ 支付流程完整，配额正确发放（Phase 4 待开发）
+- [x] ✅ 支付流程完整，配额正确发放（Phase 4 已开发）
 - [x] ✅ 功能调用失败时配额正确回滚
 - [x] ✅ 使用记录正确插入，可用于统计
+- [x] ✅ 客户端 Service 和 Controller 已完成（Phase 5 已完成）
 - [ ] ⏳ 智慧洞见功能集成完成（Phase 6 待开发）
 - [ ] ⏳ AI出报告功能集成完成（Phase 6 待开发）
 
