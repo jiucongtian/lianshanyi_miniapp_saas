@@ -215,6 +215,84 @@ class FunctionService extends BaseService {
       return ResponseBean.error('获取商品列表失败: ' + error.message, -1);
     }
   }
+
+  /**
+   * 直接调用 cozeFunctions（绕过网关，避免云函数间调用超时）
+   * @param {string} workflowType - 工作流类型（如 'DRAW_CARD'）
+   * @param {Object} parameters - 工作流参数
+   * @returns {Promise<ResponseBean>} 功能调用结果
+   */
+  async callCozeFunctionDirectly(workflowType, parameters) {
+    try {
+      const params = {
+        workflowType: workflowType,
+        parameters: parameters
+      };
+
+      const response = await this.callFunction('cozeFunctions', params);
+
+      this._logServiceCall('callCozeFunctionDirectly', params, response);
+
+      return response;
+    } catch (error) {
+      this._error('callCozeFunctionDirectly', 'callCozeFunctionDirectly 异常:', error);
+      return ResponseBean.error('调用功能失败: ' + error.message, -1);
+    }
+  }
+
+  /**
+   * 扣除配额
+   * @param {string} functionCode - 功能编码
+   * @returns {Promise<ResponseBean>} 扣除配额结果
+   */
+  async deductQuota(functionCode) {
+    try {
+      const params = {
+        action: 'deductQuota',
+        data: {
+          functionCode: functionCode,
+          quantity: 1
+        }
+      };
+
+      const response = await this.callFunction('functionQuotaManagement', params);
+
+      this._logServiceCall('deductQuota', params, response);
+
+      return response;
+    } catch (error) {
+      this._error('deductQuota', 'deductQuota 异常:', error);
+      return ResponseBean.error('扣除配额失败: ' + error.message, -1);
+    }
+  }
+
+  /**
+   * 回滚配额
+   * @param {string} functionCode - 功能编码
+   * @param {boolean} isPaid - 是否为付费配额
+   * @returns {Promise<ResponseBean>} 回滚配额结果
+   */
+  async rollbackQuota(functionCode, isPaid = false) {
+    try {
+      const params = {
+        action: 'rollbackQuota',
+        data: {
+          functionCode: functionCode,
+          quantity: 1,
+          isPaid: isPaid
+        }
+      };
+
+      const response = await this.callFunction('functionQuotaManagement', params);
+
+      this._logServiceCall('rollbackQuota', params, response);
+
+      return response;
+    } catch (error) {
+      this._error('rollbackQuota', 'rollbackQuota 异常:', error);
+      return ResponseBean.error('回滚配额失败: ' + error.message, -1);
+    }
+  }
 }
 
 // 导出类和单例实例

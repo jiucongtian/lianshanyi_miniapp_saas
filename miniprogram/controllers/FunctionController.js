@@ -24,6 +24,15 @@ const { BaseController } = require('./BaseController');
 const { functionService } = require('../services/FunctionService');
 const { paymentService } = require('../services/PaymentService');
 
+/**
+ * 功能代码与工作流类型映射
+ * 客户端本来就知道每个功能对应的工作流类型
+ */
+const FUNCTION_WORKFLOW_MAP = {
+  'wisdom_insight': 'DRAW_CARD',
+  'ai_report': 'AI_REPORT'
+};
+
 class FunctionController extends BaseController {
   /**
    * 构造函数
@@ -40,6 +49,8 @@ class FunctionController extends BaseController {
 
   /**
    * 使用功能（统一入口）
+   * 在原有调用基础上增加配额管理逻辑
+   * 
    * @param {string} functionCode - 功能编码
    * @param {Object} functionParams - 功能参数
    * @param {Object} options - 可选配置
@@ -67,54 +78,133 @@ class FunctionController extends BaseController {
         this._showLoading('处理中...');
       }
       
-      // 调用统一网关
-      const response = await functionService.useFunction(functionCode, functionParams);
+      // 1. 检查配额
+      const quotaCheck = await functionService.checkQuota(functionCode);
       
+      if (!quotaCheck.success || !quotaCheck.data) {
+        this._error('useFunction', '检查配额失败', null, quotaCheck.error);
+        if (showLoading) {
+          this._hideLoading();
+        }
+        this._showError('检查配额失败');
+        if (onError) {
+          onError(quotaCheck);
+        }
+        return null;
+      }
+      
+      const quotaInfo = quotaCheck.data;
+      
+      // 2. 检查是否有可用配额
+      if (!quotaInfo.canUse) {
+        if (showLoading) {
+          this._hideLoading();
+        }
+        this._handleQuotaInsufficient(functionCode, {
+          success: false,
+          code: 'QUOTA_INSUFFICIENT',
+          error: '配额不足',
+          data: { quotaInfo: quotaInfo }
+        }, autoPayment, onQuotaInsufficient);
+        return null;
+      }
+      
+      // 3. 扣除配额
+      const deductResult = await functionService.deductQuota(functionCode);
+      
+      if (!deductResult.success) {
+        this._error('useFunction', '扣除配额失败', null, deductResult.error);
+        if (showLoading) {
+          this._hideLoading();
+        }
+        this._showError('扣除配额失败');
+        if (onError) {
+          onError(deductResult);
+        }
+        return null;
+      }
+      
+      const deductData = deductResult.data;
+      const isPaid = deductData.isPaid || false;
+      const quotaBefore = deductData.quotaBefore || null;
+      const quotaAfter = deductData.quotaAfter || null;
+      
+      // 更新配额缓存
+      if (quotaAfter) {
+        this._updateQuotaCache(functionCode, quotaAfter);
+      }
+      
+      // 4. 直接调用云函数（就像以前一样）
+      const workflowType = FUNCTION_WORKFLOW_MAP[functionCode];
+      
+      if (!workflowType) {
+        this._error('useFunction', '未知的功能编码', { functionCode });
+        // 回滚配额
+        await functionService.rollbackQuota(functionCode, isPaid);
+        if (showLoading) {
+          this._hideLoading();
+        }
+        this._showError('功能配置错误');
+        if (onError) {
+          onError({ error: '未知的功能编码' });
+        }
+        return null;
+      }
+      
+      this._log('useFunction', '调用云函数', {
+        functionCode,
+        workflowType
+      });
+      
+      const parameters = functionParams.parameters || {};
+      const response = await functionService.callCozeFunctionDirectly(workflowType, parameters);
+      
+      if (!response.success) {
+        // 调用失败，回滚配额
+        this._log('useFunction', '功能调用失败，回滚配额', {
+          functionCode,
+          error: response.error
+        });
+        await functionService.rollbackQuota(functionCode, isPaid);
+        
+        if (showLoading) {
+          this._hideLoading();
+        }
+        
+        const errorMessage = response.error || '功能调用失败';
+        this._showError(errorMessage);
+        
+        if (onError) {
+          onError(response);
+        }
+        
+        return null;
+      }
+      
+      // 5. 调用成功
       if (showLoading) {
         this._hideLoading();
       }
       
-      // 处理成功
-      if (response.success) {
-        this._log('useFunction', '功能调用成功', { functionCode });
-        
-        // 更新配额缓存
-        if (response.data && response.data.quotaInfo && response.data.quotaInfo.after) {
-          this._updateQuotaCache(functionCode, response.data.quotaInfo.after);
+      this._log('useFunction', '功能调用成功', { functionCode });
+      
+      // 构建返回数据
+      const resultData = {
+        functionResult: response.data,
+        quotaInfo: {
+          before: quotaBefore,
+          after: quotaAfter,
+          isPaid: isPaid
         }
-        
-        // 执行成功回调
-        if (onSuccess) {
-          onSuccess(response.data);
-        }
-        
-        return response.data;
+      };
+      
+      // 执行成功回调
+      if (onSuccess) {
+        onSuccess(resultData);
       }
       
-      // 处理错误
-      this._log('useFunction', '功能调用失败', { functionCode, error: response.error, code: response.code });
+      return resultData;
       
-      // 配额不足
-      if (response.code === 'QUOTA_INSUFFICIENT') {
-        this._handleQuotaInsufficient(functionCode, response, autoPayment, onQuotaInsufficient);
-        return null;
-      }
-      
-      // 权限不足
-      if (response.code === 'PERMISSION_DENIED') {
-        this._handlePermissionDenied(response);
-        return null;
-      }
-      
-      // 其他错误
-      const errorMessage = response.error || '功能调用失败';
-      this._showError(errorMessage);
-      
-      if (onError) {
-        onError(response);
-      }
-      
-      return null;
     } catch (error) {
       this._error('useFunction', '功能调用异常', error);
       

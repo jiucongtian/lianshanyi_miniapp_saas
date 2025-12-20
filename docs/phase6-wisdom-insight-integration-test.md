@@ -35,10 +35,12 @@ const result = await wx.cloud.callFunction({
 #### 2. 新的调用方式（已实现）
 
 ```javascript
-// 新代码：使用 FunctionController
+// 新代码：使用 FunctionController（增加配额管理逻辑）
 const result = await this.functionController.useFunction('wisdom_insight', {
-  bazi_name: baziName,
-  question: this.data.question || ''
+  parameters: {
+    bazi_name: baziName,
+    question: this.data.question || ''
+  }
 }, {
   showLoading: false,
   autoPayment: true,
@@ -48,6 +50,10 @@ const result = await this.functionController.useFunction('wisdom_insight', {
   }
 });
 ```
+
+**核心逻辑：**
+1. 检查配额 → 2. 扣除配额 → 3. 调用 cozeFunctions（和原来一样）→ 4. 失败回滚配额
+2. 客户端直接调用 `cozeFunctions_v1_3`，绕过网关，避免云函数间调用超时
 
 ## 🧪 测试前准备
 
@@ -59,15 +65,16 @@ const result = await this.functionController.useFunction('wisdom_insight', {
 # 1. 功能配额管理
 functionQuotaManagement_v1_4
 
-# 2. 统一调用网关
-functionCallGateway_v1_4
-
-# 3. 支付管理（如果测试支付流程）
+# 2. 支付管理（如果测试支付流程）
 paymentManagement_v1_3
 
-# 4. 智慧洞见功能（Coze Functions）
-cozeFunctions_v1_4
+# 3. 智慧洞见功能（Coze Functions）
+cozeFunctions_v1_3
 ```
+
+**说明：**
+- 不需要部署 `functionCallGateway`，客户端直接调用 `cozeFunctions_v1_3`
+- 避免云函数间调用超时问题（15秒限制）
 
 ### 2. 配置数据库
 
@@ -85,14 +92,10 @@ cozeFunctions_v1_4
   "price": 100,
   "originalPrice": 200,
   "status": "active",
-  "callConfig": {
-    "targetFunction": "cozeFunctions_v1_4",
-    "workflowType": "WISDOM_INSIGHT",
-    "parameters": {},
-    "timeout": 60000
-  },
   "grantData": {
-    "paidQuota": 1
+    "type": "grant_function_quota",
+    "functionCode": "wisdom_insight",
+    "quantity": 1
   },
   "quotaConfig": {
     "freeDailyQuota": 2,
@@ -103,6 +106,10 @@ cozeFunctions_v1_4
   "updateTime": "2025-01-01T00:00:00.000Z"
 }
 ```
+
+**说明：** 
+- `callConfig` 字段已移除，客户端代码本身就知道该调用 `cozeFunctions` 的 `DRAW_CARD` 工作流
+- `function_products` 表只用于存储商品信息（价格、描述、配额配置等）
 
 #### 2.2 `user_function_quotas` 表
 
@@ -450,7 +457,7 @@ cozeFunctions_v1_4
 - 配额回滚失败
 
 **解决：**
-- 查看 `functionCallGateway_v1_4` 日志
+- 查看 `cozeFunctions_v1_3` 云函数日志（不是 functionCallGateway）
 - 检查配额是否已回滚
 - 手动回滚配额
 

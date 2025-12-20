@@ -266,6 +266,7 @@ async function checkQuota(wxContext, data) {
     });
     
     return success({
+      functionCode: functionCode,  // 添加 functionCode
       canUse: canUse,
       freeRemaining: freeRemaining === Infinity ? -1 : freeRemaining,
       paidRemaining: paidRemaining,
