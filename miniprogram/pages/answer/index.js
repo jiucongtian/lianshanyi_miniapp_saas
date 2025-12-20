@@ -516,35 +516,64 @@ Page({
       
       // 提取功能返回结果
       // FunctionController 返回：{ functionResult: {...}, quotaInfo: {...} }
-      // functionResult 是云函数返回的完整数据：{ success: true, data: {...} }
+      // functionResult 就是 Coze API 返回的原始数据
       const functionResult = result.functionResult;
       
+      // 添加详细日志：打印 functionResult 的完整结构
+      log.info('onAIInterpret', 'functionResult 完整结构', {
+        hasFunctionResult: !!functionResult,
+        functionResultType: typeof functionResult,
+        functionResultKeys: functionResult ? Object.keys(functionResult).slice(0, 10) : [],  // 只打印前10个
+        hasData: functionResult && 'data' in functionResult,
+        dataType: functionResult?.data ? typeof functionResult.data : 'undefined'
+      });
+      
       if (functionResult && functionResult.data) {
-        const data = functionResult.data;
+        // functionResult 就是 Coze API 返回的数据
+        // functionResult.data 就是 AI 解读结果（JSON 字符串）
+        const cozeData = functionResult.data;  // 这是 Coze 的 data 字段
         
         // 提取并打印 debug_url 和 usage（用于分析）
-        if (data.debug_url) {
-          log.info('onAIInterpret', 'Coze工作流调试链接', { debug_url: data.debug_url });
+        if (functionResult.debug_url) {
+          log.info('onAIInterpret', 'Coze工作流调试链接', { debug_url: functionResult.debug_url });
         }
         
-        if (data.usage) {
+        if (functionResult.usage) {
           log.info('onAIInterpret', 'Coze工作流Token使用情况', {
-            token_count: data.usage.token_count,
-            output_count: data.usage.output_count,
-            input_count: data.usage.input_count
+            token_count: functionResult.usage.token_count,
+            output_count: functionResult.usage.output_count,
+            input_count: functionResult.usage.input_count
           });
         }
         
         // 提取AI解读结果
         let interpretation = '';
-        if (data.data) {
+        if (cozeData) {
           try {
-            // data.data 是一个 JSON 字符串，需要先解析
-            const parsedData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+            log.info('onAIInterpret', '开始解析 cozeData', {
+              cozeDataType: typeof cozeData,
+              cozeDataLength: typeof cozeData === 'string' ? cozeData.length : 'not string',
+              cozeDataPreview: typeof cozeData === 'string' ? cozeData.substring(0, 100) : cozeData
+            });
+            
+            // cozeData 是一个 JSON 字符串，需要先解析
+            const parsedData = typeof cozeData === 'string' ? JSON.parse(cozeData) : cozeData;
+            
+            log.info('onAIInterpret', '解析后的 parsedData', {
+              parsedDataType: typeof parsedData,
+              parsedDataKeys: parsedData ? Object.keys(parsedData) : [],
+              hasDataField: parsedData && 'data' in parsedData,
+              dataFieldType: parsedData?.data ? typeof parsedData.data : 'undefined'
+            });
             
             // 从解析后的对象中提取 data 字段（这是实际的解读内容）
             if (parsedData && parsedData.data) {
               interpretation = parsedData.data;
+              
+              log.info('onAIInterpret', '提取到的原始 interpretation', {
+                length: interpretation.length,
+                preview: interpretation.substring(0, 100)
+              });
               
               // 处理转义字符：JSON.parse 后，\\n 会变成 \n（反斜杠+n字符），需要转换为真正的换行符
               // 注意：先处理转义序列，最后处理双反斜杠，避免转义序列被误处理
@@ -555,15 +584,29 @@ Page({
                 .replace(/\\t/g, '\t')            // 制表符
                 .replace(/\\r/g, '\r')            // 回车符
                 .replace(/\\\\/g, '\\');          // 最后处理双反斜杠（保留单个反斜杠）
+                
+              log.info('onAIInterpret', '转义处理后的 interpretation', {
+                length: interpretation.length,
+                preview: interpretation.substring(0, 100)
+              });
             } else {
               // 如果解析后没有 data 字段，尝试其他字段
-              interpretation = parsedData.output || parsedData.result || parsedData.text || JSON.stringify(parsedData);
+              log.warn('onAIInterpret', 'parsedData 没有 data 字段，尝试其他字段', {
+                hasOutput: parsedData && 'output' in parsedData,
+                hasResult: parsedData && 'result' in parsedData,
+                hasText: parsedData && 'text' in parsedData
+              });
+              interpretation = parsedData?.output || parsedData?.result || parsedData?.text || JSON.stringify(parsedData);
             }
           } catch (parseError) {
-            log.error('onAIInterpret', '解析返回数据失败', { error: parseError.message, rawData: data.data });
+            log.error('onAIInterpret', '解析返回数据失败', { error: parseError.message, rawData: cozeData });
             // 如果解析失败，尝试直接使用原始数据
-            interpretation = typeof data.data === 'string' ? data.data : JSON.stringify(data.data);
+            interpretation = typeof cozeData === 'string' ? cozeData : JSON.stringify(cozeData);
           }
+        } else {
+          log.warn('onAIInterpret', 'functionResult 没有 data 字段', {
+            functionResultKeys: Object.keys(functionResult).slice(0, 10)
+          });
         }
         
         // 拼接卡牌信息到解读结果最前面
