@@ -476,6 +476,14 @@ Page({
     // 设置解读标志
     this.isInterpreting = true;
     
+    // 如果是自动调用，显示加载提示
+    if (isAutoCall) {
+      wx.showLoading({
+        title: 'AI 解读中...',
+        mask: true
+      });
+    }
+    
     // 获取按钮组件引用（用于错误时重置状态）
     const buttonComponent = this.selectComponent('#loading-button-interpret');
     
@@ -492,7 +500,7 @@ Page({
           question: this.data.question || ''
         }
       }, {
-        showLoading: false, // 不使用自动加载提示，手动控制
+        showLoading: false, // 不使用自动加载提示，手动控制（上面已经显示了）
         autoPayment: true,
         onQuotaInsufficient: () => {
           // 配额不足时的自定义处理
@@ -505,6 +513,12 @@ Page({
       // 如果返回 null，说明调用失败（配额不足、权限问题等）
       if (!result) {
         log.warn('onAIInterpret', '功能调用失败或被取消');
+        
+        // 隐藏加载提示
+        if (isAutoCall) {
+          wx.hideLoading();
+        }
+        
         // 解读失败：显示AI解读按钮，让用户可以重试
         this.setData({
           showInterpretButton: true
@@ -626,6 +640,11 @@ Page({
         // 刷新智慧洞见配额信息
         await this._loadQuotaInfo();
         
+        // 隐藏加载提示（成功）
+        if (isAutoCall) {
+          wx.hideLoading();
+        }
+        
         // 如果是自动调用，不显示toast（避免打断用户体验）
         if (!isAutoCall) {
           wx.showToast({
@@ -641,6 +660,12 @@ Page({
           functionResult,
           hasData: !!functionResult?.data
         });
+        
+        // 隐藏加载提示（失败）
+        if (isAutoCall) {
+          wx.hideLoading();
+        }
+        
         this.setData({
           showInterpretButton: true
         });
@@ -652,6 +677,11 @@ Page({
       }
     } catch (error) {
       log.error('onAIInterpret', '调用功能失败', { error: error.message, isAutoCall });
+      
+      // 隐藏加载提示（异常）
+      if (isAutoCall) {
+        wx.hideLoading();
+      }
       
       // 解读失败：显示AI解读按钮，让用户可以重试
       this.setData({
