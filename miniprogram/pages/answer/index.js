@@ -166,7 +166,9 @@ Page({
         buttonComponent.reset();
       }
       this.isDrawingCard = false; // 重置抽卡标志，允许下次点击
-      this._showQuotaError(quotaCheck);
+      
+      // 配额用完，弹出购买界面
+      await this._handleQuotaInsufficient();
       return;
     }
     // ==============================
@@ -828,43 +830,60 @@ Page({
   // },
   
   /**
-   * 显示配额错误提示
-   * @param {Object} quotaInfo - 配额信息（包含错误信息）
+   * 处理配额不足（弹出购买界面）
    */
-  _showQuotaError(quotaInfo) {
-    if (!quotaInfo) {
-      wx.showToast({
-        title: '暂时无法使用抽卡功能',
-        icon: 'none',
-        duration: 2500
+  async _handleQuotaInsufficient() {
+    log.info('_handleQuotaInsufficient', '配额不足，弹出购买界面');
+    
+    try {
+      // 显示购买确认弹窗
+      const confirmed = await new Promise((resolve) => {
+        wx.showModal({
+          title: '配额不足',
+          content: '智慧洞见配额不足，是否立即购买？',
+          confirmText: '立即购买',
+          cancelText: '取消',
+          success: (res) => {
+            resolve(res.confirm);
+          },
+          fail: () => {
+            resolve(false);
+          }
+        });
       });
-      return;
+      
+      if (!confirmed) {
+        log.info('_handleQuotaInsufficient', '用户取消购买');
+        return;
+      }
+      
+      // 用户确认购买，调用购买功能
+      log.info('_handleQuotaInsufficient', '用户确认购买，调起支付');
+      const purchaseSuccess = await this.functionController.purchaseFunction('wisdom_insight', {
+        onSuccess: async () => {
+          log.info('_handleQuotaInsufficient', '购买成功，刷新配额');
+          // 购买成功后刷新配额信息
+          await this._loadQuotaInfo();
+        },
+        onCancel: () => {
+          log.info('_handleQuotaInsufficient', '用户取消支付');
+        },
+        onError: (error) => {
+          log.error('_handleQuotaInsufficient', '支付失败', error);
+        }
+      });
+      
+      if (purchaseSuccess) {
+        log.info('_handleQuotaInsufficient', '购买流程完成');
+      }
+    } catch (error) {
+      log.error('_handleQuotaInsufficient', '处理配额不足异常', error);
+      wx.showToast({
+        title: '操作失败，请重试',
+        icon: 'none',
+        duration: 2000
+      });
     }
-    
-    let message = quotaInfo.error || '暂时无法使用抽卡功能';
-    
-    // 根据错误码显示不同提示
-    switch (quotaInfo.code) {
-      case 1001: // 未注册用户
-        message = '请先注册后使用抽卡功能';
-        break;
-      case 1002: // 用户类型不支持
-        message = '您当前的用户类型不支持抽卡功能';
-        break;
-      case 1003: // 配额用完
-        const totalQuota = quotaInfo.totalQuota || 3;
-        message = `今日抽卡次数已用完（${totalQuota}次/天），明天再来吧~`;
-        break;
-      default:
-        // 使用原始错误信息
-        break;
-    }
-    
-    wx.showToast({
-      title: message,
-      icon: 'none',
-      duration: 2500
-    });
   },
 
   /**
