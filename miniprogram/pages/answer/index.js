@@ -14,6 +14,10 @@ const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
 const { posterGenerator } = require('../../utils/posterGenerator');
 // 引入功能控制器（用于智慧洞见按次付费）
 const { FunctionController } = require('../../controllers/FunctionController');
+// 引入FunctionQuotaBean
+const { FunctionQuotaBean } = require('../../beans/FunctionQuotaBean');
+// 获取app实例
+const app = getApp();
 
 Page({
   data: {
@@ -74,7 +78,7 @@ Page({
       ...cardListData
     });
     
-    // 加载智慧洞见配额信息（包含免费配额 + 付费配额）
+    // 优先使用预加载的配额信息，避免数值跳变
     await this._loadQuotaInfo();
   },
   
@@ -1042,10 +1046,55 @@ Page({
 
   /**
    * 加载智慧洞见配额信息（包含免费配额 + 付费配额）
+   * 优先使用从home页面预加载的配额信息，避免数值跳变
    * @private
    */
   async _loadQuotaInfo() {
     try {
+      // 优先使用预加载的配额信息（从home页面传递过来）
+      const preloadData = app.globalData.wisdomInsightQuotaPreload;
+      
+      if (preloadData && preloadData.quota) {
+        // 检查数据是否过期（5分钟内有效）
+        const dataAge = Date.now() - (preloadData.timestamp || 0);
+        const maxAge = 5 * 60 * 1000; // 5分钟
+        
+        if (dataAge < maxAge) {
+          // 使用预加载的配额信息
+          const quotaInfo = new FunctionQuotaBean(preloadData.quota);
+          log.info('_loadQuotaInfo', '使用预加载的配额信息', quotaInfo.toObject());
+          
+          // 保存到页面数据
+          this.setData({
+            wisdomInsightQuota: quotaInfo
+          });
+          
+          // 生成按钮文本
+          const buttonText = this._getDrawButtonText(quotaInfo);
+          this.setData({
+            drawButtonText: buttonText
+          });
+          
+          log.info('_loadQuotaInfo', '预加载配额使用成功', {
+            freeRemaining: quotaInfo.freeRemaining,
+            paidRemaining: quotaInfo.paidRemaining,
+            totalRemaining: quotaInfo.totalRemaining,
+            buttonText: buttonText
+          });
+          
+          // 清除预加载数据（已使用）
+          delete app.globalData.wisdomInsightQuotaPreload;
+          
+          return;
+        } else {
+          log.warn('_loadQuotaInfo', '预加载数据已过期，重新获取', { dataAge });
+          // 清除过期数据
+          delete app.globalData.wisdomInsightQuotaPreload;
+        }
+      }
+      
+      // 如果没有预加载数据或数据已过期，则重新获取
+      log.info('_loadQuotaInfo', '重新获取配额信息');
       const quotaInfo = await this.functionController.refreshQuota('wisdom_insight');
       if (quotaInfo) {
         log.info('_loadQuotaInfo', '智慧洞见配额信息', quotaInfo.toObject());

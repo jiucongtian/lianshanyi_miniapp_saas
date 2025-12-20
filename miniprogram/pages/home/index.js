@@ -1,4 +1,5 @@
 const { dailyInsightService } = require('../../services/DailyInsightService');
+const { FunctionController } = require('../../controllers/FunctionController');
 const app = getApp();
 
 Page({
@@ -32,6 +33,8 @@ Page({
 
   onLoad(options) {
     console.log('[HomePage] 页面加载');
+    // 初始化Controller（用于获取配额信息）
+    this.functionController = new FunctionController(this);
   },
 
   onShow() {
@@ -195,7 +198,7 @@ Page({
   /**
    * 寻找答案按钮点击事件
    */
-  onFindAnswer() {
+  async onFindAnswer() {
     const { isSearching, question } = this.data;
 
     if (isSearching) {
@@ -218,7 +221,35 @@ Page({
       isSearching: true
     });
 
-    // 直接跳转到答案页面（移除2秒延迟）
+    try {
+      // 在跳转前先获取配额信息
+      console.log('[HomePage] 开始获取配额信息');
+      const quotaInfo = await this.functionController.refreshQuota('wisdom_insight');
+      
+      if (quotaInfo) {
+        // 将配额信息存储到globalData，供answer页面使用
+        const quotaRawData = quotaInfo._rawData || quotaInfo.toObject();
+        app.globalData.wisdomInsightQuotaPreload = {
+          quota: quotaRawData,
+          timestamp: Date.now()
+        };
+        console.log('[HomePage] 配额信息已预加载:', {
+          freeRemaining: quotaInfo.freeRemaining,
+          paidRemaining: quotaInfo.paidRemaining,
+          totalRemaining: quotaInfo.totalRemaining
+        });
+      } else {
+        console.warn('[HomePage] 配额信息获取失败，answer页面将自行获取');
+        // 清除可能存在的旧数据
+        delete app.globalData.wisdomInsightQuotaPreload;
+      }
+    } catch (error) {
+      console.error('[HomePage] 获取配额信息异常:', error);
+      // 清除可能存在的旧数据
+      delete app.globalData.wisdomInsightQuotaPreload;
+    }
+
+    // 跳转到答案页面
     const questionParam = question ? encodeURIComponent(question.trim()) : '';
     wx.navigateTo({
       url: `/pages/answer/index${questionParam ? '?question=' + questionParam : ''}`,
@@ -231,6 +262,8 @@ Page({
       },
       fail: (err) => {
         console.error('[HomePage] 跳转失败:', err);
+        // 清除预加载数据
+        delete app.globalData.wisdomInsightQuotaPreload;
         wx.showToast({
           title: '跳转失败',
           icon: 'none'
