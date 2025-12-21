@@ -717,11 +717,13 @@ async function grantFunctionQuota(openid, grantData, orderId) {
   
   try {
     // 调用配额管理云函数发放配额
+    // 注意：云函数间调用时，需要在 data 中传递 openid，因为无法从 wxContext 获取
     const grantResult = await cloud.callFunction({
       name: 'functionQuotaManagement_v1_4',
       data: {
         action: 'grantQuota',
         data: {
+          openid: openid,  // 必须传递 openid，因为云函数间调用时 wxContext 可能无法获取
           functionCode: functionCode,
           quantity: quantity,
           orderId: orderId
@@ -803,16 +805,39 @@ async function grantFunctionQuota(openid, grantData, orderId) {
  */
 async function updateGrantInfo(orderId, grantInfo) {
   try {
+    // 构建完整的 grantInfo 对象
+    const completeGrantInfo = {
+      status: grantInfo.status || 'pending',
+      grantTime: grantInfo.grantTime || null,
+      grantResult: grantInfo.grantResult || null,
+      errorMessage: grantInfo.errorMessage || ''
+    };
+    
+    // 先删除整个 grantInfo 字段，然后重新设置，避免在 null 字段上创建子字段的问题
+    try {
+      // 先删除 grantInfo 字段
+      await db.collection('payment_orders').doc(orderId).update({
+        data: {
+          grantInfo: db.command.remove(),
+          updateTime: new Date()
+        }
+      });
+    } catch (removeError) {
+      // 如果删除失败（可能字段不存在），继续执行
+      console.log('[updateGrantInfo] 删除 grantInfo 字段（可能不存在）:', removeError.message);
+    }
+    
+    // 重新设置 grantInfo 对象
     await db.collection('payment_orders').doc(orderId).update({
       data: {
-        grantInfo: grantInfo,
+        grantInfo: completeGrantInfo,
         updateTime: new Date()
       }
     });
     
     console.log('[updateGrantInfo] grantInfo 更新成功', {
       orderId,
-      status: grantInfo.status
+      status: completeGrantInfo.status
     });
   } catch (error) {
     console.error('[updateGrantInfo] 更新 grantInfo 失败', {
@@ -877,6 +902,20 @@ async function upgradeUserToPremium(openid, targetUserType) {
 }
 
 /**
+ * 添加CORS响应头（用于浏览器测试）
+ * @param {Object} headers - 响应头对象
+ * @returns {Object} 添加了CORS头的响应头对象
+ */
+function addCorsHeaders(headers = {}) {
+  return {
+    ...headers,
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+  };
+}
+
+/**
  * 处理支付回调
  * 注意：此接口需要配置为HTTP触发器，接收微信支付的回调通知
  */
@@ -892,6 +931,9 @@ async function handlePaymentNotify(event) {
         console.error('[handlePaymentNotify] 解析回调数据失败', parseError);
         return {
           statusCode: 400,
+          headers: addCorsHeaders({
+            'Content-Type': 'application/json'
+          }),
           body: JSON.stringify({
             code: 'FAIL',
             message: '回调数据格式错误'
@@ -923,6 +965,9 @@ async function handlePaymentNotify(event) {
       console.error('[handlePaymentNotify] 回调数据缺少订单号', notifyData);
       return {
         statusCode: 400,
+        headers: addCorsHeaders({
+          'Content-Type': 'application/json'
+        }),
         body: JSON.stringify({
           code: 'FAIL',
           message: '回调数据不完整：缺少订单号'
@@ -1007,9 +1052,9 @@ async function handlePaymentNotify(event) {
     // 返回成功响应给微信支付（HTTP触发器需要返回HTTP响应格式）
     return {
       statusCode: 200,
-      headers: {
+      headers: addCorsHeaders({
         'Content-Type': 'application/json'
-      },
+      }),
       body: JSON.stringify({
         code: 'SUCCESS',
         message: '成功'
@@ -1020,9 +1065,9 @@ async function handlePaymentNotify(event) {
     console.error('[handlePaymentNotify] 处理支付回调失败:', err);
     return {
       statusCode: 500,
-      headers: {
+      headers: addCorsHeaders({
         'Content-Type': 'application/json'
-      },
+      }),
       body: JSON.stringify({
         code: 'FAIL',
         message: err.message || '处理失败'
@@ -1067,6 +1112,26 @@ exports.main = async (event, context) => {
     
     // HTTP触发器调用：处理支付回调
     if (path === '/payment/notify' || path.endsWith('/payment/notify')) {
+      // 处理OPTIONS预检请求（CORS）
+      if (httpMethod === 'OPTIONS') {
+        console.log('[main] 处理OPTIONS预检请求');
+        return {
+          statusCode: 200,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Max-Age': '3600',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            code: 'SUCCESS',
+            message: 'CORS预检请求成功'
+          })
+        };
+      }
+      
+      // 处理POST请求
       if (httpMethod === 'POST' || !httpMethod) {  // 如果没有httpMethod，默认处理POST
         return await handlePaymentNotify(event);
       } else {

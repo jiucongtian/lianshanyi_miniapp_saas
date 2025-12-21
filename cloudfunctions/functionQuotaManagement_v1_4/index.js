@@ -376,10 +376,15 @@ async function deductQuota(wxContext, data) {
  * action: grantQuota
  */
 async function grantQuota(wxContext, data) {
-  const { OPENID } = wxContext;
+  // 支持从 data 中获取 openid（云函数间调用时）
+  const OPENID = wxContext.OPENID || data.openid;
   const { functionCode, quantity, orderId } = data;
   
   console.log('[grantQuota] 开始发放配额:', { openid: OPENID, functionCode, quantity, orderId });
+  
+  if (!OPENID) {
+    return error('缺少 openid 参数', 'INVALID_PARAMS');
+  }
   
   if (!functionCode || !quantity) {
     return error('缺少必需参数', 'INVALID_PARAMS');
