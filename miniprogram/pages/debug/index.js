@@ -16,45 +16,14 @@ Page({
   },
 
   /**
-   * 测试配额管理功能
+   * 配额管理 - 完整测试
    */
-  async onTestQuotaManagement(e) {
-    console.log('[DebugPage] onTestQuotaManagement 被调用', e);
-    log.info('onTestQuotaManagement', '开始测试配额管理功能');
-    
+  async onQuotaFullTest() {
+    log.info('onQuotaFullTest', '开始完整测试');
     try {
-      // 显示测试选项（注意：wx.showActionSheet 最多支持 6 个选项）
-      const testOption = await new Promise((resolve) => {
-        wx.showActionSheet({
-          itemList: [
-            '🚀 完整测试（所有接口）',
-            '⚡ 快速测试（检查配额）',
-            '📋 检查配额',
-            '➕ 发放配额',
-            '➖ 扣除配额',
-            '↩️ 回滚配额'
-          ],
-          success: (res) => {
-            console.log('[DebugPage] 用户选择了测试选项:', res.tapIndex);
-            resolve(res.tapIndex);
-          },
-          fail: (err) => {
-            console.log('[DebugPage] 用户取消选择或出错:', err);
-            resolve(-1);
-          }
-        });
-      });
-
-      if (testOption === -1) {
-        console.log('[DebugPage] 用户取消或出错，退出');
-        return;
-      }
-
-      console.log('[DebugPage] 开始执行测试，选项:', testOption);
-      await this._executeQuotaTest(testOption);
+      await this._runFullTest('wisdom_insight');
     } catch (error) {
-      console.error('[DebugPage] 测试执行异常:', error);
-      log.error('onTestQuotaManagement', '测试执行失败', error);
+      log.error('onQuotaFullTest', '测试执行失败', error);
       wx.showToast({
         title: '测试失败: ' + (error.message || '未知错误'),
         icon: 'error',
@@ -64,37 +33,87 @@ Page({
   },
 
   /**
-   * 执行配额测试
+   * 配额管理 - 快速测试
    */
-  async _executeQuotaTest(testOption) {
-    const functionCode = 'wisdom_insight';
-    
-    switch (testOption) {
-      case 0: // 完整测试
-        await this._runFullTest(functionCode);
-        break;
-      case 1: // 快速测试
-        await this._runQuickTest(functionCode);
-        break;
-      case 2: // 检查配额
-        await this._testCheckQuota(functionCode);
-        break;
-      case 3: // 发放配额
-        await this._testGrantQuota(functionCode, 10);
-        break;
-      case 4: // 扣除配额
-        await this._testDeductQuota(functionCode, 1);
-        break;
-      case 5: // 回滚配额
-        await this._testRollbackQuota(functionCode, false);
-        break;
-      default:
-        console.warn('[DebugPage] 未知的测试选项:', testOption);
-        wx.showToast({
-          title: '未知的测试选项',
-          icon: 'none',
-          duration: 2000
-        });
+  async onQuotaQuickTest() {
+    log.info('onQuotaQuickTest', '开始快速测试');
+    try {
+      await this._runQuickTest('wisdom_insight');
+    } catch (error) {
+      log.error('onQuotaQuickTest', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
+    }
+  },
+
+  /**
+   * 配额管理 - 检查配额
+   */
+  async onQuotaCheck() {
+    log.info('onQuotaCheck', '开始检查配额');
+    try {
+      await this._testCheckQuota('wisdom_insight');
+    } catch (error) {
+      log.error('onQuotaCheck', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
+    }
+  },
+
+  /**
+   * 配额管理 - 发放配额
+   */
+  async onQuotaGrant() {
+    log.info('onQuotaGrant', '开始发放配额');
+    try {
+      await this._testGrantQuota('wisdom_insight', 10);
+    } catch (error) {
+      log.error('onQuotaGrant', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
+    }
+  },
+
+  /**
+   * 配额管理 - 扣除配额
+   */
+  async onQuotaDeduct() {
+    log.info('onQuotaDeduct', '开始扣除配额');
+    try {
+      await this._testDeductQuota('wisdom_insight', 1);
+    } catch (error) {
+      log.error('onQuotaDeduct', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
+    }
+  },
+
+  /**
+   * 配额管理 - 回滚配额
+   */
+  async onQuotaRollback() {
+    log.info('onQuotaRollback', '开始回滚配额');
+    try {
+      await this._testRollbackQuota('wisdom_insight', false);
+    } catch (error) {
+      log.error('onQuotaRollback', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
     }
   },
 
@@ -755,45 +774,14 @@ Page({
   },
 
   /**
-   * 测试功能付费订单
+   * 功能付费订单 - 完整流程测试
    */
-  async onTestFunctionPayment(e) {
-    console.log('[DebugPage] onTestFunctionPayment 被调用', e);
-    log.info('onTestFunctionPayment', '开始测试功能付费订单');
-    
+  async onFunctionPaymentFullTest() {
+    log.info('onFunctionPaymentFullTest', '开始完整流程测试');
     try {
-      // 显示测试选项
-      const testOption = await new Promise((resolve) => {
-        wx.showActionSheet({
-          itemList: [
-            '🚀 完整流程测试',
-            '⚡ 快速测试（创建+查询）',
-            '📝 创建功能付费订单',
-            '🔍 查询订单状态',
-            '✅ 验证配额发放',
-            '📊 查看配额信息'
-          ],
-          success: (res) => {
-            console.log('[DebugPage] 用户选择了测试选项:', res.tapIndex);
-            resolve(res.tapIndex);
-          },
-          fail: (err) => {
-            console.log('[DebugPage] 用户取消选择或出错:', err);
-            resolve(-1);
-          }
-        });
-      });
-
-      if (testOption === -1) {
-        console.log('[DebugPage] 用户取消或出错，退出');
-        return;
-      }
-
-      console.log('[DebugPage] 开始执行测试，选项:', testOption);
-      await this._executeFunctionPaymentTest(testOption);
+      await this._testFullFunctionPaymentFlow('wisdom_insight');
     } catch (error) {
-      console.error('[DebugPage] 测试执行异常:', error);
-      log.error('onTestFunctionPayment', '测试执行失败', error);
+      log.error('onFunctionPaymentFullTest', '测试执行失败', error);
       wx.showToast({
         title: '测试失败: ' + (error.message || '未知错误'),
         icon: 'error',
@@ -803,37 +791,87 @@ Page({
   },
 
   /**
-   * 执行功能付费订单测试
+   * 功能付费订单 - 快速测试
    */
-  async _executeFunctionPaymentTest(testOption) {
-    const functionCode = 'wisdom_insight';
-    
-    switch (testOption) {
-      case 0: // 完整流程测试
-        await this._testFullFunctionPaymentFlow(functionCode);
-        break;
-      case 1: // 快速测试
-        await this._testQuickFunctionPayment(functionCode);
-        break;
-      case 2: // 创建订单
-        await this._testCreateFunctionOrder(functionCode);
-        break;
-      case 3: // 查询订单
-        await this._testQueryFunctionOrder();
-        break;
-      case 4: // 验证配额发放
-        await this._testVerifyQuotaGrant(functionCode);
-        break;
-      case 5: // 查看配额信息
-        await this._testGetQuotaInfo(functionCode);
-        break;
-      default:
-        console.warn('[DebugPage] 未知的测试选项:', testOption);
-        wx.showToast({
-          title: '未知的测试选项',
-          icon: 'none',
-          duration: 2000
-        });
+  async onFunctionPaymentQuickTest() {
+    log.info('onFunctionPaymentQuickTest', '开始快速测试');
+    try {
+      await this._testQuickFunctionPayment('wisdom_insight');
+    } catch (error) {
+      log.error('onFunctionPaymentQuickTest', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
+    }
+  },
+
+  /**
+   * 功能付费订单 - 创建订单
+   */
+  async onFunctionPaymentCreate() {
+    log.info('onFunctionPaymentCreate', '开始创建订单');
+    try {
+      await this._testCreateFunctionOrder('wisdom_insight');
+    } catch (error) {
+      log.error('onFunctionPaymentCreate', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
+    }
+  },
+
+  /**
+   * 功能付费订单 - 查询订单
+   */
+  async onFunctionPaymentQuery() {
+    log.info('onFunctionPaymentQuery', '开始查询订单');
+    try {
+      await this._testQueryFunctionOrder();
+    } catch (error) {
+      log.error('onFunctionPaymentQuery', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
+    }
+  },
+
+  /**
+   * 功能付费订单 - 验证配额发放
+   */
+  async onFunctionPaymentVerifyQuota() {
+    log.info('onFunctionPaymentVerifyQuota', '开始验证配额发放');
+    try {
+      await this._testVerifyQuotaGrant('wisdom_insight');
+    } catch (error) {
+      log.error('onFunctionPaymentVerifyQuota', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
+    }
+  },
+
+  /**
+   * 功能付费订单 - 查看配额信息
+   */
+  async onFunctionPaymentQuotaInfo() {
+    log.info('onFunctionPaymentQuotaInfo', '开始查看配额信息');
+    try {
+      await this._testGetQuotaInfo('wisdom_insight');
+    } catch (error) {
+      log.error('onFunctionPaymentQuotaInfo', '测试执行失败', error);
+      wx.showToast({
+        title: '测试失败: ' + (error.message || '未知错误'),
+        icon: 'error',
+        duration: 3000
+      });
     }
   },
 

@@ -6,51 +6,140 @@
     <text class="page-subtitle">用于测试各种功能</text>
   </view>
 
-  <!-- 测试功能区域 -->
-  <view class="test-section">
+  <!-- 测试功能列表 -->
+  <view class="test-list">
     <!-- 配额管理测试 -->
-    <view class="test-card">
-      <view class="test-header">
-        <text class="test-icon">📊</text>
-        <text class="test-title">配额管理测试</text>
+    <view class="test-group">
+      <view class="group-header">
+        <text class="group-icon">📊</text>
+        <text class="group-title">配额管理测试</text>
       </view>
-      <view class="test-info">
-        <text class="test-desc">测试功能配额管理云函数所有接口</text>
-        <text class="test-detail">包含：检查、扣除、发放、回滚</text>
+      <view class="test-items">
+        <view class="test-item" bindtap="onQuotaFullTest" hover-class="item-hover">
+          <text class="item-icon">🚀</text>
+          <view class="item-content">
+            <text class="item-title">完整测试（所有接口）</text>
+            <text class="item-desc">测试配额管理的完整流程</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="test-item" bindtap="onQuotaQuickTest" hover-class="item-hover">
+          <text class="item-icon">⚡</text>
+          <view class="item-content">
+            <text class="item-title">快速测试（检查配额）</text>
+            <text class="item-desc">快速检查配额信息</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="test-item" bindtap="onQuotaCheck" hover-class="item-hover">
+          <text class="item-icon">📋</text>
+          <view class="item-content">
+            <text class="item-title">检查配额</text>
+            <text class="item-desc">查看当前配额状态</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="test-item" bindtap="onQuotaGrant" hover-class="item-hover">
+          <text class="item-icon">➕</text>
+          <view class="item-content">
+            <text class="item-title">发放配额</text>
+            <text class="item-desc">发放10次测试配额</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="test-item" bindtap="onQuotaDeduct" hover-class="item-hover">
+          <text class="item-icon">➖</text>
+          <view class="item-content">
+            <text class="item-title">扣除配额</text>
+            <text class="item-desc">扣除1次配额</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="test-item" bindtap="onQuotaRollback" hover-class="item-hover">
+          <text class="item-icon">↩️</text>
+          <view class="item-content">
+            <text class="item-title">回滚配额</text>
+            <text class="item-desc">回滚最近一次扣除的配额</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
       </view>
-      <button class="test-button" bindtap="onTestQuotaManagement" hover-class="button-hover">
-        <text class="test-button-text">🚀 开始测试配额</text>
-      </button>
     </view>
 
     <!-- 支付功能测试 -->
-    <view class="test-card">
-      <view class="test-header">
-        <text class="test-icon">🧪</text>
-        <text class="test-title">支付功能测试</text>
+    <view class="test-group">
+      <view class="group-header">
+        <text class="group-icon">🧪</text>
+        <text class="group-title">支付功能测试</text>
       </view>
-      <view class="test-info">
-        <text class="test-desc">测试微信支付V3 API完整流程</text>
-        <text class="test-detail">测试金额：¥0.01</text>
+      <view class="test-items">
+        <view class="test-item" bindtap="onTestPayment" hover-class="item-hover">
+          <text class="item-icon">💳</text>
+          <view class="item-content">
+            <text class="item-title">发起测试支付</text>
+            <text class="item-desc">测试微信支付V3 API完整流程（¥0.01）</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
       </view>
-      <button class="test-button" bindtap="onTestPayment">
-        <text class="test-button-text">🚀 发起测试支付</text>
-      </button>
     </view>
 
     <!-- 功能付费订单测试 -->
-    <view class="test-card">
-      <view class="test-header">
-        <text class="test-icon">💰</text>
-        <text class="test-title">功能付费订单测试</text>
+    <view class="test-group">
+      <view class="group-header">
+        <text class="group-icon">💰</text>
+        <text class="group-title">功能付费订单测试</text>
       </view>
-      <view class="test-info">
-        <text class="test-desc">测试功能付费订单创建、支付回调、配额发放</text>
-        <text class="test-detail">包含：创建订单、查询订单、配额发放验证</text>
+      <view class="test-items">
+        <view class="test-item" bindtap="onFunctionPaymentFullTest" hover-class="item-hover">
+          <text class="item-icon">🚀</text>
+          <view class="item-content">
+            <text class="item-title">完整流程测试</text>
+            <text class="item-desc">创建订单→支付→回调→配额发放</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="test-item" bindtap="onFunctionPaymentQuickTest" hover-class="item-hover">
+          <text class="item-icon">⚡</text>
+          <view class="item-content">
+            <text class="item-title">快速测试（创建+查询）</text>
+            <text class="item-desc">创建订单并查询状态</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="test-item" bindtap="onFunctionPaymentCreate" hover-class="item-hover">
+          <text class="item-icon">📝</text>
+          <view class="item-content">
+            <text class="item-title">创建功能付费订单</text>
+            <text class="item-desc">创建新的功能付费订单</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="test-item" bindtap="onFunctionPaymentQuery" hover-class="item-hover">
+          <text class="item-icon">🔍</text>
+          <view class="item-content">
+            <text class="item-title">查询订单状态</text>
+            <text class="item-desc">查询订单的当前状态</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="test-item" bindtap="onFunctionPaymentVerifyQuota" hover-class="item-hover">
+          <text class="item-icon">✅</text>
+          <view class="item-content">
+            <text class="item-title">验证配额发放</text>
+            <text class="item-desc">验证配额是否正确发放</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
+        <view class="test-item" bindtap="onFunctionPaymentQuotaInfo" hover-class="item-hover">
+          <text class="item-icon">📊</text>
+          <view class="item-content">
+            <text class="item-title">查看配额信息</text>
+            <text class="item-desc">查看当前配额详细信息</text>
+          </view>
+          <text class="item-arrow">›</text>
+        </view>
       </view>
-      <button class="test-button" bindtap="onTestFunctionPayment" hover-class="button-hover">
-        <text class="test-button-text">🚀 开始测试功能付费</text>
-      </button>
     </view>
   </view>
 

@@ -3,6 +3,7 @@
   min-height: 100vh;
   background-color: #f5f7fa;
   padding: 20rpx;
+  padding-bottom: 40rpx;
 }
 
 .page-header {
@@ -27,76 +28,88 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-.test-section {
+.test-list {
   margin-bottom: 30rpx;
 }
 
-.test-card {
+.test-group {
   background: #ffffff;
   border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 30rpx;
+  overflow: hidden;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
 }
 
-.test-header {
+.group-header {
   display: flex;
   align-items: center;
-  margin-bottom: 20rpx;
+  padding: 30rpx;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 2rpx solid #e9ecef;
 }
 
-.test-icon {
-  font-size: 48rpx;
+.group-icon {
+  font-size: 40rpx;
   margin-right: 20rpx;
 }
 
-.test-title {
+.group-title {
   font-size: 36rpx;
   font-weight: bold;
   color: #333333;
 }
 
-.test-info {
-  margin-bottom: 30rpx;
+.test-items {
+  padding: 10rpx 0;
 }
 
-.test-desc {
-  display: block;
-  font-size: 28rpx;
-  color: #666666;
-  margin-bottom: 10rpx;
+.test-item {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  transition: background-color 0.2s;
 }
 
-.test-detail {
-  display: block;
+.test-item:last-child {
+  border-bottom: none;
+}
+
+.item-hover {
+  background-color: #f8f9fa;
+}
+
+.item-icon {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.item-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333333;
+  margin-bottom: 8rpx;
+}
+
+.item-desc {
   font-size: 24rpx;
   color: #999999;
+  line-height: 1.4;
 }
 
-.test-button {
-  width: 100%;
-  height: 88rpx;
-  line-height: 88rpx;
-  background: linear-gradient(135deg, #854C65 0%, #a06b85 100%);
-  border-radius: 12rpx;
-  border: none;
-  color: #ffffff;
-  font-size: 32rpx;
-  font-weight: bold;
-  position: relative;
-  z-index: 1;
-}
-
-.test-button::after {
-  border: none;
-}
-
-.button-hover {
-  opacity: 0.8;
-}
-
-.test-button-text {
-  color: #ffffff;
+.item-arrow {
+  font-size: 40rpx;
+  color: #cccccc;
+  margin-left: 20rpx;
+  flex-shrink: 0;
 }
 
 .tip-section {
