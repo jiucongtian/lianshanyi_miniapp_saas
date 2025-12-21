@@ -42,7 +42,7 @@
    - 插入使用记录到 function_usage_records
 
 ### 免费配额字段映射
-- **智慧洞见**（wisdom_insight）：复用 `dailyDrawQuota` 字段
+- **智慧洞见**（wisdom_insight）：使用 `dailyDrawQuota` 字段
 - **AI出报告**（ai_report）：使用 `dailyAiReportQuota` 字段
 
 ## 🔧 接口列表

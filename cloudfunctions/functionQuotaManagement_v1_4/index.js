@@ -53,59 +53,27 @@ async function getUserTypeConfig(typeCode) {
   try {
     console.log('[getUserTypeConfig] 从数据库获取配置:', typeCode);
     
-    // 尝试从 static_user_types 表获取配置
+    // 从 static_user_types 表获取配置
     const result = await db.collection('static_user_types')
       .where({ typeCode: typeCode })
       .get();
     
-    if (result.data.length > 0) {
-      const config = result.data[0];
-      
-      // 更新缓存
-      configCache[typeCode] = config;
-      cacheTime[typeCode] = Date.now();
-      
-      console.log('[getUserTypeConfig] 成功获取配置:', typeCode);
-      return config;
+    if (result.data.length === 0) {
+      throw new Error(`用户类型配置不存在: ${typeCode}，请在 static_user_types 表中添加配置`);
     }
+    
+    const config = result.data[0];
+    
+    // 更新缓存
+    configCache[typeCode] = config;
+    cacheTime[typeCode] = Date.now();
+    
+    console.log('[getUserTypeConfig] 成功获取配置:', typeCode);
+    return config;
   } catch (err) {
     console.error('[getUserTypeConfig] 获取配置失败:', err);
+    throw err;
   }
-  
-  // 返回默认配置
-  console.log('[getUserTypeConfig] 使用默认配置:', typeCode);
-  return getDefaultConfig(typeCode);
-}
-
-/**
- * 获取默认配置
- */
-function getDefaultConfig(typeCode) {
-  const defaultConfigs = {
-    guest: {
-      typeCode: 'guest',
-      typeName: '临时用户',
-      displayName: '临时用户',
-      dailyDrawQuota: 0,
-      dailyAiReportQuota: 0
-    },
-    normal: {
-      typeCode: 'normal',
-      typeName: '探索者',
-      displayName: '探索者',
-      dailyDrawQuota: 1,
-      dailyAiReportQuota: 1
-    },
-    premium: {
-      typeCode: 'premium',
-      typeName: '高级用户',
-      displayName: '高级用户',
-      dailyDrawQuota: -1,
-      dailyAiReportQuota: -1
-    }
-  };
-  
-  return defaultConfigs[typeCode] || defaultConfigs.guest;
 }
 
 /**
@@ -191,11 +159,11 @@ async function getPaidQuota(openid, functionCode) {
  * 获取功能对应的配额字段名
  */
 function getQuotaFieldName(functionCode) {
-  // 智慧洞见复用 dailyDrawQuota
+  // 智慧洞见使用 dailyDrawQuota 字段
   if (functionCode === 'wisdom_insight') {
     return 'dailyDrawQuota';
   }
-  // AI出报告使用 dailyAiReportQuota
+  // AI出报告使用 dailyAiReportQuota 字段
   if (functionCode === 'ai_report') {
     return 'dailyAiReportQuota';
   }
