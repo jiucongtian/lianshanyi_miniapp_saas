@@ -289,8 +289,14 @@ class FunctionController extends BaseController {
       // 显示支付悬浮窗
       this._showPaymentModal();
       
+      // 显示创建订单loading
+      this._showLoading('创建订单中...', true);
+      
       // 创建订单
       const orderResponse = await functionService.purchaseFunction(functionCode);
+      
+      // 隐藏创建订单loading
+      this._hideLoading();
       
       if (!orderResponse.success) {
         this._hidePaymentModal();
@@ -367,6 +373,7 @@ class FunctionController extends BaseController {
       
       return false;
     } catch (error) {
+      this._hideLoading(); // 确保异常时也隐藏loading
       this._paymentInfo = null; // 清除支付信息
       this._hidePaymentModal();
       this._isPaymentInProgress = false; // 重置标志
@@ -487,6 +494,9 @@ class FunctionController extends BaseController {
         };
       }
       
+      // 显示支付中提示
+      this._showLoading('调起支付中...', true);
+      
       // 调起微信支付
       return new Promise((resolve) => {
         wx.requestPayment({
@@ -496,6 +506,7 @@ class FunctionController extends BaseController {
           signType: paymentParams.signType,
           paySign: paymentParams.paySign,
           success: (res) => {
+            this._hideLoading(); // 隐藏loading
             this._log('_requestPayment', '支付成功', res);
             resolve({
               success: true,
@@ -506,6 +517,7 @@ class FunctionController extends BaseController {
             });
           },
           fail: (err) => {
+            this._hideLoading(); // 隐藏loading
             this._error('_requestPayment', '支付失败', err);
             
             // 用户取消支付
@@ -526,6 +538,7 @@ class FunctionController extends BaseController {
         });
       });
     } catch (error) {
+      this._hideLoading(); // 确保异常时也隐藏loading
       this._error('_requestPayment', '调起支付异常', error);
       return {
         success: false,
