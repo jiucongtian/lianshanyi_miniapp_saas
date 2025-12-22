@@ -329,29 +329,46 @@ class FunctionController extends BaseController {
       // 调起支付（悬浮窗保持不变）
       const paymentResult = await this._requestPayment(orderResponse.data);
       
-      // 支付窗口关闭后，确保悬浮窗仍然显示
-      // 因为用户可能跳转到微信支付页面，返回时悬浮窗可能被隐藏
-      this._showPaymentModal();
-      
-      // 支付成功或用户关闭窗口（可能是支付成功后才关闭的）
-      // 两种情况都需要轮询查询订单状态，确认实际支付结果
-      if (paymentResult.success || paymentResult.code === -2) {
-        const isCancel = paymentResult.code === -2;
-        
-        this._log('purchaseFunction', isCancel ? '用户关闭支付窗口，开始轮询查询订单状态' : '支付调起成功，开始轮询查询订单状态', { 
+      // 用户点击X取消支付，订单一定不会支付成功，直接处理取消逻辑
+      if (paymentResult.code === -2) {
+        this._log('purchaseFunction', '用户取消支付，无需轮询', { 
           functionCode,
           orderId: orderResponse.data.orderId,
-          out_trade_no: orderResponse.data.out_trade_no,
-          isCancel
+          out_trade_no: orderResponse.data.out_trade_no
+        });
+        
+        // 清除支付信息
+        this._paymentInfo = null;
+        this._hidePaymentModal();
+        this._isPaymentInProgress = false;
+        
+        // 调用取消回调
+        if (onCancel) {
+          onCancel();
+        }
+        
+        return false;
+      }
+      
+      // 支付调起成功，需要轮询查询订单状态确认支付结果
+      // 因为用户可能支付成功后才关闭窗口，需要通过轮询确认
+      if (paymentResult.success) {
+        // 支付窗口关闭后，确保悬浮窗仍然显示
+        // 因为用户可能跳转到微信支付页面，返回时悬浮窗可能被隐藏
+        this._showPaymentModal();
+        
+        this._log('purchaseFunction', '支付调起成功，开始轮询查询订单状态', { 
+          functionCode,
+          orderId: orderResponse.data.orderId,
+          out_trade_no: orderResponse.data.out_trade_no
         });
         
         // 自动轮询查询订单状态（延迟2秒开始，每2秒查询一次，最多5次）
-        // 即使关闭窗口，也可能已经支付成功，需要通过轮询确认
         // 悬浮窗保持不变，直到轮询完成
         this._pollOrderStatus(orderResponse.data.orderId, orderResponse.data.out_trade_no, functionCode, {
           onSuccess,
           onError,
-          onCancel: isCancel ? onCancel : null // 如果是关闭窗口，轮询失败时调用取消回调
+          onCancel: null // 支付调起成功，不需要取消回调
         });
         
         // 清除配额缓存（稍后轮询成功后会刷新）
