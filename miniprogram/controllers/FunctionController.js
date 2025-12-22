@@ -628,11 +628,7 @@ class FunctionController extends BaseController {
               await this.checkQuota(functionCode, false);
               
               // 显示成功提示
-              if (queryResult.data.grantInfo && queryResult.data.grantInfo.status === 'granted') {
-                this._showSuccess('支付成功，配额已到账');
-              } else {
-                this._showSuccess('支付成功，配额发放中...');
-              }
+              this._showSuccess('支付成功');
               
               // 调用成功回调
               if (onSuccess) {
