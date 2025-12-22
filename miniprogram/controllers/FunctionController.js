@@ -48,6 +48,9 @@ class FunctionController extends BaseController {
     
     // 支付状态标志（防止重复点击）
     this._isPaymentInProgress = false;
+    
+    // 支付信息（用于页面显示时恢复加载提示）
+    this._paymentInfo = null;
   }
 
   /**
@@ -283,14 +286,14 @@ class FunctionController extends BaseController {
     this._log('purchaseFunction', '开始购买功能', { functionCode });
     
     try {
-      // 显示加载提示（整个支付过程使用同一个提示）
-      this._showLoading('支付处理中...');
+      // 显示支付悬浮窗
+      this._showPaymentModal();
       
       // 创建订单
       const orderResponse = await functionService.purchaseFunction(functionCode);
       
       if (!orderResponse.success) {
-        this._hideLoading();
+        this._hidePaymentModal();
         this._isPaymentInProgress = false; // 重置标志
         this._error('purchaseFunction', '创建订单失败', null, orderResponse.error);
         this._showError(orderResponse.error || '创建订单失败');
@@ -307,8 +310,22 @@ class FunctionController extends BaseController {
         out_trade_no: orderResponse.data.out_trade_no 
       });
       
-      // 调起支付（加载提示保持不变）
+      // 保存支付信息（用于页面显示时恢复悬浮窗）
+      this._paymentInfo = {
+        orderId: orderResponse.data.orderId,
+        out_trade_no: orderResponse.data.out_trade_no,
+        functionCode: functionCode,
+        onSuccess,
+        onError,
+        onCancel
+      };
+      
+      // 调起支付（悬浮窗保持不变）
       const paymentResult = await this._requestPayment(orderResponse.data);
+      
+      // 支付窗口关闭后，确保悬浮窗仍然显示
+      // 因为用户可能跳转到微信支付页面，返回时悬浮窗可能被隐藏
+      this._showPaymentModal();
       
       // 支付成功或用户关闭窗口（可能是支付成功后才关闭的）
       // 两种情况都需要轮询查询订单状态，确认实际支付结果
@@ -324,7 +341,7 @@ class FunctionController extends BaseController {
         
         // 自动轮询查询订单状态（延迟2秒开始，每2秒查询一次，最多5次）
         // 即使关闭窗口，也可能已经支付成功，需要通过轮询确认
-        // 加载提示保持不变，直到轮询完成
+        // 悬浮窗保持不变，直到轮询完成
         this._pollOrderStatus(orderResponse.data.orderId, orderResponse.data.out_trade_no, functionCode, {
           onSuccess,
           onError,
@@ -338,7 +355,8 @@ class FunctionController extends BaseController {
       }
       
       // 其他支付失败情况（非取消）
-      this._hideLoading();
+      this._paymentInfo = null; // 清除支付信息
+      this._hidePaymentModal();
       this._isPaymentInProgress = false; // 重置标志
       this._error('purchaseFunction', '支付失败', null, paymentResult.error);
       this._showError(paymentResult.error || '支付失败');
@@ -349,7 +367,8 @@ class FunctionController extends BaseController {
       
       return false;
     } catch (error) {
-      this._hideLoading();
+      this._paymentInfo = null; // 清除支付信息
+      this._hidePaymentModal();
       this._isPaymentInProgress = false; // 重置标志
       this._error('purchaseFunction', '购买功能异常', error);
       this._showError('购买失败');
@@ -613,8 +632,11 @@ class FunctionController extends BaseController {
             if (orderStatus === 'SUCCESS') {
               clearInterval(pollTimer);
               
-              // 隐藏加载提示
-              this._hideLoading();
+              // 清除支付信息
+              this._paymentInfo = null;
+              
+              // 隐藏支付悬浮窗
+              this._hidePaymentModal();
               
               // 重置支付状态标志
               this._isPaymentInProgress = false;
@@ -642,8 +664,11 @@ class FunctionController extends BaseController {
             if (attempts >= maxAttempts) {
               clearInterval(pollTimer);
               
-              // 隐藏加载提示
-              this._hideLoading();
+              // 清除支付信息
+              this._paymentInfo = null;
+              
+              // 隐藏支付悬浮窗
+              this._hidePaymentModal();
               
               // 重置支付状态标志
               this._isPaymentInProgress = false;
@@ -688,8 +713,11 @@ class FunctionController extends BaseController {
             if (attempts >= maxAttempts) {
               clearInterval(pollTimer);
               
-              // 隐藏加载提示
-              this._hideLoading();
+              // 清除支付信息
+              this._paymentInfo = null;
+              
+              // 隐藏支付悬浮窗
+              this._hidePaymentModal();
               
               // 重置支付状态标志
               this._isPaymentInProgress = false;
@@ -707,8 +735,11 @@ class FunctionController extends BaseController {
           if (attempts >= maxAttempts) {
             clearInterval(pollTimer);
             
-            // 隐藏加载提示
-            this._hideLoading();
+            // 清除支付信息
+            this._paymentInfo = null;
+            
+            // 隐藏支付悬浮窗
+            this._hidePaymentModal();
             
             // 重置支付状态标志
             this._isPaymentInProgress = false;
@@ -725,6 +756,51 @@ class FunctionController extends BaseController {
         }
       }, interval);
     }, initialDelay);
+  }
+
+  /**
+   * 显示支付悬浮窗
+   * @private
+   */
+  _showPaymentModal() {
+    this._setData({
+      showPaymentModal: true
+    });
+    this._log('_showPaymentModal', '显示支付悬浮窗');
+  }
+
+  /**
+   * 隐藏支付悬浮窗
+   * @private
+   */
+  _hidePaymentModal() {
+    this._setData({
+      showPaymentModal: false
+    });
+    this._log('_hidePaymentModal', '隐藏支付悬浮窗');
+  }
+
+  /**
+   * 页面显示时调用（恢复支付状态）
+   * 如果正在支付中，恢复显示支付悬浮窗
+   */
+  onShow() {
+    // 调用父类的 onShow 方法
+    super.onShow();
+    
+    // 如果正在支付中且有支付信息，恢复显示支付悬浮窗
+    if (this._isPaymentInProgress && this._paymentInfo) {
+      this._log('onShow', '页面显示，恢复支付悬浮窗', {
+        orderId: this._paymentInfo.orderId,
+        functionCode: this._paymentInfo.functionCode
+      });
+      
+      // 恢复显示支付悬浮窗
+      this._showPaymentModal();
+      
+      // 注意：轮询已经在后台运行，这里只需要恢复显示悬浮窗
+      // 轮询完成后会自动隐藏悬浮窗并清除支付信息
+    }
   }
 }
 
