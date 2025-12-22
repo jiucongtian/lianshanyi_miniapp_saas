@@ -45,6 +45,9 @@ class FunctionController extends BaseController {
     this.quotaCache = {};
     this.quotaCacheTime = {};
     this.quotaCacheDuration = 30000; // 30秒缓存
+    
+    // 支付状态标志（防止重复点击）
+    this._isPaymentInProgress = false;
   }
 
   /**
@@ -270,18 +273,25 @@ class FunctionController extends BaseController {
   async purchaseFunction(functionCode, options = {}) {
     const { onSuccess = null, onCancel = null, onError = null } = options;
     
+    // 防止重复点击：如果正在支付中，直接返回
+    if (this._isPaymentInProgress) {
+      this._log('purchaseFunction', '支付正在进行中，忽略重复点击', { functionCode });
+      return false;
+    }
+    
+    this._isPaymentInProgress = true; // 标记支付进行中
     this._log('purchaseFunction', '开始购买功能', { functionCode });
     
     try {
-      // 显示加载提示
-      this._showLoading('创建订单中...');
+      // 显示加载提示（整个支付过程使用同一个提示）
+      this._showLoading('支付处理中...');
       
       // 创建订单
       const orderResponse = await functionService.purchaseFunction(functionCode);
       
-      this._hideLoading();
-      
       if (!orderResponse.success) {
+        this._hideLoading();
+        this._isPaymentInProgress = false; // 重置标志
         this._error('purchaseFunction', '创建订单失败', null, orderResponse.error);
         this._showError(orderResponse.error || '创建订单失败');
         
@@ -297,35 +307,39 @@ class FunctionController extends BaseController {
         out_trade_no: orderResponse.data.out_trade_no 
       });
       
-      // 调起支付
+      // 调起支付（加载提示保持不变）
       const paymentResult = await this._requestPayment(orderResponse.data);
       
-      if (paymentResult.success) {
-        this._log('purchaseFunction', '支付成功', { functionCode });
-        this._showSuccess('支付成功，配额已到账');
+      // 支付成功或用户关闭窗口（可能是支付成功后才关闭的）
+      // 两种情况都需要轮询查询订单状态，确认实际支付结果
+      if (paymentResult.success || paymentResult.code === -2) {
+        const isCancel = paymentResult.code === -2;
         
-        // 清除配额缓存
+        this._log('purchaseFunction', isCancel ? '用户关闭支付窗口，开始轮询查询订单状态' : '支付调起成功，开始轮询查询订单状态', { 
+          functionCode,
+          orderId: orderResponse.data.orderId,
+          out_trade_no: orderResponse.data.out_trade_no,
+          isCancel
+        });
+        
+        // 自动轮询查询订单状态（延迟2秒开始，每2秒查询一次，最多5次）
+        // 即使关闭窗口，也可能已经支付成功，需要通过轮询确认
+        // 加载提示保持不变，直到轮询完成
+        this._pollOrderStatus(orderResponse.data.orderId, orderResponse.data.out_trade_no, functionCode, {
+          onSuccess,
+          onError,
+          onCancel: isCancel ? onCancel : null // 如果是关闭窗口，轮询失败时调用取消回调
+        });
+        
+        // 清除配额缓存（稍后轮询成功后会刷新）
         this._clearQuotaCache(functionCode);
         
-        if (onSuccess) {
-          onSuccess(orderResponse.data);
-        }
-        
-        return true;
+        return true; // 返回true，表示已启动轮询，等待结果
       }
       
-      // 用户取消支付
-      if (paymentResult.code === -2) {
-        this._log('purchaseFunction', '用户取消支付', { functionCode });
-        
-        if (onCancel) {
-          onCancel();
-        }
-        
-        return false;
-      }
-      
-      // 支付失败
+      // 其他支付失败情况（非取消）
+      this._hideLoading();
+      this._isPaymentInProgress = false; // 重置标志
       this._error('purchaseFunction', '支付失败', null, paymentResult.error);
       this._showError(paymentResult.error || '支付失败');
       
@@ -335,8 +349,9 @@ class FunctionController extends BaseController {
       
       return false;
     } catch (error) {
-      this._error('purchaseFunction', '购买功能异常', error);
       this._hideLoading();
+      this._isPaymentInProgress = false; // 重置标志
+      this._error('purchaseFunction', '购买功能异常', error);
       this._showError('购买失败');
       
       if (onError) {
@@ -542,6 +557,178 @@ class FunctionController extends BaseController {
       this.quotaCacheTime = {};
       this._log('_clearQuotaCache', '清除所有配额缓存');
     }
+  }
+
+  /**
+   * 轮询查询订单状态（支付成功后自动查询）
+   * @private
+   * @param {string} orderId - 订单ID
+   * @param {string} out_trade_no - 商户订单号
+   * @param {string} functionCode - 功能编码
+   * @param {Object} options - 回调选项
+   * @param {Function} options.onSuccess - 成功回调
+   * @param {Function} options.onError - 错误回调
+   * @param {Function} options.onCancel - 取消回调（如果轮询后确认未支付，调用此回调）
+   */
+  _pollOrderStatus(orderId, out_trade_no, functionCode, options = {}) {
+    const { onSuccess = null, onError = null, onCancel = null } = options;
+    
+    let attempts = 0;
+    const maxAttempts = 5; // 最多查询5次
+    const interval = 2000; // 每2秒查询一次
+    const initialDelay = 2000; // 延迟2秒后开始第一次查询
+    
+    this._log('_pollOrderStatus', '开始轮询查询订单状态', {
+      orderId,
+      out_trade_no,
+      functionCode,
+      maxAttempts,
+      interval
+    });
+    
+    // 延迟后开始第一次查询
+    setTimeout(() => {
+      const pollTimer = setInterval(async () => {
+        attempts++;
+        
+        this._log('_pollOrderStatus', `第 ${attempts} 次查询订单状态`, {
+          orderId,
+          out_trade_no
+        });
+        
+        try {
+          // 查询订单状态
+          const queryResult = await paymentService.queryOrderStatus(out_trade_no, orderId);
+          
+          if (queryResult.success && queryResult.data) {
+            const orderStatus = queryResult.data.status;
+            
+            this._log('_pollOrderStatus', '订单状态查询结果', {
+              orderId,
+              status: orderStatus,
+              attempt: attempts
+            });
+            
+            // 如果订单状态为 SUCCESS，停止轮询
+            if (orderStatus === 'SUCCESS') {
+              clearInterval(pollTimer);
+              
+              // 隐藏加载提示
+              this._hideLoading();
+              
+              // 重置支付状态标志
+              this._isPaymentInProgress = false;
+              
+              this._log('_pollOrderStatus', '订单支付成功，停止轮询', {
+                orderId,
+                grantInfo: queryResult.data.grantInfo
+              });
+              
+              // 刷新配额缓存
+              await this.checkQuota(functionCode, false);
+              
+              // 显示成功提示
+              if (queryResult.data.grantInfo && queryResult.data.grantInfo.status === 'granted') {
+                this._showSuccess('支付成功，配额已到账');
+              } else {
+                this._showSuccess('支付成功，配额发放中...');
+              }
+              
+              // 调用成功回调
+              if (onSuccess) {
+                onSuccess(queryResult.data);
+              }
+              
+              return;
+            }
+            
+            // 如果达到最大查询次数，停止轮询
+            if (attempts >= maxAttempts) {
+              clearInterval(pollTimer);
+              
+              // 隐藏加载提示
+              this._hideLoading();
+              
+              // 重置支付状态标志
+              this._isPaymentInProgress = false;
+              
+              this._log('_pollOrderStatus', '达到最大查询次数，停止轮询', {
+                orderId,
+                attempts,
+                finalStatus: orderStatus
+              });
+              
+              // 如果最终状态仍为 NOTPAY，可能是用户真的取消了支付
+              if (orderStatus === 'NOTPAY') {
+                this._log('_pollOrderStatus', '轮询后订单状态仍为NOTPAY，可能是用户取消了支付', {
+                  orderId
+                });
+                
+                // 调用取消回调（如果存在）
+                if (onCancel) {
+                  onCancel();
+                }
+                
+                // 提示用户
+                this._showSuccess('订单未支付');
+              } else {
+                // 其他状态（可能是支付中），提示用户稍后查询
+                this._showSuccess('订单状态确认中，请稍后查看');
+                
+                // 刷新配额缓存（可能已经到账）
+                await this.checkQuota(functionCode, false);
+              }
+              
+              return;
+            }
+          } else {
+            this._log('_pollOrderStatus', '查询订单状态失败', {
+              orderId,
+              error: queryResult.error,
+              attempt: attempts
+            });
+            
+            // 查询失败也继续尝试，直到达到最大次数
+            if (attempts >= maxAttempts) {
+              clearInterval(pollTimer);
+              
+              // 隐藏加载提示
+              this._hideLoading();
+              
+              // 重置支付状态标志
+              this._isPaymentInProgress = false;
+              
+              this._showSuccess('订单状态确认中，请稍后查看');
+              
+              // 刷新配额缓存（可能已经到账）
+              await this.checkQuota(functionCode, false);
+            }
+          }
+        } catch (error) {
+          this._error('_pollOrderStatus', '轮询查询订单状态异常', error);
+          
+          // 异常也继续尝试，直到达到最大次数
+          if (attempts >= maxAttempts) {
+            clearInterval(pollTimer);
+            
+            // 隐藏加载提示
+            this._hideLoading();
+            
+            // 重置支付状态标志
+            this._isPaymentInProgress = false;
+            
+            this._showSuccess('订单状态确认中，请稍后查看');
+            
+            // 刷新配额缓存（可能已经到账）
+            await this.checkQuota(functionCode, false);
+            
+            if (onError) {
+              onError({ error: error.message });
+            }
+          }
+        }
+      }, interval);
+    }, initialDelay);
   }
 }
 

@@ -566,6 +566,61 @@ async function createPaymentOrder(wxContext, data) {
 }
 
 /**
+ * 查询微信支付订单状态
+ * 参考文档：https://pay.weixin.qq.com/doc/v3/merchant/4012791900
+ * @param {string} out_trade_no - 商户订单号
+ * @param {string} mchid - 商户号
+ * @returns {Promise<Object>} 订单状态查询结果
+ */
+async function queryWeChatPayOrder(out_trade_no, mchid) {
+  try {
+    // 从环境变量获取配置
+    const privateKey = getPrivateKey();
+    const serialNo = process.env.WECHAT_PAY_SERIAL_NO;
+    
+    if (!privateKey || !serialNo) {
+      throw new Error('未配置商户私钥或证书序列号，无法查询微信支付订单');
+    }
+    
+    // 构建查询URL
+    const url = `/v3/pay/transactions/out-trade-no/${out_trade_no}?mchid=${mchid}`;
+    
+    // 生成请求头（GET请求，body为空字符串）
+    const headers = generateWechatPayV3Headers('GET', url, '', mchid, serialNo, privateKey);
+    
+    console.log('[queryWeChatPayOrder] 准备查询微信支付订单', {
+      out_trade_no,
+      mchid,
+      url: WECHAT_PAY_CONFIG.baseURL + url
+    });
+    
+    // 调用微信支付查询接口
+    const response = await axios({
+      method: 'GET',
+      url: WECHAT_PAY_CONFIG.baseURL + url,
+      headers: headers,
+      timeout: 10000 // 10秒超时
+    });
+    
+    console.log('[queryWeChatPayOrder] 微信支付查询成功', {
+      status: response.status,
+      trade_state: response.data?.trade_state
+    });
+    
+    return response.data;
+    
+  } catch (error) {
+    console.error('[queryWeChatPayOrder] 查询微信支付订单失败', {
+      out_trade_no,
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    throw error;
+  }
+}
+
+/**
  * 查询订单状态
  */
 async function queryOrderStatus(wxContext, data) {
@@ -610,8 +665,101 @@ async function queryOrderStatus(wxContext, data) {
     
     const order = orderResult.data[0];
     
-    // TODO: 如果订单状态为NOTPAY，可以调用微信支付查询接口确认最新状态
-    // 参考文档：https://pay.weixin.qq.com/docs/merchant/apis/china-transaction-query/query-by-out-trade-no.html
+    // 如果订单状态为NOTPAY，主动查询微信支付接口同步最新状态
+    if (order.status === 'NOTPAY') {
+      try {
+        const mchid = process.env.WECHAT_PAY_MCHID;
+        
+        if (!mchid) {
+          console.warn('[queryOrderStatus] 未配置商户号，跳过微信支付查询');
+        } else {
+          console.log('[queryOrderStatus] 订单状态为NOTPAY，开始查询微信支付接口同步状态', {
+            out_trade_no: order.out_trade_no
+          });
+          
+          // 查询微信支付订单状态
+          const wechatPayResult = await queryWeChatPayOrder(order.out_trade_no, mchid);
+          
+          // 如果微信支付返回的状态为SUCCESS，同步订单状态
+          if (wechatPayResult.trade_state === 'SUCCESS') {
+            console.log('[queryOrderStatus] 微信支付查询到订单已支付，开始同步订单状态', {
+              out_trade_no: order.out_trade_no,
+              transaction_id: wechatPayResult.transaction_id
+            });
+            
+            // 更新订单状态
+            const updateData = {
+              status: 'SUCCESS',
+              transaction_id: wechatPayResult.transaction_id,
+              payTime: wechatPayResult.success_time ? new Date(wechatPayResult.success_time) : new Date(),
+              updateTime: new Date()
+            };
+            
+            await db.collection('payment_orders').doc(order._id).update({
+              data: updateData
+            });
+            
+            console.log('[queryOrderStatus] 订单状态已同步为SUCCESS', {
+              orderId: order._id,
+              out_trade_no: order.out_trade_no
+            });
+            
+            // 重新查询订单，获取最新数据（包含 grantData）
+            const updatedOrderResult = await db.collection('payment_orders')
+              .doc(order._id)
+              .get();
+            
+            const updatedOrder = updatedOrderResult.data;
+            
+            // 检查是否需要发放配额（幂等性检查：只有 grantInfo.status 为 pending 时才发放）
+            if (updatedOrder.grantInfo && updatedOrder.grantInfo.status === 'pending') {
+              console.log('[queryOrderStatus] 检测到配额未发放，开始发放配额', {
+                orderId: order._id,
+                grantInfo: updatedOrder.grantInfo
+              });
+              
+              try {
+                await handlePaymentSuccess(updatedOrder);
+                console.log('[queryOrderStatus] 配额发放成功', {
+                  orderId: order._id
+                });
+              } catch (grantError) {
+                console.error('[queryOrderStatus] 配额发放失败', {
+                  orderId: order._id,
+                  error: grantError.message
+                });
+                // 配额发放失败不影响订单状态查询结果，只记录错误日志
+              }
+            } else {
+              console.log('[queryOrderStatus] 配额已发放或无需发放，跳过配额发放', {
+                orderId: order._id,
+                grantInfoStatus: updatedOrder.grantInfo?.status
+              });
+            }
+            
+            // 更新 order 对象为最新状态
+            Object.assign(order, updatedOrder);
+            order.status = 'SUCCESS';
+            order.payTime = updateData.payTime;
+            order.transaction_id = updateData.transaction_id;
+            order.updateTime = updateData.updateTime;
+            
+          } else {
+            console.log('[queryOrderStatus] 微信支付订单状态仍为未支付', {
+              out_trade_no: order.out_trade_no,
+              trade_state: wechatPayResult.trade_state
+            });
+          }
+        }
+      } catch (syncError) {
+        // 查询失败时返回数据库中的订单状态，并记录错误日志
+        console.error('[queryOrderStatus] 查询微信支付订单失败，返回数据库状态', {
+          out_trade_no: order.out_trade_no,
+          error: syncError.message
+        });
+        // 不抛出错误，继续返回数据库中的订单状态
+      }
+    }
     
     // 构建返回数据
     const orderData = {
