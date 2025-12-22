@@ -134,6 +134,10 @@ Page({
 
   onShow() {
     console.log('[AnswerPage] 页面显示');
+    // 调用 FunctionController 的 onShow，用于恢复支付状态
+    if (this.functionController) {
+      this.functionController.onShow();
+    }
   },
 
   /**
