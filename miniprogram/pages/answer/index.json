@@ -6,7 +6,8 @@
   "enablePullDownRefresh": false,
   "usingComponents": {
     "t-navbar": "/miniprogram_npm/tdesign-miniprogram/navbar/navbar",
-    "loading-button": "../../components/loading-button/index"
+    "loading-button": "../../components/loading-button/index",
+    "payment-modal": "../../components/payment-modal/index"
   }
 }
 

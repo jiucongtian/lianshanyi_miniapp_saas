@@ -141,12 +141,10 @@
     <view class="star-trail trail-8"></view>
   </view>
 
-  <!-- 支付弹窗 -->
-  <view class="payment-modal-overlay" wx:if="{{showPaymentModal}}" catchtap="">
-    <view class="payment-modal-content">
-      <view class="payment-modal-icon">⏳</view>
-      <view class="payment-modal-text">{{paymentModalText}}</view>
-    </view>
-  </view>
+  <!-- 支付弹窗组件 -->
+  <payment-modal 
+    show="{{showPaymentModal}}" 
+    text="{{paymentModalText}}"
+  ></payment-modal>
 </view>
 

@@ -51,9 +51,6 @@ class FunctionController extends BaseController {
     
     // 支付信息（用于页面显示时恢复支付弹窗）
     this._paymentInfo = null;
-    
-    // 当前支付弹窗显示的文字
-    this._currentPaymentModalText = '支付中...';
   }
 
   /**
@@ -802,31 +799,6 @@ class FunctionController extends BaseController {
     }, initialDelay);
   }
 
-  /**
-   * 显示支付悬浮窗
-   * @private
-   * @param {string} statusText - 显示的文字，默认'支付中...'
-   */
-  _showPaymentModal(statusText = '支付中...') {
-    this._currentPaymentModalText = statusText;
-    this._setData({
-      showPaymentModal: true,
-      paymentModalText: statusText
-    });
-    this._log('_showPaymentModal', '显示支付悬浮窗', { statusText });
-  }
-
-  /**
-   * 隐藏支付悬浮窗
-   * @private
-   */
-  _hidePaymentModal() {
-    this._setData({
-      showPaymentModal: false,
-      paymentModalText: ''
-    });
-    this._log('_hidePaymentModal', '隐藏支付悬浮窗');
-  }
 
   /**
    * 页面显示时调用（恢复支付状态）
@@ -837,7 +809,7 @@ class FunctionController extends BaseController {
     
     // 如果正在支付中且有支付信息，恢复显示支付悬浮窗
     if (this._isPaymentInProgress && this._paymentInfo) {
-      // 恢复显示支付悬浮窗（使用之前保存的文字）
+      // 恢复显示支付悬浮窗（使用基类保存的文字）
       this._showPaymentModal(this._currentPaymentModalText || '支付中...');
     }
   }

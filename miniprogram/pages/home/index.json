@@ -4,6 +4,8 @@
   "backgroundColor": "#000000",
   "backgroundTextStyle": "light",
   "enablePullDownRefresh": false,
-  "usingComponents": {}
+  "usingComponents": {
+    "payment-modal": "../../components/payment-modal/index"
+  }
 }
 
