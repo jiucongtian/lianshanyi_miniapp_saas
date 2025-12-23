@@ -133,3 +133,11 @@
   class="poster-canvas"
 ></canvas>
 
+<!-- 支付弹窗 -->
+<view class="payment-modal-overlay" wx:if="{{showPaymentModal}}" catchtap="">
+  <view class="payment-modal-content">
+    <view class="payment-modal-icon">⏳</view>
+    <view class="payment-modal-text">{{paymentModalText}}</view>
+  </view>
+</view>
+

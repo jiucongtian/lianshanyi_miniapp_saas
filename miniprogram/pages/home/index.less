@@ -1189,3 +1189,54 @@ page {
   }
 }
 
+/* 支付弹窗 */
+.payment-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4rpx);
+}
+
+.payment-modal-content {
+  background: linear-gradient(135deg, #3d1f3e 0%, #4d1f4e 100%);
+  border: 2rpx solid #c896b4;
+  border-radius: 24rpx;
+  padding: 60rpx 80rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 300rpx;
+  box-shadow: 
+    0 0 40rpx rgba(200, 150, 180, 0.5),
+    inset 0 0 60rpx rgba(133, 76, 101, 0.2);
+}
+
+.payment-modal-icon {
+  font-size: 60rpx;
+  margin-bottom: 20rpx;
+  animation: payment-spin 1.5s linear infinite;
+}
+
+.payment-modal-text {
+  font-size: 28rpx;
+  color: #ffffff;
+  text-align: center;
+  line-height: 1.5;
+}
+
+@keyframes payment-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
