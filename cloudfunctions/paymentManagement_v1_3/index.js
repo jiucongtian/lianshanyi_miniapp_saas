@@ -252,12 +252,13 @@ async function createOrder(orderData) {
   // 生成请求头
   const headers = generateWechatPayV3Headers('POST', url, bodyStr, mchid, serialNo, privateKey);
   
-  console.log('[createOrder] 准备调用微信支付统一下单接口', {
-    out_trade_no,
-    amount,
-    openid,
-    url: WECHAT_PAY_CONFIG.baseURL + url
-  });
+    console.log('[createOrder] 准备调用微信支付统一下单接口', {
+      out_trade_no,
+      amount,
+      openid,
+      notify_url: notify_url,
+      url: WECHAT_PAY_CONFIG.baseURL + url
+    });
   
   try {
     // 调用微信支付V3 API
@@ -463,6 +464,12 @@ async function createPaymentOrder(wxContext, data) {
     const privateKey = getPrivateKey(); // 优先从文件读取，否则从环境变量读取
     const serialNo = process.env.WECHAT_PAY_SERIAL_NO;
     const notifyUrl = process.env.WECHAT_PAY_NOTIFY_URL || `https://${cloud.getWXContext().ENV}.cloudbaseapp.com/payment/notify`;
+    
+    console.log('[createPaymentOrder] 支付回调地址配置', {
+      hasEnvVar: !!process.env.WECHAT_PAY_NOTIFY_URL,
+      notifyUrl: notifyUrl,
+      env: cloud.getWXContext().ENV
+    });
     
     if (!mchid || !apiKey) {
       console.error('[createPaymentOrder] 微信支付配置缺失', {
