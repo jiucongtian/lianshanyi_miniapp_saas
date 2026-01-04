@@ -75,7 +75,7 @@
     <view class="input-container">
       <input 
         class="question-input" 
-        placeholder="说出你的问题" 
+        placeholder="说出你的问题，实在没有空着也行！" 
         value="{{question}}"
         bindinput="onQuestionInput"
         confirm-type="done"
