@@ -42,7 +42,8 @@ Page({
     selectedCardImagePath: '', // 选中卡牌的图片路径
     // 配额信息（统一使用智慧洞见配额，包含免费 + 付费）
     wisdomInsightQuota: null, // FunctionQuotaBean（包含 freeRemaining + paidRemaining）
-    drawButtonText: '抽卡' // 抽卡按钮文本（包含剩余次数）
+    drawButtonText: '抽卡', // 抽卡按钮文本（固定为"抽卡"）
+    interpretButtonText: 'AI解读' // AI解读按钮文本（显示剩余配额）
   },
   
   // 延迟清空定时器ID
@@ -163,23 +164,8 @@ Page({
     
     log.info('onAnalyzeAnswer', '点击抽卡');
     
-    // ========== 配额检查 ==========
-    // 先获取按钮组件引用（用于配额检查失败时重置状态）
+    // 获取按钮组件引用（用于错误时重置状态）
     const buttonComponent = this.selectComponent('#loading-button-draw');
-    
-    const quotaCheck = await this._checkDrawQuota();
-    if (!quotaCheck || !quotaCheck.canDraw) {
-      // 配额检查失败，重置按钮状态和抽卡标志
-      if (buttonComponent) {
-        buttonComponent.reset();
-      }
-      this.isDrawingCard = false; // 重置抽卡标志，允许下次点击
-      
-      // 配额用完，弹出购买界面
-      await this._handleQuotaInsufficient();
-      return;
-    }
-    // ==============================
     
     // 如果已经翻转，先翻转回来，等翻转动画完成后再清空图片路径
     if (this.data.isFlipped) {
@@ -425,9 +411,9 @@ Page({
       setTimeout(() => {
         this.setData({
           isFlipped: true,
-          // 抽卡完成后：隐藏抽卡按钮，不显示AI解读按钮（等待自动解读结果）
+          // 抽卡完成后：隐藏抽卡按钮，显示AI解读按钮
           showDrawButton: false,
-          showInterpretButton: false
+          showInterpretButton: true
         });
         // 重置按钮状态和抽卡标志（抽卡完成）
         const buttonComponent = this.selectComponent('#loading-button-draw');
@@ -438,11 +424,8 @@ Page({
         this.isDrawingCard = false;
         console.log('[_startDrawCardAnimation] 抽卡完成');
         
-        // 抽卡动画完成后，自动调用AI解读功能
-        // 延迟一小段时间，让翻转动画完成
-        setTimeout(() => {
-          this.onAIInterpret(true); // true 表示自动调用
-        }, 100);
+        // 刷新AI解读按钮文案（显示配额信息）
+        this._updateInterpretButtonText();
       }, 50); // 50ms后翻转卡牌
       
     }, animationDuration);
@@ -450,14 +433,9 @@ Page({
 
   /**
    * AI解读按钮点击事件（使用功能按次付费系统）
-   * @param {boolean} isAutoCall - 是否为自动调用（抽卡后自动调用）
    */
-  async onAIInterpret(isAutoCall = false) {
-    if (isAutoCall) {
-      log.info('onAIInterpret', '自动调用AI解读（抽卡后）');
-    } else {
-      log.info('onAIInterpret', '点击AI解读');
-    }
+  async onAIInterpret() {
+    log.info('onAIInterpret', '点击AI解读');
     
     // 同步检查：如果正在解读，直接返回（防止重复点击）
     if (this.isInterpreting) {
@@ -485,14 +463,6 @@ Page({
     
     // 设置解读标志
     this.isInterpreting = true;
-    
-    // 如果是自动调用，显示加载提示
-    if (isAutoCall) {
-      wx.showLoading({
-        title: 'AI 解读中...',
-        mask: true
-      });
-    }
     
     // 获取按钮组件引用（用于错误时重置状态）
     const buttonComponent = this.selectComponent('#loading-button-interpret');
@@ -639,43 +609,31 @@ Page({
         
         this.setData({
           aiInterpretation: finalInterpretation,
-          // AI解读成功：不显示AI解读按钮（从头到尾都不显示）
+          // AI解读成功：隐藏抽卡按钮和AI解读按钮，只显示分享海报按钮
+          showDrawButton: false,
           showInterpretButton: false,
-          // 显示分享海报按钮
           showShareButton: true
         });
         
-        log.info('onAIInterpret', 'AI解读成功', { interpretation, isAutoCall });
+        log.info('onAIInterpret', 'AI解读成功', { interpretation });
         
         // 刷新智慧洞见配额信息
         await this._loadQuotaInfo();
         
-        // 隐藏加载提示（成功）
-        if (isAutoCall) {
-          wx.hideLoading();
-        }
-        
-        // 如果是自动调用，不显示toast（避免打断用户体验）
-        if (!isAutoCall) {
-          wx.showToast({
-            title: '解读成功',
-            icon: 'success',
-            duration: 2000
-          });
-        }
+        // 显示成功提示
+        wx.showToast({
+          title: '解读成功',
+          icon: 'success',
+          duration: 2000
+        });
       } else {
         // 功能调用返回了数据但解析失败
         log.error('onAIInterpret', '功能调用成功但未返回数据', { 
-          isAutoCall,
           functionResult,
           hasData: !!functionResult?.data
         });
         
-        // 隐藏加载提示（失败）
-        if (isAutoCall) {
-          wx.hideLoading();
-        }
-        
+        // 解读失败：显示AI解读按钮，让用户可以重试
         this.setData({
           showInterpretButton: true
         });
@@ -686,12 +644,7 @@ Page({
         });
       }
     } catch (error) {
-      log.error('onAIInterpret', '调用功能失败', { error: error.message, isAutoCall });
-      
-      // 隐藏加载提示（异常）
-      if (isAutoCall) {
-        wx.hideLoading();
-      }
+      log.error('onAIInterpret', '调用功能失败', { error: error.message });
       
       // 解读失败：显示AI解读按钮，让用户可以重试
       this.setData({
@@ -713,22 +666,29 @@ Page({
   },
   
   /**
-   * 获取抽卡按钮文本（包含剩余次数）
-   * 统一使用智慧洞见配额（包含免费 + 付费）
+   * 获取抽卡按钮文本（抽卡免费，不显示配额）
+   * @returns {string} 按钮文本
+   */
+  _getDrawButtonText() {
+    return '抽卡';
+  },
+  
+  /**
+   * 获取AI解读按钮文本（显示剩余配额）
    * @param {FunctionQuotaBean} quotaInfo - 智慧洞见配额信息
    * @returns {string} 按钮文本
    */
-  _getDrawButtonText(quotaInfo) {
+  _getInterpretButtonText(quotaInfo) {
     if (!quotaInfo) {
-      log.warn('_getDrawButtonText', 'quotaInfo 为空，返回默认文本');
-      return '抽卡';
+      log.warn('_getInterpretButtonText', 'quotaInfo 为空，返回默认文本');
+      return 'AI解读';
     }
     
     try {
       // 直接使用智慧洞见配额的总配额
       const totalRemaining = quotaInfo.totalRemaining;
       
-      log.info('_getDrawButtonText', '配额信息', { 
+      log.info('_getInterpretButtonText', '配额信息', { 
         freeRemaining: quotaInfo.freeRemaining,
         paidRemaining: quotaInfo.paidRemaining,
         totalRemaining: totalRemaining
@@ -736,14 +696,25 @@ Page({
       
       // 根据总配额生成按钮文本
       if (totalRemaining > 0) {
-        return `抽卡（剩余${totalRemaining}次）`;
+        return `AI解读（剩余${totalRemaining}次）`;
       } else {
-        return '抽卡（需付费）';
+        return 'AI解读（需付费）';
       }
     } catch (error) {
-      log.error('_getDrawButtonText', '获取按钮文本异常', error);
-      return '抽卡';
+      log.error('_getInterpretButtonText', '获取按钮文本异常', error);
+      return 'AI解读';
     }
+  },
+  
+  /**
+   * 更新AI解读按钮文案
+   */
+  _updateInterpretButtonText() {
+    const quotaInfo = this.data.wisdomInsightQuota;
+    const buttonText = this._getInterpretButtonText(quotaInfo);
+    this.setData({
+      interpretButtonText: buttonText
+    });
   },
   
   /**
@@ -1073,17 +1044,15 @@ Page({
             wisdomInsightQuota: quotaInfo
           });
           
-          // 生成按钮文本
-          const buttonText = this._getDrawButtonText(quotaInfo);
-          this.setData({
-            drawButtonText: buttonText
-          });
+          // 更新AI解读按钮文本（如果已显示）
+          if (this.data.showInterpretButton) {
+            this._updateInterpretButtonText();
+          }
           
           log.info('_loadQuotaInfo', '预加载配额使用成功', {
             freeRemaining: quotaInfo.freeRemaining,
             paidRemaining: quotaInfo.paidRemaining,
-            totalRemaining: quotaInfo.totalRemaining,
-            buttonText: buttonText
+            totalRemaining: quotaInfo.totalRemaining
           });
           
           // 清除预加载数据（已使用）
@@ -1108,25 +1077,26 @@ Page({
           wisdomInsightQuota: quotaInfo
         });
         
-        // 生成按钮文本
-        const buttonText = this._getDrawButtonText(quotaInfo);
-        this.setData({
-          drawButtonText: buttonText
-        });
+        // 更新AI解读按钮文本（如果已显示）
+        if (this.data.showInterpretButton) {
+          this._updateInterpretButtonText();
+        }
         
         log.info('_loadQuotaInfo', '配额加载成功', {
           freeRemaining: quotaInfo.freeRemaining,
           paidRemaining: quotaInfo.paidRemaining,
-          totalRemaining: quotaInfo.totalRemaining,
-          buttonText: buttonText
+          totalRemaining: quotaInfo.totalRemaining
         });
       }
     } catch (error) {
       log.error('_loadQuotaInfo', '加载配额信息失败', { error: error.message });
       // 配额信息加载失败不影响主流程，静默处理
-      this.setData({
-        drawButtonText: '抽卡'
-      });
+      // 如果AI解读按钮已显示，更新为默认文本
+      if (this.data.showInterpretButton) {
+        this.setData({
+          interpretButtonText: 'AI解读'
+        });
+      }
     }
   }
 });

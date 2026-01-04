@@ -104,7 +104,7 @@
         theme="secondary"
         size="medium"
         block="{{true}}"
-        button-text="AI解读"
+        button-text="{{interpretButtonText}}"
         loading-text="解读中..."
         prevent-duplicate="{{true}}"
         bind:tap="onAIInterpret"
