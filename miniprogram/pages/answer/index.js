@@ -498,9 +498,12 @@ Page({
       if (!result) {
         log.warn('onAIInterpret', '功能调用失败或被取消');
         
-        // 隐藏加载提示
-        if (isAutoCall) {
-          wx.hideLoading();
+        // 重置解读标志
+        this.isInterpreting = false;
+        
+        // 重置按钮状态
+        if (buttonComponent) {
+          buttonComponent.reset();
         }
         
         // 解读失败：显示AI解读按钮，让用户可以重试

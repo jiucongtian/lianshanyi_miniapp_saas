@@ -98,8 +98,8 @@
       </view>
     </view>
     
-    <!-- 调试功能区域（开发调试用） -->
-    <view class="test-section">
+    <!-- 调试功能区域（仅管理员可见） -->
+    <view class="test-section" wx:if="{{userInfo && userInfo.userType === 'admin'}}">
       <!-- 调试页面入口 -->
       <view class="test-card">
         <view class="test-header">

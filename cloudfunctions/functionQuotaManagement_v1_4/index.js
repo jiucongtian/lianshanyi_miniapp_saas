@@ -50,30 +50,27 @@ async function getUserTypeConfig(typeCode) {
     }
   }
   
-  try {
-    console.log('[getUserTypeConfig] 从数据库获取配置:', typeCode);
-    
-    // 从 static_user_types 表获取配置
-    const result = await db.collection('static_user_types')
-      .where({ typeCode: typeCode })
-      .get();
-    
-    if (result.data.length === 0) {
-      throw new Error(`用户类型配置不存在: ${typeCode}，请在 static_user_types 表中添加配置`);
-    }
-    
-    const config = result.data[0];
-    
-    // 更新缓存
-    configCache[typeCode] = config;
-    cacheTime[typeCode] = Date.now();
-    
-    console.log('[getUserTypeConfig] 成功获取配置:', typeCode);
-    return config;
-  } catch (err) {
-    console.error('[getUserTypeConfig] 获取配置失败:', err);
-    throw err;
+  console.log('[getUserTypeConfig] 从数据库获取配置:', typeCode);
+  
+  // 从 static_user_types 表获取配置
+  const result = await db.collection('static_user_types')
+    .where({ typeCode: typeCode })
+    .get();
+  
+  if (result.data.length === 0) {
+    const errorMsg = `用户类型配置不存在: ${typeCode}，请在 static_user_types 表中添加配置`;
+    console.error('[getUserTypeConfig]', errorMsg);
+    throw new Error(errorMsg);
   }
+  
+  const config = result.data[0];
+  
+  // 更新缓存
+  configCache[typeCode] = config;
+  cacheTime[typeCode] = Date.now();
+  
+  console.log('[getUserTypeConfig] 成功获取配置:', typeCode);
+  return config;
 }
 
 /**

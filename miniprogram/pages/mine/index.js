@@ -146,10 +146,22 @@ Page({
   },
 
   /**
-   * 跳转到调试页面
+   * 跳转到调试页面（仅管理员可访问）
    */
   onDebugTap() {
     log.info('onDebugTap', '跳转到调试页面');
+    
+    // 权限检查：只有管理员可以访问调试页面
+    if (!this.data.userInfo || this.data.userInfo.userType !== 'admin') {
+      log.warn('onDebugTap', '非管理员用户尝试访问调试页面');
+      wx.showToast({
+        title: '无权限访问',
+        icon: 'none',
+        duration: 2000
+      });
+      return;
+    }
+    
     wx.navigateTo({
       url: '/pages/debug/index'
     });

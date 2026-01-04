@@ -384,7 +384,8 @@ class MineController extends BaseController {
     const typeMap = {
       'guest': '临时用户',
       'normal': '探索者',
-      'premium': '高级用户'
+      'premium': '高级用户',
+      'admin': '管理员'
     };
     this.userTypeText = typeMap[userInfo.userType] || '临时用户';
 

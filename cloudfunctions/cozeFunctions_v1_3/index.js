@@ -421,73 +421,31 @@ async function getDrawCardQuotaInfo(wxContext) {
 
 /**
  * 获取用户类型配置
- * 从 userManagement 云函数复制过来的逻辑
+ * 从static_user_types表获取，如果不存在则抛出异常
  * @param {string} typeCode - 用户类型代码
  * @returns {Object} 用户类型配置
  */
 async function getUserTypeConfig(typeCode) {
-  try {
-    // 尝试从static_user_types表获取配置
-    const configResult = await db.collection('static_user_types')
-      .where({ typeCode: typeCode })
-      .get()
-    
-    if (configResult.data.length > 0) {
-      const config = configResult.data[0]
-      return {
-        typeCode: config.typeCode,
-        typeName: config.typeName,
-        displayName: config.displayName,
-        description: config.description,
-        profileQuota: config.profileQuota,
-        permissions: config.permissions,
-        dailyDrawQuota: config.dailyDrawQuota !== undefined ? config.dailyDrawQuota : 0
-      }
-    }
-  } catch (error) {
-    console.warn('[getUserTypeConfig] 从static_user_types表获取配置失败，使用默认配置:', error.message)
+  // 从static_user_types表获取配置
+  const configResult = await db.collection('static_user_types')
+    .where({ typeCode: typeCode })
+    .get()
+  
+  if (configResult.data.length === 0) {
+    const errorMsg = `用户类型配置不存在: ${typeCode}，请在 static_user_types 表中添加配置`
+    console.error('[getUserTypeConfig]', errorMsg)
+    throw new Error(errorMsg)
   }
   
-  // 如果获取失败或不存在，使用默认配置
-  const defaultConfigs = {
-    'guest': {
-      typeCode: 'guest',
-      typeName: '临时用户',
-      displayName: '临时用户',
-      description: '未注册的临时用户，功能受限',
-      profileQuota: 3,
-      permissions: ['view', 'create_limited'],
-      dailyDrawQuota: 0
-    },
-    'normal': {
-      typeCode: 'normal',
-      typeName: '探索者',
-      displayName: '探索者',
-      description: '已注册的普通用户，享受基础功能',
-      profileQuota: 50,
-      permissions: ['view', 'create'],
-      dailyDrawQuota: 3
-    },
-    'premium': {
-      typeCode: 'premium',
-      typeName: '高级用户',
-      displayName: '高级用户',
-      description: '付费高级用户，享受全部功能',
-      profileQuota: -1,
-      permissions: ['all'],
-      dailyDrawQuota: -1
-    },
-    'admin': {
-      typeCode: 'admin',
-      typeName: '管理员',
-      displayName: '管理员',
-      description: '系统管理员，拥有所有权限和管理功能',
-      profileQuota: -1,
-      permissions: ['all', 'admin'],
-      dailyDrawQuota: -1
-    }
+  const config = configResult.data[0]
+  return {
+    typeCode: config.typeCode,
+    typeName: config.typeName,
+    displayName: config.displayName,
+    description: config.description,
+    profileQuota: config.profileQuota,
+    permissions: config.permissions,
+    dailyDrawQuota: config.dailyDrawQuota !== undefined ? config.dailyDrawQuota : 0
   }
-  
-  return defaultConfigs[typeCode] || defaultConfigs['guest']
 }
 
