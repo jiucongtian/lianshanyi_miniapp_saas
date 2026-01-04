@@ -16,7 +16,9 @@ class DailyInsightBean extends BaseBean {
     this.central = this._getField(this.data, 'central', '', 'string');
     this.seasonMark = this._getField(this.data, 'seasonMark', '', 'string');
     this.talentMark = this._getField(this.data, 'talentMark', '', 'string');
-    this.abilityMark = this._getField(this.data, 'abilityMark', '', 'string');
+    // 才能印记：将数字转换为中文数字（1-6转换为一二三四五六）
+    const rawAbilityMark = this._getField(this.data, 'abilityMark', '', 'string');
+    this.abilityMark = this._convertAbilityMarkToChinese(rawAbilityMark);
     this.pathMark = this._getField(this.data, 'pathMark', '', 'string');
     this.description = this._getField(this.data, 'description', '', 'string');
     this.blessing = this._getField(this.data, 'blessing', '', 'string');
@@ -28,6 +30,27 @@ class DailyInsightBean extends BaseBean {
     
     // 验证关键字段
     this._validate();
+  }
+  
+  /**
+   * 将才能印记的数字转换为中文数字
+   * @param {string|number} num - 数字（字符串或数字类型）
+   * @returns {string} 中文数字
+   * @private
+   */
+  _convertAbilityMarkToChinese(num) {
+    const chineseNumbers = ['', '一', '二', '三', '四', '五', '六'];
+    
+    // 转换为数字
+    const number = typeof num === 'string' ? parseInt(num, 10) : num;
+    
+    // 检查是否在有效范围内（1-6）
+    if (isNaN(number) || number < 1 || number > 6) {
+      // 如果不在范围内，返回原值
+      return String(num);
+    }
+    
+    return chineseNumbers[number];
   }
   
   /**
