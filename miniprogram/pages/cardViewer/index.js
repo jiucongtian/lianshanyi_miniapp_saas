@@ -14,11 +14,21 @@ Page({
     cardImagePath: '', // 卡牌图片路径
     cardInfo: null, // 卡牌信息
     isLoading: false, // 是否正在加载
-    error: '' // 错误信息
+    error: '', // 错误信息
+    // 卡牌预览相关
+    showCardPreview: false, // 是否显示卡牌预览
+    previewImagePath: '' // 预览图片路径
   },
 
   onLoad(options) {
     log.info('onLoad', '页面加载');
+  },
+
+  /**
+   * 返回按钮点击事件（TDesign navbar回调）
+   */
+  goBack() {
+    wx.navigateBack();
   },
 
   /**
@@ -119,7 +129,38 @@ Page({
       cardNumber: '',
       cardImagePath: '',
       cardInfo: null,
-      error: ''
+      error: '',
+      showCardPreview: false,
+      previewImagePath: ''
+    });
+  },
+
+  /**
+   * 卡牌图片点击事件 - 显示全屏预览
+   */
+  onCardImageTap() {
+    const { cardImagePath } = this.data;
+    
+    if (!cardImagePath) {
+      return;
+    }
+    
+    log.info('onCardImageTap', '卡牌图片被点击，准备预览', { imagePath: cardImagePath });
+    
+    this.setData({
+      showCardPreview: true,
+      previewImagePath: cardImagePath
+    });
+  },
+
+  /**
+   * 关闭卡牌预览
+   */
+  onCloseCardPreview() {
+    log.info('onCloseCardPreview', '关闭卡牌预览');
+    this.setData({
+      showCardPreview: false,
+      previewImagePath: ''
     });
   }
 });

@@ -1,8 +1,9 @@
 <!--pages/cardViewer/index.wxml-->
+<t-navbar title="卡牌查看器" left-arrow bind:click-left="goBack" />
+
 <view class="card-viewer-container">
   <!-- 页面标题 -->
   <view class="page-header">
-    <text class="page-title">卡牌查看器</text>
     <text class="page-subtitle">输入1-60的数字查看对应卡牌</text>
   </view>
 
@@ -54,6 +55,7 @@
         src="{{cardImagePath}}" 
         mode="aspectFit"
         lazy-load="{{false}}"
+        bindtap="onCardImageTap"
       />
     </view>
   </view>
@@ -64,4 +66,11 @@
     <text class="empty-text">请输入卡牌编号查看</text>
   </view>
 </view>
+
+<!-- 卡牌预览组件 -->
+<card-preview
+  show="{{showCardPreview}}"
+  image-path="{{previewImagePath}}"
+  bind:close="onCloseCardPreview"
+></card-preview>
 

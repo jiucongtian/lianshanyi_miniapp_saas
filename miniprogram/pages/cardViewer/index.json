@@ -1,7 +1,12 @@
 {
-  "navigationBarTitleText": "卡牌查看器",
-  "navigationBarBackgroundColor": "#854C65",
-  "navigationBarTextStyle": "white",
-  "backgroundColor": "#f5f7fa"
+  "navigationBarTitleText": "",
+  "navigationStyle": "custom",
+  "backgroundColor": "#000000",
+  "backgroundTextStyle": "light",
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "t-navbar": "/miniprogram_npm/tdesign-miniprogram/navbar/navbar",
+    "card-preview": "../../components/card-preview/index"
+  }
 }
 
