@@ -79,8 +79,74 @@
 
     <!-- AI解读结果显示 -->
     <view class="ai-result-container" wx:if="{{aiInterpretation}}">
-      <view class="result-title">AI解读结果</view>
+      <view class="result-title">AI 深度洞察</view>
       <text class="result-content">{{aiInterpretation}}</text>
+      
+      <!-- 大赏功能区域 -->
+      <view class="reward-section">
+        <view class="reward-header">
+          <view class="reward-hint">觉得准?随喜赞赏祈福*+</view>
+        </view>
+        
+        <!-- 预设金额按钮 -->
+        <view class="preset-amounts">
+          <view 
+            class="preset-amount-item {{selectedRewardAmount === item.amount ? 'selected' : ''}} {{item.recommended ? 'recommended' : ''}}"
+            wx:for="{{presetAmounts}}" 
+            wx:key="amount"
+            bindtap="onSelectPresetAmount"
+            data-amount="{{item.amount}}"
+          >
+            <view class="preset-amount-value">¥{{item.amount}}</view>
+            <view class="preset-amount-label">{{item.label}}</view>
+            <view class="recommended-tag" wx:if="{{item.recommended}}">推荐</view>
+          </view>
+        </view>
+        
+        <!-- 其他金额和随喜按钮 -->
+        <view class="reward-actions">
+          <button class="custom-amount-button" bindtap="onShowCustomInput">
+            其他金额
+          </button>
+          <button class="reward-submit-button" bindtap="onReward" disabled="{{isRewarding}}">
+            随喜 ¥{{selectedRewardAmount}}
+          </button>
+        </view>
+        
+        <!-- 自定义金额输入框 -->
+        <view class="custom-amount-input-wrapper" wx:if="{{showCustomInput}}">
+          <view class="custom-amount-label">请输入赞赏金额（元）</view>
+          <input 
+            class="custom-amount-input" 
+            type="digit" 
+            placeholder="请输入金额"
+            value="{{customRewardAmount}}"
+            bindinput="onCustomAmountInput"
+            bindconfirm="onConfirmCustomAmount"
+          />
+          <view class="custom-amount-buttons">
+            <button class="custom-amount-cancel" bindtap="onCancelCustomAmount">取消</button>
+            <button class="custom-amount-confirm" bindtap="onConfirmCustomAmount">确定</button>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 咨询真人讲师卡片 -->
+    <view class="consultation-card" wx:if="{{aiInterpretation}}">
+      <view class="consultation-left">
+        <view class="consultant-avatar-wrapper">
+          <image class="consultant-avatar" src="{{consultantAvatar || '/static/icons/default-avatar.png'}}" mode="aspectFill"></image>
+          <view class="consultant-online-dot" wx:if="{{consultantOnline}}"></view>
+        </view>
+      </view>
+      <view class="consultation-middle">
+        <view class="consultation-title">咨询真人讲师</view>
+        <view class="consultation-desc">提供1v1 深度解惑</view>
+      </view>
+      <view class="consultation-right">
+        <button class="consultation-button" bindtap="onConsultLecturer">去咨询 ></button>
+      </view>
     </view>
 
     <!-- 按钮区域 -->

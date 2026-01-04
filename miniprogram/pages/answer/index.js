@@ -16,6 +16,8 @@ const { posterGenerator } = require('../../utils/posterGenerator');
 const { FunctionController } = require('../../controllers/FunctionController');
 // 引入FunctionQuotaBean
 const { FunctionQuotaBean } = require('../../beans/FunctionQuotaBean');
+// 引入支付服务
+const { paymentService } = require('../../services/PaymentService');
 // 获取app实例
 const app = getApp();
 
@@ -47,7 +49,24 @@ Page({
     // 卡牌预览相关
     showCardPreview: false, // 是否显示卡牌预览
     previewImagePath: '', // 预览图片路径
-    previewCardDescription: null // 预览卡牌描述信息
+    previewCardDescription: null, // 预览卡牌描述信息
+    // 大赏相关
+    rewardCount: 1300, // 赞赏人数（从服务器获取，暂时使用默认值用于展示）
+    rewardCountText: '1.3k', // 格式化后的赞赏人数文本
+    isRewarding: false, // 是否正在赞赏中
+    selectedRewardAmount: 6.66, // 选中的赞赏金额（默认选中6.66）
+    customRewardAmount: '', // 自定义金额输入
+    showCustomInput: false, // 是否显示自定义金额输入框
+    // 预设金额列表
+    presetAmounts: [
+      { amount: 1, label: '一帆风顺', recommended: false },
+      { amount: 6.66, label: '顺顺利利', recommended: false },
+      { amount: 8.88, label: '财源广进', recommended: false }
+    ],
+    // 咨询真人讲师相关
+    consultantAvatar: '', // 讲师头像URL
+    consultantName: '真人讲师', // 讲师名称
+    consultantOnline: true // 讲师是否在线
   },
   
   // 延迟清空定时器ID
@@ -85,6 +104,12 @@ Page({
     
     // 优先使用预加载的配额信息，避免数值跳变
     await this._loadQuotaInfo();
+    
+    // 初始化赞赏人数显示文本
+    this._updateRewardCountDisplay(this.data.rewardCount);
+    
+    // 加载赞赏人数统计
+    await this._loadRewardCount();
   },
   
   /**
@@ -622,6 +647,9 @@ Page({
           showShareButton: true
         });
         
+        // AI解读完成后，加载赞赏人数统计
+        await this._loadRewardCount();
+        
         log.info('onAIInterpret', 'AI解读成功', { interpretation });
         
         // 刷新智慧洞见配额信息
@@ -1155,6 +1183,282 @@ Page({
       previewImagePath: '',
       previewCardDescription: null
     });
+  },
+  
+  /**
+   * 选择预设金额
+   */
+  onSelectPresetAmount(e) {
+    const amount = parseFloat(e.currentTarget.dataset.amount);
+    log.info('onSelectPresetAmount', '选择预设金额', { amount });
+    this.setData({
+      selectedRewardAmount: amount,
+      showCustomInput: false,
+      customRewardAmount: ''
+    });
+  },
+  
+  /**
+   * 显示自定义金额输入
+   */
+  onShowCustomInput() {
+    log.info('onShowCustomInput', '显示自定义金额输入');
+    this.setData({
+      showCustomInput: true,
+      customRewardAmount: ''
+    });
+  },
+  
+  /**
+   * 自定义金额输入
+   */
+  onCustomAmountInput(e) {
+    const value = e.detail.value;
+    log.info('onCustomAmountInput', '输入自定义金额', { value });
+    this.setData({
+      customRewardAmount: value
+    });
+  },
+  
+  /**
+   * 确认自定义金额
+   */
+  onConfirmCustomAmount() {
+    const amount = parseFloat(this.data.customRewardAmount);
+    
+    if (isNaN(amount) || amount <= 0) {
+      wx.showToast({
+        title: '请输入有效金额',
+        icon: 'none',
+        duration: 2000
+      });
+      return;
+    }
+    
+    if (amount < 0.01) {
+      wx.showToast({
+        title: '金额不能少于0.01元',
+        icon: 'none',
+        duration: 2000
+      });
+      return;
+    }
+    
+    log.info('onConfirmCustomAmount', '确认自定义金额', { amount });
+    this.setData({
+      selectedRewardAmount: amount,
+      showCustomInput: false,
+      customRewardAmount: ''
+    });
+  },
+  
+  /**
+   * 取消自定义金额输入
+   */
+  onCancelCustomAmount() {
+    log.info('onCancelCustomAmount', '取消自定义金额输入');
+    this.setData({
+      showCustomInput: false,
+      customRewardAmount: ''
+    });
+  },
+  
+  /**
+   * 大赏按钮点击事件
+   */
+  async onReward() {
+    log.info('onReward', '点击随喜赞赏按钮');
+    
+    // 防止重复点击
+    if (this.data.isRewarding) {
+      log.warn('onReward', '正在赞赏中，忽略重复点击');
+      return;
+    }
+    
+    // 获取选中的金额
+    const selectedAmount = this.data.selectedRewardAmount;
+    if (!selectedAmount || selectedAmount <= 0) {
+      wx.showToast({
+        title: '请选择赞赏金额',
+        icon: 'none',
+        duration: 2000
+      });
+      return;
+    }
+    
+    // 设置赞赏中标志
+    this.setData({ isRewarding: true });
+    
+    try {
+      // 将元转换为分（微信支付单位）
+      const rewardAmount = Math.round(selectedAmount * 100);
+      
+      log.info('onReward', '创建赞赏订单', { amount: rewardAmount, yuan: selectedAmount });
+      
+      const orderResponse = await paymentService.createPaymentOrder({
+        description: `AI解读赞赏 ¥${selectedAmount}`,
+        amount: rewardAmount,
+        orderType: 'reward',
+        orderData: {
+          cardName: this.data.selectedCard?.cardName || '',
+          cardNumber: this.data.selectedCard?.cardNumber || 0,
+          question: this.data.question || '',
+          rewardAmount: selectedAmount
+        }
+      });
+      
+      if (!orderResponse.success) {
+        log.error('onReward', '创建赞赏订单失败', orderResponse.error);
+        wx.showToast({
+          title: orderResponse.error || '创建订单失败',
+          icon: 'none',
+          duration: 2000
+        });
+        this.setData({ isRewarding: false });
+        return;
+      }
+      
+      log.info('onReward', '订单创建成功，调起支付', {
+        orderId: orderResponse.data.orderId,
+        out_trade_no: orderResponse.data.out_trade_no
+      });
+      
+      // 调起支付
+      const paymentResult = await paymentService.requestPayment(orderResponse.data);
+      
+      if (paymentResult.success) {
+        log.info('onReward', '支付调起成功');
+        
+        // 延迟查询订单状态（给支付系统处理时间）
+        setTimeout(async () => {
+          const queryResult = await paymentService.queryOrderStatus(orderResponse.data.out_trade_no);
+          if (queryResult.success && queryResult.data?.status === 'paid') {
+            log.info('onReward', '赞赏支付成功');
+            
+            // 更新赞赏人数（增加1）
+            const newCount = (this.data.rewardCount || 0) + 1;
+            this._updateRewardCountDisplay(newCount);
+            
+            wx.showToast({
+              title: '感谢您的赞赏！',
+              icon: 'success',
+              duration: 2000
+            });
+            
+            // 重新加载赞赏人数统计（从服务器获取最新数据）
+            await this._loadRewardCount();
+          }
+        }, 1000);
+      } else {
+        // 用户取消支付或其他错误
+        if (paymentResult.code === -2) {
+          log.info('onReward', '用户取消支付');
+        } else {
+          log.error('onReward', '支付调起失败', paymentResult.error);
+          wx.showToast({
+            title: paymentResult.error || '支付失败',
+            icon: 'none',
+            duration: 2000
+          });
+        }
+      }
+    } catch (error) {
+      log.error('onReward', '赞赏流程异常', error);
+      wx.showToast({
+        title: '操作失败，请重试',
+        icon: 'none',
+        duration: 2000
+      });
+    } finally {
+      this.setData({ isRewarding: false });
+    }
+  },
+  
+  /**
+   * 格式化赞赏人数文本
+   * @param {number} count - 赞赏人数
+   * @returns {string} 格式化后的文本
+   */
+  _formatRewardCount(count) {
+    if (!count || count <= 0) {
+      return '0';
+    }
+    if (count >= 1000) {
+      return (count / 1000).toFixed(1) + 'k';
+    }
+    return count.toString();
+  },
+  
+  /**
+   * 更新赞赏人数显示
+   * @param {number} count - 赞赏人数
+   */
+  _updateRewardCountDisplay(count) {
+    const formattedText = this._formatRewardCount(count);
+    this.setData({
+      rewardCount: count,
+      rewardCountText: formattedText
+    });
+  },
+  
+  /**
+   * 加载赞赏人数统计
+   */
+  async _loadRewardCount() {
+    try {
+      // TODO: 调用云函数获取赞赏人数统计
+      // 暂时使用默认值，后续需要实现云函数接口
+      // const response = await wx.cloud.callFunction({
+      //   name: 'rewardManagement',
+      //   data: {
+      //     action: 'getRewardCount',
+      //     data: {
+      //       cardNumber: this.data.selectedCard?.cardNumber,
+      //       cardName: this.data.selectedCard?.cardName
+      //     }
+      //   }
+      // });
+      
+      // 暂时使用固定值或从本地存储获取
+      // 如果有选中的卡牌，可以基于卡牌信息获取统计
+      // const count = response.result?.count || 0;
+      // this._updateRewardCountDisplay(count);
+      
+      // 暂时设置一个默认值用于展示
+      if (this.data.rewardCount === 0) {
+        // 可以设置一个随机数用于演示，实际应该从服务器获取
+        // this._updateRewardCountDisplay(Math.floor(Math.random() * 1000) + 500);
+      } else {
+        // 更新格式化文本
+        this._updateRewardCountDisplay(this.data.rewardCount);
+      }
+      
+      log.info('_loadRewardCount', '加载赞赏人数（暂时使用默认值）');
+    } catch (error) {
+      log.error('_loadRewardCount', '加载赞赏人数失败', error);
+      // 静默处理，不影响主流程
+    }
+  },
+  
+  /**
+   * 咨询真人讲师按钮点击事件
+   */
+  onConsultLecturer() {
+    log.info('onConsultLecturer', '点击咨询真人讲师');
+    
+    // TODO: 实现跳转到咨询页面或显示咨询入口
+    // 暂时显示提示
+    wx.showModal({
+      title: '咨询真人讲师',
+      content: '该功能正在开发中，敬请期待！',
+      showCancel: false,
+      confirmText: '知道了'
+    });
+    
+    // 后续可以跳转到咨询页面：
+    // wx.navigateTo({
+    //   url: '/pages/consultation/index'
+    // });
   }
 });
 
