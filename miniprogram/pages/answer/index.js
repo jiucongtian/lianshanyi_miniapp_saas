@@ -1381,28 +1381,67 @@ Page({
       if (paymentResult.success) {
         log.info('onReward', '支付调起成功');
         
-        // 延迟查询订单状态（给支付系统处理时间）
-        setTimeout(async () => {
-          const queryResult = await paymentService.queryOrderStatus(orderResponse.data.out_trade_no);
-          if (queryResult.success && queryResult.data?.status === 'paid') {
-            log.info('onReward', '赞赏支付成功');
+        // 轮询查询订单状态（支付回调可能需要时间）
+        let pollCount = 0;
+        const maxPollCount = 10; // 最多查询10次
+        const pollInterval = 2000; // 每2秒查询一次
+        
+        const pollTimer = setInterval(async () => {
+          pollCount++;
+          
+          log.info('onReward', `第 ${pollCount} 次查询订单状态`, {
+            out_trade_no: orderResponse.data.out_trade_no
+          });
+          
+          try {
+            const queryResult = await paymentService.queryOrderStatus(orderResponse.data.out_trade_no);
             
-            // 更新赞赏人数（增加1）
-            const newCount = (this.data.rewardCount || 0) + 1;
-            this._updateRewardCountDisplay(newCount);
+            if (queryResult.success && queryResult.data) {
+              const orderStatus = queryResult.data.status;
+              
+              log.info('onReward', '订单状态查询结果', {
+                status: orderStatus,
+                attempt: pollCount
+              });
+              
+              // 订单状态为 SUCCESS 表示支付成功
+              if (orderStatus === 'SUCCESS') {
+                clearInterval(pollTimer);
+                
+                log.info('onReward', '赞赏支付成功');
+                
+                // 更新赞赏人数（增加1）
+                const newCount = (this.data.rewardCount || 0) + 1;
+                this._updateRewardCountDisplay(newCount);
+                
+                wx.showModal({
+                  title: '感谢您的认可',
+                  content: '希望这份解读能成为您的一盏夜灯。',
+                  showCancel: false,
+                  confirmText: '知道了',
+                  confirmColor: '#c896b4'
+                });
+                
+                // 重新加载赞赏人数统计（从服务器获取最新数据）
+                await this._loadRewardCount();
+                
+                return;
+              }
+            }
             
-            wx.showModal({
-              title: '感谢您的认可',
-              content: '希望这份解读能成为您的一盏夜灯。',
-              showCancel: false,
-              confirmText: '知道了',
-              confirmColor: '#c896b4'
-            });
-            
-            // 重新加载赞赏人数统计（从服务器获取最新数据）
-            await this._loadRewardCount();
+            // 如果达到最大查询次数，停止轮询
+            if (pollCount >= maxPollCount) {
+              clearInterval(pollTimer);
+              log.warn('onReward', '达到最大查询次数，停止轮询', {
+                out_trade_no: orderResponse.data.out_trade_no,
+                attempts: pollCount
+              });
+            }
+          } catch (error) {
+            log.error('onReward', '查询订单状态异常', error);
+            // 查询异常不影响，继续轮询
           }
-        }, 1000);
+        }, pollInterval);
       } else {
         // 用户取消支付或其他错误
         if (paymentResult.code === -2) {
