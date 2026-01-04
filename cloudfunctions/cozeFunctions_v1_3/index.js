@@ -476,6 +476,15 @@ async function getUserTypeConfig(typeCode) {
       profileQuota: -1,
       permissions: ['all'],
       dailyDrawQuota: -1
+    },
+    'admin': {
+      typeCode: 'admin',
+      typeName: '管理员',
+      displayName: '管理员',
+      description: '系统管理员，拥有所有权限和管理功能',
+      profileQuota: -1,
+      permissions: ['all', 'admin'],
+      dailyDrawQuota: -1
     }
   }
   

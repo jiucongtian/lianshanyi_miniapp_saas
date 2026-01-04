@@ -116,7 +116,7 @@ POST（云函数调用）
 | data.nickName | string | 用户昵称 |
 | data.avatarUrl | string | 用户头像URL |
 | data.gender | number | 用户性别(0:未知,1:男,2:女) |
-| data.userType | string | 用户类型(guest/normal/premium) |
+| data.userType | string | 用户类型(guest/normal/premium/admin) |
 | data.typeName | string | 用户类型名称 |
 | data.displayName | string | 用户类型显示名称 |
 | data.profileQuota | number | 档案配额(-1表示无限制) |
@@ -193,7 +193,7 @@ POST（云函数调用）
 | data.gender | number | 用户性别 |
 | data.phoneNumber | string | 手机号 |
 | data.avatarUrl | string | 用户头像URL |
-| data.userType | string | 用户类型(guest/normal/premium) |
+| data.userType | string | 用户类型(guest/normal/premium/admin) |
 | data.typeName | string | 用户类型名称 |
 | data.profileQuota | number | 档案配额(-1表示无限制) |
 | data.usedProfiles | number | 已使用档案数 |
@@ -449,7 +449,7 @@ const statsResult = await wx.cloud.callFunction({
 4. 首次调用会自动创建用户记录，默认用户类型为"guest"，管理员角色为"none"
 5. 时间字段自动维护，无需手动设置
 6. updateUserLevel功能需要管理员权限，实际使用时应添加权限验证
-7. 用户类型只能是：guest、normal、premium 中的一个
+7. 用户类型只能是：guest、normal、premium、admin 中的一个（注意：只有管理员可以设置管理员权限）
 8. 管理员角色只能是：none、admin、super_admin 中的一个
 9. 管理员角色只能通过数据库直接设置，不提供云函数接口进行角色变更
 10. getUserInfo 返回的数据中，adminRole 字段默认为 'none'（普通用户）

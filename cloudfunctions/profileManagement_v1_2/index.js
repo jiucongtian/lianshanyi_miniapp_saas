@@ -115,6 +115,14 @@ async function getUserTypeConfig(typeCode) {
       description: '付费高级用户，享受全部功能',
       profileQuota: -1,
       permissions: ['all']
+    },
+    'admin': {
+      typeCode: 'admin',
+      typeName: '管理员',
+      displayName: '管理员',
+      description: '系统管理员，拥有所有权限和管理功能',
+      profileQuota: -1,
+      permissions: ['all', 'admin']
     }
   }
   

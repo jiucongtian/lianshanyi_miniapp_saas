@@ -132,6 +132,12 @@ function getDefaultConfig(typeCode) {
       typeName: '高级用户',
       displayName: '高级用户',
       permissions: ['all']
+    },
+    admin: {
+      typeCode: 'admin',
+      typeName: '管理员',
+      displayName: '管理员',
+      permissions: ['all', 'admin']
     }
   };
   

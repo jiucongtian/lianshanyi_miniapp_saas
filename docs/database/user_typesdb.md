@@ -11,7 +11,7 @@
 | 字段名 | 类型 | 必填 | 索引 | 说明 |
 |--------|------|------|------|------|
 | _id | string | 是 | 主键 | 系统自动生成的文档ID |
-| typeCode | string | 是 | 唯一索引 | 用户类型代码(guest,normal,premium) |
+| typeCode | string | 是 | 唯一索引 | 用户类型代码(guest,normal,premium,admin) |
 | typeName | string | 是 | - | 用户类型名称 |
 | displayName | string | 是 | - | 用户类型显示名称 |
 | description | string | 否 | - | 用户类型描述 |
@@ -64,6 +64,20 @@
 }
 ```
 
+```json
+{
+  "_id": "user_type_admin",
+  "typeCode": "admin",
+  "typeName": "管理员",
+  "displayName": "管理员",
+  "description": "系统管理员，拥有所有权限和管理功能",
+  "profileQuota": -1,
+  "permissions": ["all", "admin"],
+  "dailyDrawQuota": -1,
+  "dailyAiReportQuota": -1
+}
+```
+
 ## 索引设计
 
 ### 主要索引
@@ -95,7 +109,7 @@
 2. **数据完整性**: typeCode、typeName、displayName为必填字段
 3. **权限管理**: 
    - permissions数组存储该用户类型拥有的权限
-   - 权限代码：view(查看)、create(创建)、create_limited(受限创建)、all(全部权限)
+   - 权限代码：view(查看)、create(创建)、create_limited(受限创建)、all(全部权限)、admin(管理员权限)
 4. **配额管理**:
    - profileQuota表示档案创建配额
      - -1表示无限制
@@ -151,6 +165,17 @@
   - ✅ 专属客服支持
   - ✅ 优先体验新功能
   - ✅ 数据云端备份
+
+### 管理员 (admin)
+- 档案配额：无限制
+- 智慧洞见配额：无限制（dailyDrawQuota=-1）
+- AI出报告配额：无限制
+- 权限范围：
+  - ✅ 高级用户的所有权限
+  - ✅ 系统管理功能
+  - ✅ 用户管理权限
+  - ✅ 数据管理权限
+  - ✅ 系统配置权限
 
 ## 功能免费配额说明
 

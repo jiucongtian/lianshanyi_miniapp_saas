@@ -68,6 +68,15 @@ async function getUserTypeConfig(typeCode) {
       profileQuota: -1,
       permissions: ['all'],
       dailyDrawQuota: -1 // 高级用户无限次
+    },
+    'admin': {
+      typeCode: 'admin',
+      typeName: '管理员',
+      displayName: '管理员',
+      description: '系统管理员，拥有所有权限和管理功能',
+      profileQuota: -1,
+      permissions: ['all', 'admin'],
+      dailyDrawQuota: -1 // 管理员无限次
     }
   }
   
@@ -510,11 +519,11 @@ async function upgradeUserType(wxContext, data) {
   const now = new Date()
   
   // 验证用户类型有效性
-  const validUserTypes = ['guest', 'normal', 'premium']
+  const validUserTypes = ['guest', 'normal', 'premium', 'admin']
   if (!validUserTypes.includes(targetUserType)) {
     return {
       success: false,
-      error: '无效的用户类型，支持的类型：guest, normal, premium'
+      error: '无效的用户类型，支持的类型：guest, normal, premium, admin'
     }
   }
   
@@ -543,6 +552,22 @@ async function upgradeUserType(wxContext, data) {
       }
     }
     
+    // 管理员不能降级，且只有管理员可以设置为管理员（防止普通用户升级为管理员）
+    if (currentUserType === 'admin' && targetUserType !== 'admin') {
+      return {
+        success: false,
+        error: '管理员不能降级'
+      }
+    }
+    
+    // 只有管理员可以设置其他用户为管理员
+    if (targetUserType === 'admin' && currentUserType !== 'admin') {
+      return {
+        success: false,
+        error: '只有管理员可以设置管理员权限'
+      }
+    }
+    
     // 准备更新数据
     let updateData = {
       userType: targetUserType,
@@ -559,6 +584,8 @@ async function upgradeUserType(wxContext, data) {
       }
     } else if (targetUserType === 'premium' && currentUserType !== 'premium') {
       updateData.upgradeTime = now
+    } else if (targetUserType === 'admin') {
+      updateData.adminTime = now
     }
     
     // 执行更新
