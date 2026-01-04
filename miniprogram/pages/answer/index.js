@@ -1211,10 +1211,31 @@ Page({
   
   /**
    * 自定义金额输入
+   * 限制只能输入数字，精度最小0.01（最多两位小数）
    */
   onCustomAmountInput(e) {
-    const value = e.detail.value;
-    log.info('onCustomAmountInput', '输入自定义金额', { value });
+    let value = e.detail.value;
+    
+    // 移除所有非数字和小数点的字符
+    value = value.replace(/[^\d.]/g, '');
+    
+    // 处理多个小数点的情况，只保留第一个
+    const parts = value.split('.');
+    if (parts.length > 2) {
+      value = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // 限制小数位数最多2位
+    if (parts.length === 2 && parts[1].length > 2) {
+      value = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    // 如果以小数点开头，在前面补0
+    if (value.startsWith('.')) {
+      value = '0' + value;
+    }
+    
+    log.info('onCustomAmountInput', '输入自定义金额', { original: e.detail.value, filtered: value });
     this.setData({
       customRewardAmount: value
     });
@@ -1222,9 +1243,21 @@ Page({
   
   /**
    * 确认自定义金额
+   * 验证金额精度最小0.01元
    */
   onConfirmCustomAmount() {
-    const amount = parseFloat(this.data.customRewardAmount);
+    const inputValue = this.data.customRewardAmount.trim();
+    
+    if (!inputValue || inputValue === '') {
+      wx.showToast({
+        title: '请输入金额',
+        icon: 'none',
+        duration: 2000
+      });
+      return;
+    }
+    
+    const amount = parseFloat(inputValue);
     
     if (isNaN(amount) || amount <= 0) {
       wx.showToast({
@@ -1235,6 +1268,7 @@ Page({
       return;
     }
     
+    // 验证精度：最小0.01元，最多两位小数
     if (amount < 0.01) {
       wx.showToast({
         title: '金额不能少于0.01元',
@@ -1244,9 +1278,27 @@ Page({
       return;
     }
     
-    log.info('onConfirmCustomAmount', '确认自定义金额', { amount });
+    // 验证小数位数（最多2位）
+    const decimalPlaces = (inputValue.split('.')[1] || '').length;
+    if (decimalPlaces > 2) {
+      wx.showToast({
+        title: '金额最多保留两位小数',
+        icon: 'none',
+        duration: 2000
+      });
+      return;
+    }
+    
+    // 四舍五入到2位小数
+    const roundedAmount = Math.round(amount * 100) / 100;
+    
+    log.info('onConfirmCustomAmount', '确认自定义金额', { 
+      original: inputValue, 
+      amount: roundedAmount 
+    });
+    
     this.setData({
-      selectedRewardAmount: amount,
+      selectedRewardAmount: roundedAmount,
       showCustomInput: false,
       customRewardAmount: ''
     });
