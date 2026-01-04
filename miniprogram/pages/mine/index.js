@@ -143,5 +143,15 @@ Page({
     wx.navigateTo({
       url: '/pages/feedback/index'
     });
+  },
+
+  /**
+   * 跳转到调试页面
+   */
+  onDebugTap() {
+    log.info('onDebugTap', '跳转到调试页面');
+    wx.navigateTo({
+      url: '/pages/debug/index'
+    });
   }
 })

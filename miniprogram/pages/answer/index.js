@@ -12,6 +12,12 @@ const { imageCacheManager } = require('../../utils/manager/imageCacheManager');
 // const { drawCardService } = require('../../services/DrawCardService');
 // 引入海报生成器
 const { posterGenerator } = require('../../utils/posterGenerator');
+// 引入功能控制器（用于智慧洞见按次付费）
+const { FunctionController } = require('../../controllers/FunctionController');
+// 引入FunctionQuotaBean
+const { FunctionQuotaBean } = require('../../beans/FunctionQuotaBean');
+// 获取app实例
+const app = getApp();
 
 Page({
   data: {
@@ -34,8 +40,8 @@ Page({
     // 抽中的卡牌信息
     selectedCard: null, // 格式：{ cardNumber, cardName, pinyin, description, category, keywords }
     selectedCardImagePath: '', // 选中卡牌的图片路径
-    // 配额信息
-    userQuotaInfo: null, // 用户配额信息
+    // 配额信息（统一使用智慧洞见配额，包含免费 + 付费）
+    wisdomInsightQuota: null, // FunctionQuotaBean（包含 freeRemaining + paidRemaining）
     drawButtonText: '抽卡' // 抽卡按钮文本（包含剩余次数）
   },
   
@@ -51,6 +57,9 @@ Page({
   
   async onLoad(options) {
     console.log('[AnswerPage] 页面加载');
+    
+    // 初始化功能控制器
+    this.functionController = new FunctionController(this);
     
     // 准备初始数据（合并所有 setData 调用）
     const initialData = {};
@@ -69,8 +78,8 @@ Page({
       ...cardListData
     });
     
-    // 预加载用户配额信息
-    await this._loadUserQuota();
+    // 优先使用预加载的配额信息，避免数值跳变
+    await this._loadQuotaInfo();
   },
   
   /**
@@ -125,6 +134,10 @@ Page({
 
   onShow() {
     console.log('[AnswerPage] 页面显示');
+    // 调用 FunctionController 的 onShow，用于恢复支付状态
+    if (this.functionController) {
+      this.functionController.onShow();
+    }
   },
 
   /**
@@ -161,7 +174,9 @@ Page({
         buttonComponent.reset();
       }
       this.isDrawingCard = false; // 重置抽卡标志，允许下次点击
-      this._showQuotaError(quotaCheck);
+      
+      // 配额用完，弹出购买界面
+      await this._handleQuotaInsufficient();
       return;
     }
     // ==============================
@@ -434,7 +449,7 @@ Page({
   },
 
   /**
-   * AI解读按钮点击事件
+   * AI解读按钮点击事件（使用功能按次付费系统）
    * @param {boolean} isAutoCall - 是否为自动调用（抽卡后自动调用）
    */
   async onAIInterpret(isAutoCall = false) {
@@ -471,71 +486,118 @@ Page({
     // 设置解读标志
     this.isInterpreting = true;
     
+    // 如果是自动调用，显示加载提示
+    if (isAutoCall) {
+      wx.showLoading({
+        title: 'AI 解读中...',
+        mask: true
+      });
+    }
+    
     // 获取按钮组件引用（用于错误时重置状态）
     const buttonComponent = this.selectComponent('#loading-button-interpret');
     
-    // 显示加载提示（使用标志确保只显示一次）
-    let loadingShown = false;
     try {
-      wx.showLoading({
-        title: 'AI解读中...',
-        mask: true
-      });
-      loadingShown = true;
-    } catch (e) {
-      log.warn('onAIInterpret', 'showLoading 失败', { error: e.message });
-    }
-    
-    try {
-      // 通过版本管理器获取云函数名称
-      const functionName = VersionManager.getFunctionName('cozeFunctions');
-      log.info('onAIInterpret', '调用云函数', { 
-        functionName, 
+      // 使用功能控制器调用智慧洞见功能（自动处理配额检查、扣除、支付等）
+      log.info('onAIInterpret', '调用智慧洞见功能', { 
         bazi_name: baziName,
         question: this.data.question 
       });
       
-      // 调用云函数
-      const result = await wx.cloud.callFunction({
-        name: functionName,
-        data: {
-          workflowType: 'DRAW_CARD', // 使用抽卡工作流，如需专门的解读工作流请修改此处
-          parameters: {
-            bazi_name: baziName, // DRAW_CARD工作流需要bazi_name参数，使用抽中的卡牌名称
-            question: this.data.question || '' // question为可选参数
-          }
+      const result = await this.functionController.useFunction('wisdom_insight', {
+        parameters: {
+          bazi_name: baziName,
+          question: this.data.question || ''
+        }
+      }, {
+        showLoading: false, // 不使用自动加载提示，手动控制（上面已经显示了）
+        autoPayment: true,
+        onQuotaInsufficient: () => {
+          // 配额不足时的自定义处理
+          log.warn('onAIInterpret', '智慧洞见配额不足');
+          // 返回 true 继续显示支付弹窗，返回 false 取消
+          return true;
         }
       });
       
-      log.info('onAIInterpret', '云函数调用结果', result);
-      
-      // 处理返回结果
-      if (result.result && result.result.success) {
-        const data = result.result.data;
+      // 如果返回 null，说明调用失败（配额不足、权限问题等）
+      if (!result) {
+        log.warn('onAIInterpret', '功能调用失败或被取消');
         
-        // 提取并打印 debug_url 和 usage（用于分析）
-        if (data.debug_url) {
-          log.info('onAIInterpret', 'Coze工作流调试链接', { debug_url: data.debug_url });
+        // 隐藏加载提示
+        if (isAutoCall) {
+          wx.hideLoading();
         }
         
-        if (data.usage) {
+        // 解读失败：显示AI解读按钮，让用户可以重试
+        this.setData({
+          showInterpretButton: true
+        });
+        return;
+      }
+      
+      log.info('onAIInterpret', '功能调用成功', { result });
+      
+      // 提取功能返回结果
+      // FunctionController 返回：{ functionResult: {...}, quotaInfo: {...} }
+      // functionResult 就是 Coze API 返回的原始数据
+      const functionResult = result.functionResult;
+      
+      // 添加详细日志：打印 functionResult 的完整结构
+      log.info('onAIInterpret', 'functionResult 完整结构', {
+        hasFunctionResult: !!functionResult,
+        functionResultType: typeof functionResult,
+        functionResultKeys: functionResult ? Object.keys(functionResult).slice(0, 10) : [],  // 只打印前10个
+        hasData: functionResult && 'data' in functionResult,
+        dataType: functionResult?.data ? typeof functionResult.data : 'undefined'
+      });
+      
+      if (functionResult && functionResult.data) {
+        // functionResult 就是 Coze API 返回的数据
+        // functionResult.data 就是 AI 解读结果（JSON 字符串）
+        const cozeData = functionResult.data;  // 这是 Coze 的 data 字段
+        
+        // 提取并打印 debug_url 和 usage（用于分析）
+        if (functionResult.debug_url) {
+          log.info('onAIInterpret', 'Coze工作流调试链接', { debug_url: functionResult.debug_url });
+        }
+        
+        if (functionResult.usage) {
           log.info('onAIInterpret', 'Coze工作流Token使用情况', {
-            token_count: data.usage.token_count,
-            output_count: data.usage.output_count,
-            input_count: data.usage.input_count
+            token_count: functionResult.usage.token_count,
+            output_count: functionResult.usage.output_count,
+            input_count: functionResult.usage.input_count
           });
         }
         
         // 提取AI解读结果
         let interpretation = '';
-        if (data.data) {
+        if (cozeData) {
           try {
-            // data.data 是一个 JSON 字符串，需要先解析
-            const parsedData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+            log.info('onAIInterpret', '开始解析 cozeData', {
+              cozeDataType: typeof cozeData,
+              cozeDataLength: typeof cozeData === 'string' ? cozeData.length : 'not string',
+              cozeDataPreview: typeof cozeData === 'string' ? cozeData.substring(0, 100) : cozeData
+            });
+            
+            // cozeData 是一个 JSON 字符串，需要先解析
+            const parsedData = typeof cozeData === 'string' ? JSON.parse(cozeData) : cozeData;
+            
+            log.info('onAIInterpret', '解析后的 parsedData', {
+              parsedDataType: typeof parsedData,
+              parsedDataKeys: parsedData ? Object.keys(parsedData) : [],
+              hasDataField: parsedData && 'data' in parsedData,
+              dataFieldType: parsedData?.data ? typeof parsedData.data : 'undefined'
+            });
             
             // 从解析后的对象中提取 data 字段（这是实际的解读内容）
             if (parsedData && parsedData.data) {
               interpretation = parsedData.data;
+              
+              log.info('onAIInterpret', '提取到的原始 interpretation', {
+                length: interpretation.length,
+                preview: interpretation.substring(0, 100)
+              });
               
               // 处理转义字符：JSON.parse 后，\\n 会变成 \n（反斜杠+n字符），需要转换为真正的换行符
               // 注意：先处理转义序列，最后处理双反斜杠，避免转义序列被误处理
@@ -546,15 +608,29 @@ Page({
                 .replace(/\\t/g, '\t')            // 制表符
                 .replace(/\\r/g, '\r')            // 回车符
                 .replace(/\\\\/g, '\\');          // 最后处理双反斜杠（保留单个反斜杠）
+                
+              log.info('onAIInterpret', '转义处理后的 interpretation', {
+                length: interpretation.length,
+                preview: interpretation.substring(0, 100)
+              });
             } else {
               // 如果解析后没有 data 字段，尝试其他字段
-              interpretation = parsedData.output || parsedData.result || parsedData.text || JSON.stringify(parsedData);
+              log.warn('onAIInterpret', 'parsedData 没有 data 字段，尝试其他字段', {
+                hasOutput: parsedData && 'output' in parsedData,
+                hasResult: parsedData && 'result' in parsedData,
+                hasText: parsedData && 'text' in parsedData
+              });
+              interpretation = parsedData?.output || parsedData?.result || parsedData?.text || JSON.stringify(parsedData);
             }
           } catch (parseError) {
-            log.error('onAIInterpret', '解析返回数据失败', { error: parseError.message, rawData: data.data });
+            log.error('onAIInterpret', '解析返回数据失败', { error: parseError.message, rawData: cozeData });
             // 如果解析失败，尝试直接使用原始数据
-            interpretation = typeof data.data === 'string' ? data.data : JSON.stringify(data.data);
+            interpretation = typeof cozeData === 'string' ? cozeData : JSON.stringify(cozeData);
           }
+        } else {
+          log.warn('onAIInterpret', 'functionResult 没有 data 字段', {
+            functionResultKeys: Object.keys(functionResult).slice(0, 10)
+          });
         }
         
         // 拼接卡牌信息到解读结果最前面
@@ -571,21 +647,13 @@ Page({
         
         log.info('onAIInterpret', 'AI解读成功', { interpretation, isAutoCall });
         
-        // ========== 记录抽卡历史（暂时注释，只测试配额显示） ==========
-        // if (this.data.selectedCard) {
-        //   await this._recordDrawHistory(
-        //     this.data.selectedCard,
-        //     this.data.question || '',
-        //     interpretation
-        //   );
-        // }
+        // 刷新智慧洞见配额信息
+        await this._loadQuotaInfo();
         
-        // 刷新用户信息（包含抽卡配额）
-        const app = getApp();
-        await app.globalData.globalUserManager.refreshUserInfo();
-        // 更新按钮文本
-        await this._loadUserQuota();
-        // ==================================
+        // 隐藏加载提示（成功）
+        if (isAutoCall) {
+          wx.hideLoading();
+        }
         
         // 如果是自动调用，不显示toast（避免打断用户体验）
         if (!isAutoCall) {
@@ -596,108 +664,33 @@ Page({
           });
         }
       } else {
-        // 云函数调用成功，但返回失败状态
-        // 尝试提取数据，即使 success 为 false 也可能有数据返回
-        const errorMsg = result.result?.error || '解读失败，请重试';
-        const data = result.result?.data;
+        // 功能调用返回了数据但解析失败
+        log.error('onAIInterpret', '功能调用成功但未返回数据', { 
+          isAutoCall,
+          functionResult,
+          hasData: !!functionResult?.data
+        });
         
-        // 如果返回了数据，尝试解析并显示
-        if (data && data.data) {
-          try {
-            const parsedData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
-            let interpretation = '';
-            
-            if (parsedData && parsedData.data) {
-              interpretation = parsedData.data;
-              interpretation = interpretation
-                .replace(/\\n/g, '\n')
-                .replace(/\\"/g, '"')
-                .replace(/\\'/g, "'")
-                .replace(/\\t/g, '\t')
-                .replace(/\\r/g, '\r')
-                .replace(/\\\\/g, '\\');
-            } else {
-              interpretation = parsedData.output || parsedData.result || parsedData.text || JSON.stringify(parsedData);
-            }
-            
-            if (interpretation) {
-              // 有数据，显示数据但记录警告
-              // 拼接卡牌信息到解读结果最前面
-              const cardInfoHint = this._formatCardInfoHint(this.data.selectedCard);
-              const finalInterpretation = cardInfoHint + interpretation;
-              
-              this.setData({
-                aiInterpretation: finalInterpretation,
-                // 虽然返回失败状态但有数据，视为成功，不显示AI解读按钮
-                showInterpretButton: false,
-                // 显示分享海报按钮
-                showShareButton: true
-              });
-              log.warn('onAIInterpret', '云函数返回失败状态但有数据', { error: errorMsg, interpretation, isAutoCall });
-              // 如果是自动调用，不显示toast
-              if (!isAutoCall) {
-                wx.showToast({
-                  title: '解读完成（可能有错误）',
-                  icon: 'none',
-                  duration: 2000
-                });
-              }
-            } else {
-              // 没有数据，显示错误，并显示AI解读按钮让用户重试
-              log.error('onAIInterpret', '云函数返回失败且无数据', { error: errorMsg, isAutoCall });
-              this.setData({
-                // 解读失败：显示AI解读按钮，让用户可以重试
-                showInterpretButton: true
-              });
-              wx.showToast({
-                title: errorMsg,
-                icon: 'none',
-                duration: 2000
-              });
-            }
-          } catch (parseError) {
-            log.error('onAIInterpret', '解析失败数据失败', { error: parseError.message, isAutoCall });
-            // 解析失败：显示AI解读按钮，让用户可以重试
-            this.setData({
-              showInterpretButton: true
-            });
-            wx.showToast({
-              title: errorMsg,
-              icon: 'none',
-              duration: 2000
-            });
-          }
-        } else {
-          // 没有数据，显示错误，并显示AI解读按钮让用户重试
-          log.error('onAIInterpret', '云函数返回失败', { error: errorMsg, isAutoCall });
-          this.setData({
-            // 解读失败：显示AI解读按钮，让用户可以重试
-            showInterpretButton: true
-          });
-          wx.showToast({
-            title: errorMsg,
-            icon: 'none',
-            duration: 2000
-          });
+        // 隐藏加载提示（失败）
+        if (isAutoCall) {
+          wx.hideLoading();
         }
+        
+        this.setData({
+          showInterpretButton: true
+        });
+        wx.showToast({
+          title: '解读失败，请重试',
+          icon: 'none',
+          duration: 2000
+        });
       }
     } catch (error) {
-      log.error('onAIInterpret', '调用云函数失败', { error: error.message, isAutoCall });
+      log.error('onAIInterpret', '调用功能失败', { error: error.message, isAutoCall });
       
-      // 处理超时错误
-      let errorMessage = '网络错误，请重试';
-      if (error.message && error.message.includes('timeout')) {
-        errorMessage = 'AI解读需要较长时间，请稍后再试或检查云函数配置';
-      } else if (error.message && error.message.includes('FUNCTIONS_TIME_LIMIT_EXCEEDED')) {
-        errorMessage = '请求超时，请检查云函数超时配置（建议30秒）';
-      } else if (error.message) {
-        // 提取更友好的错误信息
-        const errorStr = error.message.toString();
-        if (errorStr.includes('errCode')) {
-          errorMessage = '服务暂时不可用，请稍后再试';
-        } else {
-          errorMessage = error.message.length > 30 ? '请求失败，请重试' : error.message;
-        }
+      // 隐藏加载提示（异常）
+      if (isAutoCall) {
+        wx.hideLoading();
       }
       
       // 解读失败：显示AI解读按钮，让用户可以重试
@@ -706,19 +699,11 @@ Page({
       });
       
       wx.showToast({
-        title: errorMessage,
+        title: '功能调用失败，请重试',
         icon: 'none',
-        duration: 3000
+        duration: 2000
       });
     } finally {
-      // 隐藏加载提示（确保配对）
-      if (loadingShown) {
-        try {
-          wx.hideLoading();
-        } catch (e) {
-          log.warn('onAIInterpret', 'hideLoading 失败', { error: e.message });
-        }
-      }
       // 重置按钮状态和解读标志
       if (buttonComponent) {
         buttonComponent.stopLoading();
@@ -728,169 +713,32 @@ Page({
   },
   
   /**
-   * 加载用户配额信息（从UserBean中获取）
-   */
-  async _loadUserQuota() {
-    try {
-      log.info('_loadUserQuota', '开始加载用户配额信息');
-      
-      // 从全局用户管理器获取用户信息
-      const app = getApp();
-      const globalUserManager = app.globalData.globalUserManager;
-      let response;
-      try {
-        response = await globalUserManager.getUserInfo();
-        log.info('_loadUserQuota', 'globalUserManager.getUserInfo() 调用成功', {
-          responseType: typeof response,
-          isNull: response === null,
-          isUndefined: response === undefined,
-          hasSuccess: response && 'success' in response,
-          hasData: response && 'data' in response
-        });
-      } catch (getUserInfoError) {
-        log.error('_loadUserQuota', 'globalUserManager.getUserInfo() 调用异常', {
-          error: getUserInfoError,
-          errorMessage: getUserInfoError?.message,
-          errorStack: getUserInfoError?.stack,
-          errorType: typeof getUserInfoError
-        });
-        throw getUserInfoError;
-      }
-      
-      if (!response) {
-        log.warn('_loadUserQuota', 'response 为空或 undefined');
-        this.setData({ drawButtonText: '抽卡' });
-        return;
-      }
-      
-      log.info('_loadUserQuota', '获取用户信息响应', {
-        success: response.success,
-        hasData: !!response.data,
-        error: response.error,
-        dataType: typeof response.data,
-        isUserBean: response.data && response.data.constructor && response.data.constructor.name === 'UserBean'
-      });
-      
-      if (response.success && response.data) {
-        const userInfo = response.data; // UserBean实例
-        
-        // 详细记录 UserBean 中的配额数据
-        log.info('_loadUserQuota', 'UserBean 配额数据详情', {
-          drawCardRemainingQuota: userInfo.drawCardRemainingQuota,
-          drawCardTotalQuota: userInfo.drawCardTotalQuota,
-          drawCardUsedToday: userInfo.drawCardUsedToday,
-          dailyDrawQuota: userInfo.dailyDrawQuota,
-          canDraw: userInfo.canDraw,
-          hasGetDrawCardRemainingQuota: typeof userInfo.getDrawCardRemainingQuota === 'function',
-          hasGetDrawCardTotalQuota: typeof userInfo.getDrawCardTotalQuota === 'function',
-          hasIsDrawCardUnlimited: typeof userInfo.isDrawCardUnlimited === 'function',
-          userType: userInfo.userType
-        });
-        
-        // 生成按钮文本
-        let buttonText;
-        try {
-          buttonText = this._getDrawButtonText(userInfo);
-          log.info('_loadUserQuota', '生成的按钮文本', { buttonText });
-        } catch (buttonTextError) {
-          log.error('_loadUserQuota', '生成按钮文本异常', {
-            error: buttonTextError,
-            errorMessage: buttonTextError?.message
-          });
-          buttonText = '抽卡';
-        }
-        
-        this.setData({
-          userQuotaInfo: userInfo,
-          drawButtonText: buttonText
-        });
-        
-        log.info('_loadUserQuota', '配额信息加载成功，已更新按钮文本', {
-          canDraw: typeof userInfo.canDrawCard === 'function' ? userInfo.canDrawCard() : userInfo.canDraw,
-          remainingQuota: typeof userInfo.getDrawCardRemainingQuota === 'function' ? userInfo.getDrawCardRemainingQuota() : userInfo.drawCardRemainingQuota,
-          totalQuota: typeof userInfo.getDrawCardTotalQuota === 'function' ? userInfo.getDrawCardTotalQuota() : userInfo.drawCardTotalQuota,
-          buttonText: buttonText
-        });
-      } else {
-        log.warn('_loadUserQuota', '获取用户信息失败', {
-          success: response.success,
-          error: response.error,
-          hasData: !!response.data
-        });
-        // 静默处理，不影响页面显示
-        // 使用默认按钮文本
-        this.setData({
-          drawButtonText: '抽卡'
-        });
-      }
-    } catch (error) {
-      log.error('_loadUserQuota', '加载配额信息异常', {
-        error: error,
-        errorMessage: error?.message || String(error),
-        errorStack: error?.stack,
-        errorName: error?.name,
-        errorType: typeof error,
-        errorString: JSON.stringify(error, Object.getOwnPropertyNames(error))
-      });
-      // 静默处理
-      // 使用默认按钮文本
-      this.setData({
-        drawButtonText: '抽卡'
-      });
-    }
-  },
-  
-  /**
    * 获取抽卡按钮文本（包含剩余次数）
-   * @param {UserBean} userInfo - 用户信息
+   * 统一使用智慧洞见配额（包含免费 + 付费）
+   * @param {FunctionQuotaBean} quotaInfo - 智慧洞见配额信息
    * @returns {string} 按钮文本
    */
-  _getDrawButtonText(userInfo) {
-    if (!userInfo) {
-      log.warn('_getDrawButtonText', 'userInfo 为空，返回默认文本');
+  _getDrawButtonText(quotaInfo) {
+    if (!quotaInfo) {
+      log.warn('_getDrawButtonText', 'quotaInfo 为空，返回默认文本');
       return '抽卡';
     }
     
     try {
-      // 检查是否是无限配额
-      if (typeof userInfo.isDrawCardUnlimited === 'function' && userInfo.isDrawCardUnlimited()) {
-        log.info('_getDrawButtonText', '无限配额');
-        return '抽卡（无限次）';
-      }
+      // 直接使用智慧洞见配额的总配额
+      const totalRemaining = quotaInfo.totalRemaining;
       
-      // 获取剩余配额信息
-      const remainingQuota = typeof userInfo.getDrawCardRemainingQuota === 'function' 
-        ? userInfo.getDrawCardRemainingQuota() 
-        : (userInfo.drawCardRemainingQuota || 0);
-      const totalQuota = typeof userInfo.getDrawCardTotalQuota === 'function'
-        ? userInfo.getDrawCardTotalQuota()
-        : (userInfo.drawCardTotalQuota || 0);
+      log.info('_getDrawButtonText', '配额信息', { 
+        freeRemaining: quotaInfo.freeRemaining,
+        paidRemaining: quotaInfo.paidRemaining,
+        totalRemaining: totalRemaining
+      });
       
-      log.info('_getDrawButtonText', '配额信息', { remainingQuota, totalQuota, type: typeof remainingQuota });
-      
-      // 验证数据类型
-      if (typeof remainingQuota === 'number' && typeof totalQuota === 'number') {
-        if (totalQuota === -1) {
-          // 无限配额
-          return '抽卡（无限次）';
-        } else if (remainingQuota > 0) {
-          // 有剩余次数
-          return `抽卡（剩余${remainingQuota}次）`;
-        } else if (remainingQuota === 0 && totalQuota > 0) {
-          // 今日已用完
-          return '抽卡（今日已用完）';
-        } else {
-          // 其他情况（可能是配额为0，不可用）
-          return '抽卡';
-        }
+      // 根据总配额生成按钮文本
+      if (totalRemaining > 0) {
+        return `抽卡（剩余${totalRemaining}次）`;
       } else {
-        log.warn('_getDrawButtonText', '配额数据类型不正确', { 
-          remainingQuota, 
-          totalQuota,
-          remainingType: typeof remainingQuota,
-          totalType: typeof totalQuota
-        });
-        return '抽卡';
+        return '抽卡（需付费）';
       }
     } catch (error) {
       log.error('_getDrawButtonText', '获取按钮文本异常', error);
@@ -899,67 +747,54 @@ Page({
   },
   
   /**
-   * 检查抽卡配额（从UserBean中获取）
+   * 检查抽卡配额（统一使用智慧洞见配额）
    * @returns {Promise<Object|null>} 配额信息，失败返回null
    */
   async _checkDrawQuota() {
     try {
-      // 从全局用户管理器获取用户信息
-      const app = getApp();
-      const globalUserManager = app.globalData.globalUserManager;
-      const response = await globalUserManager.getUserInfo();
+      // 直接使用智慧洞见配额
+      const quotaInfo = this.data.wisdomInsightQuota;
       
-      if (response.success && response.data) {
-        const userInfo = response.data; // UserBean实例
-        
-        // 检查是否可以抽卡
-        const canDraw = userInfo.canDrawCard();
-        const remainingQuota = userInfo.getDrawCardRemainingQuota();
-        const totalQuota = userInfo.getDrawCardTotalQuota();
-        const usedToday = userInfo.getDrawCardUsedToday();
-        const dailyDrawQuota = userInfo.dailyDrawQuota;
-        
-        if (!canDraw) {
-          // 不能抽卡，返回错误信息
-          let error = '暂时无法使用抽卡功能';
-          let code = -1;
-          
-          // 根据配额情况判断错误类型
-          if (dailyDrawQuota === 0) {
-            error = '请先注册后使用抽卡功能';
-            code = 1001;
-          } else if (remainingQuota === 0 && totalQuota > 0) {
-            error = '今日抽卡次数已用完';
-            code = 1003;
-          }
-          
-          return {
-            canDraw: false,
-            error: error,
-            code: code,
-            userTypeCode: userInfo.userType,
-            remainingQuota: remainingQuota,
-            totalQuota: totalQuota,
-            usedToday: usedToday
-          };
-        }
-        
-        // 可以抽卡
-        return {
-          canDraw: true,
-          userTypeCode: userInfo.userType,
-          remainingQuota: remainingQuota,
-          totalQuota: totalQuota,
-          usedToday: usedToday
-        };
-      } else {
-        // 获取用户信息失败
+      if (!quotaInfo) {
+        log.error('_checkDrawQuota', '配额信息未加载');
         return {
           canDraw: false,
-          error: response.error || '获取用户信息失败',
+          error: '配额信息加载失败，请刷新页面',
           code: -1
         };
       }
+      
+      const canDraw = quotaInfo.canUse && quotaInfo.totalRemaining > 0;
+      
+      log.info('_checkDrawQuota', '配额检查结果', {
+        freeRemaining: quotaInfo.freeRemaining,
+        paidRemaining: quotaInfo.paidRemaining,
+        totalRemaining: quotaInfo.totalRemaining,
+        canDraw: canDraw
+      });
+      
+      if (!canDraw) {
+        // 不能抽卡，返回错误信息
+        let error = '配额已用完，请购买后继续使用';
+        let code = 1003;
+        
+        return {
+          canDraw: false,
+          error: error,
+          code: code,
+          freeRemaining: quotaInfo.freeRemaining,
+          paidRemaining: quotaInfo.paidRemaining,
+          totalRemaining: quotaInfo.totalRemaining
+        };
+      }
+      
+      // 可以抽卡
+      return {
+        canDraw: true,
+        freeRemaining: quotaInfo.freeRemaining,
+        paidRemaining: quotaInfo.paidRemaining,
+        totalRemaining: quotaInfo.totalRemaining
+      };
     } catch (error) {
       log.error('_checkDrawQuota', '检查配额异常', error);
       return {
@@ -1003,43 +838,60 @@ Page({
   // },
   
   /**
-   * 显示配额错误提示
-   * @param {Object} quotaInfo - 配额信息（包含错误信息）
+   * 处理配额不足（弹出购买界面）
    */
-  _showQuotaError(quotaInfo) {
-    if (!quotaInfo) {
-      wx.showToast({
-        title: '暂时无法使用抽卡功能',
-        icon: 'none',
-        duration: 2500
+  async _handleQuotaInsufficient() {
+    log.info('_handleQuotaInsufficient', '配额不足，弹出购买界面');
+    
+    try {
+      // 显示购买确认弹窗
+      const confirmed = await new Promise((resolve) => {
+        wx.showModal({
+          title: '配额不足',
+          content: '智慧洞见配额不足，是否立即购买？',
+          confirmText: '立即购买',
+          cancelText: '取消',
+          success: (res) => {
+            resolve(res.confirm);
+          },
+          fail: () => {
+            resolve(false);
+          }
+        });
       });
-      return;
+      
+      if (!confirmed) {
+        log.info('_handleQuotaInsufficient', '用户取消购买');
+        return;
+      }
+      
+      // 用户确认购买，调用购买功能
+      log.info('_handleQuotaInsufficient', '用户确认购买，调起支付');
+      const purchaseSuccess = await this.functionController.purchaseFunction('wisdom_insight', {
+        onSuccess: async () => {
+          log.info('_handleQuotaInsufficient', '购买成功，刷新配额');
+          // 购买成功后刷新配额信息
+          await this._loadQuotaInfo();
+        },
+        onCancel: () => {
+          log.info('_handleQuotaInsufficient', '用户取消支付');
+        },
+        onError: (error) => {
+          log.error('_handleQuotaInsufficient', '支付失败', error);
+        }
+      });
+      
+      if (purchaseSuccess) {
+        log.info('_handleQuotaInsufficient', '购买流程完成');
+      }
+    } catch (error) {
+      log.error('_handleQuotaInsufficient', '处理配额不足异常', error);
+      wx.showToast({
+        title: '操作失败，请重试',
+        icon: 'none',
+        duration: 2000
+      });
     }
-    
-    let message = quotaInfo.error || '暂时无法使用抽卡功能';
-    
-    // 根据错误码显示不同提示
-    switch (quotaInfo.code) {
-      case 1001: // 未注册用户
-        message = '请先注册后使用抽卡功能';
-        break;
-      case 1002: // 用户类型不支持
-        message = '您当前的用户类型不支持抽卡功能';
-        break;
-      case 1003: // 配额用完
-        const totalQuota = quotaInfo.totalQuota || 3;
-        message = `今日抽卡次数已用完（${totalQuota}次/天），明天再来吧~`;
-        break;
-      default:
-        // 使用原始错误信息
-        break;
-    }
-    
-    wx.showToast({
-      title: message,
-      icon: 'none',
-      duration: 2500
-    });
   },
 
   /**
@@ -1194,6 +1046,88 @@ Page({
         }
       }
     });
+  },
+
+  /**
+   * 加载智慧洞见配额信息（包含免费配额 + 付费配额）
+   * 优先使用从home页面预加载的配额信息，避免数值跳变
+   * @private
+   */
+  async _loadQuotaInfo() {
+    try {
+      // 优先使用预加载的配额信息（从home页面传递过来）
+      const preloadData = app.globalData.wisdomInsightQuotaPreload;
+      
+      if (preloadData && preloadData.quota) {
+        // 检查数据是否过期（5分钟内有效）
+        const dataAge = Date.now() - (preloadData.timestamp || 0);
+        const maxAge = 5 * 60 * 1000; // 5分钟
+        
+        if (dataAge < maxAge) {
+          // 使用预加载的配额信息
+          const quotaInfo = new FunctionQuotaBean(preloadData.quota);
+          log.info('_loadQuotaInfo', '使用预加载的配额信息', quotaInfo.toObject());
+          
+          // 保存到页面数据
+          this.setData({
+            wisdomInsightQuota: quotaInfo
+          });
+          
+          // 生成按钮文本
+          const buttonText = this._getDrawButtonText(quotaInfo);
+          this.setData({
+            drawButtonText: buttonText
+          });
+          
+          log.info('_loadQuotaInfo', '预加载配额使用成功', {
+            freeRemaining: quotaInfo.freeRemaining,
+            paidRemaining: quotaInfo.paidRemaining,
+            totalRemaining: quotaInfo.totalRemaining,
+            buttonText: buttonText
+          });
+          
+          // 清除预加载数据（已使用）
+          delete app.globalData.wisdomInsightQuotaPreload;
+          
+          return;
+        } else {
+          log.warn('_loadQuotaInfo', '预加载数据已过期，重新获取', { dataAge });
+          // 清除过期数据
+          delete app.globalData.wisdomInsightQuotaPreload;
+        }
+      }
+      
+      // 如果没有预加载数据或数据已过期，则重新获取
+      log.info('_loadQuotaInfo', '重新获取配额信息');
+      const quotaInfo = await this.functionController.refreshQuota('wisdom_insight');
+      if (quotaInfo) {
+        log.info('_loadQuotaInfo', '智慧洞见配额信息', quotaInfo.toObject());
+        
+        // 保存到页面数据
+        this.setData({
+          wisdomInsightQuota: quotaInfo
+        });
+        
+        // 生成按钮文本
+        const buttonText = this._getDrawButtonText(quotaInfo);
+        this.setData({
+          drawButtonText: buttonText
+        });
+        
+        log.info('_loadQuotaInfo', '配额加载成功', {
+          freeRemaining: quotaInfo.freeRemaining,
+          paidRemaining: quotaInfo.paidRemaining,
+          totalRemaining: quotaInfo.totalRemaining,
+          buttonText: buttonText
+        });
+      }
+    } catch (error) {
+      log.error('_loadQuotaInfo', '加载配额信息失败', { error: error.message });
+      // 配额信息加载失败不影响主流程，静默处理
+      this.setData({
+        drawButtonText: '抽卡'
+      });
+    }
   }
 });
 

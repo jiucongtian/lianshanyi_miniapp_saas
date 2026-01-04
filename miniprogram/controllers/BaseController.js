@@ -29,6 +29,12 @@ class BaseController extends BaseClass {
     this.page = page;
     this._loadingCount = 0; // 加载计数器，支持嵌套加载
     this.userInfo = null; // 用户信息缓存
+    
+    // 支付弹窗相关
+    this._currentPaymentModalText = '支付中...'; // 当前支付弹窗显示的文字
+    
+    // 支付弹窗相关
+    this._currentPaymentModalText = '支付中...'; // 当前支付弹窗显示的文字
   }
 
   /**
@@ -417,6 +423,34 @@ class BaseController extends BaseClass {
     this._log('页面卸载');
     // 隐藏所有加载提示
     this._hideAllLoading();
+    // 隐藏支付弹窗
+    this._hidePaymentModal();
+  }
+
+  // ==================== 支付弹窗管理方法 ====================
+
+  /**
+   * 显示支付弹窗
+   * @param {string} statusText - 显示的文字，默认'支付中...'
+   */
+  _showPaymentModal(statusText = '支付中...') {
+    this._currentPaymentModalText = statusText;
+    this._setData({
+      showPaymentModal: true,
+      paymentModalText: statusText
+    });
+    this._log('_showPaymentModal', '显示支付弹窗', { statusText });
+  }
+
+  /**
+   * 隐藏支付弹窗
+   */
+  _hidePaymentModal() {
+    this._setData({
+      showPaymentModal: false,
+      paymentModalText: ''
+    });
+    this._log('_hidePaymentModal', '隐藏支付弹窗');
   }
 }
 

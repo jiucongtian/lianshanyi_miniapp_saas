@@ -133,3 +133,9 @@
   class="poster-canvas"
 ></canvas>
 
+<!-- 支付弹窗组件 -->
+<payment-modal 
+  show="{{showPaymentModal}}" 
+  text="{{paymentModalText}}"
+></payment-modal>
+

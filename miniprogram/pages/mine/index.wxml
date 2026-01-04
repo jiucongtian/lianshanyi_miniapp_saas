@@ -97,6 +97,24 @@
         <view class="store-arrow">›</view>
       </view>
     </view>
+    
+    <!-- 调试功能区域（开发调试用） -->
+    <view class="test-section">
+      <!-- 调试页面入口 -->
+      <view class="test-card">
+        <view class="test-header">
+          <text class="test-icon">🔧</text>
+          <text class="test-title">调试页面</text>
+        </view>
+        <view class="test-info">
+          <text class="test-desc">进入调试页面测试各种功能</text>
+          <text class="test-amount">包含：配额管理、支付等测试</text>
+        </view>
+        <button class="test-button" bindtap="onDebugTap">
+          <text class="test-button-text">🚀 进入调试页面</text>
+        </button>
+      </view>
+    </view>
   </view>
 
   <!-- 管理员功能区域（仅管理员可见） -->

@@ -17,7 +17,8 @@
 | description | string | 否 | - | 用户类型描述 |
 | profileQuota | number | 是 | - | 档案配额(-1表示无限制) |
 | permissions | array | 是 | - | 权限列表 |
-| dailyDrawQuota | number | 是 | - | 每日抽卡配额(0=不可用，正整数=次数限制，-1=无限) |
+| dailyDrawQuota | number | 是 | - | 每日智慧洞见配额(0=不可用，正整数=次数限制，-1=无限) |
+| dailyAiReportQuota | number | 否 | - | 每日AI出报告配额(0=不可用，正整数=次数限制，-1=无限)，默认0 |
 
 ## 数据示例
 
@@ -30,7 +31,8 @@
   "description": "未注册的临时用户，功能受限",
   "profileQuota": 3,
   "permissions": ["view", "create_limited"],
-  "dailyDrawQuota": 0
+  "dailyDrawQuota": 0,
+  "dailyAiReportQuota": 0
 }
 ```
 
@@ -43,7 +45,8 @@
   "description": "已注册的普通用户，享受基础功能",
   "profileQuota": 50,
   "permissions": ["view", "create"],
-  "dailyDrawQuota": 3
+  "dailyDrawQuota": 1,
+  "dailyAiReportQuota": 1
 }
 ```
 
@@ -56,7 +59,8 @@
   "description": "付费高级用户，享受全部功能",
   "profileQuota": -1,
   "permissions": ["all"],
-  "dailyDrawQuota": -1
+  "dailyDrawQuota": -1,
+  "dailyAiReportQuota": -1
 }
 ```
 
@@ -96,30 +100,38 @@
    - profileQuota表示档案创建配额
      - -1表示无限制
      - 其他数值表示具体配额数量
-   - dailyDrawQuota表示每日抽卡配额
+   - dailyDrawQuota表示每日智慧洞见配额
      - 0表示不可用（如临时用户）
      - 正整数表示每日次数限制
+     - -1表示无限制
+   - dailyAiReportQuota表示每日AI出报告免费配额
+     - 0表示不可用
+     - 正整数表示每日免费次数
      - -1表示无限制
 
 ## 用户类型权限详细说明
 
 ### 临时用户 (guest)
 - 档案配额：3个
-- 抽卡配额：0次（不可用）
+- 智慧洞见配额：0次（不可用，dailyDrawQuota=0）
+- AI出报告配额：0次（不可用）
 - 权限范围：
   - ✅ 查看小程序基础功能
   - ✅ 进行生辰八字计算
   - ✅ 创建档案（数量限制）
   - ✅ 查看已创建的档案
-  - ❌ 无法使用抽卡功能
+  - ❌ 无法使用智慧洞见功能
+  - ❌ 无法使用AI出报告
   - ❌ 无法享受高级分析功能
 
 ### 普通用户 (normal)
 - 档案配额：50个
-- 抽卡配额：3次/天
+- 智慧洞见配额：1次/天（dailyDrawQuota=1）
+- AI出报告配额：1次/天
 - 权限范围：
   - ✅ 临时用户的所有权限
-  - ✅ 使用抽卡功能（每日3次）
+  - ✅ 使用智慧洞见（每日1次免费）
+  - ✅ 使用AI出报告（每日1次免费）
   - ✅ 参与社区互动（如有）
   - ✅ 收藏和管理档案
   - ❌ 无法使用高级分析算法
@@ -127,10 +139,12 @@
 
 ### 高级用户 (premium)
 - 档案配额：无限制
-- 抽卡配额：无限制
+- 智慧洞见配额：无限制（dailyDrawQuota=-1）
+- AI出报告配额：无限制
 - 权限范围：
   - ✅ 普通用户的所有权限
-  - ✅ 无限抽卡次数
+  - ✅ 无限使用智慧洞见
+  - ✅ 无限使用AI出报告
   - ✅ 高级八字分析算法
   - ✅ 专属分析报告模板
   - ✅ 无限档案创建
@@ -138,12 +152,66 @@
   - ✅ 优先体验新功能
   - ✅ 数据云端备份
 
+## 功能免费配额说明
+
+### 配额计算方式
+1. **免费配额**: 在本表 (static_user_types) 中配置，按用户类型区分
+   - **智慧洞见**: 使用 `dailyDrawQuota` 字段
+   - **AI出报告**: 使用 `dailyAiReportQuota` 字段
+2. **付费配额**: 在 function_quotas 表中记录，永久有效
+3. **总配额**: 免费配额（每日重置）+ 付费配额（永久有效）
+
+### 免费配额每日重置机制
+- 免费配额不存储在数据库中，通过查询 `function_usage_records` 表统计当日使用次数
+- 每天 00:00 自动重置（通过日期字段 usageDate 判断）
+- 配额检查公式：
+  - 智慧洞见：`剩余免费配额 = dailyDrawQuota - 当日已使用次数`
+  - AI出报告：`剩余免费配额 = dailyAiReportQuota - 当日已使用次数`
+
+### 查询免费配额示例（智慧洞见）
+```javascript
+// 获取用户类型配置
+const userTypeConfig = await db.collection('static_user_types')
+  .where({ typeCode: userTypeCode })
+  .get();
+
+// 智慧洞见使用 dailyDrawQuota 字段
+const dailyWisdomInsightQuota = userTypeConfig.data[0].dailyDrawQuota;
+
+// 统计今日免费使用次数
+const today = new Date().toISOString().split('T')[0];
+const freeUsedToday = await db.collection('function_usage_records')
+  .where({
+    openid: openid,
+    functionCode: 'wisdom_insight',
+    isPaid: false,  // 免费配额
+    usageDate: today
+  })
+  .count();
+
+// 计算剩余免费配额
+const freeRemaining = dailyWisdomInsightQuota === -1 
+  ? Infinity 
+  : Math.max(0, dailyWisdomInsightQuota - freeUsedToday.total);
+```
+
+### 配额优先级
+使用功能时，按以下优先级扣除配额：
+1. **优先使用免费配额** (isPaid=false)
+2. **免费配额用完后使用付费配额** (isPaid=true)
+
+### 重要说明
+- **智慧洞见配额**：使用 `dailyDrawQuota` 字段
+- **AI出报告配额**：使用 `dailyAiReportQuota` 字段
+
 ## 扩展性考虑
 
 1. **新增用户类型**: 只需在配置表中添加新记录，无需修改代码
 2. **权限扩展**: 可在permissions数组中添加新的权限代码
 3. **配额调整**: 修改profileQuota字段即可调整配额，无需更新用户数据
 4. **多语言支持**: 可扩展displayName字段支持多语言显示
+5. **新增功能配额**: 添加新的 dailyXxxQuota 字段即可
+6. **字段复用**: 智慧洞见复用 dailyDrawQuota，避免字段冗余
 
 ## 数据迁移说明
 

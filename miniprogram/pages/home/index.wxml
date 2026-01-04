@@ -140,5 +140,11 @@
     <view class="star-trail trail-7"></view>
     <view class="star-trail trail-8"></view>
   </view>
+
+  <!-- 支付弹窗组件 -->
+  <payment-modal 
+    show="{{showPaymentModal}}" 
+    text="{{paymentModalText}}"
+  ></payment-modal>
 </view>
 
