@@ -1,0 +1,17 @@
+<!-- 图片预览悬浮窗 -->
+<view class="image-preview-overlay" wx:if="{{show}}" bindtap="closePreview">
+  <image 
+    class="preview-image {{previewImageTouching ? 'touching' : ''}}" 
+    style="transform: {{previewImageTransformStyle}}"
+    src="{{imagePath}}" 
+    mode="aspectFill" 
+    bindload="onImageLoad" 
+    binderror="onImageError"
+    bindtouchstart="onPreviewTouchStart"
+    bindtouchmove="onPreviewTouchMove"
+    bindtouchend="onPreviewTouchEnd"
+    catchtouchmove="onPreviewTouchMove"
+    lazy-load="{{false}}"
+  />
+</view>
+

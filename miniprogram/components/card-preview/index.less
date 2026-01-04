@@ -1,0 +1,98 @@
+/* 图片预览悬浮窗样式 - 与 card 页面完全一致 */
+.image-preview-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(10rpx);
+  z-index: 99999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 40rpx;
+  box-sizing: border-box;
+  animation: fadeIn 0.3s ease-out;
+  flex-direction: column;
+}
+
+.preview-image {
+  width: 90vw !important;
+  height: 70vh !important;
+  object-fit: cover !important;
+  animation: scaleIn 0.3s ease-out;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: white !important;
+  border-radius: 8rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+  position: relative !important;
+  z-index: 100000 !important;
+  margin: 0 auto !important;
+  overflow: hidden !important;
+  /* 3D变换支持 */
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  /* 平滑过渡效果 - 触摸移动时不使用过渡，结束时使用过渡恢复 */
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* 触摸优化 */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 触摸中状态 - 禁用过渡以实现实时响应 */
+.preview-image.touching {
+  transition: none !important;
+}
+
+/* 卡牌描述信息样式 */
+.card-description {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 32rpx;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10rpx);
+  border-radius: 0 0 8rpx 8rpx;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.1);
+  border-top: 1rpx solid rgba(200, 150, 180, 0.3);
+  z-index: 100001;
+  box-sizing: border-box;
+}
+
+.card-desc-text {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+

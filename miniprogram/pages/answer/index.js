@@ -43,7 +43,11 @@ Page({
     // 配额信息（统一使用智慧洞见配额，包含免费 + 付费）
     wisdomInsightQuota: null, // FunctionQuotaBean（包含 freeRemaining + paidRemaining）
     drawButtonText: '抽卡', // 抽卡按钮文本（固定为"抽卡"）
-    interpretButtonText: 'AI解读' // AI解读按钮文本（显示剩余配额）
+    interpretButtonText: 'AI解读', // AI解读按钮文本（显示剩余配额）
+    // 卡牌预览相关
+    showCardPreview: false, // 是否显示卡牌预览
+    previewImagePath: '', // 预览图片路径
+    previewCardDescription: null // 预览卡牌描述信息
   },
   
   // 延迟清空定时器ID
@@ -1098,6 +1102,56 @@ Page({
         });
       }
     }
+  },
+
+  /**
+   * 卡牌点击事件 - 当卡牌翻转后，点击可以预览
+   */
+  onCardTap(e) {
+    const isFlipped = e.currentTarget.dataset.isFlipped;
+    
+    // 只有已翻转的卡牌才能预览
+    if (!isFlipped) {
+      return;
+    }
+    
+    // 检查是否有选中的卡牌和图片路径
+    if (!this.data.selectedCard || !this.data.selectedCardImagePath) {
+      return;
+    }
+    
+    log.info('onCardTap', '卡牌被点击，准备预览', {
+      cardName: this.data.selectedCard.cardName,
+      imagePath: this.data.selectedCardImagePath
+    });
+    
+    // 准备预览数据
+    const previewDescription = this.data.selectedCard.description 
+      ? {
+          description: this.data.selectedCard.description,
+          cardName: this.data.selectedCard.cardName,
+          cardNumber: this.data.selectedCard.cardNumber
+        }
+      : null;
+    
+    // 显示预览
+    this.setData({
+      showCardPreview: true,
+      previewImagePath: this.data.selectedCardImagePath,
+      previewCardDescription: previewDescription
+    });
+  },
+
+  /**
+   * 关闭卡牌预览
+   */
+  onCloseCardPreview() {
+    log.info('onCloseCardPreview', '关闭卡牌预览');
+    this.setData({
+      showCardPreview: false,
+      previewImagePath: '',
+      previewCardDescription: null
+    });
   }
 });
 

@@ -56,7 +56,7 @@
       <view class="cards-scroll-wrapper">
         <view class="cards-scroll" style="transform: translateX({{scrollOffset}}rpx); transition: transform {{transitionDuration}}ms {{transitionTiming}};">
           <view class="card-item {{cardIndex === selectedIndex ? 'selected' : ''}}" wx:for="{{cardList}}" wx:key="key" wx:for-index="cardIndex">
-            <view class="card-inner {{cardIndex === selectedIndex && isFlipped ? 'flipped' : ''}}">
+            <view class="card-inner {{cardIndex === selectedIndex && isFlipped ? 'flipped' : ''}}" bindtap="onCardTap" data-is-flipped="{{cardIndex === selectedIndex && isFlipped}}">
               <!-- 卡牌背面 -->
               <view class="card-back">
                 <image class="card-back-image" src="/static/card-back.jpg" mode="aspectFill"></image>
@@ -138,4 +138,12 @@
   show="{{showPaymentModal}}" 
   text="{{paymentModalText}}"
 ></payment-modal>
+
+<!-- 卡牌预览组件 -->
+<card-preview
+  show="{{showCardPreview}}"
+  image-path="{{previewImagePath}}"
+  description="{{previewCardDescription}}"
+  bind:close="onCloseCardPreview"
+></card-preview>
 

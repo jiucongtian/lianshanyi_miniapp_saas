@@ -221,13 +221,17 @@ Page({
       isSearching: true
     });
 
+    // 在跳转前先获取配额信息
+    console.log('[HomePage] 开始获取配额信息');
+    
     try {
-      // 在跳转前先获取配额信息
-      console.log('[HomePage] 开始获取配额信息');
-      const quotaInfo = await this.functionController.refreshQuota('wisdom_insight');
+      // 直接使用 FunctionService 获取配额信息，可以获取详细的错误信息
+      const { functionService } = require('../../services/FunctionService');
+      const quotaResponse = await functionService.checkQuota('wisdom_insight');
       
-      if (quotaInfo) {
-        // 将配额信息存储到globalData，供answer页面使用
+      if (quotaResponse.success && quotaResponse.data) {
+        // 配额信息获取成功，存储到globalData供answer页面使用
+        const quotaInfo = quotaResponse.data;
         const quotaRawData = quotaInfo._rawData || quotaInfo.toObject();
         app.globalData.wisdomInsightQuotaPreload = {
           quota: quotaRawData,
@@ -239,17 +243,75 @@ Page({
           totalRemaining: quotaInfo.totalRemaining
         });
       } else {
-        console.warn('[HomePage] 配额信息获取失败，answer页面将自行获取');
-        // 清除可能存在的旧数据
-        delete app.globalData.wisdomInsightQuotaPreload;
+        // 配额信息获取失败，检查是否是网络错误
+        const errorMessage = quotaResponse.error || '';
+        const isNetworkError = errorMessage.includes('Failed to fetch') || 
+                               errorMessage.includes('网络错误') ||
+                               errorMessage.includes('网络连接') ||
+                               errorMessage.includes('fetch') ||
+                               errorMessage.includes('callFunction:fail');
+        
+        if (isNetworkError) {
+          // 网络错误，提示用户并阻止跳转
+          console.error('[HomePage] 网络连接失败，阻止跳转', { error: errorMessage });
+          wx.showToast({
+            title: '网络连接失败，请检查网络后重试',
+            icon: 'none',
+            duration: 3000
+          });
+          
+          // 清除可能存在的旧数据
+          delete app.globalData.wisdomInsightQuotaPreload;
+          
+          // 重置搜索状态
+          this.setData({
+            isSearching: false
+          });
+          
+          return; // 阻止跳转
+        } else {
+          // 其他错误（如配额不足等），记录日志但允许跳转（answer页面会自行处理）
+          console.warn('[HomePage] 配额信息获取失败（非网络错误）', { error: errorMessage });
+          delete app.globalData.wisdomInsightQuotaPreload;
+        }
       }
     } catch (error) {
       console.error('[HomePage] 获取配额信息异常:', error);
-      // 清除可能存在的旧数据
-      delete app.globalData.wisdomInsightQuotaPreload;
+      
+      // 检查是否是网络错误
+      const errorMessage = error.message || String(error);
+      const isNetworkError = errorMessage.includes('Failed to fetch') || 
+                             errorMessage.includes('网络错误') ||
+                             errorMessage.includes('网络连接') ||
+                             errorMessage.includes('fetch') ||
+                             errorMessage.includes('callFunction:fail');
+      
+      if (isNetworkError) {
+        // 网络错误，提示用户并阻止跳转
+        console.error('[HomePage] 网络连接失败，阻止跳转', { error: errorMessage });
+        wx.showToast({
+          title: '网络连接失败，请检查网络后重试',
+          icon: 'none',
+          duration: 3000
+        });
+        
+        // 清除可能存在的旧数据
+        delete app.globalData.wisdomInsightQuotaPreload;
+        
+        // 重置搜索状态
+        this.setData({
+          isSearching: false
+        });
+        
+        return; // 阻止跳转
+      } else {
+        // 其他错误，清除预加载数据，允许跳转（answer页面会自行处理）
+        console.warn('[HomePage] 配额信息获取异常（非网络错误），允许跳转', { error: errorMessage });
+        delete app.globalData.wisdomInsightQuotaPreload;
+      }
     }
 
-    // 跳转到答案页面
+    // 配额检查通过或非网络错误，跳转到答案页面
     const questionParam = question ? encodeURIComponent(question.trim()) : '';
     wx.navigateTo({
       url: `/pages/answer/index${questionParam ? '?question=' + questionParam : ''}`,
