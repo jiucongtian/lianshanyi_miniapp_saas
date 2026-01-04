@@ -1391,10 +1391,12 @@ Page({
             const newCount = (this.data.rewardCount || 0) + 1;
             this._updateRewardCountDisplay(newCount);
             
-            wx.showToast({
-              title: '感谢您的赞赏！',
-              icon: 'success',
-              duration: 2000
+            wx.showModal({
+              title: '感谢您的认可',
+              content: '希望这份解读能成为您的一盏夜灯。',
+              showCancel: false,
+              confirmText: '知道了',
+              confirmColor: '#c896b4'
             });
             
             // 重新加载赞赏人数统计（从服务器获取最新数据）
