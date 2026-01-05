@@ -709,7 +709,7 @@ Page({
   },
   
   /**
-   * 获取AI解读按钮文本（显示剩余配额）
+   * 获取AI解读按钮文本（显示剩余配额或价格）
    * @param {FunctionQuotaBean} quotaInfo - 智慧洞见配额信息
    * @returns {string} 按钮文本
    */
@@ -733,7 +733,8 @@ Page({
       if (totalRemaining > 0) {
         return `AI解读（剩余${totalRemaining}次）`;
       } else {
-        return 'AI解读（需付费）';
+        // 没有剩余次数，显示价格（1.9元/次）
+        return 'AI解读（¥1.9/次）';
       }
     } catch (error) {
       log.error('_getInterpretButtonText', '获取按钮文本异常', error);
