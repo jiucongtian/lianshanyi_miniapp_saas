@@ -84,49 +84,60 @@
       
       <!-- 大赏功能区域 -->
       <view class="reward-section">
+        <!-- 大赏头部（始终显示） -->
         <view class="reward-header">
           <view class="reward-hint">觉得准?随喜赞赏祈福*+</view>
         </view>
         
-        <!-- 预设金额按钮 -->
-        <view class="preset-amounts">
-          <view 
-            class="preset-amount-item {{selectedRewardAmount === item.amount ? 'selected' : ''}} {{item.recommended ? 'recommended' : ''}}"
-            wx:for="{{presetAmounts}}" 
-            wx:key="amount"
-            bindtap="onSelectPresetAmount"
-            data-amount="{{item.amount}}"
-          >
-            <view class="preset-amount-value">¥{{item.amount}}</view>
-            <view class="preset-amount-label">{{item.label}}</view>
-            <view class="recommended-tag" wx:if="{{item.recommended}}">推荐</view>
+        <!-- 红色圆形打赏按钮（默认显示） -->
+        <view class="reward-trigger-button" wx:if="{{!showRewardOptions}}">
+          <view class="reward-trigger-circle" catchtap="onShowRewardOptions">
+            <text class="reward-trigger-text">打赏</text>
           </view>
         </view>
         
-        <!-- 其他金额和随喜按钮 -->
-        <view class="reward-actions">
-          <button class="custom-amount-button" bindtap="onShowCustomInput">
-            其他金额
-          </button>
-          <button class="reward-submit-button" bindtap="onReward" disabled="{{isRewarding}}">
-            随喜 ¥{{selectedRewardAmount}}
-          </button>
-        </view>
-        
-        <!-- 自定义金额输入框 -->
-        <view class="custom-amount-input-wrapper" wx:if="{{showCustomInput}}">
-          <view class="custom-amount-label">请输入赞赏金额（元）</view>
-          <input 
-            class="custom-amount-input" 
-            type="digit" 
-            placeholder="请输入金额"
-            value="{{customRewardAmount}}"
-            bindinput="onCustomAmountInput"
-            bindconfirm="onConfirmCustomAmount"
-          />
-          <view class="custom-amount-buttons">
-            <button class="custom-amount-cancel" bindtap="onCancelCustomAmount">取消</button>
-            <button class="custom-amount-confirm" bindtap="onConfirmCustomAmount">确定</button>
+        <!-- 金额选择区域（点击打赏按钮后显示） -->
+        <view class="reward-options-container" wx:if="{{showRewardOptions}}">
+          <!-- 预设金额按钮 -->
+          <view class="preset-amounts">
+            <view 
+              class="preset-amount-item {{selectedRewardAmount === item.amount ? 'selected' : ''}} {{item.recommended ? 'recommended' : ''}}"
+              wx:for="{{presetAmounts}}" 
+              wx:key="amount"
+              bindtap="onSelectPresetAmount"
+              data-amount="{{item.amount}}"
+            >
+              <view class="preset-amount-value">¥{{item.amount}}</view>
+              <view class="preset-amount-label">{{item.label}}</view>
+              <view class="recommended-tag" wx:if="{{item.recommended}}">推荐</view>
+            </view>
+          </view>
+          
+          <!-- 其他金额和随喜按钮 -->
+          <view class="reward-actions">
+            <button class="custom-amount-button" bindtap="onShowCustomInput">
+              其他金额
+            </button>
+            <button class="reward-submit-button" bindtap="onReward" disabled="{{isRewarding}}">
+              随喜 ¥{{selectedRewardAmount}}
+            </button>
+          </view>
+          
+          <!-- 自定义金额输入框 -->
+          <view class="custom-amount-input-wrapper" wx:if="{{showCustomInput}}">
+            <view class="custom-amount-label">请输入赞赏金额（元）</view>
+            <input 
+              class="custom-amount-input" 
+              type="digit" 
+              placeholder="请输入金额"
+              value="{{customRewardAmount}}"
+              bindinput="onCustomAmountInput"
+              bindconfirm="onConfirmCustomAmount"
+            />
+            <view class="custom-amount-buttons">
+              <button class="custom-amount-cancel" bindtap="onCancelCustomAmount">取消</button>
+              <button class="custom-amount-confirm" bindtap="onConfirmCustomAmount">确定</button>
+            </view>
           </view>
         </view>
       </view>

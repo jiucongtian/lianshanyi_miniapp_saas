@@ -57,6 +57,7 @@ Page({
     selectedRewardAmount: 6.66, // 选中的赞赏金额（默认选中6.66）
     customRewardAmount: '', // 自定义金额输入
     showCustomInput: false, // 是否显示自定义金额输入框
+    showRewardOptions: false, // 是否显示金额选择区域（默认隐藏）
     // 预设金额列表
     presetAmounts: [
       { amount: 1, label: '一帆风顺', recommended: false },
@@ -1313,6 +1314,16 @@ Page({
     this.setData({
       showCustomInput: false,
       customRewardAmount: ''
+    });
+  },
+  
+  /**
+   * 点击打赏按钮（显示金额选择区域）
+   */
+  onShowRewardOptions() {
+    log.info('onShowRewardOptions', '点击打赏按钮，显示金额选择区域');
+    this.setData({
+      showRewardOptions: true
     });
   },
   
