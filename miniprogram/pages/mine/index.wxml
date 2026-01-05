@@ -87,7 +87,8 @@
       </view>
     </view>
     
-    <!-- 微信小店入口 -->
+    <!-- 微信小店入口（暂时隐藏） -->
+    <!--
     <view class="store-section">
       <view class="store-card" bindtap="onStoreTap">
         <view class="store-icon">🏪</view>
@@ -97,6 +98,7 @@
         <view class="store-arrow">›</view>
       </view>
     </view>
+    -->
     
     <!-- 调试功能区域（仅管理员可见） -->
     <view class="test-section" wx:if="{{userInfo && userInfo.userType === 'admin'}}">
