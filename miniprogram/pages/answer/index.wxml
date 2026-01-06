@@ -232,7 +232,13 @@
       <view class="kefu-modal-close" bindtap="onCloseKefuModal">×</view>
     </view>
     <view class="kefu-modal-body">
-      <image class="kefu-qrcode" src="/static/kefu.jpg" mode="aspectFit"></image>
+      <image 
+        class="kefu-qrcode" 
+        src="/static/kefu.jpg" 
+        mode="aspectFit"
+        show-menu-by-longpress="{{true}}"
+        bindtap="onPreviewKefuQrcode"
+      ></image>
       <view class="kefu-hint">长按二维码添加客服企业微信</view>
     </view>
   </view>

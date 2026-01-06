@@ -1572,6 +1572,30 @@ Page({
     this.setData({
       showKefuModal: false
     });
+  },
+  
+  /**
+   * 预览客服二维码（点击图片时调用，在预览界面长按可识别二维码）
+   */
+  onPreviewKefuQrcode() {
+    log.info('onPreviewKefuQrcode', '预览客服二维码');
+    
+    // 使用预览功能，在预览界面长按二维码会自动识别
+    wx.previewImage({
+      urls: ['/static/kefu.jpg'],
+      current: '/static/kefu.jpg',
+      success: () => {
+        log.info('onPreviewKefuQrcode', '预览成功，请在预览界面长按二维码识别');
+      },
+      fail: (err) => {
+        log.error('onPreviewKefuQrcode', '预览失败', err);
+        wx.showToast({
+          title: '预览失败',
+          icon: 'none',
+          duration: 2000
+        });
+      }
+    });
   }
 });
 
