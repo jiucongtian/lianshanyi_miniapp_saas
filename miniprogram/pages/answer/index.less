@@ -964,3 +964,84 @@ page {
   z-index: -1;
 }
 
+/* 客服二维码弹窗 */
+.kefu-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(10rpx);
+}
+
+.kefu-modal-content {
+  width: 600rpx;
+  background: linear-gradient(135deg, rgba(45, 26, 46, 0.95) 0%, rgba(61, 31, 62, 0.95) 100%);
+  border: 2rpx solid #c896b4;
+  border-radius: 24rpx;
+  box-shadow: 
+    0 0 40rpx rgba(200, 150, 180, 0.5),
+    inset 0 0 60rpx rgba(133, 76, 101, 0.2);
+  overflow: hidden;
+}
+
+.kefu-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx 40rpx;
+  border-bottom: 1rpx solid rgba(200, 150, 180, 0.3);
+}
+
+.kefu-modal-title {
+  font-size: 32rpx;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.kefu-modal-close {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  color: #c896b4;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.kefu-modal-close:active {
+  transform: scale(0.9);
+  opacity: 0.7;
+}
+
+.kefu-modal-body {
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.kefu-qrcode {
+  width: 500rpx;
+  height: 500rpx;
+  border-radius: 16rpx;
+  border: 2rpx solid rgba(200, 150, 180, 0.3);
+  background: #ffffff;
+  margin-bottom: 30rpx;
+}
+
+.kefu-hint {
+  font-size: 26rpx;
+  color: #c896b4;
+  text-align: center;
+  line-height: 1.6;
+}
+

@@ -143,7 +143,7 @@
       </view>
     </view>
     
-    <!-- 咨询真人讲师卡片 -->
+    <!-- 咨询真人客服卡片 -->
     <view class="consultation-card" wx:if="{{aiInterpretation}}">
       <view class="consultation-left">
         <view class="consultant-avatar-wrapper">
@@ -152,7 +152,7 @@
         </view>
       </view>
       <view class="consultation-middle">
-        <view class="consultation-title">咨询真人讲师</view>
+        <view class="consultation-title">咨询真人客服</view>
         <view class="consultation-desc">提供1v1 深度解惑</view>
       </view>
       <view class="consultation-right">
@@ -223,4 +223,18 @@
   description="{{previewCardDescription}}"
   bind:close="onCloseCardPreview"
 ></card-preview>
+
+<!-- 客服二维码弹窗 -->
+<view class="kefu-modal" wx:if="{{showKefuModal}}" catchtap="onCloseKefuModal">
+  <view class="kefu-modal-content" catchtap="">
+    <view class="kefu-modal-header">
+      <text class="kefu-modal-title">添加客服企业微信</text>
+      <view class="kefu-modal-close" bindtap="onCloseKefuModal">×</view>
+    </view>
+    <view class="kefu-modal-body">
+      <image class="kefu-qrcode" src="/static/kefu.jpg" mode="aspectFit"></image>
+      <view class="kefu-hint">长按二维码添加客服企业微信</view>
+    </view>
+  </view>
+</view>
 

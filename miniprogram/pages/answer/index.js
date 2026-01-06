@@ -64,10 +64,11 @@ Page({
       { amount: 6.66, label: '顺顺利利', recommended: false },
       { amount: 8.88, label: '财源广进', recommended: false }
     ],
-    // 咨询真人讲师相关
-    consultantAvatar: '', // 讲师头像URL
-    consultantName: '真人讲师', // 讲师名称
-    consultantOnline: true // 讲师是否在线
+    // 咨询真人客服相关
+    consultantAvatar: '', // 客服头像URL
+    consultantName: '真人客服', // 客服名称
+    consultantOnline: true, // 客服是否在线
+    showKefuModal: false // 是否显示客服二维码弹窗
   },
   
   // 延迟清空定时器ID
@@ -1552,24 +1553,25 @@ Page({
   },
   
   /**
-   * 咨询真人讲师按钮点击事件
+   * 咨询真人客服按钮点击事件
    */
   onConsultLecturer() {
-    log.info('onConsultLecturer', '点击咨询真人讲师');
+    log.info('onConsultLecturer', '点击咨询真人客服');
     
-    // TODO: 实现跳转到咨询页面或显示咨询入口
-    // 暂时显示提示
-    wx.showModal({
-      title: '咨询真人讲师',
-      content: '该功能正在开发中，敬请期待！',
-      showCancel: false,
-      confirmText: '知道了'
+    // 显示客服二维码弹窗
+    this.setData({
+      showKefuModal: true
     });
-    
-    // 后续可以跳转到咨询页面：
-    // wx.navigateTo({
-    //   url: '/pages/consultation/index'
-    // });
+  },
+  
+  /**
+   * 关闭客服二维码弹窗
+   */
+  onCloseKefuModal() {
+    log.info('onCloseKefuModal', '关闭客服二维码弹窗');
+    this.setData({
+      showKefuModal: false
+    });
   }
 });
 
