@@ -778,6 +778,8 @@ Page({
         freeRemaining: quotaInfo.freeRemaining,
         paidRemaining: quotaInfo.paidRemaining,
         totalRemaining: quotaInfo.totalRemaining,
+        freeDailyQuota: quotaInfo.freeDailyQuota,
+        freeUsedToday: quotaInfo.freeUsedToday,
         canDraw: canDraw
       });
       
@@ -1089,7 +1091,9 @@ Page({
           log.info('_loadQuotaInfo', '预加载配额使用成功', {
             freeRemaining: quotaInfo.freeRemaining,
             paidRemaining: quotaInfo.paidRemaining,
-            totalRemaining: quotaInfo.totalRemaining
+            totalRemaining: quotaInfo.totalRemaining,
+            freeDailyQuota: quotaInfo.freeDailyQuota,
+            freeUsedToday: quotaInfo.freeUsedToday
           });
           
           // 清除预加载数据（已使用）
@@ -1122,7 +1126,9 @@ Page({
         log.info('_loadQuotaInfo', '配额加载成功', {
           freeRemaining: quotaInfo.freeRemaining,
           paidRemaining: quotaInfo.paidRemaining,
-          totalRemaining: quotaInfo.totalRemaining
+          totalRemaining: quotaInfo.totalRemaining,
+          freeDailyQuota: quotaInfo.freeDailyQuota,
+          freeUsedToday: quotaInfo.freeUsedToday
         });
       }
     } catch (error) {
