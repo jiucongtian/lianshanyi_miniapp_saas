@@ -183,7 +183,7 @@
           size="medium"
           block="{{true}}"
           button-text="{{interpretButtonText}}"
-          loading-text="解读中..."
+          loading-text="{{interpretLoadingText}}"
           prevent-duplicate="{{true}}"
           bind:tap="onAIInterpret"
           disabled="{{!selectedCard || !selectedCard.cardName}}"

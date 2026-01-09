@@ -46,6 +46,7 @@ Page({
     wisdomInsightQuota: null, // FunctionQuotaBean（包含 freeRemaining + paidRemaining）
     drawButtonText: '抽卡', // 抽卡按钮文本（固定为"抽卡"）
     interpretButtonText: 'AI解读', // AI解读按钮文本（显示剩余配额）
+    interpretLoadingText: '解读中...', // AI解读按钮loading时的文本（动态更新进度）
     // 卡牌预览相关
     showCardPreview: false, // 是否显示卡牌预览
     previewImagePath: '', // 预览图片路径
@@ -77,6 +78,12 @@ Page({
   isDrawingCard: false,
   // AI解读操作进行中标志（同步标志，防止重复点击）
   isInterpreting: false,
+  // AI解读进度定时器ID
+  interpretProgressTimer: null,
+  // AI解读开始时间（用于计算进度）
+  interpretStartTime: null,
+  // 原始按钮文字（用于解读完成后恢复）
+  originalInterpretButtonText: null,
   // Canvas相关
   canvasContext: null,
   canvas: null,
@@ -655,6 +662,10 @@ Page({
     // 获取按钮组件引用（用于错误时重置状态）
     const buttonComponent = this.selectComponent('#loading-button-interpret');
     
+    // 保存原始按钮文字和loading文字
+    this.originalInterpretButtonText = this.data.interpretButtonText;
+    this.originalInterpretLoadingText = this.data.interpretLoadingText;
+    
     // 如果不是自动调用，显示按钮loading状态
     if (!isAutoCall && buttonComponent) {
       buttonComponent.startLoading();
@@ -679,6 +690,7 @@ Page({
       // 定义成功回调，用于支付成功后自动调用
       const onSuccessCallback = async (resultData) => {
         log.info('onAIInterpret', '功能调用成功（支付成功后自动调用）', { resultData });
+        
         // 处理结果（异步处理）
         // 注意：按钮loading已经在 FunctionController 中显示，这里只需要处理结果
         await this._handleInterpretResult(resultData, buttonComponent, true); // 自动调用时传入 true
@@ -704,6 +716,7 @@ Page({
         if (this.functionController._pendingFunctionCall) {
           log.info('onAIInterpret', '配额不足，正在支付中，等待支付成功后自动调用');
           // 不重置状态，等待支付成功后自动调用
+          // 注意：此时不启动进度更新，因为还没有真正开始AI解读
           return;
         }
         
@@ -722,7 +735,7 @@ Page({
         return;
       }
       
-      // 调用成功，处理结果
+      // 处理结果
       await this._handleInterpretResult(result, buttonComponent, isAutoCall);
     } catch (error) {
       log.error('onAIInterpret', '调用功能失败', { error: error.message });
@@ -738,11 +751,29 @@ Page({
         duration: 2000
       });
     } finally {
+      // 停止进度更新定时器
+      this._stopInterpretProgress();
+      
+      // 恢复原始按钮文字和loading文字
+      if (this.originalInterpretButtonText) {
+        this.setData({
+          interpretButtonText: this.originalInterpretButtonText
+        });
+        this.originalInterpretButtonText = null;
+      }
+      if (this.originalInterpretLoadingText) {
+        this.setData({
+          interpretLoadingText: this.originalInterpretLoadingText
+        });
+        this.originalInterpretLoadingText = null;
+      }
+      
       // 重置按钮状态和解读标志
       if (buttonComponent) {
         buttonComponent.stopLoading();
       }
       this.isInterpreting = false;
+      this.interpretStartTime = null;
     }
   },
   
@@ -797,6 +828,74 @@ Page({
     this.setData({
       interpretButtonText: buttonText
     });
+  },
+  
+  /**
+   * 启动AI解读进度更新定时器
+   * 根据时间显示不同的进度状态
+   * @private
+   */
+  _startInterpretProgress() {
+    // 清除之前的定时器（如果存在）
+    this._stopInterpretProgress();
+    
+    // 定义4个进度状态
+    const progressStates = [
+      { text: '开始分析卡牌信息...', time: 0 },      // 0-5秒
+      { text: '调取AI知识库...', time: 5000 },  // 5-15秒
+      { text: '深度思考...', time: 15000 }, // 15-30秒
+      { text: '正在优化内容...', time: 30000 }      // 30-40秒
+    ];
+    
+    let currentStateIndex = 0;
+    
+    // 立即显示第一个状态（更新loading文字，因为按钮处于loading状态）
+    this.setData({
+      interpretLoadingText: progressStates[0].text
+    });
+    
+    // 定时更新进度状态（每1秒检查一次）
+    this.interpretProgressTimer = setInterval(() => {
+      if (!this.interpretStartTime) {
+        // 如果开始时间不存在，停止定时器
+        this._stopInterpretProgress();
+        return;
+      }
+      
+      const elapsed = Date.now() - this.interpretStartTime;
+      
+      // 根据已过时间确定当前应该显示的状态
+      let nextStateIndex = currentStateIndex;
+      for (let i = progressStates.length - 1; i >= 0; i--) {
+        if (elapsed >= progressStates[i].time) {
+          nextStateIndex = i;
+          break;
+        }
+      }
+      
+      // 如果状态发生变化，更新按钮loading文字（因为按钮处于loading状态）
+      if (nextStateIndex !== currentStateIndex) {
+        currentStateIndex = nextStateIndex;
+        this.setData({
+          interpretLoadingText: progressStates[currentStateIndex].text
+        });
+        log.info('_startInterpretProgress', '更新进度状态', {
+          state: progressStates[currentStateIndex].text,
+          elapsed: elapsed
+        });
+      }
+    }, 1000); // 每1秒检查一次
+  },
+  
+  /**
+   * 停止AI解读进度更新定时器
+   * @private
+   */
+  _stopInterpretProgress() {
+    if (this.interpretProgressTimer) {
+      clearInterval(this.interpretProgressTimer);
+      this.interpretProgressTimer = null;
+    }
   },
   
   /**

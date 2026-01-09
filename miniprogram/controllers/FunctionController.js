@@ -493,26 +493,41 @@ class FunctionController extends BaseController {
           // 清除待处理的调用
           this._pendingFunctionCall = null;
           
-          // 延迟一下，确保配额已刷新
-          setTimeout(async () => {
-            // 在调用 useFunction 之前，通过页面实例直接控制按钮loading（与免费抽卡时一致）
-            try {
-              const buttonComponent = this.page.selectComponent('#loading-button-interpret');
-              if (buttonComponent) {
-                buttonComponent.startLoading();
-                this._log('_showPaymentDialog', '支付成功后自动调用，显示按钮loading');
+            // 延迟一下，确保配额已刷新
+            setTimeout(async () => {
+              // 在调用 useFunction 之前，通过页面实例直接控制按钮loading（与免费抽卡时一致）
+              try {
+                const buttonComponent = this.page.selectComponent('#loading-button-interpret');
+                if (buttonComponent) {
+                  buttonComponent.startLoading();
+                  this._log('_showPaymentDialog', '支付成功后自动调用，显示按钮loading');
+                }
+              } catch (error) {
+                this._log('_showPaymentDialog', '获取按钮组件失败（不影响功能）', error);
               }
-            } catch (error) {
-              this._log('_showPaymentDialog', '获取按钮组件失败（不影响功能）', error);
-            }
-            
-            // 自动调用功能（不使用悬浮窗，使用按钮loading）
-            await this.useFunction(functionCode, functionParams, {
-              showLoading: false, // 不使用悬浮窗，使用按钮loading
-              autoPayment: false, // 不再自动支付，因为已经支付过了
-              onSuccess: onSuccess
-            });
-          }, 500);
+              
+              // 在调用 useFunction 之前，启动进度更新
+              // 通过页面实例调用进度更新方法
+              try {
+                if (this.page._startInterpretProgress && typeof this.page._startInterpretProgress === 'function') {
+                  // 保存原始loading文字
+                  if (!this.page.originalInterpretLoadingText) {
+                    this.page.originalInterpretLoadingText = this.page.data.interpretLoadingText;
+                  }
+                  this.page.interpretStartTime = Date.now();
+                  this.page._startInterpretProgress();
+                }
+              } catch (error) {
+                this._log('_showPaymentDialog', '启动进度更新失败（不影响功能）', error);
+              }
+              
+              // 自动调用功能（不使用悬浮窗，使用按钮loading）
+              await this.useFunction(functionCode, functionParams, {
+                showLoading: false, // 不使用悬浮窗，使用按钮loading
+                autoPayment: false, // 不再自动支付，因为已经支付过了
+                onSuccess: onSuccess
+              });
+            }, 500);
         }
       });
       return;
