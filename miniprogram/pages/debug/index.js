@@ -1516,7 +1516,7 @@ Page({
         
         const dailyDrawQuota = typeConfig.dailyDrawQuota !== undefined ? typeConfig.dailyDrawQuota : 0;
         
-        // 第三步：统计今日免费使用次数
+        // 第三步：查询今日免费使用记录（包含时间）
         const freeUsedTodayResult = await db.collection('function_usage_records')
           .where({
             openid: userOpenid,
@@ -1524,9 +1524,35 @@ Page({
             isPaid: false,
             usageDate: '${today}'
           })
-          .count();
+          .orderBy('usageTime', 'desc')
+          .get();
         
-        const freeUsedToday = freeUsedTodayResult.total;
+        const freeUsedToday = freeUsedTodayResult.data.length;
+        const freeUsageTimes = freeUsedTodayResult.data.map(record => ({
+          time: record.usageTime,
+          isPaid: false
+        }));
+        
+        // 查询今日付费使用记录（包含时间）
+        const paidUsedTodayResult = await db.collection('function_usage_records')
+          .where({
+            openid: userOpenid,
+            functionCode: 'wisdom_insight',
+            isPaid: true,
+            usageDate: '${today}'
+          })
+          .orderBy('usageTime', 'desc')
+          .get();
+        
+        const paidUsedToday = paidUsedTodayResult.data.length;
+        const paidUsageTimes = paidUsedTodayResult.data.map(record => ({
+          time: record.usageTime,
+          isPaid: true
+        }));
+        
+        // 合并所有今日使用记录，按时间排序
+        const allUsageTimes = [...freeUsageTimes, ...paidUsageTimes]
+          .sort((a, b) => new Date(b.time) - new Date(a.time));
         
         // 第四步：计算免费剩余配额
         const freeRemaining = dailyDrawQuota === -1 
@@ -1575,6 +1601,12 @@ Page({
                 ? -1 
                 : freeRemaining + paidRemaining
             }
+          },
+          todayUsage: {
+            freeCount: freeUsedToday,
+            paidCount: paidUsedToday,
+            totalCount: freeUsedToday + paidUsedToday,
+            usageTimes: allUsageTimes
           }
         };
       `;
@@ -1637,12 +1669,36 @@ Page({
       
       const user = quotaData.user;
       const quota = quotaData.quota;
+      const todayUsage = quotaData.todayUsage || { usageTimes: [] };
       
       // 4. 格式化显示结果
       const formatQuota = (value) => {
         if (value === -1) return '∞ (无限)';
         return value.toString();
       };
+      
+      // 格式化时间
+      const formatTime = (timeStr) => {
+        if (!timeStr) return '未知时间';
+        const date = new Date(timeStr);
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
+      };
+      
+      // 构建今日使用记录文本
+      let usageTimesText = '';
+      if (todayUsage.usageTimes && todayUsage.usageTimes.length > 0) {
+        usageTimesText = '\n\n今日抽卡时间记录：\n';
+        todayUsage.usageTimes.forEach((record, index) => {
+          const timeStr = formatTime(record.time);
+          const typeStr = record.isPaid ? '付费' : '免费';
+          usageTimesText += `${index + 1}. ${timeStr} (${typeStr})\n`;
+        });
+      } else {
+        usageTimesText = '\n\n今日抽卡时间记录：\n暂无记录';
+      }
       
       const content = `用户信息：
 昵称：${user.nickName || '未设置'}
@@ -1659,7 +1715,7 @@ OpenID：${user.openid}
 已使用：${quota.paid.used}次
 剩余付费：${quota.paid.remaining}次
 
-总剩余配额：${formatQuota(quota.total.remaining)}次`;
+总剩余配额：${formatQuota(quota.total.remaining)}次${usageTimesText}`;
       
       console.log('✅ 查询成功！配额信息：');
       console.log('用户:', user);
