@@ -417,29 +417,210 @@ async function executeDebugCommand(openid, command) {
 }
 
 /**
+ * 执行数据库查询命令（直接执行 JavaScript 代码）
+ * @param {string} openid - 调用者openid（管理员）
+ * @param {string} queryCode - 数据库查询代码字符串
+ * @returns {Promise<Object>} 执行结果
+ */
+async function executeQueryCode(openid, queryCode) {
+  try {
+    // 1. 检查管理员权限
+    const permissionCheck = await checkAdminPermission(openid);
+    if (!permissionCheck.isAdmin) {
+      return error(permissionCheck.message, -403, {
+        openid: openid,
+        userType: permissionCheck.user?.userType || 'unknown',
+        adminRole: permissionCheck.user?.adminRole || 'none'
+      });
+    }
+    
+    console.log('[executeQueryCode] 执行数据库查询代码:', {
+      openid: openid,
+      codeLength: queryCode.length,
+      codePreview: queryCode.substring(0, 200) + '...'
+    });
+    
+    // 2. 创建安全的执行环境
+    // 只提供数据库相关的对象，限制访问其他全局对象
+    // 注意：$ 是聚合操作符的别名，映射到 db.command.aggregate
+    const $ = db.command.aggregate;
+    const _ = db.command;
+    
+    // 3. 包装查询代码，确保返回 Promise
+    // 如果代码没有显式返回，尝试自动添加 return
+    let wrappedCode = queryCode.trim();
+    
+    // 检查代码是否已经包含 return 语句（检查多种格式）
+    const hasReturn = /^\s*return\s+/.test(wrappedCode) || 
+                      /\n\s*return\s+/.test(wrappedCode) ||
+                      /;\s*return\s+/.test(wrappedCode);
+    
+    console.log('[executeQueryCode] 原始代码预览:', wrappedCode.substring(0, 200) + '...');
+    console.log('[executeQueryCode] 是否包含 return:', hasReturn);
+    
+    if (!hasReturn) {
+      // 检查代码是否以 .end() 结尾
+      if (wrappedCode.endsWith('.end()')) {
+        // 如果以 .end() 结尾，说明是聚合查询，需要 await
+        wrappedCode = `return await ${wrappedCode}`;
+      } else if (wrappedCode.includes('await ')) {
+        // 如果包含 await，说明是异步操作，需要 return await
+        wrappedCode = `return ${wrappedCode}`;
+      } else if (wrappedCode.includes('.')) {
+        // 如果是链式调用，可能需要 await
+        wrappedCode = `return await ${wrappedCode}`;
+      } else {
+        wrappedCode = `return ${wrappedCode}`;
+      }
+    }
+    
+    console.log('[executeQueryCode] 包装后的代码预览:', wrappedCode.substring(0, 300) + '...');
+    
+    // 4. 创建执行函数
+    // 使用 Function 构造函数创建函数，只传入必要的参数
+    // 提供 db, _, $ 三个对象供代码使用
+    const executeFunction = new Function(
+      'db', '_', '$',
+      `
+      return (async () => {
+        try {
+          ${wrappedCode}
+        } catch (err) {
+          console.error('[executeQueryCode] 代码执行错误:', err);
+          throw err;
+        }
+      })();
+      `
+    );
+    
+    // 5. 执行查询代码
+    // 传入 db 对象、查询操作符 _、聚合操作符 $
+    let result;
+    try {
+      result = await executeFunction(db, _, $);
+      console.log('[executeQueryCode] 查询执行成功，结果类型:', typeof result);
+    } catch (execErr) {
+      console.error('[executeQueryCode] 执行函数调用失败:', execErr);
+      throw execErr;
+    }
+    
+    console.log('[executeQueryCode] 查询执行成功');
+    
+    // 6. 格式化返回结果
+    let formattedResult;
+    
+    if (result && typeof result === 'object') {
+      // 如果是聚合查询结果（包含 list 属性）
+      if (result.list && Array.isArray(result.list)) {
+        formattedResult = {
+          type: 'aggregate',
+          count: result.list.length,
+          data: result.list
+        };
+      }
+      // 如果是普通查询结果（包含 data 属性）
+      else if (result.data && Array.isArray(result.data)) {
+        formattedResult = {
+          type: 'query',
+          count: result.data.length,
+          data: result.data
+        };
+      }
+      // 如果是统计结果（包含 total 属性）
+      else if (typeof result.total === 'number') {
+        formattedResult = {
+          type: 'count',
+          total: result.total
+        };
+      }
+      // 其他情况，直接返回
+      else {
+        formattedResult = {
+          type: 'result',
+          data: result
+        };
+      }
+    } else {
+      formattedResult = {
+        type: 'result',
+        data: result
+      };
+    }
+    
+    return success(formattedResult, '查询执行成功');
+    
+  } catch (err) {
+    console.error('[executeQueryCode] 执行查询代码失败:', err);
+    const errorMessage = err.message || err.toString() || '未知错误';
+    const errorStack = err.stack || '';
+    const errorName = err.name || 'Error';
+    
+    console.error('[executeQueryCode] 错误详情:', {
+      message: errorMessage,
+      name: errorName,
+      stack: errorStack
+    });
+    
+    return error('执行查询失败: ' + errorMessage, -500, {
+      error: errorMessage,
+      stack: errorStack,
+      name: errorName
+    });
+  }
+}
+
+/**
  * 云函数入口
  */
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext();
-  const { command } = event;
+  const { command, action, data, queryCode } = event;
   
   console.log('[databaseDebug] 收到调试请求:', {
     openid: wxContext.OPENID,
     hasCommand: !!command,
-    commandLength: command ? command.length : 0
+    hasAction: !!action,
+    hasQueryCode: !!queryCode,
+    commandLength: command ? command.length : 0,
+    queryCodeLength: queryCode ? queryCode.length : 0
   });
   
   try {
-    // 验证参数
-    if (!command || typeof command !== 'string') {
-      return error('缺少必需参数: command（必须是字符串类型）', -400);
-    }
+    // 支持两种调用方式：
+    // 1. queryCode 方式：直接执行数据库查询代码（推荐）
+    // 2. command 方式：数据库操作指令（JSON格式）
     
-    // 执行调试命令
-    return await executeDebugCommand(wxContext.OPENID, command);
+    if (queryCode) {
+      // queryCode 方式调用（新增，支持直接执行 JavaScript 查询代码）
+      if (typeof queryCode !== 'string') {
+        return error('queryCode 参数必须是字符串类型', -400);
+      }
+      
+      return await executeQueryCode(wxContext.OPENID, queryCode);
+      
+    } else if (command) {
+      // command 方式调用（原有功能）
+      if (typeof command !== 'string') {
+        return error('command 参数必须是字符串类型', -400);
+      }
+      
+      return await executeDebugCommand(wxContext.OPENID, command);
+    } else {
+      return error('缺少必需参数: queryCode 或 command', -400);
+    }
     
   } catch (err) {
     console.error('[databaseDebug] 云函数执行失败:', err);
-    return error('云函数执行失败: ' + err.message, -500);
+    const errorMessage = err.message || err.toString() || '未知错误';
+    console.error('[databaseDebug] 错误详情:', {
+      message: errorMessage,
+      stack: err.stack,
+      name: err.name
+    });
+    return error('云函数执行失败: ' + errorMessage, -500, {
+      error: errorMessage,
+      stack: err.stack,
+      name: err.name
+    });
   }
 };

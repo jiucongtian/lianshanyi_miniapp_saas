@@ -1441,6 +1441,251 @@ Page({
   },
 
   /**
+   * 查询用户抽卡配额（使用 queryCode 方式）
+   */
+  async onQueryUserDrawCardQuota() {
+    log.info('onQueryUserDrawCardQuota', '开始查询用户抽卡配额');
+    
+    try {
+      // 1. 提示用户输入用户名或openid
+      const inputResult = await new Promise((resolve) => {
+        wx.showModal({
+          title: '查询用户抽卡配额',
+          content: '请输入用户名（nickName）或 openid',
+          editable: true,
+          placeholderText: '用户名或openid',
+          success: (res) => {
+            if (res.confirm && res.content) {
+              resolve(res.content.trim());
+            } else {
+              resolve(null);
+            }
+          }
+        });
+      });
+      
+      if (!inputResult) {
+        log.info('onQueryUserDrawCardQuota', '用户取消输入');
+        return;
+      }
+      
+      wx.showLoading({ title: '查询中...', mask: true });
+      
+      // 2. 构建查询代码
+      // 先查询用户，然后查询配额信息
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 转义输入值中的特殊字符，防止注入
+      const escapedInput = inputResult.replace(/'/g, "\\'").replace(/"/g, '\\"');
+      
+      const queryCode = `
+        // 第一步：查询用户信息（先尝试 openid，再尝试 nickName）
+        let userResult = await db.collection('users')
+          .where({
+            openid: '${escapedInput}',
+            isActive: true
+          })
+          .get();
+        
+        if (userResult.data.length === 0) {
+          // 如果 openid 查询失败，尝试 nickName
+          userResult = await db.collection('users')
+            .where({
+              nickName: '${escapedInput}',
+              isActive: true
+            })
+            .get();
+        }
+        
+        if (userResult.data.length === 0) {
+          throw new Error('用户不存在');
+        }
+        
+        const user = userResult.data[0];
+        const userOpenid = user.openid;
+        const userType = user.userType || 'guest';
+        
+        // 第二步：获取用户类型配置（免费配额）
+        const typeConfigResult = await db.collection('static_user_types')
+          .where({ typeCode: userType })
+          .get();
+        
+        const typeConfig = typeConfigResult.data.length > 0 
+          ? typeConfigResult.data[0] 
+          : { dailyDrawQuota: 0, typeName: userType };
+        
+        const dailyDrawQuota = typeConfig.dailyDrawQuota !== undefined ? typeConfig.dailyDrawQuota : 0;
+        
+        // 第三步：统计今日免费使用次数
+        const freeUsedTodayResult = await db.collection('function_usage_records')
+          .where({
+            openid: userOpenid,
+            functionCode: 'wisdom_insight',
+            isPaid: false,
+            usageDate: '${today}'
+          })
+          .count();
+        
+        const freeUsedToday = freeUsedTodayResult.total;
+        
+        // 第四步：计算免费剩余配额
+        const freeRemaining = dailyDrawQuota === -1 
+          ? -1 
+          : Math.max(0, dailyDrawQuota - freeUsedToday);
+        
+        // 第五步：获取付费配额
+        const paidQuotaResult = await db.collection('function_quotas')
+          .where({ openid: userOpenid })
+          .get();
+        
+        let paidTotal = 0;
+        let paidUsed = 0;
+        let paidRemaining = 0;
+        
+        if (paidQuotaResult.data.length > 0) {
+          const quotaDoc = paidQuotaResult.data[0];
+          const wisdomQuota = quotaDoc.quotas?.wisdom_insight || {};
+          paidTotal = wisdomQuota.paidTotal || 0;
+          paidUsed = wisdomQuota.paidUsed || 0;
+          paidRemaining = wisdomQuota.paidRemaining || 0;
+        }
+        
+        // 返回结果
+        return {
+          user: {
+            _id: user._id,
+            openid: userOpenid,
+            nickName: user.nickName,
+            userType: userType,
+            typeName: typeConfig.typeName || userType
+          },
+          quota: {
+            free: {
+              dailyQuota: dailyDrawQuota === -1 ? -1 : dailyDrawQuota,
+              usedToday: freeUsedToday,
+              remaining: freeRemaining
+            },
+            paid: {
+              total: paidTotal,
+              used: paidUsed,
+              remaining: paidRemaining
+            },
+            total: {
+              remaining: (freeRemaining === -1 || paidRemaining === -1) 
+                ? -1 
+                : freeRemaining + paidRemaining
+            }
+          }
+        };
+      `;
+      
+      // 3. 调用云函数执行查询代码
+      console.log('[onQueryUserDrawCardQuota] 准备调用云函数，查询代码长度:', queryCode.length);
+      
+      const result = await wx.cloud.callFunction({
+        name: 'debug_database_v1_0',
+        data: {
+          queryCode: queryCode
+        }
+      });
+      
+      wx.hideLoading();
+      
+      console.log('[onQueryUserDrawCardQuota] 云函数返回完整结果:', JSON.stringify(result, null, 2));
+      
+      if (!result) {
+        console.error('[onQueryUserDrawCardQuota] 云函数调用失败，result 为空');
+        throw new Error('云函数调用失败');
+      }
+      
+      if (!result.result) {
+        console.error('[onQueryUserDrawCardQuota] 云函数返回结果为空:', result);
+        throw new Error('云函数返回结果为空，请查看云函数日志');
+      }
+      
+      const response = result.result;
+      
+      console.log('[onQueryUserDrawCardQuota] 响应数据:', JSON.stringify(response, null, 2));
+      
+      if (!response.success) {
+        const errorMsg = response.error || response.message || '查询失败';
+        const errorData = response.data || {};
+        console.error('[onQueryUserDrawCardQuota] 查询失败:', {
+          error: errorMsg,
+          code: response.code,
+          data: errorData
+        });
+        throw new Error(errorMsg + (errorData.error ? ': ' + errorData.error : ''));
+      }
+      
+      // queryCode 方式返回的数据结构：{ type: 'result', data: {...} }
+      let quotaData;
+      if (response.data && response.data.type === 'result') {
+        quotaData = response.data.data;
+      } else if (response.data && response.data.data) {
+        quotaData = response.data.data;
+      } else {
+        quotaData = response.data;
+      }
+      
+      console.log('[onQueryUserDrawCardQuota] 解析后的配额数据:', quotaData);
+      
+      if (!quotaData || !quotaData.user || !quotaData.quota) {
+        console.error('[onQueryUserDrawCardQuota] 数据格式错误:', quotaData);
+        throw new Error('返回数据格式错误');
+      }
+      
+      const user = quotaData.user;
+      const quota = quotaData.quota;
+      
+      // 4. 格式化显示结果
+      const formatQuota = (value) => {
+        if (value === -1) return '∞ (无限)';
+        return value.toString();
+      };
+      
+      const content = `用户信息：
+昵称：${user.nickName || '未设置'}
+OpenID：${user.openid}
+用户类型：${user.typeName || user.userType}
+
+免费配额：
+每日配额：${formatQuota(quota.free.dailyQuota)}次
+今日已用：${quota.free.usedToday}次
+剩余免费：${formatQuota(quota.free.remaining)}次
+
+付费配额：
+总配额：${quota.paid.total}次
+已使用：${quota.paid.used}次
+剩余付费：${quota.paid.remaining}次
+
+总剩余配额：${formatQuota(quota.total.remaining)}次`;
+      
+      console.log('✅ 查询成功！配额信息：');
+      console.log('用户:', user);
+      console.log('配额:', quota);
+      
+      wx.showModal({
+        title: '✅ 查询成功',
+        content: content,
+        showCancel: false,
+        confirmText: '知道了'
+      });
+      
+    } catch (error) {
+      wx.hideLoading();
+      log.error('onQueryUserDrawCardQuota', '查询失败', error);
+      
+      wx.showModal({
+        title: '❌ 查询失败',
+        content: error.message || '未知错误',
+        showCancel: false,
+        confirmText: '知道了'
+      });
+    }
+  },
+
+  /**
    * 调起真实支付
    */
   async _testRealPayment(orderData) {
