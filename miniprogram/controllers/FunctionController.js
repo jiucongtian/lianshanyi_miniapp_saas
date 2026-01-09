@@ -510,9 +510,20 @@ class FunctionController extends BaseController {
             
             // 延迟一下，确保配额已刷新
             setTimeout(async () => {
-              // 自动调用功能
+              // 在调用 useFunction 之前，通过页面实例直接控制按钮loading（与免费抽卡时一致）
+              try {
+                const buttonComponent = this.page.selectComponent('#loading-button-interpret');
+                if (buttonComponent) {
+                  buttonComponent.startLoading();
+                  this._log('_showPaymentDialog', '支付成功后自动调用，显示按钮loading');
+                }
+              } catch (error) {
+                this._log('_showPaymentDialog', '获取按钮组件失败（不影响功能）', error);
+              }
+              
+              // 自动调用功能（不使用悬浮窗，使用按钮loading）
               await this.useFunction(functionCode, functionParams, {
-                showLoading: true,
+                showLoading: false, // 不使用悬浮窗，使用按钮loading
                 autoPayment: false, // 不再自动支付，因为已经支付过了
                 onSuccess: onSuccess
               });

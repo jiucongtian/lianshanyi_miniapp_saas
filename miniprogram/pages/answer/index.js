@@ -680,6 +680,7 @@ Page({
       const onSuccessCallback = async (resultData) => {
         log.info('onAIInterpret', '功能调用成功（支付成功后自动调用）', { resultData });
         // 处理结果（异步处理）
+        // 注意：按钮loading已经在 FunctionController 中显示，这里只需要处理结果
         await this._handleInterpretResult(resultData, buttonComponent, true); // 自动调用时传入 true
       };
       
