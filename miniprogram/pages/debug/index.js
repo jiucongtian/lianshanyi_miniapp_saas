@@ -8,7 +8,9 @@ const log = createModuleLogger('DebugPage');
 Page({
   data: {
     currentTest: '', // 当前执行的测试
-    testResults: [] // 测试结果列表
+    testResults: [], // 测试结果列表
+    showQuotaResult: false, // 是否显示查询结果弹窗
+    quotaResultText: '' // 查询结果文本
   },
 
   onLoad(options) {
@@ -1451,7 +1453,7 @@ Page({
       const inputResult = await new Promise((resolve) => {
         wx.showModal({
           title: '查询用户抽卡配额',
-          content: '请输入用户名（nickName）或 openid',
+          content: '',
           editable: true,
           placeholderText: '用户名或openid',
           success: (res) => {
@@ -1700,32 +1702,33 @@ Page({
         usageTimesText = '\n\n今日抽卡时间记录：\n暂无记录';
       }
       
-      const content = `用户信息：
+      // 构建显示内容，每条信息单独一行，左对齐
+      const content = `【用户信息】
 昵称：${user.nickName || '未设置'}
 OpenID：${user.openid}
 用户类型：${user.typeName || user.userType}
 
-免费配额：
+【免费配额】
 每日配额：${formatQuota(quota.free.dailyQuota)}次
 今日已用：${quota.free.usedToday}次
 剩余免费：${formatQuota(quota.free.remaining)}次
 
-付费配额：
+【付费配额】
 总配额：${quota.paid.total}次
 已使用：${quota.paid.used}次
 剩余付费：${quota.paid.remaining}次
 
-总剩余配额：${formatQuota(quota.total.remaining)}次${usageTimesText}`;
+【总剩余配额】
+${formatQuota(quota.total.remaining)}次${usageTimesText}`;
       
       console.log('✅ 查询成功！配额信息：');
       console.log('用户:', user);
       console.log('配额:', quota);
       
-      wx.showModal({
-        title: '✅ 查询成功',
-        content: content,
-        showCancel: false,
-        confirmText: '知道了'
+      // 使用自定义弹窗显示结果，确保左对齐
+      this.setData({
+        showQuotaResult: true,
+        quotaResultText: content
       });
       
     } catch (error) {
@@ -1814,6 +1817,16 @@ OpenID：${user.openid}
       console.error('[testRealPayment] 测试异常:', error);
       return { success: false, error: error.message };
     }
+  },
+
+  /**
+   * 关闭查询结果弹窗
+   */
+  onCloseQuotaResult() {
+    this.setData({
+      showQuotaResult: false,
+      quotaResultText: ''
+    });
   }
 });
 

@@ -168,5 +168,21 @@
       <text class="tip-text">所有测试结果请查看控制台日志</text>
     </view>
   </view>
+
+  <!-- 查询结果弹窗 -->
+  <view class="quota-result-modal" wx:if="{{showQuotaResult}}" catchtap="onCloseQuotaResult">
+    <view class="quota-result-content" catchtap="">
+      <view class="quota-result-header">
+        <text class="quota-result-title">✅ 查询成功</text>
+        <text class="quota-result-close" bindtap="onCloseQuotaResult">✕</text>
+      </view>
+      <scroll-view class="quota-result-body" scroll-y>
+        <text class="quota-result-text">{{quotaResultText}}</text>
+      </scroll-view>
+      <view class="quota-result-footer">
+        <button class="quota-result-button" bindtap="onCloseQuotaResult">知道了</button>
+      </view>
+    </view>
+  </view>
 </view>
 
