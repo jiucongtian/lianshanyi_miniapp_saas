@@ -470,8 +470,55 @@ class FunctionController extends BaseController {
    * @param {Function} onSuccess - 成功回调（用于支付成功后自动调用）
    */
   async _showPaymentDialog(functionCode, quotaInfo, functionParams = null, onSuccess = null) {
-    this._log('_showPaymentDialog', '显示支付弹窗', { functionCode });
+    this._log('_showPaymentDialog', '显示支付弹窗', { functionCode, hasAutoCall: !!(functionParams && onSuccess) });
     
+    // 如果提供了 functionParams 和 onSuccess，说明需要在支付成功后自动调用功能
+    // 这种情况下，直接执行购买逻辑，不显示确认对话框
+    if (functionParams && onSuccess) {
+      // 保存参数，用于支付成功后自动调用
+      this._pendingFunctionCall = {
+        functionCode,
+        functionParams,
+        onSuccess
+      };
+      
+      // 直接调用购买功能，支付成功后自动调用功能
+      await this.purchaseFunction(functionCode, {
+        onSuccess: async (paymentData) => {
+          this._log('_showPaymentDialog', '支付成功，准备自动调用功能', {
+            functionCode,
+            paymentData
+          });
+          
+          // 清除待处理的调用
+          this._pendingFunctionCall = null;
+          
+          // 延迟一下，确保配额已刷新
+          setTimeout(async () => {
+            // 在调用 useFunction 之前，通过页面实例直接控制按钮loading（与免费抽卡时一致）
+            try {
+              const buttonComponent = this.page.selectComponent('#loading-button-interpret');
+              if (buttonComponent) {
+                buttonComponent.startLoading();
+                this._log('_showPaymentDialog', '支付成功后自动调用，显示按钮loading');
+              }
+            } catch (error) {
+              this._log('_showPaymentDialog', '获取按钮组件失败（不影响功能）', error);
+            }
+            
+            // 自动调用功能（不使用悬浮窗，使用按钮loading）
+            await this.useFunction(functionCode, functionParams, {
+              showLoading: false, // 不使用悬浮窗，使用按钮loading
+              autoPayment: false, // 不再自动支付，因为已经支付过了
+              onSuccess: onSuccess
+            });
+          }, 500);
+        }
+      });
+      return;
+    }
+    
+    // 如果没有提供自动调用参数，显示确认对话框（保持原有逻辑）
     // 获取功能名称（从配置中获取，或使用默认名称）
     const functionNames = {
       'wisdom_insight': '智慧洞见',
@@ -488,52 +535,8 @@ class FunctionController extends BaseController {
     );
     
     if (confirmed) {
-      // 如果提供了 functionParams 和 onSuccess，说明需要在支付成功后自动调用功能
-      if (functionParams && onSuccess) {
-        // 保存参数，用于支付成功后自动调用
-        this._pendingFunctionCall = {
-          functionCode,
-          functionParams,
-          onSuccess
-        };
-        
-        // 调用购买功能，支付成功后自动调用功能
-        await this.purchaseFunction(functionCode, {
-          onSuccess: async (paymentData) => {
-            this._log('_showPaymentDialog', '支付成功，准备自动调用功能', {
-              functionCode,
-              paymentData
-            });
-            
-            // 清除待处理的调用
-            this._pendingFunctionCall = null;
-            
-            // 延迟一下，确保配额已刷新
-            setTimeout(async () => {
-              // 在调用 useFunction 之前，通过页面实例直接控制按钮loading（与免费抽卡时一致）
-              try {
-                const buttonComponent = this.page.selectComponent('#loading-button-interpret');
-                if (buttonComponent) {
-                  buttonComponent.startLoading();
-                  this._log('_showPaymentDialog', '支付成功后自动调用，显示按钮loading');
-                }
-              } catch (error) {
-                this._log('_showPaymentDialog', '获取按钮组件失败（不影响功能）', error);
-              }
-              
-              // 自动调用功能（不使用悬浮窗，使用按钮loading）
-              await this.useFunction(functionCode, functionParams, {
-                showLoading: false, // 不使用悬浮窗，使用按钮loading
-                autoPayment: false, // 不再自动支付，因为已经支付过了
-                onSuccess: onSuccess
-              });
-            }, 500);
-          }
-        });
-      } else {
-        // 没有提供参数，只购买不自动调用
-        await this.purchaseFunction(functionCode);
-      }
+      // 只购买不自动调用
+      await this.purchaseFunction(functionCode);
     }
   }
 
