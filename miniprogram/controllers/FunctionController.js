@@ -111,7 +111,7 @@ class FunctionController extends BaseController {
           code: 'QUOTA_INSUFFICIENT',
           error: '配额不足',
           data: { quotaInfo: quotaInfo }
-        }, autoPayment, onQuotaInsufficient);
+        }, autoPayment, onQuotaInsufficient, functionParams, onSuccess);
         return null;
       }
       
@@ -421,8 +421,14 @@ class FunctionController extends BaseController {
   /**
    * 处理配额不足
    * @private
+   * @param {string} functionCode - 功能编码
+   * @param {Object} response - 响应对象
+   * @param {boolean} autoPayment - 是否自动支付
+   * @param {Function} onQuotaInsufficient - 配额不足回调
+   * @param {Object} functionParams - 功能参数（用于支付成功后自动调用）
+   * @param {Function} onSuccess - 成功回调（用于支付成功后自动调用）
    */
-  _handleQuotaInsufficient(functionCode, response, autoPayment, onQuotaInsufficient) {
+  _handleQuotaInsufficient(functionCode, response, autoPayment, onQuotaInsufficient, functionParams = null, onSuccess = null) {
     this._log('_handleQuotaInsufficient', '配额不足', { functionCode, autoPayment });
     
     // 获取配额信息
@@ -438,7 +444,7 @@ class FunctionController extends BaseController {
     
     // 自动弹出支付弹窗
     if (autoPayment) {
-      this._showPaymentDialog(functionCode, quotaInfo);
+      this._showPaymentDialog(functionCode, quotaInfo, functionParams, onSuccess);
     } else {
       this._showError('配额不足，请购买后使用');
     }
@@ -458,8 +464,12 @@ class FunctionController extends BaseController {
   /**
    * 显示支付弹窗
    * @private
+   * @param {string} functionCode - 功能编码
+   * @param {Object} quotaInfo - 配额信息
+   * @param {Object} functionParams - 功能参数（用于支付成功后自动调用）
+   * @param {Function} onSuccess - 成功回调（用于支付成功后自动调用）
    */
-  async _showPaymentDialog(functionCode, quotaInfo) {
+  async _showPaymentDialog(functionCode, quotaInfo, functionParams = null, onSuccess = null) {
     this._log('_showPaymentDialog', '显示支付弹窗', { functionCode });
     
     // 获取功能名称（从配置中获取，或使用默认名称）
@@ -478,7 +488,41 @@ class FunctionController extends BaseController {
     );
     
     if (confirmed) {
-      await this.purchaseFunction(functionCode);
+      // 如果提供了 functionParams 和 onSuccess，说明需要在支付成功后自动调用功能
+      if (functionParams && onSuccess) {
+        // 保存参数，用于支付成功后自动调用
+        this._pendingFunctionCall = {
+          functionCode,
+          functionParams,
+          onSuccess
+        };
+        
+        // 调用购买功能，支付成功后自动调用功能
+        await this.purchaseFunction(functionCode, {
+          onSuccess: async (paymentData) => {
+            this._log('_showPaymentDialog', '支付成功，准备自动调用功能', {
+              functionCode,
+              paymentData
+            });
+            
+            // 清除待处理的调用
+            this._pendingFunctionCall = null;
+            
+            // 延迟一下，确保配额已刷新
+            setTimeout(async () => {
+              // 自动调用功能
+              await this.useFunction(functionCode, functionParams, {
+                showLoading: true,
+                autoPayment: false, // 不再自动支付，因为已经支付过了
+                onSuccess: onSuccess
+              });
+            }, 500);
+          }
+        });
+      } else {
+        // 没有提供参数，只购买不自动调用
+        await this.purchaseFunction(functionCode);
+      }
     }
   }
 

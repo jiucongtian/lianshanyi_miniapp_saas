@@ -463,10 +463,167 @@ Page({
   },
 
   /**
-   * AI解读按钮点击事件（使用功能按次付费系统）
+   * 处理AI解读结果
+   * @private
+   * @param {Object} result - 功能调用结果
+   * @param {Object} buttonComponent - 按钮组件引用
+   * @param {boolean} isAutoCall - 是否为自动调用
    */
-  async onAIInterpret() {
-    log.info('onAIInterpret', '点击AI解读');
+  async _handleInterpretResult(result, buttonComponent, isAutoCall) {
+    log.info('_handleInterpretResult', '处理AI解读结果', { isAutoCall });
+    
+    // 提取功能返回结果
+    // FunctionController 返回：{ functionResult: {...}, quotaInfo: {...} }
+    // functionResult 就是 Coze API 返回的原始数据
+    const functionResult = result.functionResult;
+    
+    // 添加详细日志：打印 functionResult 的完整结构
+    log.info('_handleInterpretResult', 'functionResult 完整结构', {
+      hasFunctionResult: !!functionResult,
+      functionResultType: typeof functionResult,
+      functionResultKeys: functionResult ? Object.keys(functionResult).slice(0, 10) : [],
+      hasData: functionResult && 'data' in functionResult,
+      dataType: functionResult?.data ? typeof functionResult.data : 'undefined'
+    });
+    
+    if (functionResult && functionResult.data) {
+      // functionResult 就是 Coze API 返回的数据
+      // functionResult.data 就是 AI 解读结果（JSON 字符串）
+      const cozeData = functionResult.data;
+      
+      // 提取并打印 debug_url 和 usage（用于分析）
+      if (functionResult.debug_url) {
+        log.info('_handleInterpretResult', 'Coze工作流调试链接', { debug_url: functionResult.debug_url });
+      }
+      
+      if (functionResult.usage) {
+        log.info('_handleInterpretResult', 'Coze工作流Token使用情况', {
+          token_count: functionResult.usage.token_count,
+          output_count: functionResult.usage.output_count,
+          input_count: functionResult.usage.input_count
+        });
+      }
+      
+      // 提取AI解读结果
+      let interpretation = '';
+      if (cozeData) {
+        try {
+          log.info('_handleInterpretResult', '开始解析 cozeData', {
+            cozeDataType: typeof cozeData,
+            cozeDataLength: typeof cozeData === 'string' ? cozeData.length : 'not string',
+            cozeDataPreview: typeof cozeData === 'string' ? cozeData.substring(0, 100) : cozeData
+          });
+          
+          // cozeData 是一个 JSON 字符串，需要先解析
+          const parsedData = typeof cozeData === 'string' ? JSON.parse(cozeData) : cozeData;
+          
+          log.info('_handleInterpretResult', '解析后的 parsedData', {
+            parsedDataType: typeof parsedData,
+            parsedDataKeys: parsedData ? Object.keys(parsedData) : [],
+            hasDataField: parsedData && 'data' in parsedData,
+            dataFieldType: parsedData?.data ? typeof parsedData.data : 'undefined'
+          });
+          
+          // 从解析后的对象中提取 data 字段（这是实际的解读内容）
+          if (parsedData && parsedData.data) {
+            interpretation = parsedData.data;
+            
+            log.info('_handleInterpretResult', '提取到的原始 interpretation', {
+              length: interpretation.length,
+              preview: interpretation.substring(0, 100)
+            });
+            
+            // 处理转义字符：JSON.parse 后，\\n 会变成 \n（反斜杠+n字符），需要转换为真正的换行符
+            interpretation = interpretation
+              .replace(/\\n/g, '\n')
+              .replace(/\\"/g, '"')
+              .replace(/\\'/g, "'")
+              .replace(/\\t/g, '\t')
+              .replace(/\\r/g, '\r')
+              .replace(/\\\\/g, '\\');
+              
+            log.info('_handleInterpretResult', '转义处理后的 interpretation', {
+              length: interpretation.length,
+              preview: interpretation.substring(0, 100)
+            });
+          } else {
+            // 如果解析后没有 data 字段，尝试其他字段
+            log.warn('_handleInterpretResult', 'parsedData 没有 data 字段，尝试其他字段', {
+              hasOutput: parsedData && 'output' in parsedData,
+              hasResult: parsedData && 'result' in parsedData,
+              hasText: parsedData && 'text' in parsedData
+            });
+            interpretation = parsedData?.output || parsedData?.result || parsedData?.text || JSON.stringify(parsedData);
+          }
+        } catch (parseError) {
+          log.error('_handleInterpretResult', '解析返回数据失败', { error: parseError.message, rawData: cozeData });
+          interpretation = typeof cozeData === 'string' ? cozeData : JSON.stringify(cozeData);
+        }
+      } else {
+        log.warn('_handleInterpretResult', 'functionResult 没有 data 字段', {
+          functionResultKeys: Object.keys(functionResult).slice(0, 10)
+        });
+      }
+      
+      // 拼接卡牌信息到解读结果最前面
+      const cardInfoHint = this._formatCardInfoHint(this.data.selectedCard);
+      const finalInterpretation = cardInfoHint + interpretation;
+      
+      this.setData({
+        aiInterpretation: finalInterpretation,
+        // AI解读成功：隐藏抽卡按钮和AI解读按钮，只显示分享海报按钮
+        showDrawButton: false,
+        showInterpretButton: false,
+        showShareButton: true
+      });
+      
+      // AI解读完成后，加载赞赏人数统计
+      await this._loadRewardCount();
+      
+      log.info('_handleInterpretResult', 'AI解读成功', { interpretation, isAutoCall });
+      
+      // 刷新智慧洞见配额信息
+      await this._loadQuotaInfo();
+      
+      // 显示成功提示（自动调用时不显示，避免重复提示）
+      if (!isAutoCall) {
+        wx.showToast({
+          title: '解读成功',
+          icon: 'success',
+          duration: 2000
+        });
+      }
+    } else {
+      // 功能调用返回了数据但解析失败
+      log.error('_handleInterpretResult', '功能调用成功但未返回数据', { 
+        functionResult,
+        hasData: !!functionResult?.data
+      });
+      
+      // 解读失败：显示AI解读按钮，让用户可以重试
+      this.setData({
+        showInterpretButton: true
+      });
+      wx.showToast({
+        title: '解读失败，请重试',
+        icon: 'none',
+        duration: 2000
+      });
+    }
+    
+    // 重置按钮状态和解读标志
+    if (buttonComponent) {
+      buttonComponent.stopLoading();
+    }
+    this.isInterpreting = false;
+  },
+  
+  /**
+   * AI解读按钮点击事件（使用功能按次付费系统）
+   * @param {boolean} isAutoCall - 是否为自动调用（支付成功后自动调用）
+   */
+  async onAIInterpret(isAutoCall = false) {
+    log.info('onAIInterpret', isAutoCall ? '自动调用AI解读（支付成功后）' : '点击AI解读');
     
     // 同步检查：如果正在解读，直接返回（防止重复点击）
     if (this.isInterpreting) {
@@ -498,32 +655,56 @@ Page({
     // 获取按钮组件引用（用于错误时重置状态）
     const buttonComponent = this.selectComponent('#loading-button-interpret');
     
+    // 如果不是自动调用，显示按钮loading状态
+    if (!isAutoCall && buttonComponent) {
+      buttonComponent.startLoading();
+    }
+    
     try {
       // 使用功能控制器调用智慧洞见功能（自动处理配额检查、扣除、支付等）
       log.info('onAIInterpret', '调用智慧洞见功能', { 
         bazi_name: baziName,
-        question: this.data.question 
+        question: this.data.question,
+        isAutoCall
       });
       
-      const result = await this.functionController.useFunction('wisdom_insight', {
+      // 准备功能参数
+      const functionParams = {
         parameters: {
           bazi_name: baziName,
           question: this.data.question || ''
         }
-      }, {
-        showLoading: false, // 不使用自动加载提示，手动控制（上面已经显示了）
+      };
+      
+      // 定义成功回调，用于支付成功后自动调用
+      const onSuccessCallback = async (resultData) => {
+        log.info('onAIInterpret', '功能调用成功（支付成功后自动调用）', { resultData });
+        // 处理结果（异步处理）
+        await this._handleInterpretResult(resultData, buttonComponent, true); // 自动调用时传入 true
+      };
+      
+      const result = await this.functionController.useFunction('wisdom_insight', functionParams, {
+        showLoading: false, // 不使用自动加载提示，手动控制
         autoPayment: true,
         onQuotaInsufficient: () => {
           // 配额不足时的自定义处理
           log.warn('onAIInterpret', '智慧洞见配额不足');
           // 返回 true 继续显示支付弹窗，返回 false 取消
           return true;
-        }
+        },
+        onSuccess: onSuccessCallback
       });
       
       // 如果返回 null，说明调用失败（配额不足、权限问题等）
       if (!result) {
         log.warn('onAIInterpret', '功能调用失败或被取消');
+        
+        // 检查是否正在支付中（FunctionController 会保存待处理的调用）
+        if (this.functionController._pendingFunctionCall) {
+          log.info('onAIInterpret', '配额不足，正在支付中，等待支付成功后自动调用');
+          // 不重置状态，等待支付成功后自动调用
+          return;
+        }
         
         // 重置解读标志
         this.isInterpreting = false;
@@ -540,146 +721,8 @@ Page({
         return;
       }
       
-      log.info('onAIInterpret', '功能调用成功', { result });
-      
-      // 提取功能返回结果
-      // FunctionController 返回：{ functionResult: {...}, quotaInfo: {...} }
-      // functionResult 就是 Coze API 返回的原始数据
-      const functionResult = result.functionResult;
-      
-      // 添加详细日志：打印 functionResult 的完整结构
-      log.info('onAIInterpret', 'functionResult 完整结构', {
-        hasFunctionResult: !!functionResult,
-        functionResultType: typeof functionResult,
-        functionResultKeys: functionResult ? Object.keys(functionResult).slice(0, 10) : [],  // 只打印前10个
-        hasData: functionResult && 'data' in functionResult,
-        dataType: functionResult?.data ? typeof functionResult.data : 'undefined'
-      });
-      
-      if (functionResult && functionResult.data) {
-        // functionResult 就是 Coze API 返回的数据
-        // functionResult.data 就是 AI 解读结果（JSON 字符串）
-        const cozeData = functionResult.data;  // 这是 Coze 的 data 字段
-        
-        // 提取并打印 debug_url 和 usage（用于分析）
-        if (functionResult.debug_url) {
-          log.info('onAIInterpret', 'Coze工作流调试链接', { debug_url: functionResult.debug_url });
-        }
-        
-        if (functionResult.usage) {
-          log.info('onAIInterpret', 'Coze工作流Token使用情况', {
-            token_count: functionResult.usage.token_count,
-            output_count: functionResult.usage.output_count,
-            input_count: functionResult.usage.input_count
-          });
-        }
-        
-        // 提取AI解读结果
-        let interpretation = '';
-        if (cozeData) {
-          try {
-            log.info('onAIInterpret', '开始解析 cozeData', {
-              cozeDataType: typeof cozeData,
-              cozeDataLength: typeof cozeData === 'string' ? cozeData.length : 'not string',
-              cozeDataPreview: typeof cozeData === 'string' ? cozeData.substring(0, 100) : cozeData
-            });
-            
-            // cozeData 是一个 JSON 字符串，需要先解析
-            const parsedData = typeof cozeData === 'string' ? JSON.parse(cozeData) : cozeData;
-            
-            log.info('onAIInterpret', '解析后的 parsedData', {
-              parsedDataType: typeof parsedData,
-              parsedDataKeys: parsedData ? Object.keys(parsedData) : [],
-              hasDataField: parsedData && 'data' in parsedData,
-              dataFieldType: parsedData?.data ? typeof parsedData.data : 'undefined'
-            });
-            
-            // 从解析后的对象中提取 data 字段（这是实际的解读内容）
-            if (parsedData && parsedData.data) {
-              interpretation = parsedData.data;
-              
-              log.info('onAIInterpret', '提取到的原始 interpretation', {
-                length: interpretation.length,
-                preview: interpretation.substring(0, 100)
-              });
-              
-              // 处理转义字符：JSON.parse 后，\\n 会变成 \n（反斜杠+n字符），需要转换为真正的换行符
-              // 注意：先处理转义序列，最后处理双反斜杠，避免转义序列被误处理
-              interpretation = interpretation
-                .replace(/\\n/g, '\n')            // 换行符
-                .replace(/\\"/g, '"')             // 双引号
-                .replace(/\\'/g, "'")             // 单引号
-                .replace(/\\t/g, '\t')            // 制表符
-                .replace(/\\r/g, '\r')            // 回车符
-                .replace(/\\\\/g, '\\');          // 最后处理双反斜杠（保留单个反斜杠）
-                
-              log.info('onAIInterpret', '转义处理后的 interpretation', {
-                length: interpretation.length,
-                preview: interpretation.substring(0, 100)
-              });
-            } else {
-              // 如果解析后没有 data 字段，尝试其他字段
-              log.warn('onAIInterpret', 'parsedData 没有 data 字段，尝试其他字段', {
-                hasOutput: parsedData && 'output' in parsedData,
-                hasResult: parsedData && 'result' in parsedData,
-                hasText: parsedData && 'text' in parsedData
-              });
-              interpretation = parsedData?.output || parsedData?.result || parsedData?.text || JSON.stringify(parsedData);
-            }
-          } catch (parseError) {
-            log.error('onAIInterpret', '解析返回数据失败', { error: parseError.message, rawData: cozeData });
-            // 如果解析失败，尝试直接使用原始数据
-            interpretation = typeof cozeData === 'string' ? cozeData : JSON.stringify(cozeData);
-          }
-        } else {
-          log.warn('onAIInterpret', 'functionResult 没有 data 字段', {
-            functionResultKeys: Object.keys(functionResult).slice(0, 10)
-          });
-        }
-        
-        // 拼接卡牌信息到解读结果最前面
-        const cardInfoHint = this._formatCardInfoHint(this.data.selectedCard);
-        const finalInterpretation = cardInfoHint + interpretation;
-        
-        this.setData({
-          aiInterpretation: finalInterpretation,
-          // AI解读成功：隐藏抽卡按钮和AI解读按钮，只显示分享海报按钮
-          showDrawButton: false,
-          showInterpretButton: false,
-          showShareButton: true
-        });
-        
-        // AI解读完成后，加载赞赏人数统计
-        await this._loadRewardCount();
-        
-        log.info('onAIInterpret', 'AI解读成功', { interpretation });
-        
-        // 刷新智慧洞见配额信息
-        await this._loadQuotaInfo();
-        
-        // 显示成功提示
-        wx.showToast({
-          title: '解读成功',
-          icon: 'success',
-          duration: 2000
-        });
-      } else {
-        // 功能调用返回了数据但解析失败
-        log.error('onAIInterpret', '功能调用成功但未返回数据', { 
-          functionResult,
-          hasData: !!functionResult?.data
-        });
-        
-        // 解读失败：显示AI解读按钮，让用户可以重试
-        this.setData({
-          showInterpretButton: true
-        });
-        wx.showToast({
-          title: '解读失败，请重试',
-          icon: 'none',
-          duration: 2000
-        });
-      }
+      // 调用成功，处理结果
+      await this._handleInterpretResult(result, buttonComponent, isAutoCall);
     } catch (error) {
       log.error('onAIInterpret', '调用功能失败', { error: error.message });
       
