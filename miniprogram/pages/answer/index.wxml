@@ -175,18 +175,20 @@
         bind:tap="onAnalyzeAnswer"
       />
       <!-- AI解读按钮：抽卡后显示，AI解读完成后隐藏 -->
-      <loading-button
-        wx:if="{{showInterpretButton}}"
-        id="loading-button-interpret"
-        theme="secondary"
-        size="medium"
-        block="{{true}}"
-        button-text="{{interpretButtonText}}"
-        loading-text="解读中..."
-        prevent-duplicate="{{true}}"
-        bind:tap="onAIInterpret"
-        disabled="{{!selectedCard || !selectedCard.cardName}}"
-      />
+      <view wx:if="{{showInterpretButton}}" class="interpret-button-wrapper">
+        <view class="interpret-hint">AI解读时间较长，预计40秒左右，请耐心等待</view>
+        <loading-button
+          id="loading-button-interpret"
+          theme="secondary"
+          size="medium"
+          block="{{true}}"
+          button-text="{{interpretButtonText}}"
+          loading-text="解读中..."
+          prevent-duplicate="{{true}}"
+          bind:tap="onAIInterpret"
+          disabled="{{!selectedCard || !selectedCard.cardName}}"
+        />
+      </view>
       <!-- 分享海报按钮：AI解读完成后显示 -->
       <loading-button
         wx:if="{{showShareButton}}"
