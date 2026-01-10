@@ -696,6 +696,17 @@ Page({
         await this._handleInterpretResult(resultData, buttonComponent, true); // 自动调用时传入 true
       };
       
+      // 在调用 useFunction 之前，如果还没有启动进度更新，则启动
+      // 注意：支付成功后自动调用时，进度更新应该在 FunctionController 中启动
+      if (!this.interpretProgressTimer && !this.interpretStartTime) {
+        // 保存原始loading文字（如果还没有保存）
+        if (!this.originalInterpretLoadingText) {
+          this.originalInterpretLoadingText = this.data.interpretLoadingText;
+        }
+        this.interpretStartTime = Date.now();
+        this._startInterpretProgress();
+      }
+      
       const result = await this.functionController.useFunction('wisdom_insight', functionParams, {
         showLoading: false, // 不使用自动加载提示，手动控制
         autoPayment: true,
