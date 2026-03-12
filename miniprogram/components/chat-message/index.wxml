@@ -8,7 +8,7 @@
       src="/static/icons/default-avatar.png"
       mode="aspectFill"
     />
-    <text wx:else class="avatar-text">童</text>
+    <text wx:else class="avatar-icon">🧒</text>
   </view>
 
   <!-- 消息内容 -->

@@ -16,7 +16,8 @@ Page({
     sendDisabled: true,
     hasPermission: false,
     showUpgradeTip: false,
-    loading: false
+    loading: false,
+    scrollTop: 0
   },
 
   /**
@@ -62,17 +63,13 @@ Page({
    * 滚动到底部
    */
   scrollToBottom() {
-    wx.createSelectorQuery()
-      .select('.message-list')
-      .boundingClientRect((rect) => {
-        if (rect) {
-          wx.pageScrollTo({
-            scrollTop: rect.height + 1000,
-            duration: 300
-          });
-        }
-      })
-      .exec();
+    // 使用 nextTick 确保 DOM 已更新
+    wx.nextTick(() => {
+      // 使用 scroll-view 的 scroll-top 属性
+      // 通过改变值来触发滚动，每次都递增确保值变化
+      const newScrollTop = this.data.scrollTop + 100000;
+      this.setData({ scrollTop: newScrollTop });
+    });
   },
 
   /**
@@ -122,5 +119,15 @@ Page({
     wx.switchTab({
       url: '/pages/mine/index'
     });
+  },
+
+  /**
+   * 点击快捷建议
+   */
+  onSuggestionTap(e) {
+    const text = e.currentTarget.dataset.text;
+    if (text && this.controller) {
+      this.controller.sendMessage(text);
+    }
   }
 });

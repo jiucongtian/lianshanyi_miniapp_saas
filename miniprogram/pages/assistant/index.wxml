@@ -21,15 +21,37 @@
 
   <!-- 消息列表 -->
   <scroll-view
+    id="messageList"
     class="message-list"
     scroll-y="{{true}}"
-    scroll-into-view="{{scrollToId}}"
+    scroll-top="{{scrollTop}}"
+    scroll-with-animation="{{true}}"
     wx:if="{{hasPermission && !showUpgradeTip}}"
   >
     <!-- 欢迎消息 -->
     <view class="welcome-message" wx:if="{{messages.length === 0}}">
-      <text class="welcome-title">👋 你好！</text>
-      <text class="welcome-desc">我是助学童子，有什么可以帮助你的吗？</text>
+      <!-- 助手头像 -->
+      <view class="welcome-avatar">
+        <view class="avatar-inner">
+          <text class="avatar-icon">🧒</text>
+          <text class="avatar-badge">童子</text>
+        </view>
+      </view>
+      <text class="welcome-title">你好，我是助学童子</text>
+      <text class="welcome-desc">我可以帮助你解答情感困惑、分析人际关系、探索内心世界。有什么想和我聊聊的吗？</text>
+
+      <!-- 快捷建议 -->
+      <view class="quick-suggestions">
+        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="我想了解自己的情感状态">
+          情感状态分析
+        </view>
+        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="帮我分析一下我和某人的关系">
+          关系解读
+        </view>
+        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="我最近有些困惑，想找人聊聊">
+          心灵对话
+        </view>
+      </view>
     </view>
 
     <!-- 消息列表 -->
@@ -47,7 +69,7 @@
     value="{{inputValue}}"
     disabled="{{sendDisabled}}"
     isTyping="{{isTyping}}"
-    placeholder="请输入消息..."
+    placeholder="输入你想问的问题..."
     bind:input="onInputChange"
     bind:send="onSend"
   />
