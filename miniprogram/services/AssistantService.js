@@ -3,7 +3,8 @@
  * 处理聊天相关的业务逻辑，包括消息发送、历史缓存等
  *
  * 调用模式：客户端轮询 Coze Chat API v3
- *   1. startChat      → 云函数创建 Coze 对话，返回 chatId + conversationId（< 1秒）
+ *   0. createConversation → 显式创建 Coze 持久会话，返回 conversationId（首次或新会话时调用）
+ *   1. startChat          → 云函数创建 Coze 对话，返回 chatId（< 1秒）
  *   2. getChatResult（轮询）→ 云函数查询对话状态，完成后取消息内容
  * 优点：单次云函数调用均很短，不受 60 秒超时限制，支持任意长响应时间
  *
@@ -35,9 +36,34 @@ class AssistantService extends BaseService {
   }
 
   /**
+   * 创建 Coze 持久会话
+   * 多轮对话必须先显式创建会话，获取 conversationId，再用该 ID 发起 chat
+   * @returns {Promise<ResponseBean>} 成功时 data.conversationId 为新会话ID
+   */
+  async createConversation() {
+    try {
+      const response = await this.callFunction('assistantChat', { action: 'createConversation' });
+
+      if (response.success && response.data && response.data.conversationId) {
+        this._conversationId = response.data.conversationId;
+        this._saveConversationIdToStorage(this._conversationId);
+        this._log('createConversation', `会话已创建并保存: ${this._conversationId}`);
+      } else {
+        this._error('createConversation', '创建会话失败:', response.error);
+      }
+
+      return response;
+    } catch (error) {
+      this._error('createConversation', '创建会话异常:', error);
+      return ResponseBean.error('创建会话失败: ' + error.message, -1);
+    }
+  }
+
+  /**
    * 发送消息
-   * 步骤1：startChat → 获取 chatId + conversationId（< 1秒）
-   * 步骤2：客户端轮询 getChatResult → 直到 status=success
+   * 步骤0：若无 conversationId，先调用 createConversation 显式创建 Coze 持久会话
+   * 步骤1：startChat → 云函数创建 Coze 对话，返回 chatId（< 1秒）
+   * 步骤2：getChatResult（轮询）→ 云函数查询对话状态，完成后取消息内容
    * @param {string} message - 用户消息内容
    * @returns {Promise<ResponseBean>} 响应，成功时 data 包含 content 和 conversationId
    */
@@ -47,33 +73,50 @@ class AssistantService extends BaseService {
         return ResponseBean.error('消息内容不能为空', -1);
       }
 
-      this._log('sendMessage', '发送消息', {
-        messageLength: message.length,
-        conversationId: this._conversationId
-      });
+      // 确保 conversationId 已加载（防止小程序重启后丢失）
+      if (!this._conversationId) {
+        this.loadConversationIdFromCache();
+      }
 
-      // 步骤 1：创建对话
+      // 若仍无 conversationId，显式创建 Coze 持久会话
+      if (!this._conversationId) {
+        this._log('sendMessage', '无会话ID，先创建持久会话');
+        const createResp = await this.createConversation();
+        if (!createResp.success) {
+          return ResponseBean.error('创建会话失败，无法发送消息', -1);
+        }
+      }
+
+      const conversationId = this._conversationId;
+      this._log('sendMessage', `发送消息: 长度=${message.length}, 会话ID=${conversationId}`);
+
+      // 步骤 1：创建对话（历史上下文由 Coze 通过 conversationId 在服务端管理）
       const startResponse = await this.callFunction('assistantChat', {
         action: 'startChat',
         message: message.trim(),
-        conversationId: this._conversationId
+        conversationId
       });
 
       if (!startResponse.success) {
         return startResponse;
       }
 
-      const { chatId, conversationId } = startResponse.data;
-      this._log('sendMessage', '对话已创建', { chatId, conversationId });
+      // startChat 返回的 conversationId 是 Coze 实际使用的会话ID
+      // 必须用它来轮询，因为 chatId 与 chatConversationId 是绑定关系
+      const { chatId, conversationId: chatConversationId } = startResponse.data;
+      this._log('sendMessage', `对话已创建: chatId=${chatId}, chatConversationId=${chatConversationId}`);
 
-      // 步骤 2：轮询结果
-      const content = await this._pollChatResult(chatId, conversationId);
+      // 若 Coze 返回的 conversationId 与本地不同，以 Coze 为准并更新本地缓存
+      if (chatConversationId && chatConversationId !== this._conversationId) {
+        this._log('sendMessage', `Coze 返回新 conversationId，更新本地: ${chatConversationId}`);
+        this._conversationId = chatConversationId;
+        this._saveConversationIdToStorage(chatConversationId);
+      }
 
-      // 保存新的 conversationId（用于下一轮多轮对话）
-      this._conversationId = conversationId;
-      this._saveConversationIdToStorage(conversationId);
+      // 步骤 2：轮询结果（必须用与 chatId 配对的 conversationId）
+      const content = await this._pollChatResult(chatId, chatConversationId);
 
-      const response = ResponseBean.success({ content, conversationId });
+      const response = ResponseBean.success({ content, conversationId: chatConversationId });
       this._logServiceCall('sendMessage', { messageLength: message.length }, response);
       return response;
     } catch (error) {
@@ -136,13 +179,52 @@ class AssistantService extends BaseService {
   }
 
   /**
-   * 清除会话 (开始新对话)
+   * 清除会话ID（用于开启新会话）
+   * 只清除会话ID，不清除历史记录
+   */
+  clearConversationId() {
+    this._conversationId = null;
+    wx.removeStorageSync(STORAGE_KEYS.CONVERSATION_ID);
+    if (app.globalData) {
+      app.globalData.assistantConversationId = null;
+    }
+    this._log('clearConversationId', '会话ID已清除');
+  }
+
+  /**
+   * 清除历史记录（不清除会话ID）
+   * 用户可以清除对话记录，但仍保持当前会话上下文
+   */
+  clearHistoryOnly() {
+    this._memoryCache = [];
+    wx.removeStorageSync(STORAGE_KEYS.CHAT_HISTORY);
+    if (app.globalData) {
+      app.globalData.assistantChatHistory = [];
+    }
+    this._log('clearHistoryOnly', '历史记录已清除，会话ID保持不变');
+  }
+
+  /**
+   * 开启新会话（清除会话ID和历史记录）
+   */
+  startNewConversation() {
+    this._conversationId = null;
+    this._memoryCache = [];
+    wx.removeStorageSync(STORAGE_KEYS.CHAT_HISTORY);
+    wx.removeStorageSync(STORAGE_KEYS.CONVERSATION_ID);
+    if (app.globalData) {
+      app.globalData.assistantChatHistory = [];
+      app.globalData.assistantConversationId = null;
+    }
+    this._log('startNewConversation', '新会话已开启');
+  }
+
+  /**
+   * 清除会话 (开始新对话) - 已废弃，请使用 startNewConversation
+   * @deprecated 使用 startNewConversation 替代
    */
   clearConversation() {
-    this._conversationId = null;
-    this._memoryCache = null;
-    this._clearHistoryStorage();
-    this._log('clearConversation', '会话已清除');
+    this.startNewConversation();
   }
 
   // ==================== 本地存储相关方法 ====================

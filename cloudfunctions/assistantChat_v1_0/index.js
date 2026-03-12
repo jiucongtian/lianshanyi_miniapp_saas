@@ -24,6 +24,46 @@ function fail(error, code = -1) {
 }
 
 /**
+ * action: createConversation
+ * 创建持久会话，返回 conversationId
+ * 多轮对话应先调用此接口获取 conversationId，再用于后续 startChat
+ */
+async function createConversation() {
+  console.log('[createConversation] 创建新会话')
+
+  let response
+  try {
+    response = await axios({
+      url: `${COZE_CONFIG.baseURL}/v1/conversation/create`,
+      method: 'POST',
+      headers: COZE_HEADERS,
+      data: {},
+      timeout: 10000
+    })
+  } catch (e) {
+    const errMsg = (e.response && e.response.data && e.response.data.msg) || e.message || '创建会话请求失败'
+    console.error('[createConversation] 请求异常:', errMsg, e.response && e.response.data)
+    return fail(`创建会话失败: ${errMsg}`, -2)
+  }
+
+  console.log('[createConversation] Coze 原始响应:', JSON.stringify(response.data))
+
+  if (response.data.code !== 0) {
+    console.error('[createConversation] Coze 返回错误:', response.data)
+    return fail(response.data.msg || '创建会话失败', -3)
+  }
+
+  const conversationData = response.data.data
+  if (!conversationData || !conversationData.id) {
+    console.error('[createConversation] 响应数据格式异常:', response.data)
+    return fail('响应数据格式异常', -4)
+  }
+
+  console.log('[createConversation] 会话已创建:', conversationData.id)
+  return success({ conversationId: conversationData.id })
+}
+
+/**
  * action: startChat
  * 创建一轮对话，立即返回 chatId + conversationId，耗时 < 1秒
  */
@@ -34,30 +74,49 @@ async function startChat(event, wxContext) {
     return fail('消息内容不能为空', -1)
   }
 
+  console.log('[startChat] 收到请求:', {
+    userId: wxContext.OPENID,
+    messageLength: message.length,
+    conversationId: conversationId || '(无，将创建新会话)'
+  })
+
+  // additional_messages 只传当前用户消息
+  // 当 conversation_id 存在时，Coze 已在服务端管理对话历史，无需重复传入
+  // 若手动传入历史会导致消息重复，AI 上下文混乱
+  const additionalMessages = [
+    {
+      role: 'user',
+      content: message.trim(),
+      content_type: 'text'
+    }
+  ]
+
   const requestBody = {
     bot_id: COZE_CONFIG.botId,
     user_id: wxContext.OPENID,
     stream: false,
-    additional_messages: [
-      { role: 'user', content: message.trim(), content_type: 'text' }
-    ]
+    auto_save_history: true,  // 自动保存会话历史（官方参数名）
+    additional_messages: additionalMessages
   }
 
-  // 传入 conversation_id 可继续上一轮对话上下文
+  // conversation_id 必须作为 URL query 参数传递，而非放在 request body 中
+  const chatUrl = conversationId
+    ? `${COZE_CONFIG.baseURL}/v3/chat?conversation_id=${conversationId}`
+    : `${COZE_CONFIG.baseURL}/v3/chat`
+
   if (conversationId) {
-    requestBody.conversation_id = conversationId
+    console.log('[startChat] 使用已有会话ID（query参数）:', conversationId)
+  } else {
+    console.log('[startChat] 无会话ID，将创建新会话')
   }
 
-  console.log('[startChat] 创建对话:', {
-    userId: wxContext.OPENID,
-    messageLength: message.length,
-    hasConversationId: !!conversationId
-  })
+  console.log('[startChat] 请求URL:', chatUrl)
+  console.log('[startChat] 请求体:', JSON.stringify(requestBody, null, 2))
 
   let response
   try {
     response = await axios({
-      url: `${COZE_CONFIG.baseURL}/v3/chat`,
+      url: chatUrl,
       method: 'POST',
       headers: COZE_HEADERS,
       data: requestBody,
@@ -194,6 +253,8 @@ exports.main = async (event, context) => {
 
   try {
     switch (action) {
+      case 'createConversation':
+        return await createConversation()
       case 'startChat':
         return await startChat(event, wxContext)
       case 'getChatResult':

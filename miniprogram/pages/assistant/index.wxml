@@ -6,8 +6,13 @@
       <text class="back-icon">‹</text>
     </view>
     <text class="title">助学童子</text>
-    <view class="action-btn" bindtap="onClearHistory" wx:if="{{hasPermission && messages.length > 0}}">
-      <text class="action-icon">🗑</text>
+    <view class="header-actions" wx:if="{{hasPermission && messages.length > 0}}">
+      <view class="action-btn" bindtap="onClearHistory" wx:if="{{messages.length > 0}}">
+        <text class="action-icon">🗑</text>
+      </view>
+      <view class="action-btn new-chat-btn" bindtap="onStartNewConversation">
+        <text class="action-icon">✨</text>
+      </view>
     </view>
   </view>
 

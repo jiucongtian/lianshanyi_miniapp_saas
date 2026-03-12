@@ -102,6 +102,15 @@ Page({
   },
 
   /**
+   * 开启新会话
+   */
+  onStartNewConversation() {
+    if (this.controller) {
+      this.controller.startNewConversation();
+    }
+  },
+
+  /**
    * 返回
    */
   onBack() {

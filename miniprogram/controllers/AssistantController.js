@@ -183,12 +183,12 @@ class AssistantController extends BaseController {
   }
 
   /**
-   * 清除历史对话
+   * 清除历史对话（保持会话ID）
    */
   async clearHistory() {
     const confirmed = await this._confirm(
       '清除对话',
-      '确定要清除所有对话记录吗？',
+      '确定要清除所有对话记录吗？\n清除后，AI 仍会记住之前的对话上下文。',
       '确定',
       '取消'
     );
@@ -203,8 +203,8 @@ class AssistantController extends BaseController {
     // 清除消息
     this.messages = [];
 
-    // 清除服务层缓存
-    assistantService.clearConversation();
+    // 只清除历史记录，保持会话ID
+    assistantService.clearHistoryOnly();
 
     // 更新UI
     this._setData({
@@ -215,6 +215,41 @@ class AssistantController extends BaseController {
 
     this._showSuccess('对话已清除');
     this._log('clearHistory', '对话历史已清除');
+  }
+
+  /**
+   * 开启新会话（清除会话ID和历史记录）
+   */
+  async startNewConversation() {
+    const confirmed = await this._confirm(
+      '开启新会话',
+      '确定要开启新会话吗？\n这将清除所有对话记录，AI 将不再记住之前的对话内容。',
+      '确定',
+      '取消'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // 停止打字机效果
+    this._stopTypingEffect();
+
+    // 清除消息
+    this.messages = [];
+
+    // 清除会话ID和历史记录
+    assistantService.startNewConversation();
+
+    // 更新UI
+    this._setData({
+      messages: [],
+      isTyping: false,
+      sendDisabled: false
+    });
+
+    this._showSuccess('新会话已开启');
+    this._log('startNewConversation', '新会话已开启');
   }
 
   /**
