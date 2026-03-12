@@ -1,21 +1,5 @@
 <!--pages/assistant/index.wxml-->
 <view class="assistant-container">
-  <!-- 顶部导航栏 -->
-  <view class="header">
-    <view class="back-btn" bindtap="onBack">
-      <text class="back-icon">‹</text>
-    </view>
-    <text class="title">助学童子</text>
-    <view class="header-actions" wx:if="{{hasPermission && messages.length > 0}}">
-      <view class="action-btn" bindtap="onClearHistory" wx:if="{{messages.length > 0}}">
-        <text class="action-icon">🗑</text>
-      </view>
-      <view class="action-btn new-chat-btn" bindtap="onStartNewConversation">
-        <text class="action-icon">✨</text>
-      </view>
-    </view>
-  </view>
-
   <!-- 升级提示（无权限时显示） -->
   <view class="upgrade-tip" wx:if="{{showUpgradeTip}}">
     <view class="upgrade-icon">🔮</view>
@@ -68,16 +52,22 @@
     <view class="list-bottom"></view>
   </scroll-view>
 
-  <!-- 输入框 -->
-  <chat-input
-    wx:if="{{hasPermission && !showUpgradeTip}}"
-    value="{{inputValue}}"
-    disabled="{{sendDisabled}}"
-    isTyping="{{isTyping}}"
-    placeholder="输入你想问的问题..."
-    bind:input="onInputChange"
-    bind:send="onSend"
-  />
+  <!-- 输入区域 -->
+  <view class="input-area" wx:if="{{hasPermission && !showUpgradeTip}}">
+    <view class="new-chat-btn" bindtap="onStartNewConversation" wx:if="{{messages.length > 0}}">
+      <text class="btn-icon">✨</text>
+    </view>
+    <view class="input-wrapper">
+      <chat-input
+        value="{{inputValue}}"
+        disabled="{{sendDisabled}}"
+        isTyping="{{isTyping}}"
+        placeholder="输入你想问的问题..."
+        bind:input="onInputChange"
+        bind:send="onSend"
+      />
+    </view>
+  </view>
 
   <!-- 加载状态 -->
   <view class="loading-container" wx:if="{{loading}}">
