@@ -153,22 +153,28 @@ class AssistantMessageBean extends BaseClass {
   /**
    * 从JSON数据创建消息实例
    * @param {Object} json - JSON数据
+   * @param {boolean} isHistory - 是否为历史消息（历史消息强制关闭打字效果）
    * @returns {AssistantMessageBean} 消息实例
    */
-  static fromJSON(json) {
+  static fromJSON(json, isHistory = false) {
+    // 历史消息强制关闭打字效果
+    if (isHistory) {
+      json = { ...json, isTyping: false };
+    }
     return new AssistantMessageBean(json);
   }
 
   /**
    * 批量从JSON数据创建消息实例
    * @param {Array} jsonArray - JSON数组
+   * @param {boolean} isHistory - 是否为历史消息（历史消息强制关闭打字效果）
    * @returns {Array<AssistantMessageBean>} 消息实例数组
    */
-  static fromJSONArray(jsonArray) {
+  static fromJSONArray(jsonArray, isHistory = false) {
     if (!Array.isArray(jsonArray)) {
       return [];
     }
-    return jsonArray.map(json => AssistantMessageBean.fromJSON(json));
+    return jsonArray.map(json => AssistantMessageBean.fromJSON(json, isHistory));
   }
 
   /**

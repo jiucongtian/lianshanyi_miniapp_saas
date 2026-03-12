@@ -237,7 +237,8 @@ class AssistantService extends BaseService {
     try {
       // 优先使用内存缓存
       if (this._memoryCache !== null) {
-        const messages = AssistantMessageBean.fromJSONArray(this._memoryCache);
+        // 历史消息强制关闭打字效果
+        const messages = AssistantMessageBean.fromJSONArray(this._memoryCache, true);
         this._log('loadHistoryFromCache', '从内存缓存加载', { count: messages.length });
         return messages;
       }
@@ -253,8 +254,8 @@ class AssistantService extends BaseService {
       // 更新内存缓存
       this._memoryCache = history;
 
-      // 转换为Bean实例
-      const messages = AssistantMessageBean.fromJSONArray(history);
+      // 转换为Bean实例（历史消息强制关闭打字效果）
+      const messages = AssistantMessageBean.fromJSONArray(history, true);
       this._log('loadHistoryFromCache', '从本地存储加载', { count: messages.length });
 
       return messages;
