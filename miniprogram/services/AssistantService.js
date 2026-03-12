@@ -1,12 +1,20 @@
 /**
  * 助学童子服务类
  * 处理聊天相关的业务逻辑，包括消息发送、历史缓存等
+ *
+ * 调用模式：客户端轮询 Coze Chat API v3
+ *   1. startChat      → 云函数创建 Coze 对话，返回 chatId + conversationId（< 1秒）
+ *   2. getChatResult（轮询）→ 云函数查询对话状态，完成后取消息内容
+ * 优点：单次云函数调用均很短，不受 60 秒超时限制，支持任意长响应时间
  */
 const { BaseService } = require('./BaseService');
 const { ResponseBean } = require('../beans/ResponseBean');
 const { AssistantMessageBean } = require('../beans/AssistantMessageBean');
 
 const app = getApp();
+
+const POLL_INTERVAL = 2000;     // 轮询间隔（毫秒）
+const MAX_POLL_ATTEMPTS = 150;  // 最多轮询 150 次，约 5 分钟
 
 class AssistantService extends BaseService {
   constructor() {
@@ -16,12 +24,13 @@ class AssistantService extends BaseService {
 
   /**
    * 发送消息
+   * 步骤1：startChat → 获取 chatId + conversationId（< 1秒）
+   * 步骤2：客户端轮询 getChatResult → 直到 status=success
    * @param {string} message - 用户消息内容
-   * @returns {Promise<ResponseBean>} 响应，成功时data包含reply和conversationId
+   * @returns {Promise<ResponseBean>} 响应，成功时 data 包含 content 和 conversationId
    */
   async sendMessage(message) {
     try {
-      // 验证参数
       if (!message || typeof message !== 'string' || message.trim() === '') {
         return ResponseBean.error('消息内容不能为空', -1);
       }
@@ -31,26 +40,70 @@ class AssistantService extends BaseService {
         conversationId: this._conversationId
       });
 
-      const response = await this.callFunction('assistantChat', {
+      // 步骤 1：创建对话
+      const startResponse = await this.callFunction('assistantChat', {
+        action: 'startChat',
         message: message.trim(),
         conversationId: this._conversationId
       });
 
-      this._logServiceCall('sendMessage', { messageLength: message.length }, response);
-
-      // 成功时保存会话ID
-      if (response.success && response.data) {
-        this._conversationId = response.data.conversationId;
-
-        // 保存到globalData缓存
-        this._saveConversationId(this._conversationId);
+      if (!startResponse.success) {
+        return startResponse;
       }
 
+      const { chatId, conversationId } = startResponse.data;
+      this._log('sendMessage', '对话已创建', { chatId, conversationId });
+
+      // 步骤 2：轮询结果
+      const content = await this._pollChatResult(chatId, conversationId);
+
+      // 保存新的 conversationId（用于下一轮多轮对话）
+      this._conversationId = conversationId;
+      this._saveConversationId(conversationId);
+
+      const response = ResponseBean.success({ content, conversationId });
+      this._logServiceCall('sendMessage', { messageLength: message.length }, response);
       return response;
     } catch (error) {
       this._error('sendMessage', '发送消息异常:', error);
       return ResponseBean.error('发送消息失败: ' + error.message, -1);
     }
+  }
+
+  /**
+   * 轮询对话执行结果，直到完成或超时
+   * @param {string} chatId
+   * @param {string} conversationId
+   * @returns {Promise<string>} 助手回复内容
+   * @private
+   */
+  async _pollChatResult(chatId, conversationId) {
+    for (let i = 0; i < MAX_POLL_ATTEMPTS; i++) {
+      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+
+      const response = await this.callFunction('assistantChat', {
+        action: 'getChatResult',
+        chatId,
+        conversationId
+      });
+
+      if (!response.success) {
+        const errMsg = response.error || '查询结果失败';
+        this._error('_pollChatResult', `第 ${i + 1} 次轮询失败: ${errMsg}`);
+        throw new Error(errMsg);
+      }
+
+      const { status, content } = response.data;
+
+      this._log('_pollChatResult', `轮询进度 (${i + 1}/${MAX_POLL_ATTEMPTS})`, { status });
+
+      if (status === 'success') {
+        return content || '';
+      }
+      // status === 'running'，继续轮询
+    }
+
+    throw new Error('等待响应超时（超过5分钟）');
   }
 
   /**

@@ -1,211 +1,208 @@
-// 云函数入口文件 - 助学童子聊天功能
+// 云函数入口文件 - 助学童子聊天功能（Coze Chat API v3）
 const cloud = require('wx-server-sdk')
 const axios = require('axios')
 
-cloud.init({
-  env: cloud.DYNAMIC_CURRENT_ENV // 使用当前云环境
-})
+cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-// Coze API 配置
 const COZE_CONFIG = {
   token: 'sat_JBr8tgHf8a8IkpwoFMpNWiioLFdqdAWj9O8HVRZ7DFmYqQf2wKzf92vRqKjQQMdv',
   baseURL: 'https://api.coze.cn',
   botId: '7615870340559978548'
 }
 
+const COZE_HEADERS = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${COZE_CONFIG.token}`
+}
+
+function success(data) {
+  return { success: true, data, timestamp: Date.now() }
+}
+
+function fail(error, code = -1) {
+  return { success: false, error, code, timestamp: Date.now() }
+}
+
 /**
- * 调用 Coze Chat API
- * @param {string} userId - 用户ID (使用OPENID)
- * @param {string} message - 用户消息内容
- * @param {string} conversationId - 会话ID (可选，用于多轮对话)
- * @returns {Promise<Object>} 聊天结果
+ * action: startChat
+ * 创建一轮对话，立即返回 chatId + conversationId，耗时 < 1秒
  */
-async function callCozeChatAPI(userId, message, conversationId = null) {
+async function startChat(event, wxContext) {
+  const { message, conversationId } = event
+
+  if (!message || typeof message !== 'string' || message.trim() === '') {
+    return fail('消息内容不能为空', -1)
+  }
+
+  const requestBody = {
+    bot_id: COZE_CONFIG.botId,
+    user_id: wxContext.OPENID,
+    stream: false,
+    additional_messages: [
+      { role: 'user', content: message.trim(), content_type: 'text' }
+    ]
+  }
+
+  // 传入 conversation_id 可继续上一轮对话上下文
+  if (conversationId) {
+    requestBody.conversation_id = conversationId
+  }
+
+  console.log('[startChat] 创建对话:', {
+    userId: wxContext.OPENID,
+    messageLength: message.length,
+    hasConversationId: !!conversationId
+  })
+
+  let response
   try {
-    // 构建请求体
-    const requestBody = {
-      bot_id: COZE_CONFIG.botId,
-      user_id: userId,
-      stream: false, // 非流式模式
-      additional_messages: [
-        {
-          role: 'user',
-          content: message,
-          content_type: 'text'
-        }
-      ]
-    }
-
-    // 如果有会话ID，添加到请求体（用于多轮对话）
-    if (conversationId) {
-      requestBody.conversation_id = conversationId
-    }
-
-    console.log('[assistantChat] 请求参数:', JSON.stringify({
-      userId,
-      message: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
-      hasConversationId: !!conversationId
-    }, null, 2))
-
-    const response = await axios({
+    response = await axios({
       url: `${COZE_CONFIG.baseURL}/v3/chat`,
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${COZE_CONFIG.token}`
-      },
+      headers: COZE_HEADERS,
       data: requestBody,
-      timeout: 60000 // 60秒超时
+      timeout: 15000
     })
-
-    console.log('[assistantChat] Coze API 响应状态:', response.status)
-
-    // 检查API响应
-    if (response.data.code !== 0) {
-      console.error('[assistantChat] Coze API 返回错误:', response.data)
-      const errorMsg = response.data.msg || 'Coze API调用失败'
-      throw new Error(errorMsg)
-    }
-
-    return {
-      success: true,
-      data: response.data.data
-    }
-  } catch (error) {
-    console.error('[assistantChat] Coze Chat API 调用失败:', error.message)
-
-    // 处理不同类型的错误
-    if (error.response) {
-      const status = error.response.status
-      const responseData = error.response.data
-      const errorMsg = responseData?.msg || responseData?.message || `HTTP ${status}`
-      throw new Error(`API请求失败: ${errorMsg}`)
-    } else if (error.code === 'ECONNABORTED') {
-      throw new Error('请求超时，请稍后重试')
-    } else {
-      throw new Error(error.message || '网络请求失败')
-    }
+  } catch (e) {
+    const errMsg = (e.response && e.response.data && e.response.data.msg) || e.message || '创建对话请求失败'
+    console.error('[startChat] 请求异常:', errMsg, e.response && e.response.data)
+    return fail(`创建对话失败: ${errMsg}`, -2)
   }
+
+  console.log('[startChat] Coze 原始响应:', JSON.stringify(response.data))
+
+  if (response.data.code !== 0) {
+    console.error('[startChat] Coze 返回错误:', response.data)
+    return fail(response.data.msg || '创建对话失败', -3)
+  }
+
+  const chatData = response.data.data
+  if (!chatData || !chatData.id) {
+    console.error('[startChat] 响应数据格式异常:', response.data)
+    return fail('响应数据格式异常', -4)
+  }
+
+  console.log('[startChat] 对话已创建:', { chatId: chatData.id, conversationId: chatData.conversation_id })
+
+  return success({
+    chatId: chatData.id,
+    conversationId: chatData.conversation_id
+  })
 }
 
 /**
- * 从Coze响应中提取消息内容
- * @param {Object} chatData - Coze API返回的chat数据
- * @returns {string} 提取的消息内容
+ * action: getChatResult
+ * 查询对话执行状态；若已完成则一并返回消息内容
+ * 返回 status: 'running' | 'success' | 'fail'
  */
-function extractMessageContent(chatData) {
-  try {
-    if (!chatData) {
-      return ''
-    }
+async function getChatResult(event) {
+  const { chatId, conversationId } = event
 
-    // Coze v3 API 响应结构
-    // chatData.messages 是消息数组
-    // 我们需要找到 role === 'assistant' 的消息
-    if (chatData.messages && Array.isArray(chatData.messages)) {
-      const assistantMessages = chatData.messages
-        .filter(msg => msg.role === 'assistant' && msg.type === 'answer')
-        .map(msg => msg.content)
-        .filter(content => content)
-
-      if (assistantMessages.length > 0) {
-        return assistantMessages.join('\n')
-      }
-    }
-
-    // 备选：检查其他可能的字段
-    if (chatData.content) {
-      return chatData.content
-    }
-
-    if (chatData.answer) {
-      return chatData.answer
-    }
-
-    console.warn('[assistantChat] 无法从响应中提取消息内容:', JSON.stringify(chatData, null, 2))
-    return ''
-  } catch (error) {
-    console.error('[assistantChat] 提取消息内容失败:', error)
-    return ''
+  if (!chatId || !conversationId) {
+    return fail('缺少 chatId 或 conversationId', -1)
   }
+
+  // 查询对话状态
+  let retrieveResponse
+  try {
+    retrieveResponse = await axios({
+      url: `${COZE_CONFIG.baseURL}/v3/chat/retrieve`,
+      method: 'GET',
+      headers: COZE_HEADERS,
+      params: { chat_id: chatId, conversation_id: conversationId },
+      timeout: 10000
+    })
+  } catch (e) {
+    const errMsg = (e.response && e.response.data && e.response.data.msg) || e.message || '查询状态请求失败'
+    console.error('[getChatResult] 查询状态请求异常:', errMsg, e.response && e.response.data)
+    return fail(`查询状态失败: ${errMsg}`, -2)
+  }
+
+  console.log('[getChatResult] retrieve 原始响应:', JSON.stringify(retrieveResponse.data))
+
+  if (retrieveResponse.data.code !== 0) {
+    console.error('[getChatResult] Coze 查询状态错误:', retrieveResponse.data)
+    return fail(retrieveResponse.data.msg || '查询对话状态失败', -3)
+  }
+
+  const chatData = retrieveResponse.data.data
+  const status = chatData && chatData.status
+
+  console.log('[getChatResult] 当前状态:', status)
+
+  if (!status || status === 'in_progress' || status === 'created') {
+    return success({ status: 'running' })
+  }
+
+  if (status === 'failed' || status === 'requires_action') {
+    return fail(`对话异常，状态: ${status}`, -4)
+  }
+
+  // status === 'completed'，获取消息列表
+  let msgResponse
+  try {
+    msgResponse = await axios({
+      url: `${COZE_CONFIG.baseURL}/v3/chat/message/list`,
+      method: 'GET',
+      headers: COZE_HEADERS,
+      params: { chat_id: chatId, conversation_id: conversationId },
+      timeout: 10000
+    })
+  } catch (e) {
+    const errMsg = (e.response && e.response.data && e.response.data.msg) || e.message || '获取消息请求失败'
+    console.error('[getChatResult] 获取消息请求异常:', errMsg, e.response && e.response.data)
+    return fail(`获取消息失败: ${errMsg}`, -5)
+  }
+
+  console.log('[getChatResult] message/list 原始响应:', JSON.stringify(msgResponse.data))
+
+  if (msgResponse.data.code !== 0) {
+    console.error('[getChatResult] Coze 获取消息错误:', msgResponse.data)
+    return fail(msgResponse.data.msg || '获取消息内容失败', -6)
+  }
+
+  // 兼容两种响应格式：data 直接是数组，或 data.messages 是数组
+  const rawData = msgResponse.data.data
+  const messages = Array.isArray(rawData) ? rawData : (rawData && rawData.messages) || []
+  const content = extractContent(messages)
+
+  console.log('[getChatResult] 对话完成，提取内容长度:', content.length, '消息数:', messages.length)
+
+  return success({ status: 'success', content })
 }
 
-// 云函数入口函数
+/**
+ * 从消息列表中提取助手回复
+ */
+function extractContent(messages) {
+  if (!Array.isArray(messages)) return ''
+
+  const answers = messages
+    .filter(msg => msg.role === 'assistant' && msg.type === 'answer')
+    .map(msg => msg.content)
+    .filter(Boolean)
+
+  return answers.join('\n')
+}
+
+// 云函数入口
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
+  const { action } = event
+
+  console.log('=== assistantChat_v1_0 ===', { action, openid: wxContext.OPENID })
 
   try {
-    console.log('=== assistantChat_v1_0 调用开始 ===')
-    console.log('接收到的参数:', JSON.stringify({
-      action: event.action,
-      hasMessage: !!event.message,
-      conversationId: event.conversationId
-    }, null, 2))
-
-    const { action, message, conversationId } = event
-
-    // 验证必需参数
-    if (!message || typeof message !== 'string' || message.trim() === '') {
-      return {
-        success: false,
-        error: '消息内容不能为空',
-        code: -1,
-        timestamp: new Date().getTime()
-      }
+    switch (action) {
+      case 'startChat':
+        return await startChat(event, wxContext)
+      case 'getChatResult':
+        return await getChatResult(event)
+      default:
+        return fail(`未知 action: ${action}`, -1)
     }
-
-    // 获取用户ID (使用OPENID)
-    const userId = wxContext.OPENID
-
-    if (!userId) {
-      return {
-        success: false,
-        error: '无法获取用户信息',
-        code: -2,
-        timestamp: new Date().getTime()
-      }
-    }
-
-    // 调用 Coze Chat API
-    const result = await callCozeChatAPI(userId, message.trim(), conversationId)
-
-    if (!result.success) {
-      return {
-        success: false,
-        error: result.error || 'Coze API调用失败',
-        code: -3,
-        timestamp: new Date().getTime()
-      }
-    }
-
-    // 提取消息内容
-    const replyContent = extractMessageContent(result.data)
-
-    // 构建返回结果
-    const response = {
-      success: true,
-      data: {
-        content: replyContent,
-        conversationId: result.data.id || result.data.conversation_id || null,
-        userId: userId
-      },
-      openid: wxContext.OPENID,
-      timestamp: new Date().getTime()
-    }
-
-    console.log('=== assistantChat_v1_0 调用成功 ===')
-    return response
-
   } catch (error) {
-    console.error('=== assistantChat_v1_0 调用失败 ===')
-    console.error('错误信息:', error.message)
-    console.error('错误堆栈:', error.stack)
-
-    return {
-      success: false,
-      error: error.message || '聊天服务暂时不可用',
-      code: -4,
-      timestamp: new Date().getTime()
-    }
+    console.error('=== 云函数异常 ===', error.message)
+    return fail(error.message || '服务异常', -5)
   }
 }
