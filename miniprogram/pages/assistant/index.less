@@ -1,0 +1,168 @@
+/* pages/assistant/index.less */
+
+.assistant-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #fafafa;
+}
+
+/* 顶部导航栏 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 24rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #eee;
+  position: relative;
+  z-index: 100;
+}
+
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-icon {
+  font-size: 48rpx;
+  color: #333;
+  font-weight: 300;
+}
+
+.title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.action-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-icon {
+  font-size: 32rpx;
+}
+
+/* 升级提示 */
+.upgrade-tip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+}
+
+.upgrade-icon {
+  font-size: 120rpx;
+  margin-bottom: 32rpx;
+}
+
+.upgrade-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.upgrade-desc {
+  font-size: 28rpx;
+  color: #666;
+  text-align: center;
+  margin-bottom: 48rpx;
+  line-height: 1.6;
+}
+
+.upgrade-btn {
+  width: 280rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: linear-gradient(135deg, #854C65 0%, #a05a7a 100%);
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 40rpx;
+  border: none;
+
+  &::after {
+    border: none;
+  }
+}
+
+/* 消息列表 */
+.message-list {
+  flex: 1;
+  padding: 24rpx 0;
+  overflow-y: auto;
+}
+
+/* 欢迎消息 */
+.welcome-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 48rpx;
+  text-align: center;
+}
+
+.welcome-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.welcome-desc {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 底部占位 */
+.list-bottom {
+  height: 24rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 1000;
+}
+
+.loading-spinner {
+  width: 64rpx;
+  height: 64rpx;
+  border: 4rpx solid #f0f0f0;
+  border-top-color: #854C65;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+  margin-top: 24rpx;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -19,6 +19,8 @@ App({
     version: '1.4.0', // 客户端版本
     profileManager: profileManager, // 全局档案管理器
     globalUserManager: globalUserManager, // 全局用户管理器
+    assistantChatHistory: null, // 助学童子对话历史
+    assistantConversationId: null // 助学童子会话ID
   },
 
   /** 全局事件总线 */

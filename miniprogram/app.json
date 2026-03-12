@@ -2,7 +2,7 @@
   "pages": [
     "pages/home/index",
     "pages/card/index",
-    "pages/profile/index", 
+    "pages/profile/index",
     "pages/mine/index",
     "pages/addProfile/index",
     "pages/register/index",
@@ -14,7 +14,8 @@
     "pages/webview/index",
     "pages/feedback/index",
     "pages/daily-insight/index",
-    "pages/debug/index"
+    "pages/debug/index",
+    "pages/assistant/index"
   ],
   "usingComponents": {},
   "subpackages": [],

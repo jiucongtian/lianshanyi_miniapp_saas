@@ -59,6 +59,15 @@
     
     <!-- 工具区域 -->
     <view class="tools-section">
+      <view class="tool-card" bindtap="onAssistantTap" wx:if="{{showAssistantEntry}}">
+        <view class="tool-icon">🧙</view>
+        <view class="tool-info">
+          <text class="tool-title">助学童子</text>
+          <text class="tool-desc">智能问答助手</text>
+        </view>
+        <view class="tool-arrow">›</view>
+      </view>
+
       <view class="tool-card" bindtap="onCardViewerTap">
         <view class="tool-icon">🃏</view>
         <view class="tool-info">

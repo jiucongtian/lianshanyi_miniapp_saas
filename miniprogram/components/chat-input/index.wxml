@@ -1,0 +1,23 @@
+<!--components/chat-input/index.wxml-->
+<view class="input-container {{focused ? 'focused' : ''}}">
+  <view class="input-wrapper">
+    <input
+      class="input-field"
+      type="text"
+      value="{{innerValue}}"
+      placeholder="{{placeholder}}"
+      placeholder-class="input-placeholder"
+      confirm-type="send"
+      bindinput="onInput"
+      bindfocus="onFocus"
+      bindblur="onBlur"
+      bindconfirm="onConfirm"
+      maxlength="500"
+      adjust-position="{{true}}"
+    />
+  </view>
+
+  <view class="send-btn {{innerValue && !disabled && !isTyping ? 'active' : 'disabled'}}" bindtap="onSend">
+    <text class="send-text">发送</text>
+  </view>
+</view>

@@ -1,0 +1,60 @@
+<!--pages/assistant/index.wxml-->
+<view class="assistant-container">
+  <!-- 顶部导航栏 -->
+  <view class="header">
+    <view class="back-btn" bindtap="onBack">
+      <text class="back-icon">‹</text>
+    </view>
+    <text class="title">助学童子</text>
+    <view class="action-btn" bindtap="onClearHistory" wx:if="{{hasPermission && messages.length > 0}}">
+      <text class="action-icon">🗑</text>
+    </view>
+  </view>
+
+  <!-- 升级提示（无权限时显示） -->
+  <view class="upgrade-tip" wx:if="{{showUpgradeTip}}">
+    <view class="upgrade-icon">🔮</view>
+    <text class="upgrade-title">高级功能</text>
+    <text class="upgrade-desc">助学童子是高级功能，仅限管理员和高级用户使用</text>
+    <button class="upgrade-btn" bindtap="onUpgrade">前往升级</button>
+  </view>
+
+  <!-- 消息列表 -->
+  <scroll-view
+    class="message-list"
+    scroll-y="{{true}}"
+    scroll-into-view="{{scrollToId}}"
+    wx:if="{{hasPermission && !showUpgradeTip}}"
+  >
+    <!-- 欢迎消息 -->
+    <view class="welcome-message" wx:if="{{messages.length === 0}}">
+      <text class="welcome-title">👋 你好！</text>
+      <text class="welcome-desc">我是助学童子，有什么可以帮助你的吗？</text>
+    </view>
+
+    <!-- 消息列表 -->
+    <view wx:for="{{messages}}" wx:key="id" id="msg-{{index}}">
+      <chat-message message="{{item}}" />
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="list-bottom"></view>
+  </scroll-view>
+
+  <!-- 输入框 -->
+  <chat-input
+    wx:if="{{hasPermission && !showUpgradeTip}}"
+    value="{{inputValue}}"
+    disabled="{{sendDisabled}}"
+    isTyping="{{isTyping}}"
+    placeholder="请输入消息..."
+    bind:input="onInputChange"
+    bind:send="onSend"
+  />
+
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+</view>

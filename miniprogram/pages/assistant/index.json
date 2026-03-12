@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "助学童子",
+  "usingComponents": {
+    "chat-message": "/components/chat-message/index",
+    "chat-input": "/components/chat-input/index"
+  }
+}

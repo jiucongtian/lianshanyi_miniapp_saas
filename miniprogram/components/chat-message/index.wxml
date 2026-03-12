@@ -1,0 +1,31 @@
+<!--components/chat-message/index.wxml-->
+<view class="message-container {{isUser ? 'user' : 'assistant'}}">
+  <!-- 头像 -->
+  <view class="avatar {{isUser ? 'user-avatar' : 'assistant-avatar'}}">
+    <image
+      wx:if="{{isUser}}"
+      class="avatar-img"
+      src="/static/icons/default-avatar.png"
+      mode="aspectFill"
+    />
+    <text wx:else class="avatar-text">童</text>
+  </view>
+
+  <!-- 消息内容 -->
+  <view class="message-content" bindtap="onCopyContent">
+    <view class="message-bubble">
+      <!-- 消息文本 -->
+      <text class="message-text" selectable="{{true}}">{{message.content || message.fullContent}}</text>
+
+      <!-- 打字机效果指示器 -->
+      <view class="typing-indicator" wx:if="{{message.isTyping}}">
+        <view class="typing-dot"></view>
+        <view class="typing-dot"></view>
+        <view class="typing-dot"></view>
+      </view>
+    </view>
+
+    <!-- 时间显示 -->
+    <view class="message-time">{{message.displayTime}}</view>
+  </view>
+</view>

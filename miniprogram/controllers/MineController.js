@@ -133,17 +133,23 @@ class MineController extends BaseController {
       // 处理管理员菜单显示
       this._updateAdminMenus(this.userInfo);
       
-      this._setData({
-        userInfo: this.userInfo,
-        userTypeText: this.userTypeText,
-        genderText: this.genderText,
-        phoneNumberText: this.phoneNumberText,
-        adminMenus: this.adminMenus,
-        isAdmin: this.userInfo.isAdmin(),
-        adminRoleName: this.userInfo.getAdminRoleName(),
-        loading: false,
-        error: ''
-      });
+      // 判断是否显示助学童子入口：管理员或高级用户
+        const showAssistantEntry = this.userInfo.userType === 'admin' ||
+                                    this.userInfo.userType === 'super_admin' ||
+                                    this.userInfo.userType === 'premium';
+
+        this._setData({
+          userInfo: this.userInfo,
+          userTypeText: this.userTypeText,
+          genderText: this.genderText,
+          phoneNumberText: this.phoneNumberText,
+          adminMenus: this.adminMenus,
+          isAdmin: this.userInfo.isAdmin(),
+          adminRoleName: this.userInfo.getAdminRoleName(),
+          showAssistantEntry: showAssistantEntry,
+          loading: false,
+          error: ''
+        });
       
       this._log('_updateUserInfoToPage', '用户信息已更新到页面');
     } catch (error) {

@@ -20,7 +20,8 @@ Page({
     avatarUrl: '',
     adminMenus: [],
     isAdmin: false,
-    adminRoleName: '普通用户'
+    adminRoleName: '普通用户',
+    showAssistantEntry: false
   },
 
   /**
@@ -123,6 +124,15 @@ Page({
   onCardViewerTap() {
     wx.navigateTo({
       url: '/pages/cardViewer/index'
+    });
+  },
+
+  /**
+   * 点击助学童子
+   */
+  onAssistantTap() {
+    wx.navigateTo({
+      url: '/pages/assistant/index'
     });
   },
 

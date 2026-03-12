@@ -20,7 +20,8 @@ class VersionManager {
       feedbackManagement: 'v1_4',
       dailyInsightManagement: 'v1_4',
       functionQuotaManagement: 'v1_4',
-      functionCallGateway: 'v1_4'
+      functionCallGateway: 'v1_4',
+      assistantChat: 'v1_0'  // 云函数名: assistantChat_v1_0
     }
   };
   
@@ -135,18 +136,14 @@ class VersionManager {
    */
   static getFunctionName(baseName, version = null) {
     const functionVersion = version || this.getFunctionVersion(baseName);
-    
+
     // 如果无法获取版本，返回 null
     if (!functionVersion) {
       log.warn('getFunctionName', '无法确定云函数版本，无法生成完整函数名', { baseName });
       return null;
     }
-    
-    // v1_0 版本不加后缀，保持向后兼容
-    if (functionVersion === 'v1_0') {
-      return baseName;
-    }
-    
+
+    // 所有版本都加后缀，保持命名一致性
     return `${baseName}_${functionVersion}`;
   }
   

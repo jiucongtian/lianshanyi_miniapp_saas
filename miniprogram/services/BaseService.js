@@ -78,7 +78,7 @@ class BaseService extends BaseClass {
         actualFunctionName: actualFunctionName,
         data: data
       });
-      
+
       const result = await wx.cloud.callFunction({ 
         name: actualFunctionName, 
         data 
