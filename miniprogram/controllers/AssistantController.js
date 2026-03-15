@@ -98,10 +98,8 @@ class AssistantController extends BaseController {
         return false;
       }
 
-      // 检查是否为管理员或高级用户（使用userType判断）
-      const hasPermission = user.userType === 'admin' ||
-                           user.userType === 'super_admin' ||
-                           user.userType === 'premium';
+      // 检查是否为管理员（任意级别）
+      const hasPermission = user.isAdmin();
 
       this._log('checkPermission', '权限检查结果', {
         userType: user.userType,

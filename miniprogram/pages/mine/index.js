@@ -20,6 +20,7 @@ Page({
     avatarUrl: '',
     adminMenus: [],
     isAdmin: false,
+    isSuperAdmin: false,
     adminRoleName: '普通用户',
     showAssistantEntry: false
   },
@@ -161,8 +162,8 @@ Page({
   onDebugTap() {
     log.info('onDebugTap', '跳转到调试页面');
     
-    // 权限检查：只有管理员可以访问调试页面
-    if (!this.data.userInfo || this.data.userInfo.userType !== 'admin') {
+    // 权限检查：只有超级管理员可以访问调试页面
+    if (!this.data.userInfo || !this.data.userInfo.isSuperAdmin()) {
       log.warn('onDebugTap', '非管理员用户尝试访问调试页面');
       wx.showToast({
         title: '无权限访问',

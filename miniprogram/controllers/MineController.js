@@ -133,10 +133,8 @@ class MineController extends BaseController {
       // 处理管理员菜单显示
       this._updateAdminMenus(this.userInfo);
       
-      // 判断是否显示助学童子入口：管理员或高级用户
-        const showAssistantEntry = this.userInfo.userType === 'admin' ||
-                                    this.userInfo.userType === 'super_admin' ||
-                                    this.userInfo.userType === 'premium';
+      // 判断是否显示助学童子入口：仅管理员（任意级别）可见
+        const showAssistantEntry = this.userInfo.isAdmin();
 
         this._setData({
           userInfo: this.userInfo,
@@ -145,6 +143,7 @@ class MineController extends BaseController {
           phoneNumberText: this.phoneNumberText,
           adminMenus: this.adminMenus,
           isAdmin: this.userInfo.isAdmin(),
+          isSuperAdmin: this.userInfo.isSuperAdmin(),
           adminRoleName: this.userInfo.getAdminRoleName(),
           showAssistantEntry: showAssistantEntry,
           loading: false,
@@ -307,8 +306,8 @@ class MineController extends BaseController {
   onAdminMenuTap(menuId) {
     this._log('onAdminMenuTap', '管理员菜单点击:', menuId);
     
-    // 检查权限
-    if (!this.userInfo || !this.userInfo.isAdmin()) {
+    // 检查权限（仅超级管理员可访问管理功能）
+    if (!this.userInfo || !this.userInfo.isSuperAdmin()) {
       this._showError('无权限访问管理功能');
       return;
     }
@@ -518,15 +517,15 @@ class MineController extends BaseController {
       return;
     }
     
-    // 检查是否为管理员（任何级别的管理员都显示菜单）
-    const isAdmin = AdminPermissionChecker.isAdmin(userInfo.adminRole);
+    // 只有超级管理员才显示管理后台菜单
+    const isSuperAdmin = AdminPermissionChecker.isSuperAdmin(userInfo.adminRole);
     
-    this._log('_updateAdminMenus', `用户管理员角色: ${userInfo.adminRole}, 是否为管理员: ${isAdmin}`);
+    this._log('_updateAdminMenus', `用户管理员角色: ${userInfo.adminRole}, 是否为超级管理员: ${isSuperAdmin}`);
     
-    // 根据管理员权限显示菜单
+    // 根据超级管理员权限显示菜单
     this.adminMenus = this.adminMenus.map(menu => ({
       ...menu,
-      show: isAdmin
+      show: isSuperAdmin
     }));
   }
 
