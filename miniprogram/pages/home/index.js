@@ -196,7 +196,7 @@ Page({
   },
 
   /**
-   * 寻找答案按钮点击事件
+   * 抽卡寻找答案按钮点击事件
    */
   async onFindAnswer() {
     const { isSearching, question } = this.data;

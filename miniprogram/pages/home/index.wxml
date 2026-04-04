@@ -86,7 +86,7 @@
     <!-- 按钮 -->
     <view class="button-container">
       <button class="find-answer-btn" bindtap="onFindAnswer" disabled="{{isSearching}}">
-        <text wx:if="{{!isSearching}}">寻找答案</text>
+        <text wx:if="{{!isSearching}}">抽卡寻找答案</text>
         <text wx:else>寻找中...</text>
       </button>
     </view>

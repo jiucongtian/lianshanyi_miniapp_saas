@@ -15,7 +15,10 @@
       />
     </view>
     <view class="user-info">
-      <text class="user-name">{{userInfo ? (userInfo.nickName || '未设置昵称') : '未注册用户'}}</text>
+      <view class="user-name-row">
+        <text class="user-name">{{userInfo ? (userInfo.nickName || '未设置昵称') : '未注册用户'}}</text>
+        <text class="admin-role-badge" wx:if="{{isAdmin}}">{{adminRoleName}}</text>
+      </view>
       <text class="user-level">{{userTypeText}}</text>
     </view>
   </view>
