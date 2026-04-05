@@ -98,8 +98,8 @@ class AssistantController extends BaseController {
         return false;
       }
 
-      // 检查是否为管理员（任意级别）
-      const hasPermission = user.isAdmin();
+      // 检查是否为管理员、学员或高级用户
+      const hasPermission = user.isAdmin() || user.isStudent() || user.isPremium();
 
       this._log('checkPermission', '权限检查结果', {
         userType: user.userType,

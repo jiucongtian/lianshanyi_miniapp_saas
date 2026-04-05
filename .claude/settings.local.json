@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(cp -r /Users/zhenghao/workspace/lianshan_mini_app/lianshanyi_miniapp/cloudfunctions/userManagement_v1_3 /Users/zhenghao/workspace/lianshan_mini_app/lianshanyi_miniapp/cloudfunctions/userManagement_v1_4)",
+      "Bash(cp -r /Users/zhenghao/workspace/lianshan_mini_app/lianshanyi_miniapp/cloudfunctions/profileManagement_v1_2 /Users/zhenghao/workspace/lianshan_mini_app/lianshanyi_miniapp/cloudfunctions/profileManagement_v1_3)"
+    ]
+  }
+}

@@ -133,8 +133,10 @@ class MineController extends BaseController {
       // 处理管理员菜单显示
       this._updateAdminMenus(this.userInfo);
       
-      // 判断是否显示助学童子入口：仅管理员（任意级别）可见
-        const showAssistantEntry = this.userInfo.isAdmin();
+      // 判断是否显示助学童子入口：管理员、学员、高级用户可见
+        const showAssistantEntry = this.userInfo.isAdmin()
+          || this.userInfo.isStudent()
+          || this.userInfo.isPremium();
 
         this._setData({
           userInfo: this.userInfo,
@@ -389,6 +391,7 @@ class MineController extends BaseController {
     const typeMap = {
       'guest': '临时用户',
       'normal': '探索者',
+      'student': '学员',
       'premium': '高级用户',
       'admin': '管理员'
     };

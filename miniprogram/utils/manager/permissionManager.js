@@ -9,6 +9,7 @@
 const USER_TYPES = {
   GUEST: 'guest',
   NORMAL: 'normal',
+  STUDENT: 'student',
   PREMIUM: 'premium',
   ADMIN: 'admin'
 }
@@ -30,6 +31,7 @@ const PERMISSIONS = {
 const USER_TYPE_PERMISSIONS = {
   [USER_TYPES.GUEST]: [PERMISSIONS.VIEW, PERMISSIONS.CREATE_LIMITED],
   [USER_TYPES.NORMAL]: [PERMISSIONS.VIEW, PERMISSIONS.CREATE],
+  [USER_TYPES.STUDENT]: [PERMISSIONS.VIEW, PERMISSIONS.CREATE],
   [USER_TYPES.PREMIUM]: [PERMISSIONS.ALL],
   [USER_TYPES.ADMIN]: [PERMISSIONS.ALL, PERMISSIONS.ADMIN]
 }
@@ -40,6 +42,7 @@ const USER_TYPE_PERMISSIONS = {
 const USER_TYPE_QUOTAS = {
   [USER_TYPES.GUEST]: 3, // 临时用户可创建3个档案
   [USER_TYPES.NORMAL]: 50,
+  [USER_TYPES.STUDENT]: 50,
   [USER_TYPES.PREMIUM]: -1, // -1表示无限制
   [USER_TYPES.ADMIN]: -1 // 管理员无限制
 }
@@ -50,6 +53,7 @@ const USER_TYPE_QUOTAS = {
 const USER_TYPE_NAMES = {
   [USER_TYPES.GUEST]: '临时用户',
   [USER_TYPES.NORMAL]: '探索者',
+  [USER_TYPES.STUDENT]: '学员',
   [USER_TYPES.PREMIUM]: '高级用户',
   [USER_TYPES.ADMIN]: '管理员'
 }
@@ -163,6 +167,16 @@ class PermissionManager {
         }
       case USER_TYPES.NORMAL:
         return {
+          targetType: USER_TYPES.STUDENT,
+          targetName: USER_TYPE_NAMES[USER_TYPES.STUDENT],
+          benefits: [
+            '访问助学童子智能问答',
+            '50个档案创建额度'
+          ],
+          action: '了解详情'
+        }
+      case USER_TYPES.STUDENT:
+        return {
           targetType: USER_TYPES.PREMIUM,
           targetName: USER_TYPE_NAMES[USER_TYPES.PREMIUM],
           benefits: [
@@ -189,8 +203,8 @@ class PermissionManager {
   getFeatureRestriction(feature) {
     const userType = this.getUserType()
     
-    // 高级用户和管理员无限制
-    if (userType === USER_TYPES.PREMIUM || userType === USER_TYPES.ADMIN) {
+    // 高级用户、学员和管理员无限制
+    if (userType === USER_TYPES.STUDENT || userType === USER_TYPES.PREMIUM || userType === USER_TYPES.ADMIN) {
       return null
     }
     

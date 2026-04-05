@@ -72,7 +72,7 @@ class UserBean extends BaseBean {
     this._validateFieldType('drawCardUsedToday', this.drawCardUsedToday, 'number');
     
     // 验证用户类型
-    const validUserTypes = ['guest', 'normal', 'premium'];
+    const validUserTypes = ['guest', 'normal', 'student', 'premium'];
     if (!validUserTypes.includes(this.userType)) {
       this._addValidationError('userType', `无效的用户类型: ${this.userType}`);
     }
@@ -163,6 +163,14 @@ class UserBean extends BaseBean {
     return this.userType === 'normal';
   }
   
+  /**
+   * 检查是否为学员
+   * @returns {boolean} 是否为学员
+   */
+  isStudent() {
+    return this.userType === 'student';
+  }
+
   /**
    * 检查是否为高级用户
    * @returns {boolean} 是否为高级用户
@@ -301,6 +309,8 @@ class UserBean extends BaseBean {
   getStatusDescription() {
     if (this.isPremium()) {
       return '高级用户，无限制创建档案';
+    } else if (this.isStudent()) {
+      return `学员，可创建${this.profileQuota}个档案`;
     } else if (this.isNormal()) {
       return `探索者，可创建${this.profileQuota}个档案`;
     } else {

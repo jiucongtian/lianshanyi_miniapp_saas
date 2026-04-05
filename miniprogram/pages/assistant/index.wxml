@@ -4,7 +4,7 @@
   <view class="upgrade-tip" wx:if="{{showUpgradeTip}}">
     <view class="upgrade-icon">🔮</view>
     <text class="upgrade-title">高级功能</text>
-    <text class="upgrade-desc">助学童子是高级功能，仅限管理员和高级用户使用</text>
+    <text class="upgrade-desc">助学童子是高级功能，仅限学员、高级用户及管理员使用</text>
     <button class="upgrade-btn" bindtap="onUpgrade">前往升级</button>
   </view>
 

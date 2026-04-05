@@ -13,8 +13,8 @@ class VersionManager {
   static VERSION_CONFIG = {
     '1.4.0': {
       calculateBazi: 'v1_1',
-      userManagement: 'v1_3',
-      profileManagement: 'v1_2',
+      userManagement: 'v1_4',
+      profileManagement: 'v1_3',
       cozeFunctions: 'v1_3',
       paymentManagement: 'v1_3',
       feedbackManagement: 'v1_4',
