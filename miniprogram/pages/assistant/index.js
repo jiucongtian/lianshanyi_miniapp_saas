@@ -12,7 +12,6 @@ Page({
   data: {
     messages: [],
     inputValue: '',
-    isTyping: false,
     sendDisabled: true,
     hasPermission: false,
     showUpgradeTip: false,

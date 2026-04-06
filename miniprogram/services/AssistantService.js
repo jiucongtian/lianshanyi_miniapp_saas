@@ -440,7 +440,6 @@ class AssistantService extends BaseService {
       return {
         ...messageObj,
         content: messageObj.content.substring(0, MAX_CONTENT_LENGTH) + '...',
-        fullContent: messageObj.content.substring(0, MAX_CONTENT_LENGTH) + '...',
         truncated: true
       };
     }

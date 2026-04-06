@@ -20,7 +20,7 @@
     />
   </view>
 
-  <view class="send-btn {{innerValue && !disabled && !isTyping ? 'active' : 'disabled'}}" bindtap="onSend">
+  <view class="send-btn {{innerValue && !disabled ? 'active' : 'disabled'}}" bindtap="onSend">
     <text class="send-text">发送</text>
   </view>
 </view>

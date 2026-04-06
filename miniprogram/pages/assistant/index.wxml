@@ -27,18 +27,18 @@
         </view>
       </view>
       <text class="welcome-title">你好，我是助学童子</text>
-      <text class="welcome-desc">我可以帮助你解答情感困惑、分析人际关系、探索内心世界。有什么想和我聊聊的吗？</text>
+      <text class="welcome-desc">我现在可以帮助你学习情感咨询的抽卡解答逻辑，其他功能快马加鞭开发中。</text>
 
       <!-- 快捷建议 -->
       <view class="quick-suggestions">
-        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="我想了解自己的情感状态">
-          情感状态分析
+        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="开始学习">
+          开始学习
         </view>
-        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="帮我分析一下我和某人的关系">
-          关系解读
+        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="咨询个人情感问题">
+          个人情感
         </view>
-        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="我最近有些困惑，想找人聊聊">
-          心灵对话
+        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="咨询双人情感解读">
+          双人情感
         </view>
       </view>
     </view>
@@ -61,7 +61,6 @@
       <chat-input
         value="{{inputValue}}"
         disabled="{{sendDisabled}}"
-        isTyping="{{isTyping}}"
         placeholder="输入你想问的问题..."
         bind:input="onInputChange"
         bind:send="onSend"

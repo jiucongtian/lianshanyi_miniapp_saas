@@ -14,15 +14,31 @@
   <!-- 消息内容 -->
   <view class="message-content" bindtap="onCopyContent">
     <view class="message-bubble">
-      <!-- 消息文本 -->
-      <text class="message-text" selectable="{{true}}">{{message.content || message.fullContent}}</text>
+      <!-- 用户消息：纯文本 -->
+      <text
+        wx:if="{{isUser}}"
+        class="message-text"
+        selectable="{{true}}"
+      >{{message.content}}</text>
 
-      <!-- 打字机效果指示器 -->
-      <view class="typing-indicator" wx:if="{{message.isTyping}}">
-        <view class="typing-dot"></view>
-        <view class="typing-dot"></view>
-        <view class="typing-dot"></view>
+      <!-- 助手消息 - 等待响应中：加载点 -->
+      <view wx:elif="{{message.isLoading}}" class="loading-indicator">
+        <view class="loading-dot"></view>
+        <view class="loading-dot"></view>
+        <view class="loading-dot"></view>
       </view>
+
+      <!-- 助手消息 - 有 htmlContent：Markdown 渲染 -->
+      <view wx:elif="{{message.htmlContent}}" class="message-markdown">
+        <rich-text nodes="{{message.htmlContent}}" selectable="{{true}}" />
+      </view>
+
+      <!-- 助手消息 - 兜底：纯文本 -->
+      <text
+        wx:else
+        class="message-text"
+        selectable="{{true}}"
+      >{{message.content}}</text>
     </view>
 
     <!-- 时间显示 -->

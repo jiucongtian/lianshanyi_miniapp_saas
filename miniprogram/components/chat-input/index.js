@@ -18,11 +18,6 @@ Component({
       type: String,
       value: '请输入消息...'
     },
-    // 是否正在输入
-    isTyping: {
-      type: Boolean,
-      value: false
-    }
   },
 
   data: {
@@ -63,7 +58,7 @@ Component({
      */
     onSend() {
       const value = this.data.innerValue.trim();
-      if (value && !this.data.disabled && !this.data.isTyping) {
+      if (value && !this.data.disabled) {
         this.triggerEvent('send', { value });
         this.setData({ innerValue: '' });
       }
@@ -74,7 +69,7 @@ Component({
      */
     onConfirm(e) {
       const value = e.detail.value.trim();
-      if (value && !this.data.disabled && !this.data.isTyping) {
+      if (value && !this.data.disabled) {
         this.triggerEvent('send', { value });
         this.setData({ innerValue: '' });
       }

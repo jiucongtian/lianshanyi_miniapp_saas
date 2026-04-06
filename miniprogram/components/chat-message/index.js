@@ -3,7 +3,7 @@
  */
 Component({
   properties: {
-    // 消息对象
+    // 消息对象（含 htmlContent 字段，由 Controller 层预计算）
     message: {
       type: Object,
       value: {}
@@ -30,15 +30,12 @@ Component({
      * 复制消息内容
      */
     onCopyContent() {
-      const content = this.data.message?.content || this.data.message?.fullContent;
+      const content = this.data.message?.content;
       if (content) {
         wx.setClipboardData({
           data: content,
           success: () => {
-            wx.showToast({
-              title: '已复制',
-              icon: 'success'
-            });
+            wx.showToast({ title: '已复制', icon: 'success' });
           }
         });
       }

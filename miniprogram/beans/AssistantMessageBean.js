@@ -21,11 +21,8 @@ class AssistantMessageBean extends BaseClass {
     // 消息内容
     this.content = data.content || '';
 
-    // 完整内容 (用于打字机效果，存储完整内容)
-    this.fullContent = data.fullContent || data.content || '';
-
-    // 是否正在显示 (打字机效果)
-    this.isTyping = data.isTyping || false;
+    // 是否正在等待响应（占位加载态）
+    this.isLoading = data.isLoading || false;
 
     // 消息时间戳
     this.timestamp = data.timestamp || new Date().getTime();
@@ -67,42 +64,22 @@ class AssistantMessageBean extends BaseClass {
   static createUserMessage(content) {
     return new AssistantMessageBean({
       role: 'user',
-      content: content,
-      fullContent: content,
-      isTyping: false
+      content: content
     });
   }
 
   /**
-   * 创建助手消息
-   * @param {string} content - 消息内容
+   * 创建助手占位消息（等待响应时使用）
    * @param {string} conversationId - 会话ID
    * @returns {AssistantMessageBean} 消息实例
    */
-  static createAssistantMessage(content, conversationId = null) {
+  static createAssistantPlaceholder(conversationId = null) {
     return new AssistantMessageBean({
       role: 'assistant',
       content: '',
-      fullContent: content,
-      isTyping: true,
+      isLoading: true,
       conversationId: conversationId
     });
-  }
-
-  /**
-   * 更新内容 (用于打字机效果)
-   * @param {string} content - 当前显示的内容
-   */
-  updateContent(content) {
-    this.content = content;
-  }
-
-  /**
-   * 完成打字效果
-   */
-  finishTyping() {
-    this.content = this.fullContent;
-    this.isTyping = false;
   }
 
   /**
@@ -130,8 +107,7 @@ class AssistantMessageBean extends BaseClass {
       id: this.id,
       role: this.role,
       content: this.content,
-      fullContent: this.fullContent,
-      isTyping: this.isTyping,
+      isLoading: this.isLoading,
       timestamp: this.timestamp,
       displayTime: this.displayTime,
       conversationId: this.conversationId
@@ -145,7 +121,7 @@ class AssistantMessageBean extends BaseClass {
   toCozeFormat() {
     return {
       role: this.role,
-      content: this.fullContent,
+      content: this.content,
       content_type: 'text'
     };
   }
@@ -153,28 +129,23 @@ class AssistantMessageBean extends BaseClass {
   /**
    * 从JSON数据创建消息实例
    * @param {Object} json - JSON数据
-   * @param {boolean} isHistory - 是否为历史消息（历史消息强制关闭打字效果）
    * @returns {AssistantMessageBean} 消息实例
    */
-  static fromJSON(json, isHistory = false) {
-    // 历史消息强制关闭打字效果
-    if (isHistory) {
-      json = { ...json, isTyping: false };
-    }
-    return new AssistantMessageBean(json);
+  static fromJSON(json) {
+    // 历史消息强制关闭加载态
+    return new AssistantMessageBean({ ...json, isLoading: false });
   }
 
   /**
    * 批量从JSON数据创建消息实例
    * @param {Array} jsonArray - JSON数组
-   * @param {boolean} isHistory - 是否为历史消息（历史消息强制关闭打字效果）
    * @returns {Array<AssistantMessageBean>} 消息实例数组
    */
-  static fromJSONArray(jsonArray, isHistory = false) {
+  static fromJSONArray(jsonArray) {
     if (!Array.isArray(jsonArray)) {
       return [];
     }
-    return jsonArray.map(json => AssistantMessageBean.fromJSON(json, isHistory));
+    return jsonArray.map(json => AssistantMessageBean.fromJSON(json));
   }
 
   /**

@@ -147,36 +147,44 @@
   letter-spacing: 0.5rpx;
 }
 
-/* ==================== 打字机效果指示器 ==================== */
-.typing-indicator {
+/* ==================== Markdown 内容样式 ==================== */
+/* rich-text 内部无法继承外部 CSS，所有内部样式均通过 markdownParser.js 内联注入 */
+/* 此处只设置容器本身的布局属性 */
+.message-markdown {
+  display: block;
+  width: 100%;
+  word-break: break-word;
+  font-size: 28rpx;
+  line-height: 1.7;
+  color: @text-primary;
+
+  rich-text {
+    display: block;
+    width: 100%;
+  }
+}
+
+/* ==================== 加载中指示器 ==================== */
+.loading-indicator {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  margin-top: 16rpx;
-  padding-left: 4rpx;
+  padding: 4rpx 0;
 
-  .typing-dot {
+  .loading-dot {
     width: 10rpx;
     height: 10rpx;
     background: linear-gradient(145deg, @primary 0%, @secondary 100%);
     border-radius: 50%;
-    animation: typing-wave 1.4s ease-in-out infinite;
+    animation: loading-wave 1.4s ease-in-out infinite;
 
-    &:nth-child(1) {
-      animation-delay: 0s;
-    }
-
-    &:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-
-    &:nth-child(3) {
-      animation-delay: 0.4s;
-    }
+    &:nth-child(1) { animation-delay: 0s; }
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.4s; }
   }
 }
 
-@keyframes typing-wave {
+@keyframes loading-wave {
   0%, 60%, 100% {
     transform: translateY(0) scale(1);
     opacity: 0.5;

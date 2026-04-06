@@ -1,17 +1,11 @@
 /**
  * 助学童子控制器
- * 处理聊天页面的业务逻辑，包括消息发送、打字机效果等
+ * 处理聊天页面的业务逻辑，包括消息发送、响应展示等
  */
 const { BaseController } = require('./BaseController');
 const { assistantService } = require('../services/AssistantService');
 const { AssistantMessageBean } = require('../beans/AssistantMessageBean');
-
-// 打字机效果配置
-const TYPING_CONFIG = {
-  charsPerTick: 3,      // 每次显示的字符数
-  interval: 50,         // 每次显示的间隔（毫秒）
-  maxRetries: 3         // 发送失败最大重试次数
-};
+const { markdownToHtml } = require('../utils/markdownParser');
 
 class AssistantController extends BaseController {
   /**
@@ -23,12 +17,6 @@ class AssistantController extends BaseController {
 
     // 消息列表
     this.messages = [];
-
-    // 打字机定时器
-    this._typingTimer = null;
-
-    // 当前正在显示的消息ID
-    this._currentTypingMessageId = null;
 
     // 是否正在发送消息
     this._isSending = false;
@@ -46,35 +34,24 @@ class AssistantController extends BaseController {
     this._log('initialize', '开始初始化聊天页面');
 
     try {
-      // 设置初始状态
       this._setData({
         loading: false,
         messages: [],
         inputValue: '',
-        isTyping: false,
         sendDisabled: true,
         hasPermission: false,
         showUpgradeTip: false
       });
 
-      // 检查权限
       const hasPermission = await this.checkPermission();
 
       if (!hasPermission) {
-        this._setData({
-          showUpgradeTip: true,
-          loading: false
-        });
+        this._setData({ showUpgradeTip: true, loading: false });
         return;
       }
 
-      // 有权限，加载历史消息
       this._setData({ hasPermission: true });
-
-      // 加载历史消息
       this._loadHistory();
-
-      // 加载会话ID
       assistantService.loadConversationIdFromCache();
 
       this._log('initialize', '聊天页面初始化完成');
@@ -90,7 +67,6 @@ class AssistantController extends BaseController {
    */
   async checkPermission() {
     try {
-      // 加载用户信息
       const user = await this.loadUserInfo();
 
       if (!user) {
@@ -98,7 +74,6 @@ class AssistantController extends BaseController {
         return false;
       }
 
-      // 检查是否为管理员、学员或高级用户
       const hasPermission = user.isAdmin() || user.isStudent() || user.isPremium();
 
       this._log('checkPermission', '权限检查结果', {
@@ -118,13 +93,11 @@ class AssistantController extends BaseController {
    * @param {string} content - 消息内容
    */
   async sendMessage(content) {
-    // 防止重复发送
     if (this._isSending) {
       this._log('sendMessage', '正在发送中，忽略重复请求');
       return;
     }
 
-    // 验证内容
     if (!content || typeof content !== 'string' || content.trim() === '') {
       this._showMessage('请输入消息内容');
       return;
@@ -133,49 +106,43 @@ class AssistantController extends BaseController {
     this._isSending = true;
     this._setData({ sendDisabled: true });
 
+    // 创建并展示用户消息
+    const userMessage = AssistantMessageBean.createUserMessage(content.trim());
+    this._addMessage(userMessage);
+    this._setData({ inputValue: '' });
+    this._inputValue = '';
+
+    // 添加加载占位消息
+    const placeholder = AssistantMessageBean.createAssistantPlaceholder();
+    this._addMessage(placeholder);
+
     try {
-      // 创建用户消息
-      const userMessage = AssistantMessageBean.createUserMessage(content.trim());
-
-      // 添加用户消息到列表
-      this._addMessage(userMessage);
-
-      // 清空输入框
-      this._setData({ inputValue: '' });
-      this._inputValue = '';
-
-      // 创建助手消息（先显示加载状态）
-      const assistantMessage = AssistantMessageBean.createAssistantMessage('');
-      this._addMessage(assistantMessage);
-
-      // 更新UI显示加载中
-      this._setData({ isTyping: true });
-
-      // 发送请求
       const response = await assistantService.sendMessage(content.trim());
 
       if (response.success && response.data && response.data.content) {
-        // 更新助手消息内容
-        assistantMessage.fullContent = response.data.content;
-        assistantMessage.conversationId = response.data.conversationId;
+        // 更新占位消息为完整内容
+        placeholder.content = response.data.content;
+        placeholder.isLoading = false;
+        placeholder.conversationId = response.data.conversationId;
 
-        // 保存消息到缓存
         assistantService.saveMessageToCache(userMessage);
-        assistantService.saveMessageToCache(assistantMessage);
+        assistantService.saveMessageToCache(placeholder);
 
-        // 开始打字机效果
-        this._startTypingEffect(assistantMessage);
+        this._updateMessage(placeholder.id, {
+          content: placeholder.content,
+          isLoading: false,
+          conversationId: placeholder.conversationId
+        });
       } else {
-        // 发送失败
-        this._removeMessage(assistantMessage.id);
+        this._removeMessage(placeholder.id);
         this._showError(response.error || '发送失败，请重试');
-        this._setData({ isTyping: false, sendDisabled: false });
-        this._isSending = false;
       }
     } catch (error) {
       this._error('sendMessage', '发送消息异常:', error);
+      this._removeMessage(placeholder.id);
       this._showError('发送失败，请重试');
-      this._setData({ isTyping: false, sendDisabled: false });
+    } finally {
+      this._setData({ sendDisabled: false });
       this._isSending = false;
     }
   }
@@ -191,26 +158,11 @@ class AssistantController extends BaseController {
       '取消'
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
-    // 停止打字机效果
-    this._stopTypingEffect();
-
-    // 清除消息
     this.messages = [];
-
-    // 只清除历史记录，保持会话ID
     assistantService.clearHistoryOnly();
-
-    // 更新UI
-    this._setData({
-      messages: [],
-      isTyping: false,
-      sendDisabled: false
-    });
-
+    this._setData({ messages: [], sendDisabled: false });
     this._showSuccess('对话已清除');
     this._log('clearHistory', '对话历史已清除');
   }
@@ -226,26 +178,11 @@ class AssistantController extends BaseController {
       '取消'
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
-    // 停止打字机效果
-    this._stopTypingEffect();
-
-    // 清除消息
     this.messages = [];
-
-    // 清除会话ID和历史记录
     assistantService.startNewConversation();
-
-    // 更新UI
-    this._setData({
-      messages: [],
-      isTyping: false,
-      sendDisabled: false
-    });
-
+    this._setData({ messages: [], sendDisabled: false });
     this._showSuccess('新会话已开启');
     this._log('startNewConversation', '新会话已开启');
   }
@@ -263,28 +200,10 @@ class AssistantController extends BaseController {
   }
 
   /**
-   * 页面卸载时清理
-   */
-  onUnload() {
-    this._stopTypingEffect();
-    super.onUnload();
-  }
-
-  /**
-   * 页面隐藏时清理
-   */
-  onHide() {
-    // 页面隐藏时停止打字机效果，但不清除数据
-    this._stopTypingEffect();
-    super.onHide();
-  }
-
-  /**
    * 返回上一页或跳转到升级页面
    */
   goBack() {
     if (this.data.showUpgradeTip) {
-      // 没有权限，跳转到首页
       this._switchTab('/pages/home/index');
     } else {
       this._navigateBack();
@@ -302,9 +221,7 @@ class AssistantController extends BaseController {
 
     if (history.length > 0) {
       this.messages = history;
-      this._setData({
-        messages: AssistantMessageBean.toObjectArray(history)
-      });
+      this._setData({ messages: this._buildDisplayMessages(history) });
       this._log('_loadHistory', '加载历史消息', { count: history.length });
     }
   }
@@ -316,11 +233,7 @@ class AssistantController extends BaseController {
    */
   _addMessage(message) {
     this.messages.push(message);
-    this._setData({
-      messages: AssistantMessageBean.toObjectArray(this.messages)
-    });
-
-    // 滚动到底部
+    this._setData({ messages: this._buildDisplayMessages() });
     this._scrollToBottom();
   }
 
@@ -333,9 +246,7 @@ class AssistantController extends BaseController {
     const index = this.messages.findIndex(msg => msg.id === messageId);
     if (index !== -1) {
       this.messages.splice(index, 1);
-      this._setData({
-        messages: AssistantMessageBean.toObjectArray(this.messages)
-      });
+      this._setData({ messages: this._buildDisplayMessages() });
     }
   }
 
@@ -349,64 +260,29 @@ class AssistantController extends BaseController {
     const index = this.messages.findIndex(msg => msg.id === messageId);
     if (index !== -1) {
       Object.assign(this.messages[index], updates);
-      this._setData({
-        messages: AssistantMessageBean.toObjectArray(this.messages)
-      });
-    }
-  }
-
-  /**
-   * 开始打字机效果
-   * @param {AssistantMessageBean} message - 消息实例
-   * @private
-   */
-  _startTypingEffect(message) {
-    this._stopTypingEffect();
-
-    this._currentTypingMessageId = message.id;
-    const fullContent = message.fullContent;
-    let currentIndex = 0;
-
-    this._typingTimer = setInterval(() => {
-      currentIndex += TYPING_CONFIG.charsPerTick;
-
-      if (currentIndex >= fullContent.length) {
-        // 打字完成
-        this._stopTypingEffect();
-        message.finishTyping();
-        this._updateMessage(message.id, {
-          content: message.content,
-          isTyping: false
-        });
-        this._setData({
-          isTyping: false,
-          sendDisabled: false
-        });
-        this._isSending = false;
-      } else {
-        // 继续打字
-        const currentContent = fullContent.substring(0, currentIndex);
-        message.updateContent(currentContent);
-        this._updateMessage(message.id, {
-          content: currentContent
-        });
-      }
-
-      // 滚动到底部
+      this._setData({ messages: this._buildDisplayMessages() });
       this._scrollToBottom();
-    }, TYPING_CONFIG.interval);
+    }
   }
 
   /**
-   * 停止打字机效果
+   * 将消息列表转为页面数据，为已完成的助手消息附加 htmlContent
+   * @param {Array<AssistantMessageBean>} messagesArray - 消息实例数组，默认 this.messages
+   * @returns {Array<Object>} 带 htmlContent 的消息对象数组
    * @private
    */
-  _stopTypingEffect() {
-    if (this._typingTimer) {
-      clearInterval(this._typingTimer);
-      this._typingTimer = null;
+  _buildDisplayMessages(messagesArray) {
+    const source = messagesArray || this.messages;
+    const list = AssistantMessageBean.toObjectArray(source);
+    for (const msg of list) {
+      if (msg.role === 'user' || msg.isLoading || !msg.content) continue;
+      try {
+        msg.htmlContent = markdownToHtml(msg.content);
+      } catch (e) {
+        msg.htmlContent = '';
+      }
     }
-    this._currentTypingMessageId = null;
+    return list;
   }
 
   /**
