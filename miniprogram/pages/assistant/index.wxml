@@ -31,8 +31,8 @@
 
       <!-- 快捷建议 -->
       <view class="quick-suggestions">
-        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="开始学习">
-          开始学习
+        <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="抽牌">
+          抽牌
         </view>
         <view class="suggestion-chip" bindtap="onSuggestionTap" data-text="咨询个人情感问题">
           个人情感
