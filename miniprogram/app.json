@@ -15,6 +15,7 @@
     "pages/feedback/index",
     "pages/daily-insight/index",
     "pages/debug/index",
+    "pages/sysManage/index",
     "pages/assistant/index"
   ],
   "usingComponents": {},

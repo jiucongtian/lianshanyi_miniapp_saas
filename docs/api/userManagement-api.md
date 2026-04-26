@@ -14,9 +14,13 @@ POST（云函数调用）
 - createUser: 创建或更新用户信息
 - getUserInfo: 获取用户信息
 - updateUserInfo: 更新用户信息
-- updateUserLevel: 更新用户级别（管理员功能）
-- getUsersByLevel: 按级别查询用户列表
-- getUserLevelStats: 获取用户级别统计
+- upgradeUserType: 升级用户类型
+- checkUserQuota: 检查用户档案配额
+- updateUsedProfiles: 更新已使用档案数
+- getUserTypeConfig: 获取用户类型配置
+- getUserPermissionsAndQuota: 获取当前用户权限和配额
+- adminSearchUsers: 管理员查询用户（需管理员权限）
+- adminUpdateUserType: 管理员修改用户类型（需管理员权限）
 
 ## API列表
 
@@ -349,81 +353,91 @@ const updateResult = await wx.cloud.callFunction({
 }
 ```
 
+### 7. 管理员查询用户
+
+需要调用者具有 admin 或 super_admin 角色。
+
+#### 请求参数
+```javascript
+{
+  "action": "adminSearchUsers",
+  "data": {
+    "keyword": "13800138000",
+    "searchType": "phone"
+  }
+}
+```
+
+#### 参数说明
+| 参数名 | 类型 | 必填 | 说明 |
+|-----|---|---|---|
+| action | string | 是 | 固定为 "adminSearchUsers" |
+| data.keyword | string | 是 | 查询关键词 |
+| data.searchType | string | 是 | phone=手机号精确查询，name=昵称精确查询 |
+
+#### 成功响应
+```json
+{
+  "success": true,
+  "data": {
+    "users": [
+      {
+        "_id": "xxx",
+        "nickName": "张三",
+        "phoneNumber": "13800138000",
+        "userType": "normal",
+        "adminRole": "none",
+        "openid": "oXXXXX"
+      }
+    ],
+    "total": 1
+  }
+}
+```
+
+### 8. 管理员修改用户类型
+
+需要调用者具有 admin 或 super_admin 角色。
+
+#### 请求参数
+```javascript
+{
+  "action": "adminUpdateUserType",
+  "data": {
+    "targetUserId": "user_db_id",
+    "newUserType": "student"
+  }
+}
+```
+
+#### 参数说明
+| 参数名 | 类型 | 必填 | 说明 |
+|-----|---|---|---|
+| action | string | 是 | 固定为 "adminUpdateUserType" |
+| data.targetUserId | string | 是 | 目标用户的数据库 _id |
+| data.newUserType | string | 是 | 新用户类型：guest/normal/student/premium/admin |
+
+#### 成功响应
+```json
+{
+  "success": true,
+  "message": "用户类型已更新为 学员",
+  "data": {
+    "targetUserId": "xxx",
+    "oldUserType": "normal",
+    "newUserType": "student",
+    "displayName": "学员",
+    "updateTime": "2026-04-26T00:00:00.000Z"
+  }
+}
+```
+
 ## 错误响应
 ```json
 {
   "success": false,
   "error": "错误信息描述"
 }
-```
-
-## 使用示例
-
-### JavaScript调用示例
-```javascript
-// 创建用户
-const createResult = await wx.cloud.callFunction({
-  name: 'userManagement',
-  data: {
-    action: 'createUser',
-    data: {
-      nickName: '张三',
-      gender: 1
-    }
-  }
-});
-
-// 获取用户信息
-const getUserResult = await wx.cloud.callFunction({
-  name: 'userManagement',
-  data: {
-    action: 'getUserInfo'
-  }
-});
-
-// 更新用户信息
-const updateResult = await wx.cloud.callFunction({
-  name: 'userManagement',
-  data: {
-    action: 'updateUserInfo',
-    data: {
-      nickName: '李四'
-    }
-  }
-});
-
-// 更新用户级别（管理员功能）
-const updateLevelResult = await wx.cloud.callFunction({
-  name: 'userManagement',
-  data: {
-    action: 'updateUserLevel',
-    data: {
-      targetOpenid: 'oABCD1234567890abcdef1234567890ab',
-      newLevel: 'primary',
-      operatorOpenid: 'oXYZ9876543210fedcba9876543210xy'
-    }
-  }
-});
-
-// 按级别查询用户
-const getUsersByLevelResult = await wx.cloud.callFunction({
-  name: 'userManagement',
-  data: {
-    action: 'getUsersByLevel',
-    data: {
-      level: 'normal',
-      limit: 10
-    }
-  }
-});
-
-// 获取用户级别统计
-const statsResult = await wx.cloud.callFunction({
-  name: 'userManagement',
-  data: {
-    action: 'getUserLevelStats'
-  }
-});
 ```
 
 ## 用户类型说明

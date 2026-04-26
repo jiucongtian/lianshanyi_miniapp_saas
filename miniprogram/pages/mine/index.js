@@ -157,6 +157,16 @@ Page({
   },
 
   /**
+   * 跳转到系统管理页面
+   */
+  onSysManageTap() {
+    log.info('onSysManageTap', '跳转到系统管理页面');
+    wx.navigateTo({
+      url: '/pages/sysManage/index'
+    });
+  },
+
+  /**
    * 跳转到调试页面（仅管理员可访问）
    */
   onDebugTap() {

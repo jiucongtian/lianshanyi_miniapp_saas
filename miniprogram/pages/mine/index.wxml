@@ -97,6 +97,16 @@
         </view>
         <view class="tool-arrow">›</view>
       </view>
+
+      <!-- 系统管理入口（普通管理员及以上可见） -->
+      <view class="tool-card" bindtap="onSysManageTap" wx:if="{{isAdmin}}">
+        <view class="tool-icon">⚙️</view>
+        <view class="tool-info">
+          <text class="tool-title">系统管理</text>
+          <text class="tool-desc">后台管理</text>
+        </view>
+        <view class="tool-arrow">›</view>
+      </view>
     </view>
     
     <!-- 微信小店入口（暂时隐藏） -->
@@ -111,7 +121,7 @@
       </view>
     </view>
     -->
-    
+
     <!-- 调试功能区域（仅管理员可见） -->
     <view class="test-section" wx:if="{{isSuperAdmin}}">
       <!-- 调试页面入口 -->

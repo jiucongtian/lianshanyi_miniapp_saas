@@ -236,6 +236,46 @@ class UserService extends BaseService {
   }
 
   /**
+   * 管理员查询用户（按手机号或昵称）
+   * @param {string} keyword - 查询关键词
+   * @param {'phone'|'name'} searchType - 查询类型，phone=手机号，name=昵称
+   * @returns {Promise<ResponseBean>} 用户列表响应
+   */
+  async adminSearchUsers(keyword, searchType = 'phone') {
+    try {
+      const response = await this.callFunction('userManagement', {
+        action: 'adminSearchUsers',
+        data: { keyword, searchType }
+      });
+      this._logServiceCall('adminSearchUsers', { keyword, searchType }, response);
+      return response;
+    } catch (error) {
+      this._error('adminSearchUsers', 'adminSearchUsers 异常:', error);
+      return ResponseBean.error('查询用户失败: ' + error.message, -1);
+    }
+  }
+
+  /**
+   * 管理员更新用户类型
+   * @param {string} targetUserId - 目标用户的数据库 _id
+   * @param {string} newUserType - 新的用户类型
+   * @returns {Promise<ResponseBean>} 更新结果响应
+   */
+  async adminUpdateUserType(targetUserId, newUserType) {
+    try {
+      const response = await this.callFunction('userManagement', {
+        action: 'adminUpdateUserType',
+        data: { targetUserId, newUserType }
+      });
+      this._logServiceCall('adminUpdateUserType', { targetUserId, newUserType }, response);
+      return response;
+    } catch (error) {
+      this._error('adminUpdateUserType', 'adminUpdateUserType 异常:', error);
+      return ResponseBean.error('更新用户类型失败: ' + error.message, -1);
+    }
+  }
+
+  /**
    * 检查用户是否有特定权限
    * @param {string} permission - 权限名称
    * @returns {Promise<ResponseBean>} 权限检查结果响应
