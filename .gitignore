@@ -24,5 +24,8 @@ npm-debug.log*
 .vscode/
 .idea/
 
+# Claude Code 本地配置（含本机路径，不应提交）
+.claude/
+
 # 系统文件
 Thumbs.db

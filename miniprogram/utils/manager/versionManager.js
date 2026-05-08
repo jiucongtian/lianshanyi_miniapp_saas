@@ -16,7 +16,7 @@ class VersionManager {
       userManagement: 'v1_5',
       profileManagement: 'v1_3',
       cozeFunctions: 'v1_3',
-      paymentManagement: 'v1_3',
+      paymentManagement: 'v1_4',
       feedbackManagement: 'v1_4',
       dailyInsightManagement: 'v1_4',
       functionQuotaManagement: 'v1_4',
