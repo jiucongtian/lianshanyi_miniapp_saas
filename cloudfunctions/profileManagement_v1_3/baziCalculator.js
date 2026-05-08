@@ -5,7 +5,7 @@ const cloud = require('wx-server-sdk');
 // - getGanZhiIndex: 计算干支索引（计算逻辑有严重错误，60个测试用例中50个错误）
 // - extractTimeParams: 从出生日期信息提取参数（供 Coze API 使用）
 // - parseBaziData: 解析 Coze API 返回的八字数据
-// 现在直接使用 localCalculateBazi_v1_2 云函数，不再需要这些函数
+// 现在直接使用 localCalculateBazi_v1_3 云函数，不再需要这些函数
 
 /**
  * 计算八字数据（主入口函数）
@@ -47,7 +47,7 @@ async function calculateBazi(birthDate) {
     
     // 调用本地计算云函数（支持农历和公历）
     const result = await cloud.callFunction({
-      name: 'localCalculateBazi_v1_2',
+      name: 'localCalculateBazi_v1_3',
       data: {
         year,
         month,
