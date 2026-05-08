@@ -14,11 +14,11 @@ class VersionManager {
     '1.4.0': {
       calculateBazi: 'v1_3',
       userManagement: 'v1_5',
-      profileManagement: 'v1_3',
+      profileManagement: 'v1_4',
       cozeFunctions: 'v1_3',
-      paymentManagement: 'v1_4',
+      paymentManagement: 'v1_3',
       feedbackManagement: 'v1_4',
-      dailyInsightManagement: 'v1_4',
+      dailyInsightManagement: 'v1_5',
       functionQuotaManagement: 'v1_4',
       functionCallGateway: 'v1_4',
       assistantChat: 'v1_0'  // 云函数名: assistantChat_v1_0

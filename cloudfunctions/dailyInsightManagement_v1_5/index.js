@@ -69,7 +69,7 @@ function error(errorMessage, code = -1) {
 
 /**
  * 获取当天的干支名称
- * 通过调用 localCalculateBazi_v1_2 云函数，输入日期及子时的时间先得到八字，然后取其中日柱的干支
+ * 通过调用 localCalculateBazi_v1_3 云函数，输入日期及子时的时间先得到八字，然后取其中日柱的干支
  * @returns {Promise<Object>} 干支名称响应
  */
 async function getTodayGanZhi() {
@@ -89,9 +89,9 @@ async function getTodayGanZhi() {
     
     console.log('[getTodayGanZhi] 调用八字计算，参数:', { year, month, day, hour, minute })
     
-    // 调用 localCalculateBazi_v1_2 云函数
+    // 调用 localCalculateBazi_v1_3 云函数
     const baziResult = await cloud.callFunction({
-      name: 'localCalculateBazi_v1_2',
+      name: 'localCalculateBazi_v1_3',
       data: {
         year,
         month,
@@ -167,9 +167,9 @@ async function getTodayCard() {
     
     console.log('[getTodayCard] 调用八字计算，参数:', { year, month, day, hour, minute })
     
-    // 调用 localCalculateBazi_v1_2 云函数获取当天的干支
+    // 调用 localCalculateBazi_v1_3 云函数获取当天的干支
     const baziResult = await cloud.callFunction({
-      name: 'localCalculateBazi_v1_2',
+      name: 'localCalculateBazi_v1_3',
       data: {
         year,
         month,
