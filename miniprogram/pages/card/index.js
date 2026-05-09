@@ -33,6 +33,9 @@ Page({
       earthlyBranch: ''
     },
     cardBackImagePath: '/static/card-back.jpg', // 卡牌背面图片路径
+    // 值符盘
+    showZhifu: false,
+    zhifuData: null,
   },
 
   onLoad: function(options) {

@@ -311,3 +311,206 @@
     opacity: 1;
   }
 }
+
+/* ========== ZhiFu Board Styles - Plan A ========== */
+
+.zhifu-section {
+  margin: 32rpx 0 0;
+  padding: 0 0 28rpx;
+  background: #f7f1e3;
+  border: 1rpx solid #bbae95;
+  border-radius: 8rpx;
+  box-shadow: inset 0 0 0 6rpx #f7f1e3, inset 0 0 0 8rpx rgba(187, 174, 149, 0.35);
+  font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+  color: #1f1b16;
+  overflow: hidden;
+}
+
+.zhifu-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24rpx;
+  padding: 28rpx 0 16rpx;
+}
+
+.zhifu-title-line {
+  width: 56rpx;
+  height: 1rpx;
+  background: #a8997e;
+  flex-shrink: 0;
+}
+
+.zhifu-title-text {
+  font-size: 30rpx;
+  letter-spacing: 0.4em;
+  color: #1f1b16;
+}
+
+.zhifu-subtitle {
+  display: block;
+  text-align: center;
+  font-size: 20rpx;
+  color: #7a6f60;
+  letter-spacing: 0.3em;
+  margin-bottom: 20rpx;
+}
+
+/* 表格：行优先布局，确保跨列行高严格对齐 */
+.zhifu-table {
+  display: flex;
+  flex-direction: column;
+  border: 1rpx solid #bbae95;
+  margin: 0 28rpx;
+  border-radius: 8rpx;
+  overflow: hidden;
+}
+
+.zhifu-row {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1rpx solid rgba(187, 174, 149, 0.5);
+}
+
+.zhifu-row:last-child {
+  border-bottom: none;
+}
+
+.zhifu-row-highlighted {
+  background: rgba(168, 48, 46, 0.04);
+}
+
+/* 表头行 */
+.zhifu-header-row {
+  background: rgba(168, 153, 126, 0.08);
+  border-bottom: 1rpx solid #bbae95;
+}
+
+.zhifu-cell-hd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14rpx 0 12rpx;
+  font-size: 24rpx;
+  letter-spacing: 0.1em;
+  color: #1f1b16;
+  border-right: 1rpx solid #bbae95;
+}
+
+.zhifu-cell-hd:last-child {
+  border-right: none;
+}
+
+/* 单元格（数据行） */
+.zhifu-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx 0 24rpx;
+  border-right: 1rpx solid rgba(187, 174, 149, 0.5);
+}
+
+.zhifu-cell:last-child {
+  border-right: none;
+}
+
+/* 旬列：固定宽度，居左背景 */
+.zhifu-cell-xun {
+  flex: 0 0 72rpx;
+  background: rgba(168, 153, 126, 0.04);
+}
+
+.zhifu-header-row .zhifu-cell-xun {
+  color: #7a6f60;
+}
+
+/* 四柱列：等宽平分剩余空间 */
+.zhifu-cell-value {
+  flex: 1 1 0;
+  background: rgba(168, 153, 126, 0.06);
+}
+
+/* 年龄列：固定宽度，居右 */
+.zhifu-cell-age {
+  flex: 0 0 84rpx;
+  background: rgba(168, 153, 126, 0.04);
+}
+
+.zhifu-header-row .zhifu-cell-age {
+  color: #7a6f60;
+}
+
+.zhifu-cell-text {
+  writing-mode: vertical-rl;
+  font-size: 28rpx;
+  letter-spacing: 0.15em;
+  color: #1f1b16;
+  position: relative;
+  z-index: 1;
+  line-height: 1.1;
+}
+
+.zhifu-text-meta {
+  font-size: 24rpx;
+  color: #3a342c;
+}
+
+.zhifu-text-age {
+  font-size: 22rpx;
+  letter-spacing: 0.05em;
+  color: #5a5049;
+}
+
+/* 土黄高亮光晕 */
+.zhifu-highlight-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(210, 158, 30, 0.60) 0%, rgba(210, 158, 30, 0.25) 55%, transparent 80%);
+  z-index: 0;
+}
+
+.zhifu-text-highlighted {
+  font-weight: 600;
+}
+
+/* 吉凶色调 */
+.zhifu-type-ji {
+  color: #3d7a52;
+}
+
+.zhifu-type-zhong {
+  color: #1f1b16;
+}
+
+.zhifu-type-xiong {
+  color: #9c3b2e;
+}
+
+/* 图例 */
+.zhifu-legend {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 16rpx 28rpx 0;
+}
+
+.zhifu-legend-dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(210, 158, 30, 0.60), rgba(210, 158, 30, 0.20) 60%, transparent);
+  flex-shrink: 0;
+}
+
+.zhifu-legend-text {
+  font-size: 20rpx;
+  color: #7a6f60;
+  letter-spacing: 0.1em;
+}
+

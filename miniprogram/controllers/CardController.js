@@ -27,6 +27,7 @@ const { getBaziImageById, getBaziImageByPinyin } = require('../utils/baziImageMa
 const { JIAZI_DATA } = require('../utils/jiaziData');
 const eventBus = require('../utils/eventBus');
 const { PROFILE_EVENTS, SYSTEM_EVENTS } = require('../utils/eventTypes');
+const { calculateZhifuData } = require('../utils/zhifuCalculator');
 
 class CardController extends BaseController {
   /**
@@ -188,9 +189,12 @@ class CardController extends BaseController {
         // 重置预览状态
         showImagePreview: false,
         previewImagePath: '',
-        previewCardDescription: null
+        previewCardDescription: null,
+        // 重置值符盘（稍后由_computeAndSetZhifu更新）
+        showZhifu: false,
+        zhifuData: null,
       };
-      
+
       this._log('loadProfileData', '准备更新页面数据', {
         isLoading: updateData.isLoading,
         isDataLoaded: updateData.isDataLoaded,
@@ -201,7 +205,10 @@ class CardController extends BaseController {
       this._setData(updateData);
       
       this._log('loadProfileData', '档案数据加载成功，所有状态已更新');
-      
+
+      // 计算值符盘数据
+      this._computeAndSetZhifu(profileBean);
+
       // 重置图片加载状态和自动翻转标志
       this.imageLoadStatus = {
         year: false,
@@ -796,9 +803,12 @@ class CardController extends BaseController {
       timePillar: {
         heavenlyStem: '',
         earthlyBranch: ''
-      }
+      },
+      // 重置值符盘
+      showZhifu: false,
+      zhifuData: null,
     });
-    
+
     this._log('_completeReinitialize', '完全重新初始化完成，所有数据已重置为初始状态');
   }
 
@@ -904,7 +914,10 @@ class CardController extends BaseController {
       // 重置图片预览相关
       showImagePreview: false,
       previewImagePath: '',
-      previewCardDescription: null
+      previewCardDescription: null,
+      // 重置值符盘
+      showZhifu: false,
+      zhifuData: null,
     });
   }
 
@@ -950,6 +963,38 @@ class CardController extends BaseController {
       description: '暂无描述信息',
       keywords: []
     };
+  }
+
+  /**
+   * 计算并设置值符盘数据（仅 premium/admin 可见）
+   * @param {Object} profileBean - ProfileBean 实例
+   * @private
+   */
+  _computeAndSetZhifu(profileBean) {
+    const app = getApp();
+    const cachedUserInfo = app.globalData.globalUserManager && app.globalData.globalUserManager.getCachedUserInfo();
+    const userType = (cachedUserInfo && cachedUserInfo.userType) || 'guest';
+    if (userType !== 'premium' && userType !== 'admin') {
+      this._setData({ showZhifu: false, zhifuData: null });
+      return;
+    }
+
+    const ganzhiIndex = profileBean.baziData.year.ganzhiIndex;
+    const birthYear = profileBean.birthDate.year;
+    const yearZhi = profileBean.baziData.year.zhi;
+    const monthZhi = profileBean.baziData.month.zhi;
+    const dayZhi = profileBean.baziData.day.zhi;
+    const hourZhi = profileBean.baziData.hour.zhi;
+
+    if (!yearZhi || !monthZhi || !dayZhi || !hourZhi || !birthYear) {
+      this._log('_computeAndSetZhifu', '四柱地支或出生年数据不完整，跳过值符计算');
+      this._setData({ showZhifu: false, zhifuData: null });
+      return;
+    }
+
+    const zhifuData = calculateZhifuData(ganzhiIndex, birthYear, yearZhi, monthZhi, dayZhi, hourZhi);
+    this._log('_computeAndSetZhifu', '值符盘计算完成', { startXun: zhifuData.startXun });
+    this._setData({ showZhifu: true, zhifuData });
   }
 
   /**
