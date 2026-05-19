@@ -966,7 +966,7 @@ class CardController extends BaseController {
   }
 
   /**
-   * 计算并设置值符盘数据（仅 premium/admin 可见）
+   * 计算并设置值符盘数据（student/premium/admin 可见）
    * @param {Object} profileBean - ProfileBean 实例
    * @private
    */
@@ -974,7 +974,7 @@ class CardController extends BaseController {
     const app = getApp();
     const cachedUserInfo = app.globalData.globalUserManager && app.globalData.globalUserManager.getCachedUserInfo();
     const userType = (cachedUserInfo && cachedUserInfo.userType) || 'guest';
-    if (userType !== 'premium' && userType !== 'admin') {
+    if (userType !== 'premium' && userType !== 'admin' && userType !== 'student') {
       this._setData({ showZhifu: false, zhifuData: null });
       return;
     }
