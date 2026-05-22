@@ -29,3 +29,13 @@ npm-debug.log*
 
 # 系统文件
 Thumbs.db
+
+# Web 端 — 构建产物 & 环境变量
+apps/api/node_modules/
+apps/api/dist/
+apps/api/.env
+apps/web/node_modules/
+apps/web/dist/
+apps/web/.env
+apps/web/.env.local
+apps/web/.env.production

@@ -1,0 +1,32 @@
+:root {
+  --color-primary: #8B4513;
+  --color-primary-light: #A0522D;
+  --color-bg: #FFF8F0;
+  --color-bg-dark: #F5E6D3;
+  --color-text: #3D2B1F;
+  --color-text-secondary: #7A5C4A;
+
+  /* WuXing element colors */
+  --color-wood: #4CAF50;
+  --color-wood-light: #E8F5E9;
+  --color-fire: #F44336;
+  --color-fire-light: #FFEBEE;
+  --color-earth: #FF9800;
+  --color-earth-light: #FFF3E0;
+  --color-metal: #9E9E9E;
+  --color-metal-light: #F5F5F5;
+  --color-water: #2196F3;
+  --color-water-light: #E3F2FD;
+
+  /* Vant overrides */
+  --van-primary-color: #8B4513;
+  --van-background: #FFF8F0;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+}

@@ -1,0 +1,70 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --color-primary: #8B4513;
+  --color-primary-light: #D4873B;
+  --color-secondary: #D4AF37;
+  --color-bg: #FFF8F0;
+  --color-text: #333333;
+  --color-text-secondary: #888888;
+  --color-border: #E8D9C6;
+  --color-card-bg: #FFFDF8;
+
+  /* WuXing colors */
+  --wuxing-mu: #2E7D32;
+  --wuxing-huo: #C62828;
+  --wuxing-tu: #F9A825;
+  --wuxing-jin: #616161;
+  --wuxing-shui: #1565C0;
+}
+
+html,
+body {
+  height: 100%;
+  background-color: var(--color-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  min-height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background-color: var(--color-bg);
+  position: relative;
+}
+
+/* Safe area support */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Vant overrides */
+:root {
+  --van-primary-color: #8B4513;
+  --van-button-primary-background: #8B4513;
+  --van-button-primary-border-color: #8B4513;
+  --van-nav-bar-title-font-size: 17px;
+  --van-tabs-bottom-bar-color: #8B4513;
+}
+
+.page-container {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-bottom: 66px; /* tabbar height + safe area */
+}
+
+.page-container--no-tabbar {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-bottom: env(safe-area-inset-bottom, 12px);
+}
