@@ -47,7 +47,7 @@ services:
     ports:
       - '127.0.0.1:5173:5173'
     environment:
-      VITE_API_BASE_URL: http://localhost:3000/api/v1
+      VITE_API_BASE_URL: /api/v1
     volumes:
       - ./apps/web/src:/app/src
       - /app/node_modules
