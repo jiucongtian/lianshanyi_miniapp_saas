@@ -38,7 +38,7 @@ function onTabChange(index: number) {
     inactive-color="#999999"
     @change="onTabChange"
   >
-    <van-tabbar-item icon="home-o" name="0">首页</van-tabbar-item>
+    <van-tabbar-item icon="gem-o" name="0">智慧洞见</van-tabbar-item>
     <van-tabbar-item icon="apps-o" name="1">卡牌</van-tabbar-item>
     <van-tabbar-item icon="contact-o" name="2">我的</van-tabbar-item>
   </van-tabbar>

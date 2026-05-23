@@ -65,6 +65,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/cardViewer/CardViewerPage.vue'),
   },
   {
+    path: '/card-browser',
+    name: 'card-browser',
+    component: () => import('@/pages/card/CardBrowserPage.vue'),
+  },
+  {
     path: '/answer',
     name: 'answer',
     component: () => import('@/pages/answer/AnswerPage.vue'),
