@@ -32,9 +32,23 @@ interface LunarConversionResult {
   [key: string]: unknown;
 }
 
+interface BaziPillarRaw {
+  gan: string;
+  zhi: string;
+  ganzhiIndex?: number;
+}
+
 interface BaziRawResult {
   success: boolean;
   error?: string;
+  baziData?: {
+    year: BaziPillarRaw;
+    month: BaziPillarRaw;
+    day: BaziPillarRaw;
+    hour: BaziPillarRaw;
+    lunarDate?: { year: number; month: number; day: number; isLeap: boolean };
+  };
+  details?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
@@ -87,16 +101,25 @@ export function computeBazi(input: BaziInput): BaziOutput {
     throw new Error(result.error ?? '八字计算失败');
   }
 
-  // Map raw result fields to our typed output
-  // bazi-calculator.js returns pillars as { stem, branch, stemWuXing, branchWuXing }
+  // Map raw result fields — bazi-calculator.js returns baziData.{year,month,day,hour}.{gan,zhi}
+  const bd = result.baziData;
+  if (!bd) throw new Error('八字计算结果缺少 baziData');
+
+  const toTypedPillar = (p: BaziPillarRaw): BaziOutput['yearPillar'] => ({
+    stem: p.gan,
+    branch: p.zhi,
+    stemWuXing: '',
+    branchWuXing: '',
+  });
+
   return {
-    yearPillar: (result.yearPillar ?? {}) as BaziOutput['yearPillar'],
-    monthPillar: (result.monthPillar ?? {}) as BaziOutput['monthPillar'],
-    dayPillar: (result.dayPillar ?? {}) as BaziOutput['dayPillar'],
-    hourPillar: (result.hourPillar ?? {}) as BaziOutput['hourPillar'],
-    wuXingCount: (result.wuXingCount ?? {}) as Record<string, number>,
-    dayMasterStrength: result.dayMasterStrength as string | undefined,
-    nayin: result.nayin as BaziOutput['nayin'],
+    yearPillar: toTypedPillar(bd.year),
+    monthPillar: toTypedPillar(bd.month),
+    dayPillar: toTypedPillar(bd.day),
+    hourPillar: toTypedPillar(bd.hour),
+    wuXingCount: {},
+    dayMasterStrength: undefined,
+    nayin: undefined,
     lunarDate: isLunar
       ? `农历${year}年${isLeapMonth ? '闰' : ''}${month}月${day}日`
       : undefined,
@@ -116,9 +139,9 @@ export function getDayGanZhi(year: number, month: number, day: number): {
   if (!result.success) {
     throw new Error('干支计算失败');
   }
-  const dayPillar = result.dayPillar as { stem: string; branch: string } | undefined;
+  const dayGanZhi = result.baziData?.day;
   return {
-    stem: dayPillar?.stem ?? '',
-    branch: dayPillar?.branch ?? '',
+    stem: dayGanZhi?.gan ?? '',
+    branch: dayGanZhi?.zhi ?? '',
   };
 }
