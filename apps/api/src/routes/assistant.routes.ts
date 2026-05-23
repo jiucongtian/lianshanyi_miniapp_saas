@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { assistantController } from '../controllers/assistant.controller';
-import { requireUser } from '../middlewares/auth.middleware';
+import { requireAuthOrGuest } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.post('/chat', requireUser, assistantController.chat);
+// Allow both registered users and guests to chat with the assistant
+router.post('/chat', requireAuthOrGuest, assistantController.chat);
 
 export default router;

@@ -1,10 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
+import { IUser } from '../models/user.model';
 import { authService } from '../services/auth.service';
 import { sendSuccess } from '../utils/response';
 import { ValidationError } from '../utils/errors';
 import { createModuleLogger } from '../utils/logger';
 
 const log = createModuleLogger('AuthController');
+
+/** Map Mongoose IUser document to the User DTO expected by the web frontend */
+function toUserDTO(user: IUser) {
+  return {
+    id: user._id.toString(),
+    username: user.username,
+    phone: user.phone,
+    userType: user.userType,
+    isAdmin: user.isAdmin,
+    isGuest: user.isGuest,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
 
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -39,7 +54,7 @@ export const authController = {
 
       const { accessToken, refreshToken, user } = await authService.loginWithSms(phone, code);
       res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
-      sendSuccess(res, { accessToken, user });
+      sendSuccess(res, { accessToken, user: toUserDTO(user) });
     } catch (err) {
       next(err);
     }
@@ -56,7 +71,7 @@ export const authController = {
         password,
       );
       res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
-      sendSuccess(res, { accessToken, user });
+      sendSuccess(res, { accessToken, user: toUserDTO(user) });
     } catch (err) {
       next(err);
     }
@@ -78,7 +93,7 @@ export const authController = {
         throw new Error('refreshToken cookie missing');
       }
       const { accessToken, user } = await authService.refreshAccessToken(token);
-      sendSuccess(res, { accessToken, user });
+      sendSuccess(res, { accessToken, user: toUserDTO(user) });
     } catch (err) {
       next(err);
     }

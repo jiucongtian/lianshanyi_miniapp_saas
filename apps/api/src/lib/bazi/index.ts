@@ -4,6 +4,18 @@
  * Original: core-converter/bazi-calculator.js + js-calendar-converter-v2.js
  */
 
+// 天干五行映射
+const GAN_WUXING: Record<string, string> = {
+  甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土',
+  己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水',
+};
+
+// 地支五行映射
+const ZHI_WUXING: Record<string, string> = {
+  子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火',
+  午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水',
+};
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { calculateBazi } = require('./bazi-calculator') as {
   calculateBazi: (
@@ -108,16 +120,25 @@ export function computeBazi(input: BaziInput): BaziOutput {
   const toTypedPillar = (p: BaziPillarRaw): BaziOutput['yearPillar'] => ({
     stem: p.gan,
     branch: p.zhi,
-    stemWuXing: '',
-    branchWuXing: '',
+    stemWuXing: GAN_WUXING[p.gan] ?? '',
+    branchWuXing: ZHI_WUXING[p.zhi] ?? '',
   });
+
+  const pillars = [bd.year, bd.month, bd.day, bd.hour];
+  const wuXingCount: Record<string, number> = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 };
+  for (const p of pillars) {
+    const sw = GAN_WUXING[p.gan];
+    const bw = ZHI_WUXING[p.zhi];
+    if (sw) wuXingCount[sw] = (wuXingCount[sw] ?? 0) + 1;
+    if (bw) wuXingCount[bw] = (wuXingCount[bw] ?? 0) + 1;
+  }
 
   return {
     yearPillar: toTypedPillar(bd.year),
     monthPillar: toTypedPillar(bd.month),
     dayPillar: toTypedPillar(bd.day),
     hourPillar: toTypedPillar(bd.hour),
-    wuXingCount: {},
+    wuXingCount,
     dayMasterStrength: undefined,
     nayin: undefined,
     lunarDate: isLunar

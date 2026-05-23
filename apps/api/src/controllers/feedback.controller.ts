@@ -18,6 +18,9 @@ export const feedbackController = {
       if (!content || typeof content !== 'string' || content.trim() === '') {
         throw new ValidationError('反馈内容不能为空');
       }
+      if (content.trim().length < 5) {
+        throw new ValidationError('反馈内容至少需要5个字');
+      }
       if (content.length > 2000) {
         throw new ValidationError('反馈内容不能超过2000字');
       }

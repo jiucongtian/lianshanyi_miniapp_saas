@@ -1,10 +1,41 @@
 import { Request, Response, NextFunction } from 'express';
+import { IProfile } from '../models/profile.model';
 import { profileService, CreateProfileDto } from '../services/profile.service';
 import { sendSuccess } from '../utils/response';
 import { ValidationError } from '../utils/errors';
 import { createModuleLogger } from '../utils/logger';
 
 const log = createModuleLogger('ProfileController');
+
+/** Transform Mongoose profile document to the DTO expected by the web frontend */
+function toProfileDTO(profile: IProfile) {
+  const bazi = profile.baziResult;
+  return {
+    id: profile._id.toString(),
+    userId: profile.userId.toString(),
+    name: profile.name,
+    gender: profile.gender,
+    birthYear: profile.birthYear,
+    birthMonth: profile.birthMonth,
+    birthDay: profile.birthDay,
+    birthHour: profile.birthHour,
+    isLunar: profile.isLunarDate,
+    isDefault: profile.isDefaultProfile,
+    notes: profile.notes,
+    baziResult: bazi
+      ? {
+          yearPillar: bazi.yearPillar,
+          monthPillar: bazi.monthPillar,
+          dayPillar: bazi.dayPillar,
+          hourPillar: bazi.hourPillar,
+          dayMaster: bazi.dayPillar?.stem ?? '',
+          wuXingSummary: bazi.wuXingCount ?? {},
+        }
+      : undefined,
+    createdAt: profile.createdAt,
+    updatedAt: profile.updatedAt,
+  };
+}
 
 function parseProfileDto(body: Record<string, unknown>): CreateProfileDto {
   const { name, gender, birthYear, birthMonth, birthDay, birthHour, birthMinute, isLunarDate, notes } = body;
@@ -45,7 +76,7 @@ export const profileController = {
   async listProfiles(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const profiles = await profileService.getProfiles(req.user!.userId);
-      sendSuccess(res, profiles);
+      sendSuccess(res, profiles.map(toProfileDTO));
     } catch (err) {
       next(err);
     }
@@ -54,7 +85,7 @@ export const profileController = {
   async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const profile = await profileService.getProfile(req.user!.userId, req.params['id']!);
-      sendSuccess(res, profile);
+      sendSuccess(res, toProfileDTO(profile));
     } catch (err) {
       next(err);
     }
@@ -64,7 +95,7 @@ export const profileController = {
     try {
       const dto = parseProfileDto(req.body as Record<string, unknown>);
       const profile = await profileService.createProfile(req.user!.userId, dto);
-      sendSuccess(res, profile, 201);
+      sendSuccess(res, toProfileDTO(profile), 201);
     } catch (err) {
       next(err);
     }
@@ -78,7 +109,7 @@ export const profileController = {
         req.params['id']!,
         partial as Partial<CreateProfileDto>,
       );
-      sendSuccess(res, profile);
+      sendSuccess(res, toProfileDTO(profile));
     } catch (err) {
       next(err);
     }
@@ -96,7 +127,7 @@ export const profileController = {
   async setDefault(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const profile = await profileService.setDefaultProfile(req.user!.userId, req.params['id']!);
-      sendSuccess(res, profile);
+      sendSuccess(res, toProfileDTO(profile));
     } catch (err) {
       next(err);
     }
