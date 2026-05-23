@@ -9,8 +9,6 @@ const profileStore = useProfileStore()
 const authStore = useAuthStore()
 
 const loading = ref(false)
-
-// Track which cards are flipped (by index 0-3)
 const flipped = ref<boolean[]>([false, false, false, false])
 
 const pillarDefs = [
@@ -31,14 +29,6 @@ const wuXingColorMap: Record<string, string> = {
   水: '#4a90c4',
 }
 
-const wuXingGlowMap: Record<string, string> = {
-  木: 'rgba(76, 175, 125, 0.35)',
-  火: 'rgba(224, 95, 95, 0.35)',
-  土: 'rgba(201, 147, 58, 0.35)',
-  金: 'rgba(160, 160, 160, 0.35)',
-  水: 'rgba(74, 144, 196, 0.35)',
-}
-
 function getPillar(key: string) {
   if (!bazi.value) return null
   return bazi.value[key as keyof typeof bazi.value] as {
@@ -48,14 +38,8 @@ function getPillar(key: string) {
 
 function stemColor(key: string): string {
   const p = getPillar(key)
-  if (!p) return '#ffd27a'
-  return wuXingColorMap[p.stemWuXing] ?? '#ffd27a'
-}
-
-function glow(key: string): string {
-  const p = getPillar(key)
-  if (!p) return 'none'
-  return `0 0 20px ${wuXingGlowMap[p.stemWuXing] ?? 'transparent'}`
+  if (!p) return '#854C65'
+  return wuXingColorMap[p.stemWuXing] ?? '#854C65'
 }
 
 function toggleFlip(index: number) {
@@ -63,7 +47,6 @@ function toggleFlip(index: number) {
   flipped.value = flipped.value.map((v, i) => (i === index ? !v : v))
 }
 
-// WuXing summary bar
 const wuXingOrder = ['木', '火', '土', '金', '水'] as const
 const wuXingEmoji: Record<string, string> = {
   木: '🌿', 火: '🔥', 土: '⛰️', 金: '⚙️', 水: '💧',
@@ -88,228 +71,328 @@ onMounted(async () => {
 
 <template>
   <div class="card-page page-container">
-    <!-- Header -->
-    <div class="card-page__header">
-      <div class="card-page__header-title">我的命盘</div>
-      <div class="card-page__header-sub">八字四柱</div>
-    </div>
-
-    <!-- Loading -->
-    <div v-if="loading" class="card-page__loading">
-      <van-loading type="spinner" color="#ffd27a" size="32" />
-    </div>
-
-    <!-- Not logged in -->
-    <div v-else-if="!authStore.isLoggedIn || authStore.isGuest" class="card-page__empty">
-      <div class="card-page__empty-icon">🔮</div>
-      <div class="card-page__empty-text">登录后查看您的八字命盘</div>
-      <van-button round type="primary" class="card-page__empty-btn" @click="router.push('/login')">
-        立即登录
-      </van-button>
-    </div>
-
-    <!-- No profile -->
-    <div v-else-if="!profile" class="card-page__empty">
-      <div class="card-page__empty-icon">📋</div>
-      <div class="card-page__empty-text">尚未创建档案，无法显示命盘</div>
-      <van-button round type="primary" class="card-page__empty-btn" @click="router.push('/profiles/add')">
-        创建档案
-      </van-button>
-    </div>
-
-    <!-- No bazi -->
-    <div v-else-if="!bazi" class="card-page__empty">
-      <div class="card-page__empty-icon">⏳</div>
-      <div class="card-page__empty-text">命盘数据尚未生成</div>
-    </div>
-
-    <!-- Bazi flip cards -->
-    <template v-else>
-      <div class="card-page__profile-name">{{ profile.name }}的命盘</div>
-
-      <!-- 4 flip cards -->
-      <div class="card-page__grid">
+    <!-- 内容卡片容器 -->
+    <div class="bazi-content">
+      <!-- 标题行 -->
+      <div class="title-header">
+        <div class="bazi-title">我的命盘</div>
         <div
-          v-for="(def, idx) in pillarDefs"
-          :key="def.key"
-          class="bazi-card"
-          :class="{ 'bazi-card--flipped': flipped[idx] }"
-          @click="toggleFlip(idx)"
+          class="profile-entry-button"
+          @click="router.push(authStore.isLoggedIn && !authStore.isGuest ? '/profiles/add' : '/login')"
         >
-          <div class="bazi-card__inner">
-            <!-- Front: card title -->
-            <div class="bazi-card__front">
-              <div class="bazi-card__tag">{{ def.tag }}</div>
-              <div class="bazi-card__label">{{ def.label }}</div>
-              <div class="bazi-card__sub">{{ def.sub }}</div>
-              <div class="bazi-card__hint">点击翻转</div>
-            </div>
-            <!-- Back: stem + branch -->
-            <div
-              class="bazi-card__back"
-              :style="{
-                boxShadow: glow(def.key),
-                borderColor: stemColor(def.key),
-              }"
-            >
-              <div class="bazi-card__back-sub">{{ def.sub }}</div>
-              <div class="bazi-card__ganzhi" :style="{ color: stemColor(def.key) }">
-                {{ getPillar(def.key)?.stem ?? '' }}{{ getPillar(def.key)?.branch ?? '' }}
-              </div>
-              <div class="bazi-card__wuxing-row">
-                <span
-                  class="bazi-card__wuxing-badge"
-                  :style="{ backgroundColor: stemColor(def.key) }"
-                >{{ getPillar(def.key)?.stemWuXing ?? '' }}</span>
-                <span class="bazi-card__wuxing-sep">·</span>
-                <span
-                  class="bazi-card__wuxing-badge"
-                  :style="{ backgroundColor: wuXingColorMap[getPillar(def.key)?.branchWuXing ?? ''] ?? '#888' }"
-                >{{ getPillar(def.key)?.branchWuXing ?? '' }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Day master -->
-      <div class="card-page__day-master">
-        <span class="card-page__dm-label">日主</span>
-        <span
-          class="card-page__dm-value"
-          :style="{ color: stemColor('dayPillar') }"
-        >{{ bazi.dayMaster }}</span>
-      </div>
-
-      <!-- WuXing summary -->
-      <div class="card-page__wuxing">
-        <div class="card-page__wuxing-title">五行分布</div>
-        <div class="card-page__wuxing-bars">
-          <div
-            v-for="wx in wuXingOrder"
-            :key="wx"
-            class="card-page__wuxing-item"
+          <span class="profile-entry-icon">👤</span>
+          <span class="profile-entry-text">
+            {{ authStore.isLoggedIn && !authStore.isGuest ? '档案' : '登录' }}
+          </span>
+          <span
+            v-if="profileStore.profiles.length"
+            class="profile-count-badge"
           >
-            <div class="card-page__wuxing-emoji">{{ wuXingEmoji[wx] }}</div>
-            <div class="card-page__wuxing-bar-wrap">
-              <div
-                class="card-page__wuxing-bar"
-                :style="{
-                  width: `${Math.round(((bazi.wuXingSummary[wx] ?? 0) / wuXingTotal) * 100)}%`,
-                  backgroundColor: wuXingColorMap[wx],
-                }"
-              ></div>
-            </div>
-            <div class="card-page__wuxing-count" :style="{ color: wuXingColorMap[wx] }">
-              {{ bazi.wuXingSummary[wx] ?? 0 }}
-            </div>
-          </div>
+            <span class="badge-text">{{ profileStore.profiles.length }}</span>
+          </span>
         </div>
       </div>
 
-      <!-- Go to draw -->
-      <div class="card-page__draw-btn">
-        <van-button round block type="primary" @click="router.push('/answer')">
-          抽卡寻找答案
-        </van-button>
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-state">
+        <div class="loading-icon">🔮</div>
+        <div class="loading-text">命盘解析中…</div>
       </div>
-    </template>
 
-    <!-- Background decor -->
-    <div class="card-page__bg" aria-hidden="true">
-      <div v-for="i in 6" :key="i" :class="`cp-trail cp-trail--${i}`"></div>
+      <!-- 未登录 -->
+      <div v-else-if="!authStore.isLoggedIn || authStore.isGuest" class="empty-state">
+        <div class="empty-icon">🔮</div>
+        <div class="empty-text">登录后查看您的八字命盘</div>
+        <div class="empty-desc">创建专属档案，解读生命密码</div>
+        <div class="create-card-button" @click="router.push('/login')">
+          <span class="create-card-icon">✨</span>
+          <span class="create-card-text">立即登录</span>
+        </div>
+      </div>
+
+      <!-- 无档案 -->
+      <div v-else-if="!profile" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text">尚未创建档案</div>
+        <div class="empty-desc">创建档案后即可查看专属命盘</div>
+        <div class="create-card-button" @click="router.push('/profiles/add')">
+          <span class="create-card-icon">➕</span>
+          <span class="create-card-text">创建档案</span>
+        </div>
+      </div>
+
+      <!-- 无八字数据 -->
+      <div v-else-if="!bazi" class="empty-state">
+        <div class="empty-icon">⏳</div>
+        <div class="empty-text">命盘数据尚未生成</div>
+        <div class="empty-desc">请稍后再来查看</div>
+      </div>
+
+      <!-- 八字四柱翻牌 -->
+      <template v-else>
+        <div class="profile-name-row">{{ profile.name }}的命盘</div>
+
+        <!-- 2×2 翻牌格 -->
+        <div class="pillars-flex">
+          <div
+            v-for="(def, idx) in pillarDefs"
+            :key="def.key"
+            class="bazi-card"
+            :class="{ 'bazi-card--flipped': flipped[idx] }"
+            @click="toggleFlip(idx)"
+          >
+            <div class="bazi-card__inner">
+              <!-- 正面 -->
+              <div class="bazi-card__front">
+                <div class="bazi-card__tag">{{ def.tag }}</div>
+                <div class="bazi-card__label">{{ def.label }}</div>
+                <div class="bazi-card__sub">{{ def.sub }}</div>
+                <div class="bazi-card__hint">点击翻转</div>
+              </div>
+              <!-- 背面 -->
+              <div
+                class="bazi-card__back"
+                :style="{ borderColor: stemColor(def.key) }"
+              >
+                <div class="bazi-card__back-sub">{{ def.sub }}</div>
+                <div class="bazi-card__ganzhi" :style="{ color: stemColor(def.key) }">
+                  {{ getPillar(def.key)?.stem ?? '' }}{{ getPillar(def.key)?.branch ?? '' }}
+                </div>
+                <div class="bazi-card__wuxing-row">
+                  <span
+                    class="bazi-card__wuxing-badge"
+                    :style="{ backgroundColor: stemColor(def.key) }"
+                  >{{ getPillar(def.key)?.stemWuXing ?? '' }}</span>
+                  <span class="bazi-card__wuxing-sep">·</span>
+                  <span
+                    class="bazi-card__wuxing-badge"
+                    :style="{ backgroundColor: wuXingColorMap[getPillar(def.key)?.branchWuXing ?? ''] ?? '#888' }"
+                  >{{ getPillar(def.key)?.branchWuXing ?? '' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 日主 -->
+        <div class="day-master-row">
+          <span class="dm-label">日主</span>
+          <span class="dm-value" :style="{ color: stemColor('dayPillar') }">
+            {{ bazi.dayMaster }}
+          </span>
+        </div>
+
+        <!-- 五行分布 -->
+        <div class="wuxing-section">
+          <div class="wuxing-title">五行分布</div>
+          <div class="wuxing-bars">
+            <div v-for="wx in wuXingOrder" :key="wx" class="wuxing-item">
+              <div class="wuxing-emoji">{{ wuXingEmoji[wx] }}</div>
+              <div class="wuxing-bar-wrap">
+                <div
+                  class="wuxing-bar"
+                  :style="{
+                    width: `${Math.round(((bazi.wuXingSummary[wx] ?? 0) / wuXingTotal) * 100)}%`,
+                    backgroundColor: wuXingColorMap[wx],
+                  }"
+                ></div>
+              </div>
+              <div class="wuxing-count" :style="{ color: wuXingColorMap[wx] }">
+                {{ bazi.wuXingSummary[wx] ?? 0 }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 抽卡按钮 -->
+        <div class="draw-btn-row">
+          <div class="draw-btn" @click="router.push('/answer')">抽卡寻找答案</div>
+        </div>
+      </template>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* ─── 页面背景 ───────────────────────────── */
 .card-page {
-  background: linear-gradient(160deg, #1a0a00 0%, #3d1a00 40%, #6b3412 100%);
+  background-color: #f6f6f6;
   min-height: 100vh;
-  position: relative;
-  overflow: hidden;
-  padding-bottom: 100px;
+  padding-bottom: 32px;
 }
 
-/* ─── Header ─────────────────────────────── */
-.card-page__header {
-  text-align: center;
-  padding: 28px 20px 8px;
-  position: relative;
-  z-index: 2;
+/* ─── 内容卡片 ───────────────────────────── */
+.bazi-content {
+  margin: 16px;
+  background: #ffffff;
+  border: 1px solid #c896b4;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow:
+    0 1px 6px rgba(133, 76, 101, 0.15),
+    0 0 10px rgba(200, 150, 180, 0.1);
+  min-height: 674px;
+  box-sizing: border-box;
 }
 
-.card-page__header-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #ffd27a;
-  letter-spacing: 3px;
-}
-
-.card-page__header-sub {
-  font-size: 12px;
-  color: rgba(255, 210, 122, 0.5);
-  margin-top: 4px;
-  letter-spacing: 2px;
-}
-
-/* ─── Loading / Empty ─────────────────────── */
-.card-page__loading {
+/* ─── 标题行 ─────────────────────────────── */
+.title-header {
   display: flex;
-  justify-content: center;
-  padding: 80px 0;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
   position: relative;
-  z-index: 2;
 }
 
-.card-page__empty {
+.bazi-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #854C65;
+  text-align: center;
+  flex: 1;
+  letter-spacing: 1px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.profile-entry-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #854C65 0%, #a85c7a 100%);
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(133, 76, 101, 0.3);
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.profile-entry-button:active {
+  transform: scale(0.95);
+}
+
+.profile-entry-icon {
+  font-size: 14px;
+}
+
+.profile-entry-text {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.profile-count-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  background: #ff4757;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1px solid #ffffff;
+  box-sizing: border-box;
+}
+
+.badge-text {
+  font-size: 10px;
+  color: #ffffff;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* ─── 加载 / 空状态 ──────────────────────── */
+.loading-state,
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60px 20px;
-  position: relative;
-  z-index: 2;
+  justify-content: center;
+  min-height: 600px;
+  text-align: center;
 }
 
-.card-page__empty-icon {
-  font-size: 48px;
+.loading-icon,
+.empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  animation: pulseSpin 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseSpin {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.1); opacity: 0.7; }
+}
+
+.loading-text,
+.empty-text {
+  font-size: 16px;
+  color: #854C65;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.empty-desc {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 16px;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.create-card-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #854C65 0%, #a85c7a 100%);
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(133, 76, 101, 0.3);
+  cursor: pointer;
+  transition: transform 0.2s;
+  margin-top: 12px;
+}
+
+.create-card-button:active {
+  transform: scale(0.95);
+}
+
+.create-card-icon {
+  font-size: 16px;
+  color: #ffffff;
+}
+
+.create-card-text {
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* ─── 档案名 ─────────────────────────────── */
+.profile-name-row {
+  text-align: center;
+  font-size: 13px;
+  color: #A06B7F;
   margin-bottom: 16px;
 }
 
-.card-page__empty-text {
-  font-size: 15px;
-  color: rgba(255, 220, 170, 0.7);
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.card-page__empty-btn :deep(.van-button--primary) {
-  background: linear-gradient(135deg, #b86b1e 0%, #e89c40 100%);
-  border: none;
-  padding: 0 32px;
-}
-
-/* ─── Profile name ────────────────────────── */
-.card-page__profile-name {
-  text-align: center;
-  font-size: 14px;
-  color: rgba(255, 220, 170, 0.6);
-  margin: 8px 0 20px;
-  position: relative;
-  z-index: 2;
-}
-
-/* ─── 2×2 card grid ──────────────────────── */
-.card-page__grid {
+/* ─── 2×2 翻牌格 ──────────────────────────── */
+.pillars-flex {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  padding: 0 20px;
-  position: relative;
-  z-index: 2;
+  gap: 10px;
+  min-height: 300px;
 }
 
-/* ─── Flip card ──────────────────────────── */
+/* ─── 翻牌动画 ───────────────────────────── */
 .bazi-card {
   height: 160px;
   perspective: 800px;
@@ -332,7 +415,7 @@ onMounted(async () => {
 .bazi-card__back {
   position: absolute;
   inset: 0;
-  border-radius: 16px;
+  border-radius: 12px;
   backface-visibility: hidden;
   display: flex;
   flex-direction: column;
@@ -341,59 +424,60 @@ onMounted(async () => {
   gap: 4px;
 }
 
-/* Front */
+/* 正面：白色，浅玫瑰色边框 */
 .bazi-card__front {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 210, 122, 0.2);
+  background: #ffffff;
+  border: 1px solid rgba(200, 150, 180, 0.4);
+  box-shadow: 0 1px 6px rgba(133, 76, 101, 0.1);
 }
 
 .bazi-card__tag {
   position: absolute;
-  top: 10px;
-  right: 12px;
+  top: 8px;
+  right: 10px;
   font-size: 11px;
-  color: rgba(255, 210, 122, 0.5);
+  color: rgba(133, 76, 101, 0.4);
   letter-spacing: 1px;
 }
 
 .bazi-card__label {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  color: #ffd27a;
-  letter-spacing: 1px;
+  color: #854C65;
+  letter-spacing: 0.5px;
+  text-align: center;
 }
 
 .bazi-card__sub {
-  font-size: 12px;
-  color: rgba(255, 210, 122, 0.55);
+  font-size: 11px;
+  color: rgba(133, 76, 101, 0.55);
 }
 
 .bazi-card__hint {
   position: absolute;
-  bottom: 10px;
-  font-size: 11px;
-  color: rgba(255, 210, 122, 0.3);
+  bottom: 8px;
+  font-size: 10px;
+  color: rgba(133, 76, 101, 0.3);
 }
 
-/* Back */
+/* 背面：浅色底，彩色边框 */
 .bazi-card__back {
-  background: rgba(26, 10, 0, 0.85);
+  background: rgba(133, 76, 101, 0.04);
   border: 1.5px solid;
   transform: rotateY(180deg);
-  transition: box-shadow 0.3s;
 }
 
 .bazi-card__back-sub {
-  font-size: 11px;
-  color: rgba(255, 210, 122, 0.5);
+  font-size: 10px;
+  color: rgba(133, 76, 101, 0.5);
   letter-spacing: 1px;
   margin-bottom: 4px;
 }
 
 .bazi-card__ganzhi {
-  font-size: 36px;
+  font-size: 34px;
   font-weight: 800;
-  letter-spacing: 6px;
+  letter-spacing: 4px;
   line-height: 1;
 }
 
@@ -413,138 +497,113 @@ onMounted(async () => {
 }
 
 .bazi-card__wuxing-sep {
-  color: rgba(255, 210, 122, 0.3);
+  color: rgba(133, 76, 101, 0.3);
 }
 
-/* ─── Day master ─────────────────────────── */
-.card-page__day-master {
+/* ─── 日主 ───────────────────────────────── */
+.day-master-row {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin: 20px 20px 0;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 210, 122, 0.15);
-  border-radius: 12px;
-  position: relative;
-  z-index: 2;
+  margin: 16px 0 0;
+  padding: 10px 16px;
+  background: rgba(133, 76, 101, 0.04);
+  border: 1px solid rgba(200, 150, 180, 0.2);
+  border-radius: 10px;
 }
 
-.card-page__dm-label {
+.dm-label {
   font-size: 13px;
-  color: rgba(255, 220, 170, 0.6);
+  color: #999;
 }
 
-.card-page__dm-value {
+.dm-value {
   font-size: 22px;
   font-weight: 700;
 }
 
-/* ─── WuXing summary ─────────────────────── */
-.card-page__wuxing {
-  margin: 16px 20px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 210, 122, 0.12);
-  border-radius: 16px;
-  position: relative;
-  z-index: 2;
+/* ─── 五行分布 ───────────────────────────── */
+.wuxing-section {
+  margin: 12px 0 0;
+  padding: 14px;
+  background: rgba(133, 76, 101, 0.03);
+  border: 1px solid rgba(200, 150, 180, 0.15);
+  border-radius: 10px;
 }
 
-.card-page__wuxing-title {
-  font-size: 13px;
-  color: rgba(255, 210, 122, 0.6);
-  margin-bottom: 12px;
+.wuxing-title {
+  font-size: 12px;
+  color: #A06B7F;
+  margin-bottom: 10px;
   letter-spacing: 1px;
 }
 
-.card-page__wuxing-bars {
+.wuxing-bars {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.card-page__wuxing-item {
+.wuxing-item {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.card-page__wuxing-emoji {
+.wuxing-emoji {
   font-size: 14px;
-  width: 20px;
+  width: 18px;
   text-align: center;
   flex-shrink: 0;
 }
 
-.card-page__wuxing-bar-wrap {
+.wuxing-bar-wrap {
   flex: 1;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.07);
+  height: 7px;
+  background: #f0f0f0;
   border-radius: 4px;
   overflow: hidden;
 }
 
-.card-page__wuxing-bar {
+.wuxing-bar {
   height: 100%;
   border-radius: 4px;
   transition: width 0.8s ease;
-  min-width: 4px;
+  min-width: 3px;
 }
 
-.card-page__wuxing-count {
+.wuxing-count {
   font-size: 13px;
   font-weight: 700;
-  width: 16px;
+  width: 14px;
   text-align: center;
   flex-shrink: 0;
 }
 
-/* ─── Draw button ────────────────────────── */
-.card-page__draw-btn {
-  padding: 8px 20px 0;
-  position: relative;
-  z-index: 2;
+/* ─── 抽卡按钮 ───────────────────────────── */
+.draw-btn-row {
+  margin-top: 16px;
 }
 
-.card-page__draw-btn :deep(.van-button--primary) {
-  background: linear-gradient(135deg, #b86b1e 0%, #e89c40 100%);
-  border: none;
-  font-size: 16px;
-  letter-spacing: 2px;
-  height: 50px;
-  box-shadow: 0 4px 18px rgba(184, 107, 30, 0.5);
+.draw-btn {
+  width: 100%;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #854C65 0%, #A06B7F 100%);
+  border-radius: 24px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(133, 76, 101, 0.3);
+  transition: transform 0.2s;
 }
 
-/* ─── Background trails ──────────────────── */
-.card-page__bg {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.cp-trail {
-  position: absolute;
-  width: 1px;
-  border-radius: 1px;
-  background: linear-gradient(to bottom, transparent, rgba(255, 210, 122, 0.2), transparent);
-  animation: trail-fall linear infinite;
-  opacity: 0;
-}
-
-.cp-trail--1 { height: 50px; left: 10%; animation-duration: 8s;   animation-delay: 0s; }
-.cp-trail--2 { height: 70px; left: 28%; animation-duration: 11s;  animation-delay: 2s; }
-.cp-trail--3 { height: 40px; left: 55%; animation-duration: 7s;   animation-delay: 1s; }
-.cp-trail--4 { height: 60px; left: 74%; animation-duration: 9.5s; animation-delay: 3s; }
-.cp-trail--5 { height: 45px; left: 88%; animation-duration: 6.5s; animation-delay: 0.5s; }
-.cp-trail--6 { height: 55px; left: 42%; animation-duration: 10s;  animation-delay: 4s; }
-
-@keyframes trail-fall {
-  0%   { top: -8%;  opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 0.6; }
-  100% { top: 108%; opacity: 0; }
+.draw-btn:active {
+  transform: scale(0.98);
 }
 </style>

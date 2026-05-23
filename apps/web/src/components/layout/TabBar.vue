@@ -34,11 +34,11 @@ function onTabChange(index: number) {
     fixed
     safe-area-inset-bottom
     :border="true"
-    active-color="#8B4513"
+    active-color="#854C65"
     inactive-color="#999999"
     @change="onTabChange"
   >
-    <van-tabbar-item icon="gem-o" name="0">智慧洞见</van-tabbar-item>
+    <van-tabbar-item icon="gem-o" name="0">首页</van-tabbar-item>
     <van-tabbar-item icon="apps-o" name="1">卡牌</van-tabbar-item>
     <van-tabbar-item icon="contact-o" name="2">我的</van-tabbar-item>
   </van-tabbar>

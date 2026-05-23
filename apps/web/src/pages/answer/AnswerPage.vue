@@ -26,7 +26,6 @@ const profileOptions = computed(() =>
 )
 
 onMounted(async () => {
-  // Pre-populate question from query param (comes from home page)
   if (route.query.question && typeof route.query.question === 'string') {
     question.value = route.query.question
   }
@@ -89,100 +88,96 @@ const wuXingColorMap: Record<string, string> = {
 
 <template>
   <div class="answer-page page-container--no-tabbar">
-    <!-- Nav bar with dark style -->
+    <!-- 导航栏 -->
     <van-nav-bar
       title="抽卡解读"
       left-arrow
       @click-left="router.back()"
     />
 
-    <div class="answer-page__body">
-      <!-- Question display / input -->
-      <div class="answer-page__question-section">
-        <div class="answer-page__q-label">您的问题</div>
-        <div class="answer-page__q-wrap">
-          <van-field
-            v-model="question"
-            type="textarea"
-            placeholder="请输入您想占卜的问题，或留空"
-            :autosize="{ minHeight: 60, maxHeight: 120 }"
-            maxlength="100"
-            show-word-limit
-            class="answer-page__q-field"
-          />
-        </div>
+    <!-- 主内容玻璃卡片 -->
+    <div class="main-content">
+      <!-- 问题展示/输入 -->
+      <div class="question-container">
+        <div class="question-label">您的问题</div>
+        <van-field
+          v-model="question"
+          type="textarea"
+          placeholder="请输入您想占卜的问题，或留空"
+          :autosize="{ minHeight: 52, maxHeight: 100 }"
+          maxlength="100"
+          show-word-limit
+          class="q-field"
+        />
       </div>
 
-      <!-- Profile selector -->
-      <div class="answer-page__section">
-        <div class="answer-page__label">选择档案</div>
-        <van-dropdown-menu>
+      <!-- 档案选择 -->
+      <div class="profile-section">
+        <div class="profile-label">选择档案</div>
+        <van-dropdown-menu class="profile-dropdown">
           <van-dropdown-item
             v-model="selectedProfileId"
             :options="profileOptions.length ? profileOptions : [{ text: '暂无档案（游客模式）', value: '' }]"
           />
         </van-dropdown-menu>
-        <div v-if="!profileOptions.length" class="answer-page__no-profile">
+        <div v-if="!profileOptions.length" class="no-profile-hint">
           <span>尚未创建档案，</span>
-          <span class="answer-page__link" @click="router.push('/profiles/add')">立即创建</span>
+          <span class="hint-link" @click="router.push('/profiles/add')">立即创建</span>
         </div>
       </div>
 
-      <!-- Draw button -->
-      <div class="answer-page__draw-btn">
-        <van-button
-          block
-          type="primary"
-          round
-          size="large"
-          :loading="loading"
-          loading-text="抽卡中..."
+      <!-- 抽卡按钮 -->
+      <div class="draw-btn-wrap">
+        <button
+          class="btn-primary"
+          :disabled="loading"
           @click="startDraw"
         >
-          抽卡寻找答案
-        </van-button>
+          <van-loading v-if="loading" size="18" color="#fff" style="margin-right:8px" />
+          {{ loading ? '抽卡中…' : '抽卡寻找答案' }}
+        </button>
       </div>
 
-      <!-- Card flip animation + result -->
-      <div v-if="isFlipping || drawResult" class="answer-page__result">
-        <!-- Card flip -->
+      <!-- 翻牌 + 解读 -->
+      <div v-if="isFlipping || drawResult" class="result-area">
+        <!-- 翻牌动画 -->
         <div class="card-flip" :class="{ 'is-flipped': showFront }">
           <div class="card-flip__inner">
-            <!-- Back (initial face) -->
+            <!-- 背面 -->
             <div class="card-flip__back">
               <div class="card-flip__back-text">联山易</div>
             </div>
-            <!-- Front (revealed) -->
+            <!-- 正面 -->
             <div
               class="card-flip__front"
               :style="{
-                borderColor: drawResult ? (wuXingColorMap[drawResult.card.stemWuXing] ?? '#ffd27a') : '#ffd27a',
+                borderColor: drawResult ? (wuXingColorMap[drawResult.card.stemWuXing] ?? '#c896b4') : '#c896b4',
                 boxShadow: drawResult
-                  ? `0 0 24px ${wuXingColorMap[drawResult.card.stemWuXing] ?? '#ffd27a'}55`
+                  ? `0 0 20px ${wuXingColorMap[drawResult.card.stemWuXing] ?? '#c896b4'}55`
                   : 'none',
               }"
             >
               <div
-                class="card-flip__card-name"
-                :style="{ color: drawResult ? (wuXingColorMap[drawResult.card.stemWuXing] ?? '#ffd27a') : '#ffd27a' }"
+                class="card-flip__name"
+                :style="{ color: drawResult ? (wuXingColorMap[drawResult.card.stemWuXing] ?? '#c896b4') : '#c896b4' }"
               >
                 {{ drawResult?.card.name ?? '' }}
               </div>
-              <div class="card-flip__card-nayin">{{ drawResult?.card.nayin ?? '' }}</div>
-              <div class="card-flip__card-seq" v-if="drawResult">
+              <div class="card-flip__nayin">{{ drawResult?.card.nayin ?? '' }}</div>
+              <div v-if="drawResult" class="card-flip__seq">
                 第{{ drawResult.card.sequence }}卦
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Interpretation -->
-        <div v-if="showFront && typedText" class="answer-page__interpretation">
-          <div class="answer-page__interp-header">
-            <span class="answer-page__interp-icon">✦</span>
-            <span class="answer-page__interp-title">智慧解读</span>
+        <!-- AI 解读 -->
+        <div v-if="showFront && typedText" class="interp-container">
+          <div class="interp-header">
+            <span class="interp-icon">✦</span>
+            <span class="interp-title">智慧解读</span>
           </div>
-          <div class="answer-page__interp-text">{{ typedText }}</div>
+          <div class="interp-text">{{ typedText }}</div>
         </div>
       </div>
     </div>
@@ -190,112 +185,150 @@ const wuXingColorMap: Record<string, string> = {
 </template>
 
 <style scoped>
+/* ─── 页面容器 ───────────────────────────── */
 .answer-page {
-  background: linear-gradient(160deg, #1a0a00 0%, #3d1a00 40%, #6b3412 100%);
+  background: linear-gradient(180deg, #2d1a2e 0%, #3d1f3e 50%, #4d1f4e 100%);
   min-height: 100vh;
 }
 
 .answer-page :deep(.van-nav-bar) {
   background: transparent;
 }
-
 .answer-page :deep(.van-nav-bar__title),
 .answer-page :deep(.van-nav-bar__left) {
-  color: #ffd27a;
+  color: rgba(200, 150, 180, 0.9);
+}
+.answer-page :deep(.van-icon) {
+  color: rgba(200, 150, 180, 0.9);
 }
 
-.answer-page__body {
-  padding: 12px 16px 40px;
+/* ─── 主内容（玻璃卡片）────────────────── */
+.main-content {
+  margin: 10px 16px;
+  padding: 15px 25px;
+  border: 1px solid #c896b4;
+  border-radius: 12px;
+  background: rgba(45, 26, 46, 0.85);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 0 20px rgba(200, 150, 180, 0.3),
+    inset 0 0 30px rgba(133, 76, 101, 0.1);
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-/* Question section */
-.answer-page__question-section {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 210, 122, 0.2);
-  border-radius: 16px;
-  padding: 14px;
+/* ─── 问题区 ─────────────────────────────── */
+.question-container {
+  width: 100%;
 }
 
-.answer-page__q-label {
-  font-size: 13px;
-  color: rgba(255, 210, 122, 0.6);
-  margin-bottom: 8px;
+.question-label {
+  font-size: 12px;
+  color: #c896b4;
+  margin-bottom: 6px;
   letter-spacing: 1px;
+  opacity: 0.8;
 }
 
-.answer-page__q-field :deep(.van-field__control) {
-  color: #ffeedd;
-  font-size: 15px;
-}
-
-.answer-page__q-field :deep(.van-field__control::placeholder) {
-  color: rgba(255, 220, 170, 0.35);
-}
-
-.answer-page__q-field :deep(.van-field__word-limit) {
-  color: rgba(255, 210, 122, 0.4);
-}
-
-.answer-page__q-wrap :deep(.van-cell) {
+.q-field :deep(.van-field__control) {
+  color: #ffffff;
+  font-size: 14px;
   background: transparent;
-  padding: 0;
 }
 
-/* Profile section */
-.answer-page__section {
+.q-field :deep(.van-field__control::placeholder) {
+  color: rgba(200, 150, 180, 0.35);
+}
+
+.q-field :deep(.van-field__word-limit) {
+  color: rgba(200, 150, 180, 0.4);
+}
+
+.q-field :deep(.van-cell) {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 210, 122, 0.15);
-  border-radius: 16px;
-  padding: 14px;
-  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(200, 150, 180, 0.2);
 }
 
-.answer-page__label {
-  font-size: 13px;
-  color: rgba(255, 210, 122, 0.6);
-  margin-bottom: 8px;
+/* ─── 档案选择 ───────────────────────────── */
+.profile-section {
+  width: 100%;
+}
+
+.profile-label {
+  font-size: 12px;
+  color: #c896b4;
+  margin-bottom: 6px;
   letter-spacing: 1px;
+  opacity: 0.8;
 }
 
-.answer-page__section :deep(.van-dropdown-menu__bar) {
+.profile-dropdown :deep(.van-dropdown-menu__bar) {
   background: rgba(255, 255, 255, 0.06);
   box-shadow: none;
   border-radius: 8px;
+  border: 1px solid rgba(200, 150, 180, 0.2);
 }
 
-.answer-page__section :deep(.van-dropdown-menu__title) {
-  color: #ffeedd;
+.profile-dropdown :deep(.van-dropdown-menu__title) {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
 }
 
-.answer-page__no-profile {
-  margin-top: 8px;
-  font-size: 13px;
-  color: rgba(255, 220, 170, 0.6);
+.no-profile-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(200, 150, 180, 0.6);
 }
 
-.answer-page__link {
-  color: #ffd27a;
+.hint-link {
+  color: #c896b4;
   cursor: pointer;
+  text-decoration: underline;
 }
 
-/* Draw button */
-.answer-page__draw-btn :deep(.van-button--primary) {
-  background: linear-gradient(135deg, #b86b1e 0%, #e89c40 100%);
+/* ─── 抽卡按钮 ───────────────────────────── */
+.draw-btn-wrap {
+  width: 100%;
+}
+
+.btn-primary {
+  width: 100%;
+  height: 44px;
+  background: linear-gradient(135deg, #854C65 0%, #A06B7F 100%);
+  border-radius: 8px;
   border: none;
+  color: #ffffff;
   font-size: 16px;
-  letter-spacing: 2px;
-  height: 50px;
-  box-shadow: 0 4px 18px rgba(184, 107, 30, 0.5);
+  font-weight: 500;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(133, 76, 101, 0.4);
+  transition: opacity 0.2s;
 }
 
-/* ─── Card flip ──────────────────────────── */
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─── 结果区 ─────────────────────────────── */
+.result-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+/* ─── 翻牌动画 ───────────────────────────── */
 .card-flip {
-  width: 160px;
-  height: 210px;
-  margin: 8px auto 0;
+  width: 130px;
+  height: 182px;
   perspective: 800px;
 }
 
@@ -315,7 +348,7 @@ const wuXingColorMap: Record<string, string> = {
 .card-flip__back {
   position: absolute;
   inset: 0;
-  border-radius: 20px;
+  border-radius: 12px;
   backface-visibility: hidden;
   display: flex;
   flex-direction: column;
@@ -325,71 +358,74 @@ const wuXingColorMap: Record<string, string> = {
 }
 
 .card-flip__back {
-  background: linear-gradient(135deg, #3d1a00 0%, #8b4513 100%);
-  border-color: rgba(255, 210, 122, 0.4);
+  background: linear-gradient(135deg, #3d1a2e 0%, #6b3060 100%);
+  border-color: rgba(200, 150, 180, 0.4);
 }
 
 .card-flip__back-text {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
-  color: #ffd27a;
-  letter-spacing: 4px;
+  color: #c896b4;
+  letter-spacing: 3px;
+  text-shadow: 0 0 8px rgba(200, 150, 180, 0.5);
 }
 
 .card-flip__front {
   background: rgba(26, 10, 0, 0.9);
   transform: rotateY(180deg);
-  gap: 6px;
+  gap: 4px;
 }
 
-.card-flip__card-name {
-  font-size: 46px;
+.card-flip__name {
+  font-size: 38px;
   font-weight: 800;
-  letter-spacing: 4px;
+  letter-spacing: 3px;
   line-height: 1;
+  text-shadow: 0 0 8px currentColor;
 }
 
-.card-flip__card-nayin {
-  font-size: 13px;
-  color: rgba(255, 220, 170, 0.6);
-}
-
-.card-flip__card-seq {
+.card-flip__nayin {
   font-size: 11px;
-  color: rgba(255, 210, 122, 0.4);
+  color: rgba(255, 255, 255, 0.6);
 }
 
-/* ─── Interpretation ─────────────────────── */
-.answer-page__interpretation {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 210, 122, 0.15);
-  border-radius: 16px;
-  padding: 16px;
-  margin-top: 4px;
+.card-flip__seq {
+  font-size: 10px;
+  color: rgba(200, 150, 180, 0.4);
 }
 
-.answer-page__interp-header {
+/* ─── AI 解读 ────────────────────────────── */
+.interp-container {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(200, 150, 180, 0.1) 0%, rgba(160, 107, 127, 0.05) 100%);
+  border: 1px solid rgba(200, 150, 180, 0.4);
+  border-radius: 12px;
+  padding: 14px;
+  backdrop-filter: blur(5px);
+}
+
+.interp-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
-.answer-page__interp-icon {
-  color: #ffd27a;
-  font-size: 14px;
+.interp-icon {
+  color: #c896b4;
+  font-size: 13px;
 }
 
-.answer-page__interp-title {
+.interp-title {
   font-size: 15px;
   font-weight: 700;
-  color: #ffd27a;
+  color: rgba(200, 150, 180, 0.9);
   letter-spacing: 1px;
 }
 
-.answer-page__interp-text {
-  font-size: 15px;
-  color: rgba(255, 220, 170, 0.85);
+.interp-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
   line-height: 1.9;
   white-space: pre-wrap;
 }
