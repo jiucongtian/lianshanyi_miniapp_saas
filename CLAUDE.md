@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git 仓库
+
+**GitHub 仓库：** `git@github.com:jiucongtian/lianshanyi_miniapp_saas.git`
+
+**提交规范（必须遵守）：**
+1. 每完成一个功能后，及时 `git commit`（不要等积累很多改动）
+2. 功能验证通过后，立即 `git push origin <branch>` 推送到 GitHub
+3. 不要等用户提醒，主动完成提交和推送
+4. 提交信息使用中文，格式：`feat/fix/refactor: 简短描述`
+
 ## Project Overview
 
 联山易 (Lianshanyi) - A WeChat Mini Program for Chinese BaZi (生辰八字) fortune telling and card drawing. Built with WeChat CloudBase (腾讯云开发) for backend services.
