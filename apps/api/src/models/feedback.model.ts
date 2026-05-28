@@ -4,6 +4,7 @@ export type FeedbackStatus = 'pending' | 'reviewed' | 'resolved';
 
 export interface IFeedback extends Document {
   _id: mongoose.Types.ObjectId;
+  tenantId: mongoose.Types.ObjectId;
   userId?: mongoose.Types.ObjectId;
   content: string;
   contactInfo?: string;
@@ -17,6 +18,7 @@ export interface IFeedback extends Document {
 
 const feedbackSchema = new Schema<IFeedback>(
   {
+    tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User' },
     content: { type: String, required: true, maxlength: 2000 },
     contactInfo: { type: String, maxlength: 100 },
@@ -32,5 +34,8 @@ const feedbackSchema = new Schema<IFeedback>(
   },
   { timestamps: true },
 );
+
+feedbackSchema.index({ tenantId: 1, status: 1 });
+feedbackSchema.index({ tenantId: 1, userId: 1 });
 
 export const Feedback = mongoose.model<IFeedback>('Feedback', feedbackSchema);

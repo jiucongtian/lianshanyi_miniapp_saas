@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IDrawCardRecord extends Document {
   _id: mongoose.Types.ObjectId;
+  tenantId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   profileId?: mongoose.Types.ObjectId;
   cardId: number; // 1-60 (60 jiazi)
@@ -16,6 +17,7 @@ export interface IDrawCardRecord extends Document {
 
 const drawCardRecordSchema = new Schema<IDrawCardRecord>(
   {
+    tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     profileId: { type: Schema.Types.ObjectId, ref: 'Profile' },
     cardId: { type: Number, required: true, min: 1, max: 60 },
@@ -28,7 +30,7 @@ const drawCardRecordSchema = new Schema<IDrawCardRecord>(
   { timestamps: true },
 );
 
-drawCardRecordSchema.index({ userId: 1, drawDate: 1 });
+drawCardRecordSchema.index({ tenantId: 1, userId: 1, drawDate: 1 });
 
 export const DrawCardRecord = mongoose.model<IDrawCardRecord>(
   'DrawCardRecord',

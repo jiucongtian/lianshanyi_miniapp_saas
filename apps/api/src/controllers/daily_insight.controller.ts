@@ -9,9 +9,9 @@ const log = createModuleLogger('DailyInsightController');
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 export const dailyInsightController = {
-  async getTodayInsight(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getTodayInsight(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const insight = await dailyInsightService.getTodayInsight();
+      const insight = await dailyInsightService.getTodayInsight(req.tenant!._id.toString());
       sendSuccess(res, insight);
     } catch (err) {
       next(err);
@@ -24,7 +24,10 @@ export const dailyInsightController = {
       if (!date || !DATE_REGEX.test(date)) {
         throw new ValidationError('日期格式无效，请使用 YYYY-MM-DD');
       }
-      const insight = await dailyInsightService.getInsightByDate(date);
+      const insight = await dailyInsightService.getInsightByDate(
+        req.tenant!._id.toString(),
+        date,
+      );
       sendSuccess(res, insight);
     } catch (err) {
       next(err);

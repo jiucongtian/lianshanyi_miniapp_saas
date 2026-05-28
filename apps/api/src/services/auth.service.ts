@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import mongoose from 'mongoose';
 import { User, IUser } from '../models/user.model';
 import {
   signAccessToken,
@@ -9,7 +10,6 @@ import {
 } from '../lib/crypto/jwt';
 import { getSmsAdapter } from '../lib/sms/adapter';
 import {
-  AppError,
   UnauthorizedError,
   ConflictError,
   NotFoundError,
@@ -25,6 +25,7 @@ function generateSmsCode(): string {
 function buildTokenPayload(user: IUser) {
   return {
     userId: user._id.toString(),
+    tenantId: user.tenantId.toString(),
     userType: user.userType,
     isAdmin: user.isAdmin,
     isGuest: user.isGuest,
@@ -33,31 +34,33 @@ function buildTokenPayload(user: IUser) {
 
 export const authService = {
   /**
-   * Send SMS verification code (creates user if first time)
+   * Send SMS verification code (creates user if first time, scoped to tenant)
    */
-  async sendSmsCode(phone: string): Promise<void> {
+  async sendSmsCode(phone: string, tenantId: string): Promise<void> {
     const code = generateSmsCode();
     const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    const tenantOid = new mongoose.Types.ObjectId(tenantId);
 
     await User.findOneAndUpdate(
-      { phone },
-      { smsCode: code, smsCodeExpiry: expiry },
+      { phone, tenantId: tenantOid },
+      { smsCode: code, smsCodeExpiry: expiry, tenantId: tenantOid },
       { upsert: true, new: true },
     );
 
     const sms = await getSmsAdapter();
     await sms.sendVerificationCode(phone, code);
-    log.info({ phone }, 'SMS code sent');
+    log.info({ phone, tenantId }, 'SMS code sent');
   },
 
   /**
-   * Login/register with phone + SMS code
+   * Login/register with phone + SMS code (scoped to tenant)
    */
   async loginWithSms(
     phone: string,
     code: string,
+    tenantId: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: IUser; isNew: boolean }> {
-    const user = await User.findOne({ phone });
+    const user = await User.findOne({ phone, tenantId: new mongoose.Types.ObjectId(tenantId) });
     if (!user || !user.smsCode || !user.smsCodeExpiry) {
       throw new UnauthorizedError('验证码无效，请重新获取');
     }
@@ -84,13 +87,16 @@ export const authService = {
   },
 
   /**
-   * Login with username + password
+   * Login with username + password (scoped to tenant)
    */
   async loginWithPassword(
     usernameOrPhone: string,
     password: string,
+    tenantId: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: IUser }> {
+    const tenantOid = new mongoose.Types.ObjectId(tenantId);
     const user = await User.findOne({
+      tenantId: tenantOid,
       $or: [{ username: usernameOrPhone }, { phone: usernameOrPhone }],
     }).select('+passwordHash');
 
@@ -112,11 +118,12 @@ export const authService = {
   },
 
   /**
-   * Issue a guest JWT (no DB user required for read-only browsing)
+   * Issue a guest JWT (scoped to tenant)
    */
-  async issueGuestToken(): Promise<{ accessToken: string; userId: string }> {
+  async issueGuestToken(tenantId: string): Promise<{ accessToken: string; userId: string }> {
     const guestToken = randomUUID();
     const user = await User.create({
+      tenantId: new mongoose.Types.ObjectId(tenantId),
       isGuest: true,
       guestToken,
       userType: 'guest',
@@ -128,7 +135,7 @@ export const authService = {
   },
 
   /**
-   * Refresh access token using refresh token (stored in httpOnly cookie)
+   * Refresh access token using refresh token
    */
   async refreshAccessToken(
     refreshToken: string,
@@ -144,20 +151,26 @@ export const authService = {
   },
 
   /**
-   * Register username + password (for admin creation or alternative login)
+   * Register username + password (for admin creation, scoped to tenant)
    */
   async registerWithPassword(
     username: string,
     password: string,
+    tenantId: string,
     phone?: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: IUser }> {
-    const existing = await User.findOne({ $or: [{ username }, ...(phone ? [{ phone }] : [])] });
+    const tenantOid = new mongoose.Types.ObjectId(tenantId);
+    const existing = await User.findOne({
+      tenantId: tenantOid,
+      $or: [{ username }, ...(phone ? [{ phone }] : [])],
+    });
     if (existing) {
       throw new ConflictError('用户名或手机号已存在');
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await User.create({
+      tenantId: tenantOid,
       username,
       phone,
       passwordHash,

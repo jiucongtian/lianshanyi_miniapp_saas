@@ -8,6 +8,7 @@ import pinoHttp from 'pino-http';
 
 import { logger } from './utils/logger';
 import { errorMiddleware } from './middlewares/error.middleware';
+import { resolveTenant } from './middlewares/tenant.middleware';
 import router from './routes/index';
 
 const app = express();
@@ -24,7 +25,7 @@ app.use(
     origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Slug'],
   }),
 );
 
@@ -57,7 +58,16 @@ app.use(
 );
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
-app.use('/api/v1', router);
+// Mount router once; skip tenant resolution for public config endpoints
+app.use(
+  '/api/v1',
+  (req, res, next) => {
+    // /tenants/public/* is bootstrap — no tenant context needed
+    if (req.path.startsWith('/tenants/public/')) return next();
+    return resolveTenant(req, res, next);
+  },
+  router,
+);
 
 // 404 fallback
 app.use((_req, res) => {

@@ -3,11 +3,13 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import { useAuthStore } from '@/stores/auth.store'
+import { useTenantStore } from '@/stores/tenant.store'
 import * as authApi from '@/api/auth.api'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const tenantStore = useTenantStore()
 
 const activeTab = ref(0)
 
@@ -108,7 +110,7 @@ async function handleGuestLogin() {
 <template>
   <div class="login-page page-container--no-tabbar">
     <div class="login-page__header">
-      <div class="login-page__logo">联山易</div>
+      <div class="login-page__logo">{{ tenantStore.config?.themeConfig.brandName ?? '连山易' }}</div>
       <div class="login-page__subtitle">命理解读 · 卡牌占卜</div>
     </div>
 

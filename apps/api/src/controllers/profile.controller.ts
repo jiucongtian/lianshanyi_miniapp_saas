@@ -75,7 +75,7 @@ function parseProfileDto(body: Record<string, unknown>): CreateProfileDto {
 export const profileController = {
   async listProfiles(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const profiles = await profileService.getProfiles(req.user!.userId);
+      const profiles = await profileService.getProfiles(req.user!.userId, req.user!.tenantId);
       sendSuccess(res, profiles.map(toProfileDTO));
     } catch (err) {
       next(err);
@@ -84,7 +84,11 @@ export const profileController = {
 
   async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const profile = await profileService.getProfile(req.user!.userId, req.params['id']!);
+      const profile = await profileService.getProfile(
+        req.user!.userId,
+        req.user!.tenantId,
+        req.params['id']!,
+      );
       sendSuccess(res, toProfileDTO(profile));
     } catch (err) {
       next(err);
@@ -94,7 +98,7 @@ export const profileController = {
   async createProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const dto = parseProfileDto(req.body as Record<string, unknown>);
-      const profile = await profileService.createProfile(req.user!.userId, dto);
+      const profile = await profileService.createProfile(req.user!.userId, req.user!.tenantId, dto);
       sendSuccess(res, toProfileDTO(profile), 201);
     } catch (err) {
       next(err);
@@ -106,6 +110,7 @@ export const profileController = {
       const partial = req.body as Record<string, unknown>;
       const profile = await profileService.updateProfile(
         req.user!.userId,
+        req.user!.tenantId,
         req.params['id']!,
         partial as Partial<CreateProfileDto>,
       );
@@ -117,7 +122,7 @@ export const profileController = {
 
   async deleteProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await profileService.deleteProfile(req.user!.userId, req.params['id']!);
+      await profileService.deleteProfile(req.user!.userId, req.user!.tenantId, req.params['id']!);
       sendSuccess(res, { message: '档案已删除' });
     } catch (err) {
       next(err);
@@ -126,7 +131,11 @@ export const profileController = {
 
   async setDefault(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const profile = await profileService.setDefaultProfile(req.user!.userId, req.params['id']!);
+      const profile = await profileService.setDefaultProfile(
+        req.user!.userId,
+        req.user!.tenantId,
+        req.params['id']!,
+      );
       sendSuccess(res, toProfileDTO(profile));
     } catch (err) {
       next(err);

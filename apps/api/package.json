@@ -1,7 +1,7 @@
 {
   "name": "lianshanyi-api",
   "version": "1.0.0",
-  "description": "联山易 Web 后端 API",
+  "description": "连山易 Web 后端 API",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",

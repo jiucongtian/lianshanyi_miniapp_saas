@@ -3,12 +3,14 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import { useProfileStore } from '@/stores/profile.store'
+import { useTenantStore } from '@/stores/tenant.store'
 import { drawCard } from '@/api/card.api'
 import type { DrawCardRecord } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
 const profileStore = useProfileStore()
+const tenantStore = useTenantStore()
 
 const selectedProfileId = ref<string>('')
 const question = ref('')
@@ -145,7 +147,7 @@ const wuXingColorMap: Record<string, string> = {
           <div class="card-flip__inner">
             <!-- 背面 -->
             <div class="card-flip__back">
-              <div class="card-flip__back-text">联山易</div>
+              <div class="card-flip__back-text">{{ tenantStore.config?.themeConfig.brandName ?? '连山易' }}</div>
             </div>
             <!-- 正面 -->
             <div

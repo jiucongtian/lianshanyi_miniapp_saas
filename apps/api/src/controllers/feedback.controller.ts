@@ -25,11 +25,15 @@ export const feedbackController = {
         throw new ValidationError('反馈内容不能超过2000字');
       }
 
-      const feedback = await feedbackService.submitFeedback(req.user?.userId, {
-        content: content.trim(),
-        contactInfo: contactInfo && typeof contactInfo === 'string' ? contactInfo : undefined,
-        category: category && typeof category === 'string' ? category : undefined,
-      });
+      const feedback = await feedbackService.submitFeedback(
+        req.user?.userId,
+        req.tenant!._id.toString(),
+        {
+          content: content.trim(),
+          contactInfo: contactInfo && typeof contactInfo === 'string' ? contactInfo : undefined,
+          category: category && typeof category === 'string' ? category : undefined,
+        },
+      );
 
       sendSuccess(res, feedback, 201);
     } catch (err) {
@@ -43,7 +47,12 @@ export const feedbackController = {
       const limit = Math.min(100, Math.max(1, parseInt(String(req.query['limit'] ?? '20'), 10) || 20));
       const status = req.query['status'] ? String(req.query['status']) : undefined;
 
-      const { feedbacks, meta } = await feedbackService.listFeedbacks(page, limit, status);
+      const { feedbacks, meta } = await feedbackService.listFeedbacks(
+        req.user!.tenantId,
+        page,
+        limit,
+        status,
+      );
       sendSuccess(res, feedbacks, 200, meta);
     } catch (err) {
       next(err);
@@ -59,7 +68,11 @@ export const feedbackController = {
         throw new ValidationError('回复内容不能为空');
       }
 
-      const feedback = await feedbackService.replyFeedback(id!, reply.trim());
+      const feedback = await feedbackService.replyFeedback(
+        req.user!.tenantId,
+        id!,
+        reply.trim(),
+      );
       sendSuccess(res, feedback);
     } catch (err) {
       next(err);

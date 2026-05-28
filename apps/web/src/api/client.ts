@@ -11,13 +11,33 @@ export const apiClient: AxiosInstance = axios.create({
   },
 })
 
-// Request interceptor: attach token
+// Request interceptor: attach token + tenant slug
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    // Inject tenant slug unless the caller already set it (e.g. bootstrap call)
+    if (!config.headers['X-Tenant-Slug']) {
+      // Resolve slug from hostname at call time (avoids circular import with Pinia store)
+      const host = window.location.hostname
+      let slug = 'default'
+      if (!/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+        const parts = host.split('.')
+        if (parts.length === 2 && parts[1] === 'localhost') {
+          // 'xinian.localhost' → 'xinian'  (local dev subdomain)
+          slug = parts[0]
+        } else if (parts.length >= 3) {
+          // 'xinian.example.com' → 'xinian'
+          slug = parts[0]
+        }
+        // single-part 'localhost' → stays 'default'
+      }
+      config.headers['X-Tenant-Slug'] = slug
+    }
+
     return config
   },
   (error) => Promise.reject(error),

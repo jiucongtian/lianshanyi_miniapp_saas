@@ -30,7 +30,7 @@ const toolItems = [
   { icon: '🃏', label: '卡牌查看器', desc: '浏览六十甲子全卡', path: '/card-browser' },
   { icon: '🌙', label: '今日运势',   desc: '每日愈见',         path: '/daily-insight' },
   { icon: '🤖', label: '助学童子',   desc: 'AI 命理问答',      path: '/assistant' },
-  { icon: '📖', label: '使用手册',   desc: '了解联山易',       path: '/agreement' },
+  { icon: '📖', label: '使用手册',   desc: '了解连山易',       path: '/agreement' },
   { icon: '💬', label: '反馈与建议', desc: '帮助我们改进',     path: '/feedback' },
 ]
 

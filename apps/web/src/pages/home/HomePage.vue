@@ -1,11 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useTenantStore } from '@/stores/tenant.store'
 
 const router = useRouter()
+const tenantStore = useTenantStore()
 
 const currentTab = ref<'wisdom' | 'daily'>('wisdom')
 const question = ref('')
+
+// Tenant-driven copy with sane defaults
+const copy = computed(() => ({
+  tabInsight: tenantStore.config?.themeConfig.copy.tabInsight ?? '智慧洞见',
+  tabDaily: tenantStore.config?.themeConfig.copy.tabDaily ?? '每日愈见',
+  homeTitle: tenantStore.config?.themeConfig.copy.homeTitle ?? '智慧洞见',
+  homeSubtitle: tenantStore.config?.themeConfig.copy.homeSubtitle ?? 'Wisdom and Insight',
+  drawButtonText: tenantStore.config?.themeConfig.copy.drawButtonText ?? '抽卡寻找答案',
+  inputPlaceholder: tenantStore.config?.themeConfig.copy.inputPlaceholder ?? '说出你的问题，实在没有空着也行！',
+}))
+
+const showDailyInsight = computed(
+  () => tenantStore.config?.themeConfig.features.showDailyInsight ?? true,
+)
 
 const outerPatterns = Array.from({ length: 36 }, (_, i) => i)
 const middlePatterns = Array.from({ length: 16 }, (_, i) => i)
@@ -60,14 +76,15 @@ function onNavigateToDailyInsight() {
           :class="{ active: currentTab === 'wisdom' }"
           @click="currentTab = 'wisdom'"
         >
-          <span class="tab-text">智慧洞见</span>
+          <span class="tab-text">{{ copy.tabInsight }}</span>
         </div>
         <div
+          v-if="showDailyInsight"
           class="tab-item"
           :class="{ active: currentTab === 'daily' }"
           @click="currentTab = 'daily'"
         >
-          <span class="tab-text">每日愈见</span>
+          <span class="tab-text">{{ copy.tabDaily }}</span>
         </div>
       </div>
 
@@ -75,8 +92,8 @@ function onNavigateToDailyInsight() {
       <div v-show="currentTab === 'wisdom'" class="tab-content">
         <!-- 卡片标题 -->
         <div class="card-title">
-          <span class="title-main">智慧洞见</span>
-          <span class="title-sub">Wisdom and Insight</span>
+          <span class="title-main">{{ copy.homeTitle }}</span>
+          <span class="title-sub">{{ copy.homeSubtitle }}</span>
         </div>
 
         <!-- 曼陀罗装饰 -->
@@ -145,7 +162,7 @@ function onNavigateToDailyInsight() {
           <input
             v-model="question"
             class="question-input"
-            placeholder="说出你的问题，实在没有空着也行！"
+            :placeholder="copy.inputPlaceholder"
             maxlength="50"
             @keyup.enter="onFindAnswer"
           />
@@ -154,16 +171,16 @@ function onNavigateToDailyInsight() {
         <!-- 按钮 -->
         <div class="button-container">
           <button class="find-answer-btn" @click="onFindAnswer">
-            抽卡寻找答案
+            {{ copy.drawButtonText }}
           </button>
         </div>
       </div>
 
       <!-- 每日愈见 -->
-      <div v-show="currentTab === 'daily'" class="tab-content">
+      <div v-if="showDailyInsight" v-show="currentTab === 'daily'" class="tab-content">
         <!-- 卡片标题 -->
         <div class="card-title">
-          <span class="title-main">每日愈见</span>
+          <span class="title-main">{{ copy.tabDaily }}</span>
           <span class="title-sub">Daily Healing</span>
         </div>
 

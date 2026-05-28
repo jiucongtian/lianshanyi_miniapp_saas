@@ -9,6 +9,7 @@ const JWT_GUEST_EXPIRES_IN = process.env.JWT_GUEST_EXPIRES_IN ?? '30d';
 
 export interface JwtPayload {
   userId: string;
+  tenantId: string;
   userType: string;
   isAdmin: boolean;
   isGuest: boolean;

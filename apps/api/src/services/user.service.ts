@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { User, IUser, UserType } from '../models/user.model';
 import { StaticUserType } from '../models/static-user-type.model';
 import { NotFoundError, ForbiddenError, ConflictError } from '../utils/errors';
@@ -35,8 +36,12 @@ export const userService = {
     await user.save();
   },
 
-  async bindPhone(userId: string, phone: string): Promise<IUser> {
-    const existing = await User.findOne({ phone, _id: { $ne: userId } });
+  async bindPhone(userId: string, tenantId: string, phone: string): Promise<IUser> {
+    const existing = await User.findOne({
+      phone,
+      tenantId: new mongoose.Types.ObjectId(tenantId),
+      _id: { $ne: userId },
+    });
     if (existing) throw new ConflictError('该手机号已被其他账号绑定');
     const user = await User.findByIdAndUpdate(userId, { phone }, { new: true });
     if (!user) throw new NotFoundError('用户');
@@ -52,11 +57,12 @@ export const userService = {
     return StaticUserType.find().sort({ sortOrder: 1 });
   },
 
-  // Admin operations
-  async listUsers(page: number, limit: number, search?: string) {
-    const query = search
-      ? { $or: [{ phone: { $regex: search } }, { username: { $regex: search } }] }
-      : {};
+  // Admin operations — scoped to tenant
+  async listUsers(tenantId: string, page: number, limit: number, search?: string) {
+    const query: Record<string, unknown> = { tenantId: new mongoose.Types.ObjectId(tenantId) };
+    if (search) {
+      query['$or'] = [{ phone: { $regex: search } }, { username: { $regex: search } }];
+    }
     const [users, total] = await Promise.all([
       User.find(query)
         .skip((page - 1) * limit)
@@ -67,10 +73,20 @@ export const userService = {
     return { users, total };
   },
 
-  async updateUserType(userId: string, userType: UserType, isAdmin?: boolean): Promise<IUser> {
+  async updateUserType(
+    userId: string,
+    tenantId: string,
+    userType: UserType,
+    isAdmin?: boolean,
+  ): Promise<IUser> {
     const update: Partial<IUser> = { userType };
     if (typeof isAdmin === 'boolean') update.isAdmin = isAdmin;
-    const user = await User.findByIdAndUpdate(userId, update, { new: true });
+    // Ensure the user belongs to this tenant
+    const user = await User.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(userId), tenantId: new mongoose.Types.ObjectId(tenantId) },
+      update,
+      { new: true },
+    );
     if (!user) throw new NotFoundError('用户');
     return user;
   },

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { DailyInsight, IDailyInsight } from '../models/daily-insight.model';
 import { StaticCard } from '../models/static-card.model';
 import { getDayGanZhi } from '../lib/bazi';
@@ -29,20 +30,27 @@ function dateToCardId(dateStr: string): number {
 }
 
 export const dailyInsightService = {
-  async getTodayInsight(): Promise<IDailyInsight> {
+  async getTodayInsight(tenantId: string): Promise<IDailyInsight> {
     const today = getTodayString();
-    const insight = await DailyInsight.findOne({ date: today });
+    const insight = await DailyInsight.findOne({
+      tenantId: new mongoose.Types.ObjectId(tenantId),
+      date: today,
+    });
     if (!insight) throw new NotFoundError('今日运势尚未生成');
     return insight;
   },
 
-  async getInsightByDate(date: string): Promise<IDailyInsight> {
-    const insight = await DailyInsight.findOne({ date });
+  async getInsightByDate(tenantId: string, date: string): Promise<IDailyInsight> {
+    const insight = await DailyInsight.findOne({
+      tenantId: new mongoose.Types.ObjectId(tenantId),
+      date,
+    });
     if (!insight) throw new NotFoundError(`${date} 的运势尚未生成`);
     return insight;
   },
 
-  async generateForDate(date: string): Promise<IDailyInsight> {
+  async generateForDate(tenantId: string, date: string): Promise<IDailyInsight> {
+    const tenantOid = new mongoose.Types.ObjectId(tenantId);
     const cardId = dateToCardId(date);
 
     const card = await StaticCard.findOne({ cardId });
@@ -61,8 +69,9 @@ export const dailyInsightService = {
     });
 
     const insight = await DailyInsight.findOneAndUpdate(
-      { date },
+      { tenantId: tenantOid, date },
       {
+        tenantId: tenantOid,
         date,
         cardId,
         cardName,
@@ -80,7 +89,7 @@ export const dailyInsightService = {
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
 
-    log.info({ date, cardId, insightId: insight!._id.toString() }, 'Daily insight generated');
+    log.info({ tenantId, date, cardId, insightId: insight!._id.toString() }, 'Daily insight generated');
     return insight!;
   },
 };

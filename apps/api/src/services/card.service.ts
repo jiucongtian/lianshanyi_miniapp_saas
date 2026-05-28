@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { StaticCard, IStaticCard } from '../models/static-card.model';
 import { DrawCardRecord, IDrawCardRecord } from '../models/draw-card-record.model';
+import { Tenant } from '../models/tenant.model';
 import { getAiAdapter } from '../lib/ai/adapter';
 import { Profile } from '../models/profile.model';
 import { NotFoundError, TooManyRequestsError } from '../utils/errors';
@@ -30,18 +31,27 @@ export const cardService = {
 
   async drawCard(
     userId: string,
+    tenantId: string,
     profileId: string | undefined,
     question: string | undefined,
   ): Promise<IDrawCardRecord & { card?: IStaticCard }> {
     const today = getTodayString();
+    const tenantOid = new mongoose.Types.ObjectId(tenantId);
+    const userOid = new mongoose.Types.ObjectId(userId);
 
-    // Check daily draw limit
-    const existingToday = await DrawCardRecord.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
+    // Check daily draw limit against tenant config
+    const tenant = await Tenant.findById(tenantOid).lean();
+    const dailyLimit = tenant?.limits?.dailyDrawCount ?? 1;
+
+    const countToday = await DrawCardRecord.countDocuments({
+      tenantId: tenantOid,
+      userId: userOid,
       drawDate: today,
     });
-    if (existingToday) {
-      throw new TooManyRequestsError('今日已抽过牌，每日仅限抽一次');
+    if (countToday >= dailyLimit) {
+      throw new TooManyRequestsError(
+        `今日已达抽卡上限（每日最多 ${dailyLimit} 次）`,
+      );
     }
 
     // Random card 1-60
@@ -58,7 +68,8 @@ export const cardService = {
       try {
         const profile = await Profile.findOne({
           _id: new mongoose.Types.ObjectId(profileId),
-          userId: new mongoose.Types.ObjectId(userId),
+          tenantId: tenantOid,
+          userId: userOid,
         });
         if (profile) {
           profileName = profile.name;
@@ -84,7 +95,8 @@ export const cardService = {
     });
 
     const record = await DrawCardRecord.create({
-      userId: new mongoose.Types.ObjectId(userId),
+      tenantId: tenantOid,
+      userId: userOid,
       profileId: profileId ? new mongoose.Types.ObjectId(profileId) : undefined,
       cardId: drawnCardId,
       cardName: card.name,
@@ -94,7 +106,7 @@ export const cardService = {
       drawDate: today,
     });
 
-    log.info({ userId, cardId: drawnCardId, recordId: record._id.toString() }, 'Card drawn');
+    log.info({ tenantId, userId, cardId: drawnCardId, recordId: record._id.toString() }, 'Card drawn');
 
     const recordObj = record.toObject() as IDrawCardRecord & { card?: IStaticCard };
     recordObj.card = card;
@@ -103,13 +115,17 @@ export const cardService = {
 
   async getDrawHistory(
     userId: string,
+    tenantId: string,
     page: number,
     limit: number,
   ): Promise<{
     records: IDrawCardRecord[];
     meta: ReturnType<typeof paginationMeta>;
   }> {
-    const query = { userId: new mongoose.Types.ObjectId(userId) };
+    const query = {
+      tenantId: new mongoose.Types.ObjectId(tenantId),
+      userId: new mongoose.Types.ObjectId(userId),
+    };
     const [records, total] = await Promise.all([
       DrawCardRecord.find(query)
         .sort({ createdAt: -1 })

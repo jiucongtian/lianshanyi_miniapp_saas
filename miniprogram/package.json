@@ -1,7 +1,7 @@
 {
   "name": "lianshanyi-miniprogram",
   "version": "1.0.0",
-  "description": "联山易小程序",
+  "description": "连山易小程序",
   "main": "app.js",
   "dependencies": {
     "tdesign-miniprogram": "^1.10.1"

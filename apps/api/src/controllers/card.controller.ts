@@ -72,6 +72,7 @@ export const cardController = {
       };
       const record = await cardService.drawCard(
         req.user!.userId,
+        req.user!.tenantId,
         profileId && typeof profileId === 'string' ? profileId : undefined,
         question && typeof question === 'string' ? question : undefined,
       );
@@ -85,7 +86,12 @@ export const cardController = {
     try {
       const page = Math.max(1, parseInt(String(req.query['page'] ?? '1'), 10) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(String(req.query['limit'] ?? '20'), 10) || 20));
-      const { records, meta } = await cardService.getDrawHistory(req.user!.userId, page, limit);
+      const { records, meta } = await cardService.getDrawHistory(
+        req.user!.userId,
+        req.user!.tenantId,
+        page,
+        limit,
+      );
       sendSuccess(res, records.map((r) => toDrawRecordDTO(r as IDrawCardRecord & { card?: IStaticCard })), 200, meta);
     } catch (err) {
       next(err);

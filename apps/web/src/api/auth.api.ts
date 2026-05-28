@@ -7,19 +7,19 @@ export interface LoginResponse {
 }
 
 export function sendSmsCode(phone: string) {
-  return apiClient.post<ApiResponse<null>>('/auth/sms/send', { phone })
+  return apiClient.post<ApiResponse<null>>('/auth/send-code', { phone })
 }
 
 export function loginSms(phone: string, code: string) {
-  return apiClient.post<ApiResponse<LoginResponse>>('/auth/sms/login', { phone, code })
+  return apiClient.post<ApiResponse<LoginResponse>>('/auth/login/sms', { phone, code })
 }
 
 export function loginPassword(username: string, password: string) {
-  return apiClient.post<ApiResponse<LoginResponse>>('/auth/login', { username, password })
+  return apiClient.post<ApiResponse<LoginResponse>>('/auth/login/password', { username, password })
 }
 
 export function loginGuest() {
-  return apiClient.post<ApiResponse<LoginResponse>>('/auth/guest')
+  return apiClient.post<ApiResponse<LoginResponse>>('/auth/login/guest')
 }
 
 export function refreshToken() {

@@ -39,7 +39,7 @@ export const authController = {
       if (!/^1[3-9]\d{9}$/.test(phone)) {
         throw new ValidationError('手机号格式不正确');
       }
-      await authService.sendSmsCode(phone);
+      await authService.sendSmsCode(phone, req.tenant!._id.toString());
       sendSuccess(res, { message: '验证码已发送' });
     } catch (err) {
       next(err);
@@ -52,7 +52,11 @@ export const authController = {
       if (!phone || typeof phone !== 'string') throw new ValidationError('手机号不能为空');
       if (!code || typeof code !== 'string') throw new ValidationError('验证码不能为空');
 
-      const { accessToken, refreshToken, user } = await authService.loginWithSms(phone, code);
+      const { accessToken, refreshToken, user } = await authService.loginWithSms(
+        phone,
+        code,
+        req.tenant!._id.toString(),
+      );
       res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
       sendSuccess(res, { accessToken, user: toUserDTO(user) });
     } catch (err) {
@@ -69,6 +73,7 @@ export const authController = {
       const { accessToken, refreshToken, user } = await authService.loginWithPassword(
         username,
         password,
+        req.tenant!._id.toString(),
       );
       res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
       sendSuccess(res, { accessToken, user: toUserDTO(user) });
@@ -77,9 +82,11 @@ export const authController = {
     }
   },
 
-  async guestLogin(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  async guestLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { accessToken, userId } = await authService.issueGuestToken();
+      const { accessToken, userId } = await authService.issueGuestToken(
+        req.tenant!._id.toString(),
+      );
       sendSuccess(res, { accessToken, userId });
     } catch (err) {
       next(err);
@@ -90,7 +97,7 @@ export const authController = {
     try {
       const token = req.cookies?.refreshToken as string | undefined;
       if (!token) {
-        throw new Error('refreshToken cookie missing');
+        throw new ValidationError('refreshToken cookie missing');
       }
       const { accessToken, user } = await authService.refreshAccessToken(token);
       sendSuccess(res, { accessToken, user: toUserDTO(user) });
@@ -122,6 +129,7 @@ export const authController = {
       const { accessToken, refreshToken, user } = await authService.registerWithPassword(
         username,
         password,
+        req.tenant!._id.toString(),
         phone && typeof phone === 'string' ? phone : undefined,
       );
       res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);

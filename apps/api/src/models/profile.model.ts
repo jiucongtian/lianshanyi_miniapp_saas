@@ -18,6 +18,7 @@ export interface IBaziResult {
 
 export interface IProfile extends Document {
   _id: mongoose.Types.ObjectId;
+  tenantId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   name: string;
   gender: 'male' | 'female';
@@ -76,6 +77,7 @@ const baziResultSchema = new Schema(
 
 const profileSchema = new Schema<IProfile>(
   {
+    tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     name: { type: String, required: true, trim: true, maxlength: 20 },
     gender: { type: String, enum: ['male', 'female'], required: true },
@@ -92,6 +94,7 @@ const profileSchema = new Schema<IProfile>(
   { timestamps: true },
 );
 
-profileSchema.index({ userId: 1, isDefaultProfile: 1 });
+profileSchema.index({ tenantId: 1, userId: 1 });
+profileSchema.index({ tenantId: 1, userId: 1, isDefaultProfile: 1 });
 
 export const Profile = mongoose.model<IProfile>('Profile', profileSchema);

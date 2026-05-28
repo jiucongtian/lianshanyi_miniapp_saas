@@ -35,29 +35,37 @@ function computeBaziForProfile(dto: Pick<CreateProfileDto, 'birthYear' | 'birthM
 }
 
 export const profileService = {
-  async getProfiles(userId: string): Promise<IProfile[]> {
-    return Profile.find({ userId: new mongoose.Types.ObjectId(userId) })
+  async getProfiles(userId: string, tenantId: string): Promise<IProfile[]> {
+    return Profile.find({
+      tenantId: new mongoose.Types.ObjectId(tenantId),
+      userId: new mongoose.Types.ObjectId(userId),
+    })
       .sort({ isDefaultProfile: -1, createdAt: 1 })
       .exec();
   },
 
-  async getProfile(userId: string, profileId: string): Promise<IProfile> {
-    const profile = await Profile.findById(profileId);
+  async getProfile(userId: string, tenantId: string, profileId: string): Promise<IProfile> {
+    const profile = await Profile.findOne({
+      _id: new mongoose.Types.ObjectId(profileId),
+      tenantId: new mongoose.Types.ObjectId(tenantId),
+    });
     if (!profile) throw new NotFoundError('档案');
     if (profile.userId.toString() !== userId) throw new ForbiddenError('无权访问此档案');
     return profile;
   },
 
-  async createProfile(userId: string, data: CreateProfileDto): Promise<IProfile> {
-    const existingCount = await Profile.countDocuments({
-      userId: new mongoose.Types.ObjectId(userId),
-    });
+  async createProfile(userId: string, tenantId: string, data: CreateProfileDto): Promise<IProfile> {
+    const tenantOid = new mongoose.Types.ObjectId(tenantId);
+    const userOid = new mongoose.Types.ObjectId(userId);
+
+    const existingCount = await Profile.countDocuments({ tenantId: tenantOid, userId: userOid });
     const isFirst = existingCount === 0;
 
     const baziResult = computeBaziForProfile(data);
 
     const profile = await Profile.create({
-      userId: new mongoose.Types.ObjectId(userId),
+      tenantId: tenantOid,
+      userId: userOid,
       name: data.name,
       gender: data.gender,
       birthYear: data.birthYear,
@@ -71,16 +79,20 @@ export const profileService = {
       notes: data.notes,
     });
 
-    log.info({ userId, profileId: profile._id.toString() }, 'Profile created');
+    log.info({ tenantId, userId, profileId: profile._id.toString() }, 'Profile created');
     return profile;
   },
 
   async updateProfile(
     userId: string,
+    tenantId: string,
     profileId: string,
     data: Partial<CreateProfileDto>,
   ): Promise<IProfile> {
-    const profile = await Profile.findById(profileId);
+    const profile = await Profile.findOne({
+      _id: new mongoose.Types.ObjectId(profileId),
+      tenantId: new mongoose.Types.ObjectId(tenantId),
+    });
     if (!profile) throw new NotFoundError('档案');
     if (profile.userId.toString() !== userId) throw new ForbiddenError('无权修改此档案');
 
@@ -122,12 +134,16 @@ export const profileService = {
     });
     if (!updated) throw new NotFoundError('档案');
 
-    log.info({ userId, profileId }, 'Profile updated');
+    log.info({ tenantId, userId, profileId }, 'Profile updated');
     return updated;
   },
 
-  async deleteProfile(userId: string, profileId: string): Promise<void> {
-    const profile = await Profile.findById(profileId);
+  async deleteProfile(userId: string, tenantId: string, profileId: string): Promise<void> {
+    const tenantOid = new mongoose.Types.ObjectId(tenantId);
+    const profile = await Profile.findOne({
+      _id: new mongoose.Types.ObjectId(profileId),
+      tenantId: tenantOid,
+    });
     if (!profile) throw new NotFoundError('档案');
     if (profile.userId.toString() !== userId) throw new ForbiddenError('无权删除此档案');
 
@@ -135,28 +151,30 @@ export const profileService = {
     await Profile.deleteOne({ _id: profileId });
 
     if (wasDefault) {
-      // Assign default to the oldest remaining profile
-      const next = await Profile.findOne({ userId: new mongoose.Types.ObjectId(userId) }).sort({
-        createdAt: 1,
-      });
+      const next = await Profile.findOne({
+        tenantId: tenantOid,
+        userId: new mongoose.Types.ObjectId(userId),
+      }).sort({ createdAt: 1 });
       if (next) {
         await Profile.updateOne({ _id: next._id }, { isDefaultProfile: true });
       }
     }
 
-    log.info({ userId, profileId }, 'Profile deleted');
+    log.info({ tenantId, userId, profileId }, 'Profile deleted');
   },
 
-  async setDefaultProfile(userId: string, profileId: string): Promise<IProfile> {
-    const profile = await Profile.findById(profileId);
+  async setDefaultProfile(userId: string, tenantId: string, profileId: string): Promise<IProfile> {
+    const tenantOid = new mongoose.Types.ObjectId(tenantId);
+    const userOid = new mongoose.Types.ObjectId(userId);
+
+    const profile = await Profile.findOne({
+      _id: new mongoose.Types.ObjectId(profileId),
+      tenantId: tenantOid,
+    });
     if (!profile) throw new NotFoundError('档案');
     if (profile.userId.toString() !== userId) throw new ForbiddenError('无权修改此档案');
 
-    // Unset all, then set the target
-    await Profile.updateMany(
-      { userId: new mongoose.Types.ObjectId(userId) },
-      { isDefaultProfile: false },
-    );
+    await Profile.updateMany({ tenantId: tenantOid, userId: userOid }, { isDefaultProfile: false });
     const updated = await Profile.findByIdAndUpdate(
       profileId,
       { isDefaultProfile: true },
@@ -164,7 +182,7 @@ export const profileService = {
     );
     if (!updated) throw new NotFoundError('档案');
 
-    log.info({ userId, profileId }, 'Default profile set');
+    log.info({ tenantId, userId, profileId }, 'Default profile set');
     return updated;
   },
 };

@@ -4,6 +4,7 @@ export type UserType = 'guest' | 'normal' | 'student' | 'premium';
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
+  tenantId: mongoose.Types.ObjectId;
   phone?: string;
   username?: string;
   passwordHash?: string;
@@ -22,6 +23,7 @@ export interface IUser extends Document {
 
 const userSchema = new Schema<IUser>(
   {
+    tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
     phone: { type: String, sparse: true },
     username: { type: String, sparse: true },
     passwordHash: { type: String },
@@ -42,20 +44,28 @@ const userSchema = new Schema<IUser>(
   {
     timestamps: true,
     toJSON: {
-      transform(_doc, ret) {
-        delete ret.passwordHash;
-        delete ret.smsCode;
-        delete ret.smsCodeExpiry;
-        delete ret.guestToken;
-        delete ret.__v;
+      transform(_doc, ret: Record<string, unknown>) {
+        delete ret['passwordHash'];
+        delete ret['smsCode'];
+        delete ret['smsCodeExpiry'];
+        delete ret['guestToken'];
+        delete ret['__v'];
         return ret;
       },
     },
   },
 );
 
-// Ensure phone uniqueness when set
-userSchema.index({ phone: 1 }, { unique: true, sparse: true });
-userSchema.index({ username: 1 }, { unique: true, sparse: true });
+// Tenant-scoped uniqueness for phone and username
+// Use partialFilterExpression instead of sparse so that guest users (null phone/username)
+// are never included in the unique index — avoids duplicate-key errors for multiple guests.
+userSchema.index(
+  { tenantId: 1, phone: 1 },
+  { unique: true, partialFilterExpression: { phone: { $type: 'string' } } },
+);
+userSchema.index(
+  { tenantId: 1, username: 1 },
+  { unique: true, partialFilterExpression: { username: { $type: 'string' } } },
+);
 
 export const User = mongoose.model<IUser>('User', userSchema);

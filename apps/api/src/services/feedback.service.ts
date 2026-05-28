@@ -15,20 +15,23 @@ export interface SubmitFeedbackDto {
 export const feedbackService = {
   async submitFeedback(
     userId: string | undefined,
+    tenantId: string,
     data: SubmitFeedbackDto,
   ): Promise<IFeedback> {
     const feedback = await Feedback.create({
+      tenantId: new mongoose.Types.ObjectId(tenantId),
       userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
       content: data.content,
       contactInfo: data.contactInfo,
       category: data.category,
     });
 
-    log.info({ feedbackId: feedback._id.toString(), userId }, 'Feedback submitted');
+    log.info({ tenantId, feedbackId: feedback._id.toString(), userId }, 'Feedback submitted');
     return feedback;
   },
 
   async listFeedbacks(
+    tenantId: string,
     page: number,
     limit: number,
     status?: string,
@@ -36,7 +39,9 @@ export const feedbackService = {
     feedbacks: IFeedback[];
     meta: ReturnType<typeof paginationMeta>;
   }> {
-    const query: Record<string, unknown> = {};
+    const query: Record<string, unknown> = {
+      tenantId: new mongoose.Types.ObjectId(tenantId),
+    };
     if (status) {
       query['status'] = status as FeedbackStatus;
     }
@@ -53,9 +58,9 @@ export const feedbackService = {
     return { feedbacks, meta: paginationMeta(total, page, limit) };
   },
 
-  async replyFeedback(feedbackId: string, reply: string): Promise<IFeedback> {
-    const feedback = await Feedback.findByIdAndUpdate(
-      feedbackId,
+  async replyFeedback(tenantId: string, feedbackId: string, reply: string): Promise<IFeedback> {
+    const feedback = await Feedback.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(feedbackId), tenantId: new mongoose.Types.ObjectId(tenantId) },
       {
         adminReply: reply,
         status: 'reviewed' as FeedbackStatus,
@@ -66,7 +71,7 @@ export const feedbackService = {
 
     if (!feedback) throw new NotFoundError('反馈');
 
-    log.info({ feedbackId }, 'Feedback replied');
+    log.info({ tenantId, feedbackId }, 'Feedback replied');
     return feedback;
   },
 };
