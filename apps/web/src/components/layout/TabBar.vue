@@ -36,6 +36,7 @@ function onTabChange(index: number) {
     :border="true"
     active-color="#854C65"
     inactive-color="#999999"
+    :z-index="100"
     @change="onTabChange"
   >
     <van-tabbar-item icon="gem-o" name="0">首页</van-tabbar-item>

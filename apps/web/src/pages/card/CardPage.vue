@@ -166,7 +166,6 @@ onMounted(async () => {
             </div>
           </div>
           <div class="pillar-label">
-            <span class="pillar-label-sub">{{ def.sub }}</span>
             <span class="pillar-label-name">{{ def.label }}</span>
           </div>
         </div>
@@ -400,12 +399,6 @@ onMounted(async () => {
   margin-top: 6px;
   text-align: center;
   line-height: 1.4;
-}
-
-.pillar-label-sub {
-  display: block;
-  font-size: 11px;
-  color: #999;
 }
 
 .pillar-label-name {
