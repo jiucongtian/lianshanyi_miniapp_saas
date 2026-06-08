@@ -54,6 +54,9 @@ const profileOptions = computed(() =>
   })),
 )
 
+// 标记是否从首页带问题跳转而来（自动触发抽卡）
+const autoStart = route.query.question != null
+
 onMounted(async () => {
   if (route.query.question && typeof route.query.question === 'string') {
     question.value = route.query.question
@@ -61,6 +64,9 @@ onMounted(async () => {
   await profileStore.fetchProfiles()
   if (profileStore.defaultProfile) {
     selectedProfileId.value = profileStore.defaultProfile.id
+  }
+  if (autoStart) {
+    startDraw()
   }
 })
 
