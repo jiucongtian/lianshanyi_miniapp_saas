@@ -170,34 +170,16 @@ onMounted(async () => {
             @click="toggleFlip(idx)"
           >
             <div class="bazi-card__inner">
-              <!-- 正面：卡背图 + 标签 -->
+              <!-- 正面：卡背图 -->
               <div class="bazi-card__front">
                 <img src="/cards/back.jpg" class="bazi-card__img" alt="卡背" />
-                <div class="bazi-card__front-overlay">
-                  <div class="bazi-card__tag-pill">{{ def.tag }}</div>
-                  <div class="bazi-card__label">{{ def.label }}</div>
-                </div>
               </div>
-              <!-- 背面：对应卡牌图 + 干支信息 -->
+              <!-- 背面：对应卡牌图 -->
               <div
                 class="bazi-card__back"
                 :style="{ borderColor: stemColor(def.key) }"
               >
                 <img :src="pillarCardUrl(def.key)" class="bazi-card__img" :alt="getPillar(def.key)?.stem + getPillar(def.key)?.branch" />
-                <div class="bazi-card__back-overlay">
-                  <div class="bazi-card__ganzhi" :style="{ color: stemColor(def.key) }">
-                    {{ getPillar(def.key)?.stem ?? '' }}{{ getPillar(def.key)?.branch ?? '' }}
-                  </div>
-                  <div class="bazi-card__wuxing-row">
-                    <span class="bazi-card__wuxing-badge" :style="{ backgroundColor: stemColor(def.key) }">
-                      {{ getPillar(def.key)?.stemWuXing ?? '' }}
-                    </span>
-                    <span class="bazi-card__wuxing-sep">·</span>
-                    <span class="bazi-card__wuxing-badge" :style="{ backgroundColor: wuXingColorMap[getPillar(def.key)?.branchWuXing ?? ''] ?? '#888' }">
-                      {{ getPillar(def.key)?.branchWuXing ?? '' }}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -423,7 +405,9 @@ onMounted(async () => {
 
 /* ─── 翻牌动画 ───────────────────────────── */
 .bazi-card {
-  height: 160px;
+  /* 卡牌真实比例 826:1416 ≈ 7:12 */
+  aspect-ratio: 7 / 12;
+  width: 100%;
   perspective: 800px;
   cursor: pointer;
 }
@@ -444,110 +428,25 @@ onMounted(async () => {
 .bazi-card__back {
   position: absolute;
   inset: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   backface-visibility: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
+  overflow: hidden;
 }
 
-/* 正面：卡背图 */
 .bazi-card__front {
   border: 1px solid rgba(200, 150, 180, 0.4);
-  overflow: hidden;
-  padding: 0;
 }
 
-/* 背面：卡牌图 + 彩色边框 */
 .bazi-card__back {
   border: 1.5px solid;
   transform: rotateY(180deg);
-  overflow: hidden;
-  padding: 0;
 }
 
 .bazi-card__img {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-/* 正面遮罩：标签 + 柱名 */
-.bazi-card__front-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  padding-bottom: 10px;
-  background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%);
-}
-
-.bazi-card__tag-pill {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(133, 76, 101, 0.7);
-  border-radius: 12px;
-  padding: 1px 8px;
-  letter-spacing: 1px;
-}
-
-.bazi-card__label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.5px;
-  text-align: center;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-}
-
-/* 背面遮罩：干支 + 五行 */
-.bazi-card__back-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  padding-bottom: 10px;
-  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%);
-}
-
-.bazi-card__ganzhi {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: 3px;
-  line-height: 1;
-  text-shadow: 0 0 8px currentColor;
-}
-
-.bazi-card__wuxing-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 5px;
-}
-
-.bazi-card__wuxing-badge {
-  font-size: 10px;
-  color: #fff;
-  padding: 1px 6px;
-  border-radius: 20px;
-  font-weight: 600;
-}
-
-.bazi-card__wuxing-sep {
-  color: rgba(255,255,255,0.4);
-  font-size: 10px;
+  display: block;
 }
 
 /* ─── 日主 ───────────────────────────────── */
