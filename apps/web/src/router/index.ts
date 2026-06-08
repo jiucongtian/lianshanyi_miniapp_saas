@@ -42,6 +42,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/auth/RegisterPage.vue'),
   },
   {
+    path: '/profiles',
+    name: 'profile-list',
+    component: () => import('@/pages/profile/ProfileListPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/profiles/add',
     name: 'profile-add',
     component: () => import('@/pages/addProfile/AddProfilePage.vue'),

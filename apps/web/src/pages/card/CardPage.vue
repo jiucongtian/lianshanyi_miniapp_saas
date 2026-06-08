@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { showImagePreview } from 'vant'
 import { useProfileStore } from '@/stores/profile.store'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -11,6 +10,8 @@ const authStore = useAuthStore()
 
 const loading = ref(false)
 const flipped = ref<boolean[]>([false, false, false, false])
+const showImagePreview = ref(false)
+const previewImageUrl = ref('')
 
 const pillarDefs = [
   { key: 'yearPillar',  label: '时空关系卡', sub: '年柱', tag: '年' },
@@ -21,6 +22,7 @@ const pillarDefs = [
 
 const profile = computed(() => profileStore.defaultProfile)
 const bazi = computed(() => profile.value?.baziResult)
+const profileCount = computed(() => profileStore.profiles.length)
 
 const wuXingColorMap: Record<string, string> = {
   木: '#4caf7d',
@@ -43,25 +45,14 @@ function stemColor(key: string): string {
   return wuXingColorMap[p.stemWuXing] ?? '#854C65'
 }
 
-// 干支 → 六十甲子序号（1-60），用于定位卡牌图片
 const STEMS  = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸']
 const BRANCHES = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
 
 function ganzhiToSeq(stem: string, branch: string): number {
-  const si = STEMS.indexOf(stem)
-  const bi = BRANCHES.indexOf(branch)
-  if (si === -1 || bi === -1) return 1
-  // 六十甲子：每隔10天干、12地支交替，公式：((bi - si + 60) % 12) * 5 + si 不准确
-  // 直接从 甲子=1 按顺序推算：每10组递进，天干步进，地支同步
-  // cardId = si + 1 + floor(((bi - si % 12 + 12) % 12) / 1) * 10，改用查表
-  let seq = 0
   for (let i = 0; i < 60; i++) {
-    if (STEMS[i % 10] === stem && BRANCHES[i % 12] === branch) {
-      seq = i + 1
-      break
-    }
+    if (STEMS[i % 10] === stem && BRANCHES[i % 12] === branch) return i + 1
   }
-  return seq || 1
+  return 1
 }
 
 function pillarCardUrl(key: string): string {
@@ -74,15 +65,17 @@ function pillarCardUrl(key: string): string {
 function toggleFlip(index: number) {
   if (!bazi.value) return
   if (flipped.value[index]) {
-    // Already flipped → show full-screen image preview
-    const url = pillarCardUrl(pillarDefs[index]!.key)
-    showImagePreview({ images: [url], startPosition: 0 })
+    previewImageUrl.value = pillarCardUrl(pillarDefs[index]!.key)
+    showImagePreview.value = true
   } else {
     flipped.value = flipped.value.map((v, i) => (i === index ? true : v))
   }
 }
 
-/** Auto-flip cards one by one after bazi data is loaded */
+function closePreview() {
+  showImagePreview.value = false
+}
+
 function autoFlipSequence() {
   pillarDefs.forEach((_, i) => {
     setTimeout(() => {
@@ -93,22 +86,11 @@ function autoFlipSequence() {
   })
 }
 
-const wuXingOrder = ['木', '火', '土', '金', '水'] as const
-const wuXingEmoji: Record<string, string> = {
-  木: '🌿', 火: '🔥', 土: '⛰️', 金: '⚙️', 水: '💧',
-}
-
-const wuXingTotal = computed(() => {
-  if (!bazi.value?.wuXingSummary) return 8
-  return Object.values(bazi.value.wuXingSummary).reduce((a, b) => a + b, 0) || 8
-})
-
 onMounted(async () => {
   loading.value = true
   try {
     if (authStore.isLoggedIn && !authStore.isGuest) {
       await profileStore.fetchProfiles()
-      // Auto-flip if bazi data is available
       if (profileStore.defaultProfile?.baziResult) {
         autoFlipSequence()
       }
@@ -125,71 +107,49 @@ onMounted(async () => {
     <div class="bazi-content">
       <!-- 标题行 -->
       <div class="title-header">
-        <div class="bazi-title">我的命盘</div>
+        <div class="bazi-title">{{ profile?.name ?? '我的命盘' }}</div>
         <div
           class="profile-entry-button"
-          @click="router.push(authStore.isLoggedIn && !authStore.isGuest ? '/profiles/add' : '/login')"
+          @click="router.push(authStore.isLoggedIn && !authStore.isGuest ? '/profiles' : '/login')"
         >
-          <span class="profile-entry-icon">👤</span>
-          <span class="profile-entry-text">
-            {{ authStore.isLoggedIn && !authStore.isGuest ? '档案' : '登录' }}
-          </span>
-          <span
-            v-if="profileStore.profiles.length"
-            class="profile-count-badge"
-          >
-            <span class="badge-text">{{ profileStore.profiles.length }}</span>
+          <span class="profile-entry-icon">📋</span>
+          <span class="profile-entry-text">牌库</span>
+          <span v-if="profileCount > 0" class="profile-count-badge">
+            <span class="badge-text">{{ profileCount }}</span>
           </span>
         </div>
       </div>
 
       <!-- 加载状态 -->
       <div v-if="loading" class="loading-state">
-        <div class="loading-icon">🔮</div>
-        <div class="loading-text">命盘解析中…</div>
+        <div class="loading-icon">⏳</div>
+        <div class="loading-text">正在加载卡牌数据...</div>
       </div>
 
-      <!-- 未登录 -->
-      <div v-else-if="!authStore.isLoggedIn || authStore.isGuest" class="empty-state">
-        <div class="empty-icon">🔮</div>
-        <div class="empty-text">登录后查看您的八字命盘</div>
-        <div class="empty-desc">创建专属档案，解读生命密码</div>
-        <div class="create-card-button" @click="router.push('/login')">
-          <span class="create-card-icon">✨</span>
-          <span class="create-card-text">立即登录</span>
-        </div>
-      </div>
-
-      <!-- 无档案 -->
-      <div v-else-if="!profile" class="empty-state">
-        <div class="empty-icon">📋</div>
-        <div class="empty-text">尚未创建档案</div>
-        <div class="empty-desc">创建档案后即可查看专属命盘</div>
-        <div class="create-card-button" @click="router.push('/profiles/add')">
+      <!-- 无数据状态 -->
+      <div v-else-if="!authStore.isLoggedIn || authStore.isGuest || !profile || !bazi" class="empty-state">
+        <div class="empty-icon">🃏</div>
+        <div class="empty-text">暂无卡牌数据</div>
+        <div v-if="!authStore.isLoggedIn || authStore.isGuest" class="empty-desc">登录后即可查看</div>
+        <div v-else-if="profileCount > 0" class="empty-desc">请先选择一个档案</div>
+        <div v-else class="empty-desc">牌库中还没有卡牌，快来创建第一个吧</div>
+        <div v-if="profileCount === 0 && authStore.isLoggedIn && !authStore.isGuest" class="create-card-button" @click="router.push('/profiles/add')">
           <span class="create-card-icon">➕</span>
-          <span class="create-card-text">创建档案</span>
+          <span class="create-card-text">新建卡牌</span>
         </div>
       </div>
 
-      <!-- 无八字数据 -->
-      <div v-else-if="!bazi" class="empty-state">
-        <div class="empty-icon">⏳</div>
-        <div class="empty-text">命盘数据尚未生成</div>
-        <div class="empty-desc">请稍后再来查看</div>
-      </div>
-
-      <!-- 八字四柱翻牌 -->
-      <template v-else>
-        <div class="profile-name-row">{{ profile.name }}的命盘</div>
-
-        <!-- 2×2 翻牌格 -->
-        <div class="pillars-flex">
+      <!-- 卡牌内容 -->
+      <div v-else class="pillars-flex">
+        <div
+          v-for="(def, idx) in pillarDefs"
+          :key="def.key"
+          class="pillar-item"
+          @click="toggleFlip(idx)"
+        >
           <div
-            v-for="(def, idx) in pillarDefs"
-            :key="def.key"
             class="bazi-card"
             :class="{ 'bazi-card--flipped': flipped[idx] }"
-            @click="toggleFlip(idx)"
           >
             <div class="bazi-card__inner">
               <!-- 正面：卡背图 -->
@@ -205,43 +165,17 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- 日主 -->
-        <div class="day-master-row">
-          <span class="dm-label">日主</span>
-          <span class="dm-value" :style="{ color: stemColor('dayPillar') }">
-            {{ bazi.dayMaster }}
-          </span>
-        </div>
-
-        <!-- 五行分布 -->
-        <div class="wuxing-section">
-          <div class="wuxing-title">五行分布</div>
-          <div class="wuxing-bars">
-            <div v-for="wx in wuXingOrder" :key="wx" class="wuxing-item">
-              <div class="wuxing-emoji">{{ wuXingEmoji[wx] }}</div>
-              <div class="wuxing-bar-wrap">
-                <div
-                  class="wuxing-bar"
-                  :style="{
-                    width: `${Math.round(((bazi.wuXingSummary[wx] ?? 0) / wuXingTotal) * 100)}%`,
-                    backgroundColor: wuXingColorMap[wx],
-                  }"
-                ></div>
-              </div>
-              <div class="wuxing-count" :style="{ color: wuXingColorMap[wx] }">
-                {{ bazi.wuXingSummary[wx] ?? 0 }}
-              </div>
-            </div>
+          <div class="pillar-label">
+            <span class="pillar-label-sub">{{ def.sub }}</span>
+            <span class="pillar-label-name">{{ def.label }}</span>
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- 抽卡按钮 -->
-        <div class="draw-btn-row">
-          <div class="draw-btn" @click="router.push('/answer')">抽卡寻找答案</div>
-        </div>
-      </template>
+    <!-- 图片预览悬浮窗 -->
+    <div v-if="showImagePreview" class="image-preview-overlay" @click="closePreview">
+      <img :src="previewImageUrl" class="preview-image" alt="卡牌预览" @click.stop />
     </div>
   </div>
 </template>
@@ -303,6 +237,7 @@ onMounted(async () => {
   z-index: 1;
   flex-shrink: 0;
   transition: transform 0.2s;
+  margin-left: auto;
 }
 
 .profile-entry-button:active {
@@ -355,14 +290,8 @@ onMounted(async () => {
 
 .loading-icon,
 .empty-icon {
-  font-size: 40px;
+  font-size: 60px;
   margin-bottom: 12px;
-  animation: pulseSpin 1.5s ease-in-out infinite;
-}
-
-@keyframes pulseSpin {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%       { transform: scale(1.1); opacity: 0.7; }
 }
 
 .loading-text,
@@ -376,7 +305,7 @@ onMounted(async () => {
 .empty-desc {
   font-size: 12px;
   color: #666;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   line-height: 1.5;
   opacity: 0.8;
 }
@@ -391,7 +320,6 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(133, 76, 101, 0.3);
   cursor: pointer;
   transition: transform 0.2s;
-  margin-top: 12px;
 }
 
 .create-card-button:active {
@@ -409,29 +337,25 @@ onMounted(async () => {
   font-weight: 500;
 }
 
-/* ─── 档案名 ─────────────────────────────── */
-.profile-name-row {
-  text-align: center;
-  font-size: 13px;
-  color: #A06B7F;
-  margin-bottom: 16px;
-}
-
 /* ─── 2×2 翻牌格 ──────────────────────────── */
 .pillars-flex {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  min-height: 300px;
+}
+
+.pillar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
 }
 
 /* ─── 翻牌动画 ───────────────────────────── */
 .bazi-card {
-  /* 卡牌真实比例 826:1416 ≈ 7:12 */
   aspect-ratio: 7 / 12;
   width: 100%;
   perspective: 800px;
-  cursor: pointer;
 }
 
 .bazi-card__inner {
@@ -471,110 +395,41 @@ onMounted(async () => {
   display: block;
 }
 
-/* ─── 日主 ───────────────────────────────── */
-.day-master-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin: 16px 0 0;
-  padding: 10px 16px;
-  background: rgba(133, 76, 101, 0.04);
-  border: 1px solid rgba(200, 150, 180, 0.2);
-  border-radius: 10px;
+/* ─── 柱标签 ─────────────────────────────── */
+.pillar-label {
+  margin-top: 6px;
+  text-align: center;
+  line-height: 1.4;
 }
 
-.dm-label {
-  font-size: 13px;
+.pillar-label-sub {
+  display: block;
+  font-size: 11px;
   color: #999;
 }
 
-.dm-value {
-  font-size: 22px;
-  font-weight: 700;
-}
-
-/* ─── 五行分布 ───────────────────────────── */
-.wuxing-section {
-  margin: 12px 0 0;
-  padding: 14px;
-  background: rgba(133, 76, 101, 0.03);
-  border: 1px solid rgba(200, 150, 180, 0.15);
-  border-radius: 10px;
-}
-
-.wuxing-title {
+.pillar-label-name {
+  display: block;
   font-size: 12px;
-  color: #A06B7F;
-  margin-bottom: 10px;
-  letter-spacing: 1px;
+  color: #854C65;
+  font-weight: 500;
 }
 
-.wuxing-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.wuxing-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.wuxing-emoji {
-  font-size: 14px;
-  width: 18px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.wuxing-bar-wrap {
-  flex: 1;
-  height: 7px;
-  background: #f0f0f0;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.wuxing-bar {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.8s ease;
-  min-width: 3px;
-}
-
-.wuxing-count {
-  font-size: 13px;
-  font-weight: 700;
-  width: 14px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-/* ─── 抽卡按钮 ───────────────────────────── */
-.draw-btn-row {
-  margin-top: 16px;
-}
-
-.draw-btn {
-  width: 100%;
-  height: 44px;
+/* ─── 图片预览 ───────────────────────────── */
+.image-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #854C65 0%, #A06B7F 100%);
-  border-radius: 24px;
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 1px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(133, 76, 101, 0.3);
-  transition: transform 0.2s;
+  z-index: 1000;
 }
 
-.draw-btn:active {
-  transform: scale(0.98);
+.preview-image {
+  max-width: 80vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 12px;
 }
 </style>
