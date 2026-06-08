@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Profile } from '../models/profile.model';
+import { ProfileRepo } from '../repos';
 import { getAiAdapter, AssistantMessage, AssistantChatResult } from '../lib/ai/adapter';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { createModuleLogger } from '../utils/logger';
@@ -9,13 +9,14 @@ const log = createModuleLogger('AssistantService');
 export const assistantService = {
   async chat(
     userId: string,
+    tenantId: string,
     messages: AssistantMessage[],
     conversationId?: string,
     profileId?: string,
   ): Promise<AssistantChatResult> {
     let profileContext: string | undefined;
     if (profileId) {
-      profileContext = await assistantService.getProfileContext(profileId, userId);
+      profileContext = await assistantService.getProfileContext(profileId, userId, tenantId);
     }
 
     const ai = await getAiAdapter();
@@ -25,14 +26,15 @@ export const assistantService = {
       profileContext,
     });
 
-    log.info({ userId, conversationId: result.conversationId }, 'Assistant chat completed');
+    log.info({ userId, tenantId, conversationId: result.conversationId }, 'Assistant chat completed');
     return result;
   },
 
-  async getProfileContext(profileId: string, userId: string): Promise<string> {
+  async getProfileContext(profileId: string, userId: string, tenantId: string): Promise<string> {
+    const repo = new ProfileRepo(tenantId);
     let profile;
     try {
-      profile = await Profile.findOne({
+      profile = await repo.findOne({
         _id: new mongoose.Types.ObjectId(profileId),
         userId: new mongoose.Types.ObjectId(userId),
       });

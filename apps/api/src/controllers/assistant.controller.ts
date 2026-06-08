@@ -36,6 +36,7 @@ export const assistantController = {
 
       const result = await assistantService.chat(
         req.user!.userId,
+        req.user!.tenantId,
         validatedMessages,
         conversationId && typeof conversationId === 'string' ? conversationId : undefined,
         profileId && typeof profileId === 'string' ? profileId : undefined,

@@ -2,12 +2,16 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { User, IUser, UserType } from '../models/user.model';
 import { StaticUserType } from '../models/static-user-type.model';
+import { UserRepo } from '../repos';
 import { NotFoundError, ForbiddenError, ConflictError } from '../utils/errors';
 import { createModuleLogger } from '../utils/logger';
 
 const log = createModuleLogger('UserService');
 
 export const userService = {
+  // getById / updateProfile / setPassword operate on a single user by ID
+  // from the JWT — no tenant scope needed here.
+
   async getById(userId: string): Promise<IUser> {
     const user = await User.findById(userId);
     if (!user) throw new NotFoundError('用户');
@@ -37,10 +41,10 @@ export const userService = {
   },
 
   async bindPhone(userId: string, tenantId: string, phone: string): Promise<IUser> {
-    const existing = await User.findOne({
+    const repo = new UserRepo(tenantId);
+    const existing = await repo.findOne({
       phone,
-      tenantId: new mongoose.Types.ObjectId(tenantId),
-      _id: { $ne: userId },
+      _id: { $ne: new mongoose.Types.ObjectId(userId) },
     });
     if (existing) throw new ConflictError('该手机号已被其他账号绑定');
     const user = await User.findByIdAndUpdate(userId, { phone }, { new: true });
@@ -49,26 +53,21 @@ export const userService = {
   },
 
   async getUserTypeConfig(typeKey: string) {
-    const config = await StaticUserType.findOne({ typeKey });
-    return config;
+    return StaticUserType.findOne({ typeKey });
   },
 
   async getAllUserTypes() {
     return StaticUserType.find().sort({ sortOrder: 1 });
   },
 
-  // Admin operations — scoped to tenant
   async listUsers(tenantId: string, page: number, limit: number, search?: string) {
-    const query: Record<string, unknown> = { tenantId: new mongoose.Types.ObjectId(tenantId) };
-    if (search) {
-      query['$or'] = [{ phone: { $regex: search } }, { username: { $regex: search } }];
-    }
+    const repo = new UserRepo(tenantId);
+    const filter = search
+      ? { $or: [{ phone: { $regex: search } }, { username: { $regex: search } }] }
+      : {};
     const [users, total] = await Promise.all([
-      User.find(query)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .sort({ createdAt: -1 }),
-      User.countDocuments(query),
+      repo.find(filter).skip((page - 1) * limit).limit(limit).sort({ createdAt: -1 }),
+      repo.countDocuments(filter),
     ]);
     return { users, total };
   },
@@ -79,15 +78,16 @@ export const userService = {
     userType: UserType,
     isAdmin?: boolean,
   ): Promise<IUser> {
+    const repo = new UserRepo(tenantId);
     const update: Partial<IUser> = { userType };
     if (typeof isAdmin === 'boolean') update.isAdmin = isAdmin;
-    // Ensure the user belongs to this tenant
-    const user = await User.findOneAndUpdate(
-      { _id: new mongoose.Types.ObjectId(userId), tenantId: new mongoose.Types.ObjectId(tenantId) },
+    const user = await repo.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(userId) },
       update,
       { new: true },
     );
     if (!user) throw new NotFoundError('用户');
+    log.info({ tenantId, userId, userType }, 'User type updated');
     return user;
   },
 };

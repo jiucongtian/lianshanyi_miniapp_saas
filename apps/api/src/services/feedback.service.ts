@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
-import { Feedback, IFeedback, FeedbackStatus } from '../models/feedback.model';
+import { IFeedback, FeedbackStatus } from '../models/feedback.model';
+import { FeedbackRepo } from '../repos';
 import { NotFoundError } from '../utils/errors';
 import { paginationMeta } from '../utils/response';
 import { createModuleLogger } from '../utils/logger';
@@ -18,8 +19,8 @@ export const feedbackService = {
     tenantId: string,
     data: SubmitFeedbackDto,
   ): Promise<IFeedback> {
-    const feedback = await Feedback.create({
-      tenantId: new mongoose.Types.ObjectId(tenantId),
+    const repo = new FeedbackRepo(tenantId);
+    const feedback = await repo.create({
       userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
       content: data.content,
       contactInfo: data.contactInfo,
@@ -39,28 +40,21 @@ export const feedbackService = {
     feedbacks: IFeedback[];
     meta: ReturnType<typeof paginationMeta>;
   }> {
-    const query: Record<string, unknown> = {
-      tenantId: new mongoose.Types.ObjectId(tenantId),
-    };
-    if (status) {
-      query['status'] = status as FeedbackStatus;
-    }
+    const repo = new FeedbackRepo(tenantId);
+    const filter = status ? { status: status as FeedbackStatus } : {};
 
     const [feedbacks, total] = await Promise.all([
-      Feedback.find(query)
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .exec(),
-      Feedback.countDocuments(query),
+      repo.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).exec(),
+      repo.countDocuments(filter),
     ]);
 
     return { feedbacks, meta: paginationMeta(total, page, limit) };
   },
 
   async replyFeedback(tenantId: string, feedbackId: string, reply: string): Promise<IFeedback> {
-    const feedback = await Feedback.findOneAndUpdate(
-      { _id: new mongoose.Types.ObjectId(feedbackId), tenantId: new mongoose.Types.ObjectId(tenantId) },
+    const repo = new FeedbackRepo(tenantId);
+    const feedback = await repo.findOneAndUpdate(
+      { _id: new mongoose.Types.ObjectId(feedbackId) },
       {
         adminReply: reply,
         status: 'reviewed' as FeedbackStatus,

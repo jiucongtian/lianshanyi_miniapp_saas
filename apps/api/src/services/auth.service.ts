@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
-import mongoose from 'mongoose';
 import { User, IUser } from '../models/user.model';
+import { UserRepo } from '../repos';
 import {
   signAccessToken,
   signRefreshToken,
@@ -33,17 +33,14 @@ function buildTokenPayload(user: IUser) {
 }
 
 export const authService = {
-  /**
-   * Send SMS verification code (creates user if first time, scoped to tenant)
-   */
   async sendSmsCode(phone: string, tenantId: string): Promise<void> {
     const code = generateSmsCode();
-    const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
-    const tenantOid = new mongoose.Types.ObjectId(tenantId);
+    const expiry = new Date(Date.now() + 10 * 60 * 1000);
+    const repo = new UserRepo(tenantId);
 
-    await User.findOneAndUpdate(
-      { phone, tenantId: tenantOid },
-      { smsCode: code, smsCodeExpiry: expiry, tenantId: tenantOid },
+    await repo.findOneAndUpdate(
+      { phone },
+      { smsCode: code, smsCodeExpiry: expiry },
       { upsert: true, new: true },
     );
 
@@ -52,15 +49,13 @@ export const authService = {
     log.info({ phone, tenantId }, 'SMS code sent');
   },
 
-  /**
-   * Login/register with phone + SMS code (scoped to tenant)
-   */
   async loginWithSms(
     phone: string,
     code: string,
     tenantId: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: IUser; isNew: boolean }> {
-    const user = await User.findOne({ phone, tenantId: new mongoose.Types.ObjectId(tenantId) });
+    const repo = new UserRepo(tenantId);
+    const user = await repo.findOne({ phone });
     if (!user || !user.smsCode || !user.smsCodeExpiry) {
       throw new UnauthorizedError('验证码无效，请重新获取');
     }
@@ -86,19 +81,15 @@ export const authService = {
     return { accessToken, refreshToken, user, isNew };
   },
 
-  /**
-   * Login with username + password (scoped to tenant)
-   */
   async loginWithPassword(
     usernameOrPhone: string,
     password: string,
     tenantId: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: IUser }> {
-    const tenantOid = new mongoose.Types.ObjectId(tenantId);
-    const user = await User.findOne({
-      tenantId: tenantOid,
-      $or: [{ username: usernameOrPhone }, { phone: usernameOrPhone }],
-    }).select('+passwordHash');
+    const repo = new UserRepo(tenantId);
+    const user = await repo
+      .findOne({ $or: [{ username: usernameOrPhone }, { phone: usernameOrPhone }] })
+      .select('+passwordHash');
 
     if (!user || !user.passwordHash) {
       throw new UnauthorizedError('用户名或密码错误');
@@ -117,13 +108,10 @@ export const authService = {
     return { accessToken, refreshToken, user };
   },
 
-  /**
-   * Issue a guest JWT (scoped to tenant)
-   */
   async issueGuestToken(tenantId: string): Promise<{ accessToken: string; userId: string }> {
+    const repo = new UserRepo(tenantId);
     const guestToken = randomUUID();
-    const user = await User.create({
-      tenantId: new mongoose.Types.ObjectId(tenantId),
+    const user = await repo.create({
       isGuest: true,
       guestToken,
       userType: 'guest',
@@ -134,9 +122,8 @@ export const authService = {
     return { accessToken, userId: user._id.toString() };
   },
 
-  /**
-   * Refresh access token using refresh token
-   */
+  // refreshAccessToken has no tenantId (comes from refresh token which only holds userId).
+  // User.findById is safe here — it's a primary-key lookup, not a tenant-scoped query.
   async refreshAccessToken(
     refreshToken: string,
   ): Promise<{ accessToken: string; user: IUser }> {
@@ -150,18 +137,14 @@ export const authService = {
     return { accessToken, user };
   },
 
-  /**
-   * Register username + password (for admin creation, scoped to tenant)
-   */
   async registerWithPassword(
     username: string,
     password: string,
     tenantId: string,
     phone?: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: IUser }> {
-    const tenantOid = new mongoose.Types.ObjectId(tenantId);
-    const existing = await User.findOne({
-      tenantId: tenantOid,
+    const repo = new UserRepo(tenantId);
+    const existing = await repo.findOne({
       $or: [{ username }, ...(phone ? [{ phone }] : [])],
     });
     if (existing) {
@@ -169,8 +152,7 @@ export const authService = {
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await User.create({
-      tenantId: tenantOid,
+    const user = await repo.create({
       username,
       phone,
       passwordHash,

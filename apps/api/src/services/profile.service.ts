@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
-import { Profile, IProfile } from '../models/profile.model';
+import { IProfile } from '../models/profile.model';
 import { User } from '../models/user.model';
 import { StaticUserType } from '../models/static-user-type.model';
+import { ProfileRepo } from '../repos';
 import { computeBazi } from '../lib/bazi';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { createModuleLogger } from '../utils/logger';
@@ -38,29 +39,24 @@ function computeBaziForProfile(dto: Pick<CreateProfileDto, 'birthYear' | 'birthM
 
 export const profileService = {
   async getProfiles(userId: string, tenantId: string): Promise<IProfile[]> {
-    return Profile.find({
-      tenantId: new mongoose.Types.ObjectId(tenantId),
-      userId: new mongoose.Types.ObjectId(userId),
-    })
-      .sort({ isDefaultProfile: -1, createdAt: 1 })
-      .exec();
+    const repo = new ProfileRepo(tenantId);
+    const userOid = new mongoose.Types.ObjectId(userId);
+    return repo.find({ userId: userOid }).sort({ isDefaultProfile: -1, createdAt: 1 }).exec();
   },
 
   async getProfile(userId: string, tenantId: string, profileId: string): Promise<IProfile> {
-    const profile = await Profile.findOne({
-      _id: new mongoose.Types.ObjectId(profileId),
-      tenantId: new mongoose.Types.ObjectId(tenantId),
-    });
+    const repo = new ProfileRepo(tenantId);
+    const profile = await repo.findOne({ _id: new mongoose.Types.ObjectId(profileId) });
     if (!profile) throw new NotFoundError('档案');
     if (profile.userId.toString() !== userId) throw new ForbiddenError('无权访问此档案');
     return profile;
   },
 
   async createProfile(userId: string, tenantId: string, data: CreateProfileDto): Promise<IProfile> {
-    const tenantOid = new mongoose.Types.ObjectId(tenantId);
+    const repo = new ProfileRepo(tenantId);
     const userOid = new mongoose.Types.ObjectId(userId);
 
-    const existingCount = await Profile.countDocuments({ tenantId: tenantOid, userId: userOid });
+    const existingCount = await repo.countDocuments({ userId: userOid });
 
     // Enforce per-userType profile quota (matches mini program permission system)
     const user = await User.findById(userOid).select('userType').lean();
@@ -73,12 +69,9 @@ export const profileService = {
       throw new ForbiddenError(`已达到档案上限（最多 ${maxProfiles} 个）`);
     }
 
-    const isFirst = existingCount === 0;
-
     const baziResult = computeBaziForProfile(data);
 
-    const profile = await Profile.create({
-      tenantId: tenantOid,
+    const profile = await repo.create({
       userId: userOid,
       name: data.name,
       gender: data.gender,
@@ -88,7 +81,7 @@ export const profileService = {
       birthHour: data.birthHour,
       birthMinute: data.birthMinute,
       isLunarDate: data.isLunarDate ?? false,
-      isDefaultProfile: isFirst,
+      isDefaultProfile: existingCount === 0,
       baziResult,
       notes: data.notes,
     });
@@ -103,10 +96,10 @@ export const profileService = {
     profileId: string,
     data: Partial<CreateProfileDto>,
   ): Promise<IProfile> {
-    const profile = await Profile.findOne({
-      _id: new mongoose.Types.ObjectId(profileId),
-      tenantId: new mongoose.Types.ObjectId(tenantId),
-    });
+    const repo = new ProfileRepo(tenantId);
+    const profileOid = new mongoose.Types.ObjectId(profileId);
+
+    const profile = await repo.findOne({ _id: profileOid });
     if (!profile) throw new NotFoundError('档案');
     if (profile.userId.toString() !== userId) throw new ForbiddenError('无权修改此档案');
 
@@ -142,10 +135,11 @@ export const profileService = {
       if (baziResult) updatedFields.baziResult = baziResult;
     }
 
-    const updated = await Profile.findByIdAndUpdate(profileId, updatedFields, {
-      new: true,
-      runValidators: true,
-    });
+    const updated = await repo.findOneAndUpdate(
+      { _id: profileOid },
+      updatedFields,
+      { new: true, runValidators: true },
+    );
     if (!updated) throw new NotFoundError('档案');
 
     log.info({ tenantId, userId, profileId }, 'Profile updated');
@@ -153,24 +147,21 @@ export const profileService = {
   },
 
   async deleteProfile(userId: string, tenantId: string, profileId: string): Promise<void> {
-    const tenantOid = new mongoose.Types.ObjectId(tenantId);
-    const profile = await Profile.findOne({
-      _id: new mongoose.Types.ObjectId(profileId),
-      tenantId: tenantOid,
-    });
+    const repo = new ProfileRepo(tenantId);
+    const profileOid = new mongoose.Types.ObjectId(profileId);
+    const userOid = new mongoose.Types.ObjectId(userId);
+
+    const profile = await repo.findOne({ _id: profileOid });
     if (!profile) throw new NotFoundError('档案');
     if (profile.userId.toString() !== userId) throw new ForbiddenError('无权删除此档案');
 
     const wasDefault = profile.isDefaultProfile;
-    await Profile.deleteOne({ _id: profileId });
+    await repo.deleteOne({ _id: profileOid, userId: userOid });
 
     if (wasDefault) {
-      const next = await Profile.findOne({
-        tenantId: tenantOid,
-        userId: new mongoose.Types.ObjectId(userId),
-      }).sort({ createdAt: 1 });
-      if (next) {
-        await Profile.updateOne({ _id: next._id }, { isDefaultProfile: true });
+      const next = await repo.find({ userId: userOid }).sort({ createdAt: 1 }).limit(1).exec();
+      if (next[0]) {
+        await repo.updateOne({ _id: next[0]._id }, { isDefaultProfile: true });
       }
     }
 
@@ -178,19 +169,17 @@ export const profileService = {
   },
 
   async setDefaultProfile(userId: string, tenantId: string, profileId: string): Promise<IProfile> {
-    const tenantOid = new mongoose.Types.ObjectId(tenantId);
+    const repo = new ProfileRepo(tenantId);
+    const profileOid = new mongoose.Types.ObjectId(profileId);
     const userOid = new mongoose.Types.ObjectId(userId);
 
-    const profile = await Profile.findOne({
-      _id: new mongoose.Types.ObjectId(profileId),
-      tenantId: tenantOid,
-    });
+    const profile = await repo.findOne({ _id: profileOid });
     if (!profile) throw new NotFoundError('档案');
     if (profile.userId.toString() !== userId) throw new ForbiddenError('无权修改此档案');
 
-    await Profile.updateMany({ tenantId: tenantOid, userId: userOid }, { isDefaultProfile: false });
-    const updated = await Profile.findByIdAndUpdate(
-      profileId,
+    await repo.updateMany({ userId: userOid }, { isDefaultProfile: false });
+    const updated = await repo.findOneAndUpdate(
+      { _id: profileOid },
       { isDefaultProfile: true },
       { new: true },
     );
