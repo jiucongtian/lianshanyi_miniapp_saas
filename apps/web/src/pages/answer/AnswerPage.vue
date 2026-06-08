@@ -86,6 +86,10 @@ const wuXingColorMap: Record<string, string> = {
   金: '#a0a0a0',
   水: '#4a90c4',
 }
+
+function cardImageUrl(cardId: number): string {
+  return `/cards/${String(cardId).padStart(2, '0')}.png`
+}
 </script>
 
 <template>
@@ -147,7 +151,7 @@ const wuXingColorMap: Record<string, string> = {
           <div class="card-flip__inner">
             <!-- 背面 -->
             <div class="card-flip__back">
-              <div class="card-flip__back-text">{{ tenantStore.config?.themeConfig.brandName ?? '连山易' }}</div>
+              <img src="/cards/back.jpg" class="card-flip__img" alt="卡背" />
             </div>
             <!-- 正面 -->
             <div
@@ -159,21 +163,26 @@ const wuXingColorMap: Record<string, string> = {
                   : 'none',
               }"
             >
-              <div
-                class="card-flip__name"
-                :style="{ color: drawResult ? (wuXingColorMap[drawResult.card.stemWuXing] ?? '#c896b4') : '#c896b4' }"
-              >
-                {{ drawResult?.card.name ?? '' }}
-              </div>
-              <div class="card-flip__nayin">{{ drawResult?.card.nayin ?? '' }}</div>
-              <div v-if="drawResult" class="card-flip__seq">
-                第{{ drawResult.card.sequence }}卦
-              </div>
+              <img
+                v-if="drawResult"
+                :src="cardImageUrl(drawResult.card.sequence)"
+                class="card-flip__img"
+                :alt="drawResult.card.name"
+              />
             </div>
           </div>
         </div>
 
-        <!-- AI 解读 -->
+        <!-- 卡牌名称 + AI 解读 -->
+        <div v-if="showFront && drawResult" class="card-info">
+          <span
+            class="card-info__name"
+            :style="{ color: wuXingColorMap[drawResult.card.stemWuXing] ?? '#c896b4' }"
+          >{{ drawResult.card.name }}</span>
+          <span class="card-info__nayin">{{ drawResult.card.nayin }}</span>
+          <span class="card-info__seq">第{{ drawResult.card.sequence }}卦</span>
+        </div>
+
         <div v-if="showFront && typedText" class="interp-container">
           <div class="interp-header">
             <span class="interp-icon">✦</span>
@@ -360,39 +369,49 @@ const wuXingColorMap: Record<string, string> = {
 }
 
 .card-flip__back {
-  background: linear-gradient(135deg, #3d1a2e 0%, #6b3060 100%);
+  background: #1a0a1e;
   border-color: rgba(200, 150, 180, 0.4);
-}
-
-.card-flip__back-text {
-  font-size: 18px;
-  font-weight: 800;
-  color: #c896b4;
-  letter-spacing: 3px;
-  text-shadow: 0 0 8px rgba(200, 150, 180, 0.5);
+  padding: 0;
+  overflow: hidden;
 }
 
 .card-flip__front {
-  background: rgba(26, 10, 0, 0.9);
+  background: #1a0a1e;
   transform: rotateY(180deg);
-  gap: 4px;
+  padding: 0;
+  overflow: hidden;
 }
 
-.card-flip__name {
-  font-size: 38px;
+.card-flip__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
+/* ─── 卡牌信息（图片下方）────────────────── */
+.card-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.card-info__name {
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: 3px;
-  line-height: 1;
+  letter-spacing: 2px;
   text-shadow: 0 0 8px currentColor;
 }
 
-.card-flip__nayin {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+.card-info__nayin {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
 }
 
-.card-flip__seq {
-  font-size: 10px;
+.card-info__seq {
+  font-size: 11px;
   color: rgba(200, 150, 180, 0.4);
 }
 

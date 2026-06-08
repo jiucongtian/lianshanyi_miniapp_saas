@@ -31,20 +31,12 @@ const wuXingColorMap: Record<string, string> = {
   水: '#4a90c4',
 }
 
-const wuXingBgMap: Record<string, string> = {
-  木: 'rgba(76, 175, 125, 0.1)',
-  火: 'rgba(224, 95, 95, 0.1)',
-  土: 'rgba(201, 147, 58, 0.1)',
-  金: 'rgba(160, 160, 160, 0.1)',
-  水: 'rgba(74, 144, 196, 0.1)',
+function cardImageUrl(sequence: number): string {
+  return `/cards/${String(sequence).padStart(2, '0')}.png`
 }
 
-function getCardStyle(card: StaticCard) {
-  return {
-    backgroundColor: wuXingBgMap[card.stemWuXing] ?? 'rgba(255,255,255,0.06)',
-    borderColor: wuXingColorMap[card.stemWuXing] ?? 'rgba(255,210,122,0.2)',
-    color: wuXingColorMap[card.stemWuXing] ?? '#ffd27a',
-  }
+function borderColor(card: StaticCard): string {
+  return wuXingColorMap[card.stemWuXing] ?? 'rgba(255,210,122,0.3)'
 }
 </script>
 
@@ -65,15 +57,21 @@ function getCardStyle(card: StaticCard) {
     <van-skeleton v-if="loading" :row="6" style="padding: 16px" />
 
     <!-- Card grid -->
-    <van-grid v-else :column-num="4" :gutter="10" class="card-browser__grid">
+    <van-grid v-else :column-num="4" :gutter="8" class="card-browser__grid">
       <van-grid-item
         v-for="card in cards"
         :key="card.id"
         @click="router.push(`/cards/${card.id}`)"
       >
-        <div class="card-browser__item" :style="getCardStyle(card)">
-          <div class="card-browser__item-name">{{ card.name }}</div>
-          <div class="card-browser__item-seq">第{{ card.sequence }}卦</div>
+        <div class="card-browser__item" :style="{ borderColor: borderColor(card) }">
+          <img
+            :src="cardImageUrl(card.sequence)"
+            :alt="card.name"
+            class="card-browser__item-img"
+          />
+          <div class="card-browser__item-name" :style="{ color: borderColor(card) }">
+            {{ card.name }}
+          </div>
         </div>
       </van-grid-item>
     </van-grid>
@@ -120,17 +118,16 @@ function getCardStyle(card: StaticCard) {
 }
 
 .card-browser__item {
-  width: 68px;
-  height: 68px;
-  border-radius: 12px;
+  width: 100%;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   border: 1px solid;
-  gap: 2px;
+  overflow: hidden;
   cursor: pointer;
   transition: transform 0.15s, opacity 0.15s;
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .card-browser__item:active {
@@ -138,14 +135,18 @@ function getCardStyle(card: StaticCard) {
   opacity: 0.85;
 }
 
-.card-browser__item-name {
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
+.card-browser__item-img {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  display: block;
 }
 
-.card-browser__item-seq {
-  font-size: 9px;
-  opacity: 0.6;
+.card-browser__item-name {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 0 5px;
+  letter-spacing: 1px;
 }
 </style>
