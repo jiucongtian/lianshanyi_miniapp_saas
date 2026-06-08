@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import { StaticCard, IStaticCard } from '../models/static-card.model';
 import { DrawCardRecord, IDrawCardRecord } from '../models/draw-card-record.model';
 import { Tenant } from '../models/tenant.model';
+import { User } from '../models/user.model';
+import { StaticUserType } from '../models/static-user-type.model';
 import { getAiAdapter } from '../lib/ai/adapter';
 import { Profile } from '../models/profile.model';
 import { NotFoundError, TooManyRequestsError } from '../utils/errors';
@@ -39,9 +41,20 @@ export const cardService = {
     const tenantOid = new mongoose.Types.ObjectId(tenantId);
     const userOid = new mongoose.Types.ObjectId(userId);
 
-    // Check daily draw limit against tenant config
-    const tenant = await Tenant.findById(tenantOid).lean();
-    const dailyLimit = tenant?.limits?.dailyDrawCount ?? 1;
+    // Determine daily draw limit: user-type config takes priority over tenant default
+    const [user, tenant] = await Promise.all([
+      User.findById(userOid).select('userType').lean(),
+      Tenant.findById(tenantOid).select('limits').lean(),
+    ]);
+
+    const userTypeKey = user?.userType ?? 'normal';
+    const userTypeConfig = await StaticUserType.findOne({ typeKey: userTypeKey })
+      .select('dailyCardDrawLimit')
+      .lean();
+
+    // Use user-type limit if configured; otherwise fall back to tenant default
+    const dailyLimit =
+      userTypeConfig?.dailyCardDrawLimit ?? tenant?.limits?.dailyDrawCount ?? 1;
 
     const countToday = await DrawCardRecord.countDocuments({
       tenantId: tenantOid,

@@ -9,7 +9,7 @@ services:
     container_name: lsy-api
     restart: unless-stopped
     ports:
-      - '127.0.0.1:3000:3000'
+      - '127.0.0.1:3001:3000'
     environment:
       NODE_ENV: development
       PORT: 3000
@@ -24,7 +24,11 @@ services:
       MINIO_SECRET_KEY: minioadmin123
       MINIO_BUCKET: lianshanyi
       SMS_PROVIDER: mock
-      AI_PROVIDER: mock
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      COZE_API_TOKEN: ${COZE_API_TOKEN:-}
+      COZE_CARD_DRAW_WORKFLOW_ID: ${COZE_CARD_DRAW_WORKFLOW_ID:-7565131575660003366}
+      COZE_DAILY_INSIGHT_WORKFLOW_ID: ${COZE_DAILY_INSIGHT_WORKFLOW_ID:-7583167143870382106}
+      COZE_ASSISTANT_BOT_ID: ${COZE_ASSISTANT_BOT_ID:-7615870340559978548}
       SINGLE_DAILY_INSIGHT_JOB: 'true'
     volumes:
       - ./apps/api/src:/app/src
@@ -48,6 +52,7 @@ services:
       - '127.0.0.1:5173:5173'
     environment:
       VITE_API_BASE_URL: /api/v1
+      API_PROXY_TARGET: http://api:3000
     volumes:
       - ./apps/web/src:/app/src
       - /app/node_modules

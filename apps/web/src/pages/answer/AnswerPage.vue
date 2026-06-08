@@ -136,7 +136,7 @@ const wuXingColorMap: Record<string, string> = {
           @click="startDraw"
         >
           <van-loading v-if="loading" size="18" color="#fff" style="margin-right:8px" />
-          {{ loading ? '抽卡中…' : '抽卡寻找答案' }}
+          {{ loading ? 'AI 解读中，请稍候…' : '抽卡寻找答案' }}
         </button>
       </div>
 

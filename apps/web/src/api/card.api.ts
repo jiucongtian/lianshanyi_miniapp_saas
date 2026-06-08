@@ -15,7 +15,8 @@ export interface DrawCardParams {
 }
 
 export function drawCard(data?: DrawCardParams) {
-  return apiClient.post<ApiResponse<DrawCardRecord>>('/cards/draw', data ?? {})
+  // Coze AI can take 30-90s; use a longer timeout than the default 30s
+  return apiClient.post<ApiResponse<DrawCardRecord>>('/cards/draw', data ?? {}, { timeout: 120_000 })
 }
 
 export function getDrawHistory(page = 1, limit = 20) {
