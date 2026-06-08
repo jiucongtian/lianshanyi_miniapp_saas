@@ -42,6 +42,34 @@ function stemColor(key: string): string {
   return wuXingColorMap[p.stemWuXing] ?? '#854C65'
 }
 
+// 干支 → 六十甲子序号（1-60），用于定位卡牌图片
+const STEMS  = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸']
+const BRANCHES = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
+
+function ganzhiToSeq(stem: string, branch: string): number {
+  const si = STEMS.indexOf(stem)
+  const bi = BRANCHES.indexOf(branch)
+  if (si === -1 || bi === -1) return 1
+  // 六十甲子：每隔10天干、12地支交替，公式：((bi - si + 60) % 12) * 5 + si 不准确
+  // 直接从 甲子=1 按顺序推算：每10组递进，天干步进，地支同步
+  // cardId = si + 1 + floor(((bi - si % 12 + 12) % 12) / 1) * 10，改用查表
+  let seq = 0
+  for (let i = 0; i < 60; i++) {
+    if (STEMS[i % 10] === stem && BRANCHES[i % 12] === branch) {
+      seq = i + 1
+      break
+    }
+  }
+  return seq || 1
+}
+
+function pillarCardUrl(key: string): string {
+  const p = getPillar(key)
+  if (!p) return '/cards/back.jpg'
+  const seq = ganzhiToSeq(p.stem, p.branch)
+  return `/cards/${String(seq).padStart(2, '0')}.png`
+}
+
 function toggleFlip(index: number) {
   if (!bazi.value) return
   flipped.value = flipped.value.map((v, i) => (i === index ? !v : v))
@@ -142,32 +170,33 @@ onMounted(async () => {
             @click="toggleFlip(idx)"
           >
             <div class="bazi-card__inner">
-              <!-- 正面 -->
+              <!-- 正面：卡背图 + 标签 -->
               <div class="bazi-card__front">
-                <div class="bazi-card__tag">{{ def.tag }}</div>
-                <div class="bazi-card__label">{{ def.label }}</div>
-                <div class="bazi-card__sub">{{ def.sub }}</div>
-                <div class="bazi-card__hint">点击翻转</div>
+                <img src="/cards/back.jpg" class="bazi-card__img" alt="卡背" />
+                <div class="bazi-card__front-overlay">
+                  <div class="bazi-card__tag-pill">{{ def.tag }}</div>
+                  <div class="bazi-card__label">{{ def.label }}</div>
+                </div>
               </div>
-              <!-- 背面 -->
+              <!-- 背面：对应卡牌图 + 干支信息 -->
               <div
                 class="bazi-card__back"
                 :style="{ borderColor: stemColor(def.key) }"
               >
-                <div class="bazi-card__back-sub">{{ def.sub }}</div>
-                <div class="bazi-card__ganzhi" :style="{ color: stemColor(def.key) }">
-                  {{ getPillar(def.key)?.stem ?? '' }}{{ getPillar(def.key)?.branch ?? '' }}
-                </div>
-                <div class="bazi-card__wuxing-row">
-                  <span
-                    class="bazi-card__wuxing-badge"
-                    :style="{ backgroundColor: stemColor(def.key) }"
-                  >{{ getPillar(def.key)?.stemWuXing ?? '' }}</span>
-                  <span class="bazi-card__wuxing-sep">·</span>
-                  <span
-                    class="bazi-card__wuxing-badge"
-                    :style="{ backgroundColor: wuXingColorMap[getPillar(def.key)?.branchWuXing ?? ''] ?? '#888' }"
-                  >{{ getPillar(def.key)?.branchWuXing ?? '' }}</span>
+                <img :src="pillarCardUrl(def.key)" class="bazi-card__img" :alt="getPillar(def.key)?.stem + getPillar(def.key)?.branch" />
+                <div class="bazi-card__back-overlay">
+                  <div class="bazi-card__ganzhi" :style="{ color: stemColor(def.key) }">
+                    {{ getPillar(def.key)?.stem ?? '' }}{{ getPillar(def.key)?.branch ?? '' }}
+                  </div>
+                  <div class="bazi-card__wuxing-row">
+                    <span class="bazi-card__wuxing-badge" :style="{ backgroundColor: stemColor(def.key) }">
+                      {{ getPillar(def.key)?.stemWuXing ?? '' }}
+                    </span>
+                    <span class="bazi-card__wuxing-sep">·</span>
+                    <span class="bazi-card__wuxing-badge" :style="{ backgroundColor: wuXingColorMap[getPillar(def.key)?.branchWuXing ?? ''] ?? '#888' }">
+                      {{ getPillar(def.key)?.branchWuXing ?? '' }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -424,80 +453,101 @@ onMounted(async () => {
   gap: 4px;
 }
 
-/* 正面：白色，浅玫瑰色边框 */
+/* 正面：卡背图 */
 .bazi-card__front {
-  background: #ffffff;
   border: 1px solid rgba(200, 150, 180, 0.4);
-  box-shadow: 0 1px 6px rgba(133, 76, 101, 0.1);
+  overflow: hidden;
+  padding: 0;
 }
 
-.bazi-card__tag {
+/* 背面：卡牌图 + 彩色边框 */
+.bazi-card__back {
+  border: 1.5px solid;
+  transform: rotateY(180deg);
+  overflow: hidden;
+  padding: 0;
+}
+
+.bazi-card__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 正面遮罩：标签 + 柱名 */
+.bazi-card__front-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 10px;
+  background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%);
+}
+
+.bazi-card__tag-pill {
   position: absolute;
   top: 8px;
-  right: 10px;
-  font-size: 11px;
-  color: rgba(133, 76, 101, 0.4);
+  right: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(133, 76, 101, 0.7);
+  border-radius: 12px;
+  padding: 1px 8px;
   letter-spacing: 1px;
 }
 
 .bazi-card__label {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
-  color: #854C65;
+  color: #fff;
   letter-spacing: 0.5px;
   text-align: center;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
 }
 
-.bazi-card__sub {
-  font-size: 11px;
-  color: rgba(133, 76, 101, 0.55);
-}
-
-.bazi-card__hint {
+/* 背面遮罩：干支 + 五行 */
+.bazi-card__back-overlay {
   position: absolute;
-  bottom: 8px;
-  font-size: 10px;
-  color: rgba(133, 76, 101, 0.3);
-}
-
-/* 背面：浅色底，彩色边框 */
-.bazi-card__back {
-  background: rgba(133, 76, 101, 0.04);
-  border: 1.5px solid;
-  transform: rotateY(180deg);
-}
-
-.bazi-card__back-sub {
-  font-size: 10px;
-  color: rgba(133, 76, 101, 0.5);
-  letter-spacing: 1px;
-  margin-bottom: 4px;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 10px;
+  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%);
 }
 
 .bazi-card__ganzhi {
-  font-size: 34px;
+  font-size: 26px;
   font-weight: 800;
-  letter-spacing: 4px;
+  letter-spacing: 3px;
   line-height: 1;
+  text-shadow: 0 0 8px currentColor;
 }
 
 .bazi-card__wuxing-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 4px;
+  margin-top: 5px;
 }
 
 .bazi-card__wuxing-badge {
-  font-size: 11px;
+  font-size: 10px;
   color: #fff;
-  padding: 2px 8px;
+  padding: 1px 6px;
   border-radius: 20px;
   font-weight: 600;
 }
 
 .bazi-card__wuxing-sep {
-  color: rgba(133, 76, 101, 0.3);
+  color: rgba(255,255,255,0.4);
+  font-size: 10px;
 }
 
 /* ─── 日主 ───────────────────────────────── */
