@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import { Profile, IProfile } from '../models/profile.model';
+import { User } from '../models/user.model';
+import { StaticUserType } from '../models/static-user-type.model';
 import { computeBazi } from '../lib/bazi';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { createModuleLogger } from '../utils/logger';
@@ -59,6 +61,18 @@ export const profileService = {
     const userOid = new mongoose.Types.ObjectId(userId);
 
     const existingCount = await Profile.countDocuments({ tenantId: tenantOid, userId: userOid });
+
+    // Enforce per-userType profile quota (matches mini program permission system)
+    const user = await User.findById(userOid).select('userType').lean();
+    const userTypeKey = user?.userType ?? 'normal';
+    const userTypeConfig = await StaticUserType.findOne({ typeKey: userTypeKey })
+      .select('maxProfiles')
+      .lean();
+    const maxProfiles = userTypeConfig?.maxProfiles ?? 3;
+    if (maxProfiles !== -1 && existingCount >= maxProfiles) {
+      throw new ForbiddenError(`已达到档案上限（最多 ${maxProfiles} 个）`);
+    }
+
     const isFirst = existingCount === 0;
 
     const baziResult = computeBaziForProfile(data);

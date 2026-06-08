@@ -34,7 +34,6 @@ export interface ITenant extends Document {
     botId?: string;
   };
   limits: {
-    dailyDrawCount: number;
     maxUsers: number;
   };
   createdAt: Date;
@@ -86,7 +85,6 @@ const tenantSchema = new Schema<ITenant>(
       botId: { type: String },
     },
     limits: {
-      dailyDrawCount: { type: Number, default: 1 },
       maxUsers: { type: Number, default: 1000 },
     },
   },

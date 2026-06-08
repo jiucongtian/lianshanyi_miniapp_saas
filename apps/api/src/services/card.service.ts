@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import { StaticCard, IStaticCard } from '../models/static-card.model';
 import { DrawCardRecord, IDrawCardRecord } from '../models/draw-card-record.model';
-import { Tenant } from '../models/tenant.model';
 import { User } from '../models/user.model';
 import { StaticUserType } from '../models/static-user-type.model';
 import { getAiAdapter } from '../lib/ai/adapter';
@@ -41,20 +40,13 @@ export const cardService = {
     const tenantOid = new mongoose.Types.ObjectId(tenantId);
     const userOid = new mongoose.Types.ObjectId(userId);
 
-    // Determine daily draw limit: user-type config takes priority over tenant default
-    const [user, tenant] = await Promise.all([
-      User.findById(userOid).select('userType').lean(),
-      Tenant.findById(tenantOid).select('limits').lean(),
-    ]);
-
+    const user = await User.findById(userOid).select('userType').lean();
     const userTypeKey = user?.userType ?? 'normal';
     const userTypeConfig = await StaticUserType.findOne({ typeKey: userTypeKey })
       .select('dailyCardDrawLimit')
       .lean();
 
-    // Use user-type limit if configured; otherwise fall back to tenant default
-    const dailyLimit =
-      userTypeConfig?.dailyCardDrawLimit ?? tenant?.limits?.dailyDrawCount ?? 1;
+    const dailyLimit = userTypeConfig?.dailyCardDrawLimit ?? 0;
 
     const countToday = await DrawCardRecord.countDocuments({
       tenantId: tenantOid,
@@ -137,18 +129,13 @@ export const cardService = {
     const tenantOid = new mongoose.Types.ObjectId(tenantId);
     const userOid = new mongoose.Types.ObjectId(userId);
 
-    const [user, tenant] = await Promise.all([
-      User.findById(userOid).select('userType').lean(),
-      Tenant.findById(tenantOid).select('limits').lean(),
-    ]);
-
+    const user = await User.findById(userOid).select('userType').lean();
     const userTypeKey = user?.userType ?? 'normal';
     const userTypeConfig = await StaticUserType.findOne({ typeKey: userTypeKey })
       .select('dailyCardDrawLimit')
       .lean();
 
-    const dailyLimit =
-      userTypeConfig?.dailyCardDrawLimit ?? tenant?.limits?.dailyDrawCount ?? 1;
+    const dailyLimit = userTypeConfig?.dailyCardDrawLimit ?? 0;
 
     const countToday = await DrawCardRecord.countDocuments({
       tenantId: tenantOid,
