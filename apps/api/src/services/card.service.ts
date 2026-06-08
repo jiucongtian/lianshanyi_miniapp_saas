@@ -126,6 +126,95 @@ export const cardService = {
     return recordObj;
   },
 
+  async interpretCard(
+    userId: string,
+    tenantId: string,
+    cardId: number,
+    profileId: string | undefined,
+    question: string | undefined,
+  ): Promise<IDrawCardRecord & { card?: IStaticCard }> {
+    const today = getTodayString();
+    const tenantOid = new mongoose.Types.ObjectId(tenantId);
+    const userOid = new mongoose.Types.ObjectId(userId);
+
+    const [user, tenant] = await Promise.all([
+      User.findById(userOid).select('userType').lean(),
+      Tenant.findById(tenantOid).select('limits').lean(),
+    ]);
+
+    const userTypeKey = user?.userType ?? 'normal';
+    const userTypeConfig = await StaticUserType.findOne({ typeKey: userTypeKey })
+      .select('dailyCardDrawLimit')
+      .lean();
+
+    const dailyLimit =
+      userTypeConfig?.dailyCardDrawLimit ?? tenant?.limits?.dailyDrawCount ?? 1;
+
+    const countToday = await DrawCardRecord.countDocuments({
+      tenantId: tenantOid,
+      userId: userOid,
+      drawDate: today,
+    });
+    if (countToday >= dailyLimit) {
+      throw new TooManyRequestsError(`今日已达抽卡上限（每日最多 ${dailyLimit} 次）`);
+    }
+
+    const card = await StaticCard.findOne({ cardId });
+    if (!card) throw new NotFoundError('卡牌数据');
+
+    let profileName = '用户';
+    let gender = 'unknown';
+    let baziSummary = '';
+
+    if (profileId) {
+      try {
+        const profile = await Profile.findOne({
+          _id: new mongoose.Types.ObjectId(profileId),
+          tenantId: tenantOid,
+          userId: userOid,
+        });
+        if (profile) {
+          profileName = profile.name;
+          gender = profile.gender;
+          if (profile.baziResult) {
+            const bazi = profile.baziResult;
+            baziSummary = `年柱${bazi.yearPillar.stem}${bazi.yearPillar.branch}，月柱${bazi.monthPillar.stem}${bazi.monthPillar.branch}，日柱${bazi.dayPillar.stem}${bazi.dayPillar.branch}，时柱${bazi.hourPillar.stem}${bazi.hourPillar.branch}`;
+          }
+        }
+      } catch (err) {
+        log.warn({ err, profileId }, 'Failed to load profile for card interpret, proceeding without');
+      }
+    }
+
+    const ai = await getAiAdapter();
+    const aiResult = await ai.drawCard({
+      profileName,
+      gender,
+      baziSummary,
+      question,
+      cardId,
+      cardName: card.name,
+    });
+
+    const record = await DrawCardRecord.create({
+      tenantId: tenantOid,
+      userId: userOid,
+      profileId: profileId ? new mongoose.Types.ObjectId(profileId) : undefined,
+      cardId,
+      cardName: card.name,
+      question,
+      aiInterpretation: aiResult.interpretation,
+      aiProvider: aiResult.provider,
+      drawDate: today,
+    });
+
+    log.info({ tenantId, userId, cardId, recordId: record._id.toString() }, 'Card interpreted');
+
+    const recordObj = record.toObject() as IDrawCardRecord & { card?: IStaticCard };
+    recordObj.card = card;
+    return recordObj;
+  },
+
   async getDrawHistory(
     userId: string,
     tenantId: string,

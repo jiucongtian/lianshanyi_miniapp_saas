@@ -82,6 +82,29 @@ export const cardController = {
     }
   },
 
+  async interpretCard(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { cardId, profileId, question } = req.body as {
+        cardId?: unknown;
+        profileId?: unknown;
+        question?: unknown;
+      };
+      if (typeof cardId !== 'number' || cardId < 1 || cardId > 60) {
+        throw new ValidationError('cardId 必须是 1-60 的整数');
+      }
+      const record = await cardService.interpretCard(
+        req.user!.userId,
+        req.user!.tenantId,
+        cardId,
+        profileId && typeof profileId === 'string' ? profileId : undefined,
+        question && typeof question === 'string' ? question : undefined,
+      );
+      sendSuccess(res, toDrawRecordDTO(record), 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async getDrawHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const page = Math.max(1, parseInt(String(req.query['page'] ?? '1'), 10) || 1);
