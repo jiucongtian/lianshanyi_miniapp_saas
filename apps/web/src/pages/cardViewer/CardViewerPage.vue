@@ -54,7 +54,16 @@ onMounted(async () => {
     <van-skeleton v-if="loading" :row="5" style="padding: 20px" />
 
     <template v-else-if="card">
-      <!-- Hero card display -->
+      <!-- Card image -->
+      <div class="card-viewer__img-wrap">
+        <img
+          :src="`/cards/${String(card.sequence).padStart(2, '0')}.png`"
+          :alt="card.name"
+          class="card-viewer__img"
+        />
+      </div>
+
+      <!-- Hero metadata -->
       <div
         class="card-viewer__hero"
         :style="{
@@ -109,9 +118,25 @@ onMounted(async () => {
   background: var(--color-bg);
 }
 
+/* ─── Card image ─────────────────────────── */
+.card-viewer__img-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0 0;
+}
+
+.card-viewer__img {
+  width: 160px;
+  aspect-ratio: 7 / 12;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  display: block;
+}
+
 .card-viewer__hero {
-  margin: 20px 16px;
-  padding: 32px 24px;
+  margin: 16px 16px 0;
+  padding: 20px 24px;
   border-radius: 20px;
   border: 2px solid;
   text-align: center;

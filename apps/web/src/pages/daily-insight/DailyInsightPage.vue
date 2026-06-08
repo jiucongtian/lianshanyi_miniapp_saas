@@ -49,12 +49,13 @@ onMounted(async () => {
             <span class="date-text date-month">{{ insight.dayStem }}</span>
             <span class="date-text date-day">{{ insight.dayBranch }}日</span>
           </div>
-          <!-- 卡牌名称 -->
+          <!-- 卡牌图片 -->
           <div class="card-image-wrapper">
-            <div class="card-name-display">
-              <span class="card-name-text">{{ insight.cardName }}</span>
-              <span class="card-title-text">{{ insight.title }}</span>
-            </div>
+            <img
+              :src="`/cards/${String(insight.cardId).padStart(2, '0')}.png`"
+              :alt="insight.cardName"
+              class="card-image"
+            />
           </div>
         </div>
 
@@ -215,40 +216,21 @@ onMounted(async () => {
 .date-day   { font-size: 18px; }
 
 .card-image-wrapper {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
 }
 
-.card-name-display {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 120px;
+.card-image {
   height: 100%;
-  background: rgba(200, 150, 180, 0.08);
-  border: 1.5px solid rgba(200, 150, 180, 0.4);
+  width: auto;
+  aspect-ratio: 7 / 12;
+  object-fit: cover;
   border-radius: 8px;
-  padding: 12px 8px;
-}
-
-.card-name-text {
-  font-size: 20px;
-  font-weight: 700;
-  color: #c896b4;
-  letter-spacing: 2px;
-  text-shadow: 0 0 6px rgba(200, 150, 180, 0.5);
-}
-
-.card-title-text {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  text-align: center;
-  line-height: 1.4;
+  border: 1.5px solid rgba(200, 150, 180, 0.5);
+  box-shadow: 0 0 12px rgba(200, 150, 180, 0.3);
+  display: block;
 }
 
 /* ─── 时间轴 ─────────────────────────────── */

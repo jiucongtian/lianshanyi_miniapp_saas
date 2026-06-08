@@ -111,6 +111,7 @@ export interface DrawCardRecord {
 
 export interface DailyInsight {
   date: string
+  cardId: number // 1-60, maps to card image filename
   cardName: string
   dayStem: string
   dayBranch: string

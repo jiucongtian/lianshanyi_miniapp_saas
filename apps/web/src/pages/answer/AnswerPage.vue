@@ -19,6 +19,33 @@ const drawResult = ref<DrawCardRecord | null>(null)
 const isFlipping = ref(false)
 const showFront = ref(false)
 const typedText = ref('')
+const loadingStage = ref('')
+
+const LOADING_STAGES = [
+  '开始分析卡牌信息…',
+  '调取AI知识库…',
+  '深度思考中…',
+  '正在优化内容…',
+]
+
+let stageTimer: ReturnType<typeof setInterval> | null = null
+
+function startLoadingStages() {
+  let idx = 0
+  loadingStage.value = LOADING_STAGES[0]!
+  stageTimer = setInterval(() => {
+    idx = (idx + 1) % LOADING_STAGES.length
+    loadingStage.value = LOADING_STAGES[idx]!
+  }, 4000)
+}
+
+function stopLoadingStages() {
+  if (stageTimer) {
+    clearInterval(stageTimer)
+    stageTimer = null
+  }
+  loadingStage.value = ''
+}
 
 const profileOptions = computed(() =>
   profileStore.profiles.map((p) => ({
@@ -43,6 +70,7 @@ async function startDraw() {
   showFront.value = false
   isFlipping.value = false
   typedText.value = ''
+  startLoadingStages()
 
   try {
     const res = await drawCard({
@@ -64,6 +92,7 @@ async function startDraw() {
     showToast({ type: 'fail', message: '抽卡失败，请重试' })
   } finally {
     loading.value = false
+    stopLoadingStages()
   }
 }
 
@@ -140,7 +169,7 @@ function cardImageUrl(cardId: number): string {
           @click="startDraw"
         >
           <van-loading v-if="loading" size="18" color="#fff" style="margin-right:8px" />
-          {{ loading ? 'AI 解读中，请稍候…' : '抽卡寻找答案' }}
+          {{ loading ? loadingStage || 'AI 解读中…' : '抽卡寻找答案' }}
         </button>
       </div>
 

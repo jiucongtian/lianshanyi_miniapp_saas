@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { showImagePreview } from 'vant'
 import { useProfileStore } from '@/stores/profile.store'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -72,7 +73,24 @@ function pillarCardUrl(key: string): string {
 
 function toggleFlip(index: number) {
   if (!bazi.value) return
-  flipped.value = flipped.value.map((v, i) => (i === index ? !v : v))
+  if (flipped.value[index]) {
+    // Already flipped → show full-screen image preview
+    const url = pillarCardUrl(pillarDefs[index]!.key)
+    showImagePreview({ images: [url], startPosition: 0 })
+  } else {
+    flipped.value = flipped.value.map((v, i) => (i === index ? true : v))
+  }
+}
+
+/** Auto-flip cards one by one after bazi data is loaded */
+function autoFlipSequence() {
+  pillarDefs.forEach((_, i) => {
+    setTimeout(() => {
+      if (!flipped.value[i]) {
+        flipped.value = flipped.value.map((v, j) => (j === i ? true : v))
+      }
+    }, 600 + i * 500)
+  })
 }
 
 const wuXingOrder = ['木', '火', '土', '金', '水'] as const
@@ -90,6 +108,10 @@ onMounted(async () => {
   try {
     if (authStore.isLoggedIn && !authStore.isGuest) {
       await profileStore.fetchProfiles()
+      // Auto-flip if bazi data is available
+      if (profileStore.defaultProfile?.baziResult) {
+        autoFlipSequence()
+      }
     }
   } finally {
     loading.value = false
