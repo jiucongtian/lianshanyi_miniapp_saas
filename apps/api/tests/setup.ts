@@ -7,3 +7,7 @@ process.env.JWT_GUEST_EXPIRES_IN = '30d';
 process.env.SMS_PROVIDER = 'mock';
 process.env.AI_PROVIDER = 'mock';
 process.env.NODE_ENV = 'test';
+// 32-byte AES key for open-app secret encryption tests
+process.env.OPENAPI_SECRET_ENC_KEY = 'a0b1c2d3e4f5a0b1c2d3e4f5a0b1c2d3e4f5a0b1c2d3e4f5a0b1c2d3e4f5a0b1';
+// Use dedicated test DB on the running Docker MongoDB
+process.env.MONGO_URI = process.env.MONGO_URI ?? 'mongodb://localhost:27017/lianshanyi_test';

@@ -24,6 +24,7 @@ export interface ITenantThemeConfig {
 
 export interface ITenant extends Document {
   _id: mongoose.Types.ObjectId;
+  type: 'tenant' | 'partner';
   slug: string;
   name: string;
   status: 'trial' | 'active' | 'suspended';
@@ -35,10 +36,15 @@ export interface ITenant extends Document {
   };
   limits: {
     maxUsers: number;
+    aiCallsPerDay?: number;
   };
+  ipWhitelist?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
+
+/** Account is the unified context model; tenant and partner are both Accounts. */
+export type IAccount = ITenant;
 
 const themeConfigSchema = new Schema<ITenantThemeConfig>(
   {
@@ -67,6 +73,11 @@ const themeConfigSchema = new Schema<ITenantThemeConfig>(
 
 const tenantSchema = new Schema<ITenant>(
   {
+    type: {
+      type: String,
+      enum: ['tenant', 'partner'],
+      default: 'tenant',
+    },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
     name: { type: String, required: true },
     status: {
@@ -86,7 +97,9 @@ const tenantSchema = new Schema<ITenant>(
     },
     limits: {
       maxUsers: { type: Number, default: 1000 },
+      aiCallsPerDay: { type: Number },
     },
+    ipWhitelist: [{ type: String }],
   },
   {
     timestamps: true,
@@ -100,3 +113,4 @@ const tenantSchema = new Schema<ITenant>(
 );
 
 export const Tenant = mongoose.model<ITenant>('Tenant', tenantSchema);
+export const Account = Tenant;

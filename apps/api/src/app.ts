@@ -9,7 +9,9 @@ import pinoHttp from 'pino-http';
 import { logger } from './utils/logger';
 import { errorMiddleware } from './middlewares/error.middleware';
 import { resolveTenant } from './middlewares/tenant.middleware';
+import { auditMiddleware } from './middlewares/audit.middleware';
 import router from './routes/index';
+import openapiRouter from './routes/openapi/index';
 
 const app = express();
 
@@ -25,12 +27,28 @@ app.use(
     origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Slug'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Tenant-Slug',
+      'X-App-Id',
+      'X-Timestamp',
+      'X-Nonce',
+      'X-Signature',
+    ],
   }),
 );
 
 // ─── Request parsing ────────────────────────────────────────────────────────
-app.use(express.json({ limit: '2mb' }));
+// Capture raw body buffer for HMAC signature verification
+app.use(
+  express.json({
+    limit: '2mb',
+    verify: (req: express.Request, _res, buf) => {
+      (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -49,20 +67,21 @@ app.use(
 // ─── Global rate limiting ───────────────────────────────────────────────────
 app.use(
   rateLimit({
-    windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS ?? 900_000), // 15 min
+    windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS ?? 900_000),
     max: Number(process.env.RATE_LIMIT_MAX ?? 100),
     standardHeaders: true,
     legacyHeaders: false,
-    message: { success: false, data: null, error: '请求过于频繁，请稍后再试' },
+    message: { success: false, data: null, error: '请求过于频繁，请稍后再试', code: 'RATE_LIMITED' },
   }),
 );
 
-// ─── Routes ─────────────────────────────────────────────────────────────────
-// Mount router once; skip tenant resolution for public config endpoints
+// ─── /openapi/v1 — external facade (HMAC-signed requests only) ──────────────
+app.use('/openapi/v1', auditMiddleware, openapiRouter);
+
+// ─── /api/v1 — internal facade (JWT + optional HMAC for tenant backends) ────
 app.use(
   '/api/v1',
   (req, res, next) => {
-    // /tenants/public/* is bootstrap — no tenant context needed
     if (req.path.startsWith('/tenants/public/')) return next();
     return resolveTenant(req, res, next);
   },
@@ -71,7 +90,7 @@ app.use(
 
 // 404 fallback
 app.use((_req, res) => {
-  res.status(404).json({ success: false, data: null, error: '接口不存在' });
+  res.status(404).json({ success: false, data: null, error: '接口不存在', code: 'NOT_FOUND' });
 });
 
 // ─── Error handling ──────────────────────────────────────────────────────────
