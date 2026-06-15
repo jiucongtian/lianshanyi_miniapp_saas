@@ -64,7 +64,7 @@ export async function hmacStrategy(req: Request): Promise<Principal | null> {
 
   // Verify signature — use req.originalUrl path (strip query string) for HMAC
   const path = req.originalUrl.split('?')[0];
-  const body: Buffer | string = req.rawBody ?? JSON.stringify(req.body ?? {});
+  const body: Buffer | string = req.rawBody ?? (req.body && Object.keys(req.body as object).length > 0 ? JSON.stringify(req.body) : '');
   const signStr = buildSignString(req.method, path, timestamp, nonce, body);
   const secret = getCachedSecret(appId, app.secretEnc);
   const expected = hmacSha256(secret, signStr);

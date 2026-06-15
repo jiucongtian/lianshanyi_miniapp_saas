@@ -1,7 +1,7 @@
 /** Platform scopes — no contextId binding required */
 export const PLATFORM_SCOPES = {
   BAZI_CALCULATE: 'bazi:calculate',
-  AI_CHAT: 'ai:chat',
+  INSIGHT_INTERPRET: 'insight:interpret',
   DAILY_INSIGHT_READ: 'daily-insight:read',
   TUTOR_CHAT: 'tutor:chat',
 } as const;
@@ -41,7 +41,7 @@ export const ROLE_SCOPES: Record<string, string[]> = {
   guest: [PLATFORM_SCOPES.BAZI_CALCULATE],
   user: [
     PLATFORM_SCOPES.BAZI_CALCULATE,
-    PLATFORM_SCOPES.AI_CHAT,
+    PLATFORM_SCOPES.INSIGHT_INTERPRET,
     PLATFORM_SCOPES.DAILY_INSIGHT_READ,
     DATA_SCOPES.PROFILE_READ_SELF,
     DATA_SCOPES.PROFILE_WRITE_SELF,
