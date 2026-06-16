@@ -2,19 +2,21 @@ import { get, post, patch } from './client'
 
 export interface Credential {
   appId: string
-  tenantId: string
+  accountId: string
+  name: string
   remark?: string
   scopes: string[]
   status: 'active' | 'disabled'
-  rateLimit: number
+  rateLimit?: { windowMs: number; max: number }
   createdAt: string
 }
 
 export interface CreateCredentialPayload {
-  tenantId: string
+  name: string
+  accountId: string
   remark?: string
-  scopes?: string[]
-  rateLimit?: number
+  scopes: string[]
+  rateLimit?: { windowMs: number; max: number }
 }
 
 export interface CreateCredentialResult extends Credential {
@@ -22,13 +24,14 @@ export interface CreateCredentialResult extends Credential {
 }
 
 export interface UpdateCredentialPayload {
+  name?: string
   remark?: string
   scopes?: string[]
-  rateLimit?: number
+  rateLimit?: { windowMs: number; max: number }
 }
 
 export const credentialsApi = {
-  list: (params?: Record<string, unknown>) => get<{ credentials: Credential[]; meta: { total: number; page: number; limit: number } }>('/v1/admin/credentials', params),
+  list: (params?: Record<string, unknown>) => get<Credential[]>('/v1/admin/credentials', params),
   get: (appId: string) => get<Credential>(`/v1/admin/credentials/${appId}`),
   create: (payload: CreateCredentialPayload) => post<CreateCredentialResult>('/v1/admin/credentials', payload),
   update: (appId: string, payload: UpdateCredentialPayload) => patch<Credential>(`/v1/admin/credentials/${appId}`, payload),

@@ -7,17 +7,24 @@
 
     <el-card>
       <el-table :data="credentials" v-loading="loading" border stripe>
-        <el-table-column label="App ID" prop="appId" width="200" />
+        <el-table-column label="名称" prop="name" width="150" />
+        <el-table-column label="App ID" prop="appId" width="220" />
         <el-table-column label="备注" prop="remark" />
-        <el-table-column label="租户 ID" prop="tenantId" width="180" />
-        <el-table-column label="状态" width="90">
+        <el-table-column label="权限范围" width="180">
+          <template #default="{ row }">
+            <el-tag v-for="s in row.scopes" :key="s" size="small" style="margin: 2px">{{ s }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
               {{ row.status === 'active' ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="限流 (req/min)" prop="rateLimit" width="130" />
+        <el-table-column label="限流 (rpm)" width="110">
+          <template #default="{ row }">{{ row.rateLimit?.max ?? '—' }}</template>
+        </el-table-column>
         <el-table-column label="创建时间" width="170">
           <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
@@ -46,16 +53,27 @@
     </el-card>
 
     <!-- Create dialog -->
-    <el-dialog v-model="showCreate" title="生成凭据" width="460px">
-      <el-form :model="createForm" label-width="90px">
-        <el-form-item label="租户 ID" required>
-          <el-input v-model="createForm.tenantId" placeholder="输入租户 ID" />
+    <el-dialog v-model="showCreate" title="生成凭据" width="500px">
+      <el-form :model="createForm" label-width="100px">
+        <el-form-item label="名称" required>
+          <el-input v-model="createForm.name" placeholder="如：测试联调方" />
+        </el-form-item>
+        <el-form-item label="账户 ID" required>
+          <el-input v-model="createForm.accountId" placeholder="输入租户/账户的 MongoDB _id" />
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="createForm.remark" placeholder="如：测试联调方" />
+          <el-input v-model="createForm.remark" placeholder="可选备注" />
+        </el-form-item>
+        <el-form-item label="权限范围" required>
+          <el-checkbox-group v-model="createForm.scopes">
+            <el-checkbox value="bazi:calculate">八字测算</el-checkbox>
+            <el-checkbox value="tutor:chat">助学童子</el-checkbox>
+            <el-checkbox value="insight:interpret">智慧洞见</el-checkbox>
+            <el-checkbox value="daily-insight:read">每日愈见</el-checkbox>
+          </el-checkbox-group>
         </el-form-item>
         <el-form-item label="限流 (rpm)">
-          <el-input-number v-model="createForm.rateLimit" :min="1" :max="10000" />
+          <el-input-number v-model="createForm.rateLimitMax" :min="1" :max="10000" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -91,7 +109,7 @@
           <el-input v-model="editForm.remark" />
         </el-form-item>
         <el-form-item label="限流 (rpm)">
-          <el-input-number v-model="editForm.rateLimit" :min="1" :max="10000" />
+          <el-input-number v-model="editForm.rateLimitMax" :min="1" :max="10000" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -114,37 +132,46 @@ const total = ref(0)
 
 const showCreate = ref(false)
 const creating = ref(false)
-const createForm = reactive({ tenantId: '', remark: '', rateLimit: 60 })
+const createForm = reactive({ name: '', accountId: '', remark: '', scopes: [] as string[], rateLimitMax: 60 })
 
 const showSecret = ref(false)
 const newCred = ref<CreateCredentialResult | null>(null)
 
 const showEdit = ref(false)
 const saving = ref(false)
-const editForm = reactive({ appId: '', remark: '', rateLimit: 60 })
+const editForm = reactive({ appId: '', remark: '', rateLimitMax: 60 })
 
 onMounted(() => load())
 
 async function load() {
   loading.value = true
   try {
-    const res = await credentialsApi.list({ page: page.value, limit: 20 })
-    credentials.value = res.credentials
-    total.value = res.meta.total
+    const list = await credentialsApi.list({ page: page.value, limit: 20 })
+    credentials.value = Array.isArray(list) ? list : []
+    total.value = credentials.value.length
   } finally {
     loading.value = false
   }
 }
 
 async function handleCreate() {
-  if (!createForm.tenantId.trim()) { ElMessage.warning('请输入租户 ID'); return }
+  if (!createForm.name.trim()) { ElMessage.warning('请输入名称'); return }
+  if (!createForm.accountId.trim()) { ElMessage.warning('请输入账户 ID'); return }
+  if (createForm.scopes.length === 0) { ElMessage.warning('请至少选择一个权限范围'); return }
   creating.value = true
   try {
-    const result = await credentialsApi.create(createForm)
+    const payload = {
+      name: createForm.name,
+      accountId: createForm.accountId,
+      remark: createForm.remark || undefined,
+      scopes: createForm.scopes,
+      rateLimit: { windowMs: 60000, max: createForm.rateLimitMax },
+    }
+    const result = await credentialsApi.create(payload)
     newCred.value = result
     showCreate.value = false
     showSecret.value = true
-    Object.assign(createForm, { tenantId: '', remark: '', rateLimit: 60 })
+    Object.assign(createForm, { name: '', accountId: '', remark: '', scopes: [], rateLimitMax: 60 })
     await load()
   } catch (e: unknown) {
     ElMessage.error(e instanceof Error ? e.message : '创建失败')
@@ -154,14 +181,14 @@ async function handleCreate() {
 }
 
 function openEdit(row: Credential) {
-  Object.assign(editForm, { appId: row.appId, remark: row.remark ?? '', rateLimit: row.rateLimit })
+  Object.assign(editForm, { appId: row.appId, remark: row.remark ?? '', rateLimitMax: row.rateLimit?.max ?? 60 })
   showEdit.value = true
 }
 
 async function handleEdit() {
   saving.value = true
   try {
-    await credentialsApi.update(editForm.appId, { remark: editForm.remark, rateLimit: editForm.rateLimit })
+    await credentialsApi.update(editForm.appId, { remark: editForm.remark, rateLimit: { windowMs: 60000, max: editForm.rateLimitMax } })
     ElMessage.success('保存成功')
     showEdit.value = false
     await load()
