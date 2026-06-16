@@ -1,3 +1,7 @@
+<!--
+  DEPRECATED: 此页面已被独立的 apps/admin 管理后台取代（http://localhost:5174）。
+  入口已下线，此文件保留以避免路由报错，后续版本清理。
+-->
 <template>
   <div class="admin-page">
     <van-nav-bar title="管理后台" left-arrow @click-left="router.back()" />

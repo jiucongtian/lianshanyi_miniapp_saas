@@ -8,8 +8,16 @@ import mongoose from 'mongoose';
 
 export interface CreateAppInput {
   name: string;
+  remark?: string;
   accountId: string;
   scopes: string[];
+  rateLimit?: { windowMs: number; max: number };
+}
+
+export interface UpdateAppInput {
+  name?: string;
+  remark?: string;
+  scopes?: string[];
   rateLimit?: { windowMs: number; max: number };
 }
 
@@ -42,6 +50,7 @@ export async function createApp(input: CreateAppInput): Promise<CreateAppResult>
     appId,
     secretEnc,
     name,
+    remark: input.remark,
     accountId: new mongoose.Types.ObjectId(accountId),
     scopes,
     status: 'active',
@@ -86,6 +95,18 @@ export async function updateScopes(appId: string, scopes: string[]): Promise<voi
 
   validateDataScopes(scopes, String(app.accountId));
   app.scopes = scopes;
+  await app.save();
+}
+
+export async function updateApp(appId: string, input: UpdateAppInput): Promise<void> {
+  const app = await OpenApp.findOne({ appId });
+  if (!app) throw new NotFoundError('OpenApp');
+
+  if (input.scopes) validateDataScopes(input.scopes, String(app.accountId));
+  if (input.name !== undefined) app.name = input.name;
+  if (input.remark !== undefined) app.remark = input.remark;
+  if (input.scopes) app.scopes = input.scopes;
+  if (input.rateLimit) app.rateLimit = input.rateLimit;
   await app.save();
 }
 

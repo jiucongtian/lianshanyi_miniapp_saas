@@ -3,4 +3,5 @@ export interface Principal {
   contextId: string;
   subjectUserId?: string;
   scopes: string[];
+  isAdmin?: boolean;
 }

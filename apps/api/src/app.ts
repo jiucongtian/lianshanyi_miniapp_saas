@@ -83,6 +83,7 @@ app.use(
   '/api/v1',
   (req, res, next) => {
     if (req.path.startsWith('/tenants/public/')) return next();
+    if (req.path.startsWith('/admin')) return next();
     return resolveTenant(req, res, next);
   },
   router,

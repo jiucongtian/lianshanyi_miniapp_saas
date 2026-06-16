@@ -7,7 +7,7 @@ import dailyInsightRoutes from './daily-insight.routes';
 import assistantRoutes from './assistant.routes';
 import feedbackRoutes from './feedback.routes';
 import tenantRoutes from './tenant.routes';
-import openAppRoutes from './open-app.routes';
+import adminRoutes from './admin/index';
 
 const router = Router();
 
@@ -23,6 +23,6 @@ router.use('/cards', cardRoutes);
 router.use('/daily-insight', dailyInsightRoutes);
 router.use('/assistant', assistantRoutes);
 router.use('/feedbacks', feedbackRoutes);
-router.use('/open-apps', openAppRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;

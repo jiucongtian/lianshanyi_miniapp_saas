@@ -5,6 +5,7 @@ export interface IOpenApp extends Document {
   appId: string;
   secretEnc: string;
   name: string;
+  remark?: string;
   accountId: mongoose.Types.ObjectId;
   scopes: string[];
   status: 'active' | 'disabled';
@@ -21,6 +22,7 @@ const openAppSchema = new Schema<IOpenApp>(
     appId: { type: String, required: true, unique: true, index: true },
     secretEnc: { type: String, required: true },
     name: { type: String, required: true },
+    remark: { type: String },
     accountId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
     scopes: [{ type: String }],
     status: { type: String, enum: ['active', 'disabled'], default: 'active' },

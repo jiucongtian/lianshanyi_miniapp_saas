@@ -53,12 +53,25 @@ export interface AiAdapter {
   assistantChat(input: AssistantChatInput): Promise<AssistantChatResult>;
 }
 
-// Lazy singleton
+// Lazy singleton — invalidated when app-config changes
 let _adapter: AiAdapter | null = null;
+
+export function invalidateAiAdapter(): void {
+  _adapter = null;
+}
 
 export async function getAiAdapter(): Promise<AiAdapter> {
   if (!_adapter) {
-    const provider = process.env.AI_PROVIDER ?? 'mock';
+    // Prefer DB config, fall back to env var
+    let provider: string;
+    try {
+      const { appConfigService } = await import('../../services/app-config.service');
+      const raw = await appConfigService.getAiConfigRaw();
+      provider = raw.provider;
+    } catch {
+      provider = process.env.AI_PROVIDER ?? 'mock';
+    }
+
     if (provider === 'mock') {
       const { mockAiAdapter } = await import('./mock.adapter');
       _adapter = mockAiAdapter;

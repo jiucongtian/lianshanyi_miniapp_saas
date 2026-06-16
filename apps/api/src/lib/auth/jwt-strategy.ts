@@ -22,5 +22,6 @@ export async function jwtStrategy(req: Request): Promise<Principal | null> {
     contextId: payload.tenantId,
     subjectUserId: payload.userId,
     scopes,
+    isAdmin: payload.isAdmin,
   };
 }

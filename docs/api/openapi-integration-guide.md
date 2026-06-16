@@ -1,6 +1,6 @@
 # 身心游开放平台 · 接入指南
 
-**文档版本：** v1.0  
+**文档版本：** v1.1  
 **适用对象：** 第三方应用后端开发者  
 **Base URL：** `https://api.lianshanyi.com/openapi/v1`（联调阶段以实际提供的地址为准）
 
@@ -20,9 +20,9 @@
 4. [公共响应规范](#4-公共响应规范)
 5. [错误码参考](#5-错误码参考)
 6. [接口：生辰八字计算](#6-接口生辰八字计算)
-7. [接口：智慧洞见](#7-接口智慧洞见)
-8. [接口：每日愈见](#8-接口每日愈见)
-9. [接口：助学童子（TBD）](#9-接口助学童子tbd)
+7. [接口：助学童子问答](#7-接口助学童子问答)
+8. [接口：智慧洞见](#8-接口智慧洞见)
+9. [接口：每日愈见](#9-接口每日愈见)
 10. [签名示例代码](#10-签名示例代码)
 11. [联调检查清单](#11-联调检查清单)
 12. [常见问题](#12-常见问题)
@@ -128,7 +128,7 @@ X-Nonce: a1b2c3d4e5f6g7h8
 X-Signature: 3a7f2e...（十六进制小写）
 ```
 
-所有接口均使用 **HTTPS POST**，请求体为 JSON。
+除特别说明外，接口使用 **HTTPS POST**，请求体为 JSON。`GET` 接口无请求体，签名时 `BODY_HASH` 按空字符串计算。
 
 ---
 
@@ -206,15 +206,15 @@ X-Signature: 3a7f2e...（十六进制小写）
     "branchWuXing": "火"    // 地支五行
   },
   "monthPillar": {
-    "stem":         "壬",
+    "stem":         "甲",
     "branch":       "申",
-    "stemWuXing":   "水",
+    "stemWuXing":   "木",
     "branchWuXing": "金"
   },
   "dayPillar": {
-    "stem":         "戊",
+    "stem":         "壬",
     "branch":       "子",
-    "stemWuXing":   "土",
+    "stemWuXing":   "水",
     "branchWuXing": "水"
   },
   "hourPillar": {
@@ -224,9 +224,9 @@ X-Signature: 3a7f2e...（十六进制小写）
     "branchWuXing": "土"
   },
   "wuXingCount": {
-    "木": 0,
+    "木": 1,
     "火": 2,
-    "土": 3,
+    "土": 1,
     "金": 2,
     "水": 2
   },
@@ -265,19 +265,20 @@ curl -X POST https://api.lianshanyi.com/openapi/v1/bazi/calculate \
 
 ---
 
-## 7. 接口：智慧洞见
+## 7. 接口：助学童子问答
 
-### `POST /openapi/v1/ai/chat`
+### `POST /openapi/v1/tutor-chat`
 
-**所需权限：** `ai:chat`
+**所需权限：** `tutor:chat`
 
-基于连山易学知识体系的「智慧洞见」AI 问答能力。**仅支持单轮问答**：每次请求独立提问、独立返回，服务端不维护多轮上下文。
+面向学习与问答场景的「助学童子」AI 辅导能力。支持传入可选 `conversationId` 进行连续对话；首轮不传时，服务端会返回新的 `conversationId`。
 
 #### 请求参数
 
 ```jsonc
 {
-  "content": "帮我分析一下庚午日柱的性格特点"   // 必填 · 用户问题，单次不超过 2000 字
+  "content": "请介绍一下庚午日柱的特点",          // 必填 · 用户问题，单次不超过 2000 字
+  "conversationId": "..."                         // 选填 · 多轮对话 ID，首轮不传
 }
 ```
 
@@ -285,57 +286,8 @@ curl -X POST https://api.lianshanyi.com/openapi/v1/bazi/calculate \
 
 ```jsonc
 {
-  "reply": "根据庚午日柱……"   // AI 回复内容
-}
-```
-
-> **注意：** 本接口为无状态单轮问答，不返回也不接受 `conversationId`。若需要"连续对话"效果，请由您的后台自行把上下文拼进单次 `content` 提交。
-
-#### 请求示例
-
-```bash
-curl -X POST https://api.lianshanyi.com/openapi/v1/ai/chat \
-  -H "Content-Type: application/json" \
-  -H "X-App-Id: your_app_id" \
-  -H "X-Timestamp: 1718000000" \
-  -H "X-Nonce: x9y8z7w6v5u4t3s2" \
-  -H "X-Signature: 9c4d1a..." \
-  -d '{ "content": "帮我分析一下庚午日柱的性格特点" }'
-```
-
----
-
-## 8. 接口：每日愈见
-
-### `POST /openapi/v1/daily-insight`
-
-**所需权限：** `daily-insight:read`
-
-获取指定日期的「每日愈见」——当日卦象、干支与运势文案。同一日期对所有调用稳定一致。
-
-#### 请求参数
-
-```jsonc
-{
-  "date": "2026-06-15"   // 选填 · 目标日期 YYYY-MM-DD，默认当天
-}
-```
-
-#### 成功响应 `data`
-
-```jsonc
-{
-  "date":           "2026-06-15",
-  "cardId":         42,            // 卦序 1–60
-  "cardName":       "...",         // 卦名
-  "dayStem":        "庚",          // 当日天干
-  "dayBranch":      "午",          // 当日地支
-  "title":          "...",         // 标题
-  "summary":        "...",         // 摘要
-  "fullText":       "...",         // 全文
-  "luckyDirection": "东南",        // 吉利方位
-  "luckyColor":     "金色",        // 吉利颜色
-  "luckyNumber":    8              // 吉利数字
+  "reply": "您好！关于您提到的……",                 // AI 回复内容
+  "conversationId": "d72c8106-11ba-4c4c-9c52-77d63a95c058"
 }
 ```
 
@@ -343,132 +295,272 @@ curl -X POST https://api.lianshanyi.com/openapi/v1/ai/chat \
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `date` | string | 日期 YYYY-MM-DD |
-| `cardId` | number | 当日卦序，1–60 |
-| `cardName` | string | 卦名 |
-| `dayStem` / `dayBranch` | string | 当日天干 / 地支 |
-| `title` / `summary` / `fullText` | string? | 运势标题 / 摘要 / 全文 |
-| `luckyDirection` / `luckyColor` | string? | 吉利方位 / 颜色 |
-| `luckyNumber` | number? | 吉利数字 |
-
-> 若指定日期尚未生成内容，返回 `404 NOT_FOUND`。
+| `reply` | string | AI 回复内容 |
+| `conversationId` | string | 会话 ID；后续请求可原样传回以延续对话 |
 
 #### 请求示例
 
 ```bash
-curl -X POST https://api.lianshanyi.com/openapi/v1/daily-insight \
+curl -X POST https://api.lianshanyi.com/openapi/v1/tutor-chat \
+  -H "Content-Type: application/json" \
+  -H "X-App-Id: your_app_id" \
+  -H "X-Timestamp: 1718000000" \
+  -H "X-Nonce: x9y8z7w6v5u4t3s2" \
+  -H "X-Signature: 9c4d1a..." \
+  -d '{ "content": "请介绍一下庚午日柱的特点" }'
+```
+
+---
+
+## 8. 接口：智慧洞见
+
+### `POST /openapi/v1/card-insight`
+
+**所需权限：** `insight:interpret`
+
+基于抽取到的卡牌、用户档案摘要与可选问题，生成面向当前场景的卡牌解读。
+
+#### 请求参数
+
+```jsonc
+{
+  "cardId": 7,                              // 必填 · 卦序，1–60
+  "cardName": "庚午",                       // 必填 · 卡牌名称，1–10 字
+  "profileName": "李明",                    // 必填 · 档案名称，1–50 字
+  "gender": "male",                         // 必填 · male / female
+  "baziSummary": "庚午日主，八字金火交战",    // 必填 · 八字摘要，1–500 字
+  "question": "今年适合创业吗？"              // 选填 · 具体问题，不超过 200 字
+}
+```
+
+#### 成功响应 `data`
+
+```jsonc
+{
+  "interpretation": "【庚午】—— 卦象示以坚韧之道……"
+}
+```
+
+#### 字段说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `interpretation` | string | 卡牌解读正文 |
+
+#### 请求示例
+
+```bash
+curl -X POST https://api.lianshanyi.com/openapi/v1/card-insight \
   -H "Content-Type: application/json" \
   -H "X-App-Id: your_app_id" \
   -H "X-Timestamp: 1718000000" \
   -H "X-Nonce: b2c3d4e5f6a7b8c9" \
   -H "X-Signature: 7e2f9a..." \
-  -d '{ "date": "2026-06-15" }'
+  -d '{
+    "cardId": 7,
+    "cardName": "庚午",
+    "profileName": "李明",
+    "gender": "male",
+    "baziSummary": "庚午日主，八字金火交战，性格刚烈果断",
+    "question": "今年适合创业吗？"
+  }'
 ```
 
 ---
 
-## 9. 接口：助学童子（TBD）
+## 9. 接口：每日愈见
 
-> **状态：待定（TBD）。** 该接口规格尚未最终确定，下方为占位说明，**请勿据此开发**，最终字段以我方后续更新为准。
+### `GET /openapi/v1/daily-insight`
 
-「助学童子」是面向学习场景的 AI 辅导能力（区别于「智慧洞见」的通用问答）。预计形态：
+**所需权限：** `daily-insight:read`
 
-| 项 | 暂定值 |
-|---|---|
-| 端点 | `POST /openapi/v1/tutor/chat`（暂定） |
-| 所需权限 | `tutor:chat`（暂定） |
-| 请求参数 | TBD（预计与「智慧洞见」类似：单次 `content` 提问） |
-| 响应 | TBD（预计含 `reply`） |
+根据调用方传入的日期、卡牌与当日干支信息，生成「每日愈见」文案。
 
-> 如该接口在您的首批联调范围内，请与我方确认排期与最终规格。
+> 本接口使用 `GET` query string 传参。签名时 `PATH` 仍为 `/openapi/v1/daily-insight`，不包含 query string；`BODY_HASH` 按空字符串计算。
+
+#### 请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `date` | string | 是 | 目标日期，格式 `YYYY-MM-DD` |
+| `cardId` | number | 是 | 卦序，1–60 |
+| `cardName` | string | 是 | 卡牌名称，1–10 字 |
+| `dayStem` | string | 是 | 当日天干 |
+| `dayBranch` | string | 是 | 当日地支 |
+
+#### 成功响应 `data`
+
+```jsonc
+{
+  "title":          "2026-06-15 · 庚午 · 庚午日",     // 标题
+  "summary":        "今日主卦「庚午」……",             // 摘要
+  "fullText":       "今日干支 庚午……",                // 全文
+  "luckyDirection": "西北",                           // 吉利方位
+  "luckyColor":     "蓝色",                           // 吉利颜色
+  "luckyNumber":    8                                 // 吉利数字
+}
+```
+
+#### 字段说明
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `title` | string | 运势标题 |
+| `summary` | string | 摘要 |
+| `fullText` | string | 全文 |
+| `luckyDirection` | string | 吉利方位 |
+| `luckyColor` | string | 吉利颜色 |
+| `luckyNumber` | number | 吉利数字 |
+
+#### 请求示例
+
+```bash
+curl -X GET 'https://api.lianshanyi.com/openapi/v1/daily-insight?date=2026-06-15&cardId=7&cardName=%E5%BA%9A%E5%8D%88&dayStem=%E5%BA%9A&dayBranch=%E5%8D%88' \
+  -H "X-App-Id: your_app_id" \
+  -H "X-Timestamp: 1718000000" \
+  -H "X-Nonce: b2c3d4e5f6a7b8c9" \
+  -H "X-Signature: 7e2f9a..."
+```
 
 ---
 
 ## 10. 签名示例代码
 
-### Node.js
+### JavaScript / Node.js
 
 ```javascript
 const crypto = require('crypto');
 
-function sign({ appSecret, method, path, timestamp, nonce, body = '' }) {
+const config = {
+  baseUrl: 'https://api.lianshanyi.com',
+  appId: 'your_app_id',
+  appSecret: 'your_app_secret',
+};
+
+function createSignature({ appSecret, method, path, timestamp, nonce, body = '' }) {
   const bodyHash = crypto.createHash('sha256').update(body).digest('hex');
   const signStr = [method.toUpperCase(), path, timestamp, nonce, bodyHash].join('\n');
   return crypto.createHmac('sha256', appSecret).update(signStr).digest('hex');
 }
 
-// 使用示例
-const appId     = 'your_app_id';
-const appSecret = 'your_app_secret';
-const timestamp = String(Math.floor(Date.now() / 1000));
-const nonce     = crypto.randomBytes(16).toString('hex');
-const body      = JSON.stringify({ year: 1990, month: 8, day: 15, hour: 14 });
+async function requestOpenApi({ method = 'POST', path, query, data }) {
+  // GET 请求没有请求体，签名时 body 必须使用空字符串。
+  // POST 请求签名用的 body 字符串必须与实际发送的请求体完全一致。
+  const body = data === undefined ? '' : JSON.stringify(data);
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const nonce = crypto.randomBytes(16).toString('hex');
+  const signature = createSignature({
+    appSecret: config.appSecret,
+    method,
+    path,
+    timestamp,
+    nonce,
+    body,
+  });
 
-const signature = sign({
-  appSecret,
-  method:    'POST',
-  path:      '/openapi/v1/bazi/calculate',
-  timestamp,
-  nonce,
-  body,
-});
+  const search = query ? `?${new URLSearchParams(query).toString()}` : '';
+  const headers = {
+    'X-App-Id': config.appId,
+    'X-Timestamp': timestamp,
+    'X-Nonce': nonce,
+    'X-Signature': signature,
+  };
 
-// 将 appId / timestamp / nonce / signature 放入请求头发送
-```
+  if (data !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
 
-### Python
+  const response = await fetch(`${config.baseUrl}${path}${search}`, {
+    method,
+    headers,
+    body: data === undefined ? undefined : body,
+  });
 
-```python
-import hmac
-import hashlib
-import time
-import secrets
+  const result = await response.json();
+  if (!response.ok || result.success === false) {
+    const error = new Error(result.error || `HTTP ${response.status}`);
+    error.status = response.status;
+    error.code = result.code;
+    error.response = result;
+    throw error;
+  }
 
-def sign(app_secret: str, method: str, path: str,
-         timestamp: str, nonce: str, body: str = '') -> str:
-    body_hash = hashlib.sha256(body.encode()).hexdigest()
-    sign_str  = '\n'.join([method.upper(), path, timestamp, nonce, body_hash])
-    return hmac.new(app_secret.encode(), sign_str.encode(), hashlib.sha256).hexdigest()
-
-# 使用示例
-app_id     = 'your_app_id'
-app_secret = 'your_app_secret'
-timestamp  = str(int(time.time()))
-nonce      = secrets.token_hex(16)
-body       = '{"year":1990,"month":8,"day":15,"hour":14}'
-
-signature = sign(app_secret, 'POST', '/openapi/v1/bazi/calculate', timestamp, nonce, body)
-```
-
-### Java
-
-```java
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.MessageDigest;
-import java.nio.charset.StandardCharsets;
-
-public class OpenApiSign {
-    public static String sign(String appSecret, String method, String path,
-                               String timestamp, String nonce, String body) throws Exception {
-        String bodyHash = sha256Hex(body);
-        String signStr  = String.join("\n", method.toUpperCase(), path, timestamp, nonce, bodyHash);
-        Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(new SecretKeySpec(appSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-        byte[] raw = mac.doFinal(signStr.getBytes(StandardCharsets.UTF_8));
-        StringBuilder sb = new StringBuilder();
-        for (byte b : raw) sb.append(String.format("%02x", b));
-        return sb.toString();
-    }
-
-    private static String sha256Hex(String input) throws Exception {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        byte[] hash = md.digest(input.getBytes(StandardCharsets.UTF_8));
-        StringBuilder sb = new StringBuilder();
-        for (byte b : hash) sb.append(String.format("%02x", b));
-        return sb.toString();
-    }
+  return result;
 }
+
+async function calculateBazi() {
+  return requestOpenApi({
+    method: 'POST',
+    path: '/openapi/v1/bazi/calculate',
+    data: {
+      year: 1990,
+      month: 8,
+      day: 15,
+      hour: 14,
+      minute: 30,
+      isLunar: false,
+    },
+  });
+}
+
+async function askTutor() {
+  return requestOpenApi({
+    method: 'POST',
+    path: '/openapi/v1/tutor-chat',
+    data: {
+      content: '抽卡解读情感问题，第一张14，第二张44',
+      // conversationId: '7651828284779708450', // 继续同一轮对话时传入
+    },
+  });
+}
+
+async function getWisdomInsight() {
+  return requestOpenApi({
+    method: 'POST',
+    path: '/openapi/v1/card-insight',
+    data: {
+      cardId: 7,
+      cardName: '庚午',
+      profileName: '李明',
+      gender: 'male',
+      baziSummary: '庚午日主，八字金火交战，性格刚烈果断',
+      question: '今年适合创业吗？',
+    },
+  });
+}
+
+async function getDailyInsight() {
+  return requestOpenApi({
+    method: 'GET',
+    path: '/openapi/v1/daily-insight',
+    query: {
+      date: '2026-06-15',
+      cardId: '7',
+      cardName: '庚午',
+      dayStem: '庚',
+      dayBranch: '午',
+    },
+  });
+}
+
+async function main() {
+  try {
+    console.log('生辰八字计算：', await calculateBazi());
+    console.log('助学童子问答：', await askTutor());
+    console.log('智慧洞见：', await getWisdomInsight());
+    console.log('每日愈见：', await getDailyInsight());
+  } catch (error) {
+    console.error('OpenAPI 调用失败：', {
+      status: error.status,
+      code: error.code,
+      message: error.message,
+      response: error.response,
+    });
+    process.exitCode = 1;
+  }
+}
+
+main();
 ```
 
 ---
@@ -480,10 +572,11 @@ public class OpenApiSign {
 - [ ] `appSecret` 仅保存在服务端，未出现在任何客户端代码或版本仓库中
 - [ ] 签名时使用的 `timestamp` 为 Unix 秒级时间戳（非毫秒）
 - [ ] 签名时使用的 `PATH` 不含域名，不含 query string，以 `/` 开头
-- [ ] 请求体与签名中的 `body` 内容**字节一致**（编码、空格、顺序相同）
+- [ ] `POST` 请求体与签名中的 `body` 内容**字节一致**（编码、空格、顺序相同）
+- [ ] `GET` 请求签名时 `PATH` 不含 query string，`body` 使用空字符串
 - [ ] 每次请求的 `nonce` 唯一，不重复使用
 - [ ] 服务器时间已与 NTP 同步，时间偏差 < 5 分钟
-- [ ] 已确认所需 scope 已开通（`bazi:calculate` / `ai:chat` / `daily-insight:read`；助学童子 scope 待定）
+- [ ] 已确认所需 scope 已开通（`bazi:calculate` / `tutor:chat` / `insight:interpret` / `daily-insight:read`）
 - [ ] 已实现 `429 RATE_LIMITED` 的重试退避逻辑
 
 ---
@@ -503,9 +596,9 @@ public class OpenApiSign {
 
 您的服务器时间与标准时间偏差超过 5 分钟，请同步 NTP 时间服务器。
 
-**Q：智慧洞见支持多轮连续对话吗？**
+**Q：助学童子支持多轮连续对话吗？**
 
-不支持。智慧洞见为**单轮无状态**问答，每次请求独立、不记忆上下文，也不涉及 `conversationId`。如需"连续对话"效果，请由您的后台自行把历史拼进单次 `content`。
+支持。首轮调用 `POST /openapi/v1/tutor-chat` 时可以不传 `conversationId`，服务端会返回新的 `conversationId`；后续调用传回该值即可延续对话。
 
 **Q：`wuXingCount` 总共是几个计数？**
 

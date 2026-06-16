@@ -10,13 +10,11 @@ import type {
   AssistantChatResult,
 } from './adapter';
 import { createModuleLogger } from '../../utils/logger';
+import { resolveCozeConfig } from './coze-config';
 
 const log = createModuleLogger('CozeAI');
 
 const COZE_BASE_URL = 'https://api.coze.cn';
-const DEFAULT_WORKFLOW_DRAW_CARD = '7565131575660003366';
-const DEFAULT_WORKFLOW_DAILY_INSIGHT = '7583167143870382106';
-const DEFAULT_BOT_ID_ASSISTANT = '7615870340559978548';
 
 // Static lookup: gan-zhi card name → ability mark (cai_neng param for daily insight workflow)
 const ABILITY_MARK_MAP: Record<string, string> = {
@@ -91,7 +89,7 @@ async function pollUntilComplete(
     const { data: retrieve } = await axios.get(`${COZE_BASE_URL}/v3/chat/retrieve`, {
       params: { chat_id: chatId, conversation_id: conversationId },
       headers,
-      timeout: 10_000,
+      timeout: 120_000,
       httpsAgent: NO_KEEPALIVE_AGENT,
     });
 
@@ -111,7 +109,7 @@ async function pollUntilComplete(
     const { data: msgList } = await axios.get(`${COZE_BASE_URL}/v3/chat/message/list`, {
       params: { chat_id: chatId, conversation_id: conversationId },
       headers,
-      timeout: 10_000,
+      timeout: 120_000,
       httpsAgent: NO_KEEPALIVE_AGENT,
     });
 
@@ -137,9 +135,9 @@ async function pollUntilComplete(
 
 export const cozeAiAdapter: AiAdapter = {
   async drawCard(input: CardDrawInput): Promise<CardDrawResult> {
-    const token = process.env.COZE_API_TOKEN;
-    if (!token) throw new Error('COZE_API_TOKEN is required when AI_PROVIDER=coze');
-    const workflowId = process.env.COZE_CARD_DRAW_WORKFLOW_ID ?? DEFAULT_WORKFLOW_DRAW_CARD;
+    const cfg = await resolveCozeConfig();
+    const { token } = cfg;
+    const workflowId = cfg.cardDrawWorkflowId;
 
     log.info({ cardId: input.cardId, cardName: input.cardName }, 'Coze drawCard');
 
@@ -167,9 +165,9 @@ export const cozeAiAdapter: AiAdapter = {
   },
 
   async generateDailyInsight(input: DailyInsightInput): Promise<DailyInsightResult> {
-    const token = process.env.COZE_API_TOKEN;
-    if (!token) throw new Error('COZE_API_TOKEN is required when AI_PROVIDER=coze');
-    const workflowId = process.env.COZE_DAILY_INSIGHT_WORKFLOW_ID ?? DEFAULT_WORKFLOW_DAILY_INSIGHT;
+    const cfg = await resolveCozeConfig();
+    const { token } = cfg;
+    const workflowId = cfg.dailyInsightWorkflowId;
 
     const caiNeng = ABILITY_MARK_MAP[input.cardName] ?? '1';
     log.info({ date: input.date, cardName: input.cardName, caiNeng }, 'Coze generateDailyInsight');
@@ -205,9 +203,9 @@ export const cozeAiAdapter: AiAdapter = {
   },
 
   async assistantChat(input: AssistantChatInput): Promise<AssistantChatResult> {
-    const token = process.env.COZE_API_TOKEN;
-    if (!token) throw new Error('COZE_API_TOKEN is required when AI_PROVIDER=coze');
-    const botId = process.env.COZE_ASSISTANT_BOT_ID ?? DEFAULT_BOT_ID_ASSISTANT;
+    const cfg = await resolveCozeConfig();
+    const { token } = cfg;
+    const botId = cfg.assistantBotId;
 
     log.info({ conversationId: input.conversationId }, 'Coze assistantChat');
 
@@ -247,7 +245,7 @@ export const cozeAiAdapter: AiAdapter = {
         auto_save_history: true,
         additional_messages: additionalMessages,
       },
-      { headers: cozeHeaders(token), timeout: 15_000, httpsAgent: NO_KEEPALIVE_AGENT },
+      { headers: cozeHeaders(token), timeout: 120_000, httpsAgent: NO_KEEPALIVE_AGENT },
     );
 
     if (chatResp.code !== 0) {
