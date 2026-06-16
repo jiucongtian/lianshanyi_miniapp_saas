@@ -29,6 +29,7 @@ router.post('/ai-config/test', aiConfigCtrl.testAiConnection);
 router.get('/credentials', credCtrl.listCredentials);
 router.post('/credentials', credCtrl.createCredential);
 router.get('/credentials/:appId', credCtrl.getCredential);
+router.get('/credentials/:appId/secret', credCtrl.revealSecret);
 router.patch('/credentials/:appId', credCtrl.updateCredential);
 router.post('/credentials/:appId/rotate-secret', credCtrl.rotateSecret);
 router.patch('/credentials/:appId/status', credCtrl.setStatus);

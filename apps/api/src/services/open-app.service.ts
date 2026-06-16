@@ -1,6 +1,6 @@
 import { OpenApp, IOpenApp } from '../models/open-app.model';
 import { Tenant } from '../models/tenant.model';
-import { encryptSecret, invalidateSecretCache } from '../lib/crypto/app-secret';
+import { encryptSecret, decryptSecret, invalidateSecretCache } from '../lib/crypto/app-secret';
 import { generateAppId, generateAppSecret } from '../lib/crypto/sign';
 import { isDataScope } from '../lib/openapi/scopes';
 import { AppError, NotFoundError } from '../utils/errors';
@@ -108,6 +108,13 @@ export async function updateApp(appId: string, input: UpdateAppInput): Promise<v
   if (input.scopes) app.scopes = input.scopes;
   if (input.rateLimit) app.rateLimit = input.rateLimit;
   await app.save();
+}
+
+export async function revealSecret(appId: string): Promise<{ appSecret: string }> {
+  const app = await OpenApp.findOne({ appId }).select('+secretEnc');
+  if (!app) throw new NotFoundError('OpenApp');
+  const appSecret = decryptSecret(app.secretEnc);
+  return { appSecret };
 }
 
 export async function findActiveByAppId(appId: string) {

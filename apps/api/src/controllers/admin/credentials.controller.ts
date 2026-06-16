@@ -54,6 +54,13 @@ export async function rotateSecret(req: Request, res: Response, next: NextFuncti
   } catch (err) { next(err); }
 }
 
+export async function revealSecret(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await svc.revealSecret(req.params.appId);
+    res.json({ success: true, data: result, error: null, code: null });
+  } catch (err) { next(err); }
+}
+
 export async function setStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { status } = z.object({ status: z.enum(['active', 'disabled']) }).parse(req.body);

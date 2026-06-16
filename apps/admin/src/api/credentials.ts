@@ -33,6 +33,7 @@ export interface UpdateCredentialPayload {
 export const credentialsApi = {
   list: (params?: Record<string, unknown>) => get<Credential[]>('/v1/admin/credentials', params),
   get: (appId: string) => get<Credential>(`/v1/admin/credentials/${appId}`),
+  revealSecret: (appId: string) => get<{ appSecret: string }>(`/v1/admin/credentials/${appId}/secret`),
   create: (payload: CreateCredentialPayload) => post<CreateCredentialResult>('/v1/admin/credentials', payload),
   update: (appId: string, payload: UpdateCredentialPayload) => patch<Credential>(`/v1/admin/credentials/${appId}`, payload),
   rotateSecret: (appId: string) => post<{ appSecret: string }>(`/v1/admin/credentials/${appId}/rotate-secret`),

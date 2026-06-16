@@ -25,6 +25,24 @@
         <el-table-column label="限流 (rpm)" width="110">
           <template #default="{ row }">{{ row.rateLimit?.max ?? '—' }}</template>
         </el-table-column>
+        <el-table-column label="App Secret" width="220">
+          <template #default="{ row }">
+            <div class="secret-cell">
+              <span class="secret-text">{{ revealedSecrets[row.appId] ?? '••••••••••••••••' }}</span>
+              <el-button
+                size="small" link
+                :icon="revealedSecrets[row.appId] ? 'Hide' : 'View'"
+                :loading="revealingId === row.appId"
+                @click="toggleReveal(row.appId)"
+              />
+              <el-button
+                v-if="revealedSecrets[row.appId]"
+                size="small" link icon="CopyDocument"
+                @click="copy(revealedSecrets[row.appId])"
+              />
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="创建时间" width="170">
           <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
@@ -137,6 +155,9 @@ const createForm = reactive({ name: '', accountId: '', remark: '', scopes: [] as
 const showSecret = ref(false)
 const newCred = ref<CreateCredentialResult | null>(null)
 
+const revealedSecrets = ref<Record<string, string>>({})
+const revealingId = ref<string | null>(null)
+
 const showEdit = ref(false)
 const saving = ref(false)
 const editForm = reactive({ appId: '', remark: '', rateLimitMax: 60 })
@@ -177,6 +198,23 @@ async function handleCreate() {
     ElMessage.error(e instanceof Error ? e.message : '创建失败')
   } finally {
     creating.value = false
+  }
+}
+
+async function toggleReveal(appId: string) {
+  if (revealedSecrets.value[appId]) {
+    const { [appId]: _, ...rest } = revealedSecrets.value
+    revealedSecrets.value = rest
+    return
+  }
+  revealingId.value = appId
+  try {
+    const res = await credentialsApi.revealSecret(appId)
+    revealedSecrets.value = { ...revealedSecrets.value, [appId]: res.appSecret }
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : '获取失败')
+  } finally {
+    revealingId.value = null
   }
 }
 
@@ -236,4 +274,6 @@ function formatDate(d: string) {
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .page-title { margin: 0; }
 .pagination { margin-top: 16px; justify-content: flex-end; }
+.secret-cell { display: flex; align-items: center; gap: 4px; }
+.secret-text { font-family: monospace; font-size: 12px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
