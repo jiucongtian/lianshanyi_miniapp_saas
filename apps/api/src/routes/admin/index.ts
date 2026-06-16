@@ -36,11 +36,15 @@ router.patch('/credentials/:appId/status', credCtrl.setStatus);
 
 // Accounts
 router.get('/accounts', accountsCtrl.listAccounts);
+router.post('/accounts', accountsCtrl.createAccount);
 router.get('/accounts/:id', accountsCtrl.getAccount);
 router.patch('/accounts/:id', accountsCtrl.updateAccount);
+router.delete('/accounts/:id', accountsCtrl.deleteAccount);
 
 // Users
 router.get('/users', usersCtrl.listUsers);
+router.post('/users', usersCtrl.createUser);
+router.delete('/users/:userId', usersCtrl.deleteUser);
 router.patch('/users/:userId/type', usersCtrl.updateUserType);
 
 // Feedbacks

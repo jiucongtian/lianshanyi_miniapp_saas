@@ -126,6 +126,14 @@
     <!-- Edit dialog -->
     <el-dialog v-model="showEdit" title="编辑凭据" width="460px">
       <el-form :model="editForm" label-width="90px">
+        <el-form-item label="权限范围" required>
+          <el-checkbox-group v-model="editForm.scopes">
+            <el-checkbox value="bazi:calculate">八字测算</el-checkbox>
+            <el-checkbox value="tutor:chat">助学童子</el-checkbox>
+            <el-checkbox value="insight:interpret">智慧洞见</el-checkbox>
+            <el-checkbox value="daily-insight:read">每日愈见</el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
         <el-form-item label="限流 (rpm)">
           <el-input-number v-model="editForm.rateLimitMax" :min="1" :max="10000" />
         </el-form-item>
@@ -163,7 +171,7 @@ const revealingId = ref<string | null>(null)
 
 const showEdit = ref(false)
 const saving = ref(false)
-const editForm = reactive({ appId: '', rateLimitMax: 60 })
+const editForm = reactive({ appId: '', scopes: [] as string[], rateLimitMax: 60 })
 
 onMounted(async () => {
   await load()
@@ -225,14 +233,15 @@ async function toggleReveal(appId: string) {
 }
 
 function openEdit(row: Credential) {
-  Object.assign(editForm, { appId: row.appId, rateLimitMax: row.rateLimit?.max ?? 60 })
+  Object.assign(editForm, { appId: row.appId, scopes: [...row.scopes], rateLimitMax: row.rateLimit?.max ?? 60 })
   showEdit.value = true
 }
 
 async function handleEdit() {
+  if (editForm.scopes.length === 0) { ElMessage.warning('请至少选择一个权限范围'); return }
   saving.value = true
   try {
-    await credentialsApi.update(editForm.appId, { rateLimit: { windowMs: 60000, max: editForm.rateLimitMax } })
+    await credentialsApi.update(editForm.appId, { scopes: editForm.scopes, rateLimit: { windowMs: 60000, max: editForm.rateLimitMax } })
     ElMessage.success('保存成功')
     showEdit.value = false
     await load()
