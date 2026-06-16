@@ -75,8 +75,15 @@
         <el-form-item label="名称" required>
           <el-input v-model="createForm.name" placeholder="如：测试联调方" />
         </el-form-item>
-        <el-form-item label="账户 ID" required>
-          <el-input v-model="createForm.accountId" placeholder="输入租户/账户的 MongoDB _id" />
+        <el-form-item label="所属账户" required>
+          <el-select v-model="createForm.accountId" placeholder="选择租户账户" style="width: 100%">
+            <el-option
+              v-for="a in accounts"
+              :key="a._id"
+              :label="`${a.name}（${a.slug}）`"
+              :value="a._id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="权限范围" required>
           <el-checkbox-group v-model="createForm.scopes">
@@ -135,11 +142,14 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { credentialsApi, type Credential, type CreateCredentialResult } from '@/api/credentials'
+import { accountsApi, type Account } from '@/api/accounts'
 
 const credentials = ref<Credential[]>([])
 const loading = ref(false)
 const page = ref(1)
 const total = ref(0)
+
+const accounts = ref<Account[]>([])
 
 const showCreate = ref(false)
 const creating = ref(false)
@@ -155,7 +165,11 @@ const showEdit = ref(false)
 const saving = ref(false)
 const editForm = reactive({ appId: '', rateLimitMax: 60 })
 
-onMounted(() => load())
+onMounted(async () => {
+  await load()
+  const res = await accountsApi.list({ limit: 100 })
+  accounts.value = res.accounts
+})
 
 async function load() {
   loading.value = true
