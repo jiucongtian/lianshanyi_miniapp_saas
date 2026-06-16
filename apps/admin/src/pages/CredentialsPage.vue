@@ -9,7 +9,6 @@
       <el-table :data="credentials" v-loading="loading" border stripe>
         <el-table-column label="名称" prop="name" width="150" />
         <el-table-column label="App ID" prop="appId" width="220" />
-        <el-table-column label="备注" prop="remark" />
         <el-table-column label="权限范围" width="180">
           <template #default="{ row }">
             <el-tag v-for="s in row.scopes" :key="s" size="small" style="margin: 2px">{{ s }}</el-tag>
@@ -46,7 +45,7 @@
         <el-table-column label="创建时间" width="170">
           <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="openEdit(row)">编辑</el-button>
             <el-button size="small" type="warning" @click="rotate(row.appId)">轮换密钥</el-button>
@@ -79,9 +78,6 @@
         <el-form-item label="账户 ID" required>
           <el-input v-model="createForm.accountId" placeholder="输入租户/账户的 MongoDB _id" />
         </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="createForm.remark" placeholder="可选备注" />
-        </el-form-item>
         <el-form-item label="权限范围" required>
           <el-checkbox-group v-model="createForm.scopes">
             <el-checkbox value="bazi:calculate">八字测算</el-checkbox>
@@ -103,7 +99,7 @@
     <!-- Secret reveal dialog (one-time) -->
     <el-dialog v-model="showSecret" title="凭据已生成（Secret 仅显示一次）" width="500px" :close-on-click-modal="false">
       <el-alert type="warning" :closable="false" style="margin-bottom: 16px">
-        请立即复制 App Secret，关闭后无法再次查看。
+        请立即复制 App Secret，关闭后可通过眼睛图标随时查看。
       </el-alert>
       <el-descriptions border :column="1">
         <el-descriptions-item label="App ID">
@@ -123,9 +119,6 @@
     <!-- Edit dialog -->
     <el-dialog v-model="showEdit" title="编辑凭据" width="460px">
       <el-form :model="editForm" label-width="90px">
-        <el-form-item label="备注">
-          <el-input v-model="editForm.remark" />
-        </el-form-item>
         <el-form-item label="限流 (rpm)">
           <el-input-number v-model="editForm.rateLimitMax" :min="1" :max="10000" />
         </el-form-item>
@@ -150,7 +143,7 @@ const total = ref(0)
 
 const showCreate = ref(false)
 const creating = ref(false)
-const createForm = reactive({ name: '', accountId: '', remark: '', scopes: [] as string[], rateLimitMax: 60 })
+const createForm = reactive({ name: '', accountId: '', scopes: [] as string[], rateLimitMax: 60 })
 
 const showSecret = ref(false)
 const newCred = ref<CreateCredentialResult | null>(null)
@@ -160,7 +153,7 @@ const revealingId = ref<string | null>(null)
 
 const showEdit = ref(false)
 const saving = ref(false)
-const editForm = reactive({ appId: '', remark: '', rateLimitMax: 60 })
+const editForm = reactive({ appId: '', rateLimitMax: 60 })
 
 onMounted(() => load())
 
@@ -184,7 +177,6 @@ async function handleCreate() {
     const payload = {
       name: createForm.name,
       accountId: createForm.accountId,
-      remark: createForm.remark || undefined,
       scopes: createForm.scopes,
       rateLimit: { windowMs: 60000, max: createForm.rateLimitMax },
     }
@@ -192,7 +184,7 @@ async function handleCreate() {
     newCred.value = result
     showCreate.value = false
     showSecret.value = true
-    Object.assign(createForm, { name: '', accountId: '', remark: '', scopes: [], rateLimitMax: 60 })
+    Object.assign(createForm, { name: '', accountId: '', scopes: [], rateLimitMax: 60 })
     await load()
   } catch (e: unknown) {
     ElMessage.error(e instanceof Error ? e.message : '创建失败')
@@ -219,14 +211,14 @@ async function toggleReveal(appId: string) {
 }
 
 function openEdit(row: Credential) {
-  Object.assign(editForm, { appId: row.appId, remark: row.remark ?? '', rateLimitMax: row.rateLimit?.max ?? 60 })
+  Object.assign(editForm, { appId: row.appId, rateLimitMax: row.rateLimit?.max ?? 60 })
   showEdit.value = true
 }
 
 async function handleEdit() {
   saving.value = true
   try {
-    await credentialsApi.update(editForm.appId, { remark: editForm.remark, rateLimit: { windowMs: 60000, max: editForm.rateLimitMax } })
+    await credentialsApi.update(editForm.appId, { rateLimit: { windowMs: 60000, max: editForm.rateLimitMax } })
     ElMessage.success('保存成功')
     showEdit.value = false
     await load()

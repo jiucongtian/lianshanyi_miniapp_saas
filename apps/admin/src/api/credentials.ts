@@ -4,7 +4,6 @@ export interface Credential {
   appId: string
   accountId: string
   name: string
-  remark?: string
   scopes: string[]
   status: 'active' | 'disabled'
   rateLimit?: { windowMs: number; max: number }
@@ -14,7 +13,6 @@ export interface Credential {
 export interface CreateCredentialPayload {
   name: string
   accountId: string
-  remark?: string
   scopes: string[]
   rateLimit?: { windowMs: number; max: number }
 }
@@ -25,7 +23,6 @@ export interface CreateCredentialResult extends Credential {
 
 export interface UpdateCredentialPayload {
   name?: string
-  remark?: string
   scopes?: string[]
   rateLimit?: { windowMs: number; max: number }
 }
