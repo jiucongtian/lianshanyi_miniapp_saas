@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { authService } from '../../services/auth.service';
 import { userService } from '../../services/user.service';
 import { User } from '../../models/user.model';
-import { AppError, UnauthorizedError } from '../../utils/errors';
+import { UnauthorizedError } from '../../utils/errors';
+import { signAccessToken, signRefreshToken } from '../../lib/crypto/jwt';
 
 const loginSchema = z.object({
   usernameOrPhone: z.string().min(1, '用户名不能为空'),
@@ -34,12 +34,18 @@ export async function adminLogin(req: Request, res: Response, next: NextFunction
     const valid = await bcrypt.compare(body.password, user.passwordHash);
     if (!valid) throw new UnauthorizedError('用户名或密码错误');
 
-    // Build tokens via auth service
-    const { accessToken, refreshToken } = await authService.loginWithPassword(
-      body.usernameOrPhone,
-      body.password,
-      user.tenantId.toString(),
-    );
+    // Sign tokens directly — avoids redundant DB round-trip in authService
+    const accessToken = signAccessToken({
+      userId: user._id.toString(),
+      tenantId: user.tenantId.toString(),
+      userType: user.userType,
+      isAdmin: user.isAdmin,
+      isGuest: user.isGuest ?? false,
+    });
+    const refreshToken = signRefreshToken(user._id.toString());
+
+    // Update last login time (fire-and-forget, do not block response)
+    User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() }).exec().catch(() => undefined);
 
     res.json({
       success: true,
