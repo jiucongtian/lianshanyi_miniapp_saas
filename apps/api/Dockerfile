@@ -13,7 +13,6 @@ CMD ["dumb-init", "npx", "tsx", "watch", "src/server.ts"]
 
 # ─── Build stage ─────────────────────────────────────────────────────────────
 FROM base AS build
-ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci
 COPY . .
