@@ -25,6 +25,6 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
 # Copy JS lib files (non-compiled BaZi calculator)
-COPY --from=build /app/src/lib/bazi/*.js ./dist/lib/bazi/
+COPY --from=build /app/src/lib/bazi/*.js ./dist/src/lib/bazi/
 EXPOSE 3000
-CMD ["dumb-init", "node", "dist/server.js"]
+CMD ["dumb-init", "node", "dist/src/server.js"]
