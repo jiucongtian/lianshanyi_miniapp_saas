@@ -11,6 +11,7 @@ declare global {
       tenant?: ITenant;
       principal?: Principal;
       rawBody?: Buffer;
+      openAppRateLimit?: { appId: string; windowMs: number; max: number };
     }
   }
 }

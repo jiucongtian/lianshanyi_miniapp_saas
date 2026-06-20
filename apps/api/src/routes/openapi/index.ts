@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../middlewares/authenticate.middleware';
 import { requireScope } from '../../middlewares/scope.middleware';
+import { perAppRateLimit } from '../../middlewares/per-app-rate-limit.middleware';
 import { PLATFORM_SCOPES } from '../../lib/openapi/scopes';
 import * as baziCtrl from '../../controllers/openapi/bazi.controller';
 import * as tutorCtrl from '../../controllers/openapi/tutor-chat.controller';
@@ -16,6 +17,7 @@ router.get('/ping', (_req, res) => {
 router.post(
   '/bazi/calculate',
   authenticate('hmac'),
+  perAppRateLimit,
   requireScope(PLATFORM_SCOPES.BAZI_CALCULATE),
   baziCtrl.calculate,
 );
@@ -23,6 +25,7 @@ router.post(
 router.post(
   '/tutor-chat',
   authenticate('hmac'),
+  perAppRateLimit,
   requireScope(PLATFORM_SCOPES.TUTOR_CHAT),
   tutorCtrl.chat,
 );
@@ -30,6 +33,7 @@ router.post(
 router.post(
   '/card-insight',
   authenticate('hmac'),
+  perAppRateLimit,
   requireScope(PLATFORM_SCOPES.INSIGHT_INTERPRET),
   cardInsightCtrl.interpret,
 );
@@ -37,6 +41,7 @@ router.post(
 router.get(
   '/daily-insight',
   authenticate('hmac'),
+  perAppRateLimit,
   requireScope(PLATFORM_SCOPES.DAILY_INSIGHT_READ),
   dailyInsightCtrl.get,
 );

@@ -84,6 +84,8 @@ export async function hmacStrategy(req: Request): Promise<Principal | null> {
     }
   }
 
+  req.openAppRateLimit = { appId, windowMs: app.rateLimit.windowMs, max: app.rateLimit.max };
+
   return {
     callerType: 'service',
     contextId: String(app.accountId),
