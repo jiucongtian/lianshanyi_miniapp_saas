@@ -15,6 +15,11 @@ import openapiRouter from './routes/openapi/index';
 
 const app = express();
 
+// ─── Reverse proxy ──────────────────────────────────────────────────────────
+// Behind Nginx: trust the first proxy hop so req.ip / X-Forwarded-For reflect
+// the real client, making rate limiting and audit logs accurate.
+app.set('trust proxy', 1);
+
 // ─── Security ──────────────────────────────────────────────────────────────
 app.use(helmet());
 
