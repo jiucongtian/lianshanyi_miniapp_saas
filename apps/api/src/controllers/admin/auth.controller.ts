@@ -37,7 +37,7 @@ export async function adminLogin(req: Request, res: Response, next: NextFunction
     // Sign tokens directly — avoids redundant DB round-trip in authService
     const accessToken = signAccessToken({
       userId: user._id.toString(),
-      tenantId: user.tenantId.toString(),
+      tenantId: user.tenantId?.toString() ?? '',
       userType: user.userType,
       isAdmin: user.isAdmin,
       isGuest: user.isGuest ?? false,

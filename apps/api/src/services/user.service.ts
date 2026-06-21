@@ -36,8 +36,8 @@ export const userService = {
       if (!valid) throw new ForbiddenError('当前密码错误');
     }
 
-    user.passwordHash = await bcrypt.hash(newPassword, 12);
-    await user.save();
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await User.findByIdAndUpdate(userId, { passwordHash: newHash });
   },
 
   async bindPhone(userId: string, tenantId: string, phone: string): Promise<IUser> {
