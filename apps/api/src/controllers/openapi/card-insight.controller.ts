@@ -6,11 +6,7 @@ import { sendOk, sendErr, ERROR_CODES } from '../../lib/openapi/response';
 import { logger } from '../../utils/logger';
 
 const interpretSchema = z.object({
-  cardId: z.number().int().min(1).max(60),
   cardName: z.string().min(1).max(10),
-  profileName: z.string().min(1).max(50),
-  gender: z.enum(['male', 'female']),
-  baziSummary: z.string().min(1).max(500),
   question: z.string().max(200).optional(),
 });
 

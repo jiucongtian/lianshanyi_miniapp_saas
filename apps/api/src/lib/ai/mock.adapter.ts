@@ -8,6 +8,7 @@ import type {
   AssistantChatInput,
   AssistantChatResult,
 } from './adapter';
+import { cardNameToId } from './adapter';
 
 const MOCK_INTERPRETATIONS = [
   '本卦象征生机勃发，万物始生。此时宜积极进取，把握良机，凡事开拓创新，必有所成。',
@@ -23,22 +24,26 @@ const COLORS = ['红色', '金色', '绿色', '蓝色', '白色', '紫色'];
 export const mockAiAdapter: AiAdapter = {
   async drawCard(input: CardDrawInput): Promise<CardDrawResult> {
     await new Promise((r) => setTimeout(r, 200));
-    const idx = input.cardId % MOCK_INTERPRETATIONS.length;
+    const seed = input.cardId ?? input.cardName.charCodeAt(0);
+    const idx = seed % MOCK_INTERPRETATIONS.length;
     const interpretation = `【${input.cardName}】—— ${MOCK_INTERPRETATIONS[idx]}${input.question ? `\n\n针对您的问题「${input.question}」：此卦提示您顺应自然规律，静待佳音。` : ''}`;
     return { interpretation, provider: 'mock' };
   },
 
   async generateDailyInsight(input: DailyInsightInput): Promise<DailyInsightResult> {
     await new Promise((r) => setTimeout(r, 100));
-    const dirIdx = input.cardId % DIRECTIONS.length;
-    const colorIdx = (input.cardId + 2) % COLORS.length;
+    const cardId = cardNameToId(input.cardName);
+    const dayStem = input.cardName[0];
+    const dayBranch = input.cardName[1];
+    const dirIdx = cardId % DIRECTIONS.length;
+    const colorIdx = (cardId + 2) % COLORS.length;
     return {
-      title: `${input.date} · ${input.cardName} · ${input.dayStem}${input.dayBranch}日`,
-      summary: `今日主卦「${input.cardName}」，${input.dayStem}${input.dayBranch}之气主导，宜谋定后动，守正出奇。`,
-      fullText: `今日干支 ${input.dayStem}${input.dayBranch}，配合「${input.cardName}」之象，提示诸事宜稳中求进。晨间可进行冥想或规划，有助于明确方向。下午适合处理重要事务。晚间宜休养生息，为明日积蓄能量。`,
+      title: `${input.date} · ${input.cardName} · ${dayStem}${dayBranch}日`,
+      summary: `今日主卦「${input.cardName}」，${dayStem}${dayBranch}之气主导，宜谋定后动，守正出奇。`,
+      fullText: `今日干支 ${dayStem}${dayBranch}，配合「${input.cardName}」之象，提示诸事宜稳中求进。晨间可进行冥想或规划，有助于明确方向。下午适合处理重要事务。晚间宜休养生息，为明日积蓄能量。`,
       luckyDirection: DIRECTIONS[dirIdx],
       luckyColor: COLORS[colorIdx],
-      luckyNumber: (input.cardId % 9) + 1,
+      luckyNumber: (cardId % 9) + 1,
       provider: 'mock',
     };
   },

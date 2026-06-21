@@ -318,18 +318,14 @@ curl -X POST https://api.lianshanyi.com/openapi/v1/tutor-chat \
 
 **所需权限：** `insight:interpret`
 
-基于抽取到的卡牌、用户档案摘要与可选问题，生成面向当前场景的卡牌解读。
+基于卡牌名称与可选问题，生成面向当前场景的卡牌解读。
 
 #### 请求参数
 
 ```jsonc
 {
-  "cardId": 7,                              // 必填 · 卦序，1–60
-  "cardName": "庚午",                       // 必填 · 卡牌名称，1–10 字
-  "profileName": "李明",                    // 必填 · 档案名称，1–50 字
-  "gender": "male",                         // 必填 · male / female
-  "baziSummary": "庚午日主，八字金火交战",    // 必填 · 八字摘要，1–500 字
-  "question": "今年适合创业吗？"              // 选填 · 具体问题，不超过 200 字
+  "cardName": "庚午",              // 必填 · 卡牌名称，1–10 字（60甲子之一）
+  "question": "今年适合创业吗？"    // 选填 · 具体问题，不超过 200 字
 }
 ```
 
@@ -357,11 +353,7 @@ curl -X POST https://api.lianshanyi.com/openapi/v1/card-insight \
   -H "X-Nonce: b2c3d4e5f6a7b8c9" \
   -H "X-Signature: 7e2f9a..." \
   -d '{
-    "cardId": 7,
     "cardName": "庚午",
-    "profileName": "李明",
-    "gender": "male",
-    "baziSummary": "庚午日主，八字金火交战，性格刚烈果断",
     "question": "今年适合创业吗？"
   }'
 ```
@@ -383,10 +375,7 @@ curl -X POST https://api.lianshanyi.com/openapi/v1/card-insight \
 | 参数 | 类型 | 必填 | 说明 |
 |---|---|---|---|
 | `date` | string | 是 | 目标日期，格式 `YYYY-MM-DD` |
-| `cardId` | number | 是 | 卦序，1–60 |
-| `cardName` | string | 是 | 卡牌名称，1–10 字 |
-| `dayStem` | string | 是 | 当日天干 |
-| `dayBranch` | string | 是 | 当日地支 |
+| `cardName` | string | 是 | 卡牌名称，1–10 字（60甲子之一） |
 
 #### 成功响应 `data`
 
@@ -415,7 +404,7 @@ curl -X POST https://api.lianshanyi.com/openapi/v1/card-insight \
 #### 请求示例
 
 ```bash
-curl -X GET 'https://api.lianshanyi.com/openapi/v1/daily-insight?date=2026-06-15&cardId=7&cardName=%E5%BA%9A%E5%8D%88&dayStem=%E5%BA%9A&dayBranch=%E5%8D%88' \
+curl -X GET 'https://api.lianshanyi.com/openapi/v1/daily-insight?date=2026-06-15&cardName=%E5%BA%9A%E5%8D%88' \
   -H "X-App-Id: your_app_id" \
   -H "X-Timestamp: 1718000000" \
   -H "X-Nonce: b2c3d4e5f6a7b8c9" \

@@ -7,10 +7,7 @@ import { logger } from '../../utils/logger';
 
 const querySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date 格式须为 YYYY-MM-DD'),
-  cardId: z.coerce.number().int().min(1).max(60),
   cardName: z.string().min(1).max(10),
-  dayStem: z.string().min(1).max(2),
-  dayBranch: z.string().min(1).max(2),
 });
 
 export async function get(req: Request, res: Response, next: NextFunction): Promise<void> {

@@ -9,6 +9,7 @@ import type {
   AssistantChatInput,
   AssistantChatResult,
 } from './adapter';
+import { cardNameToId } from './adapter';
 import { createModuleLogger } from '../../utils/logger';
 import { resolveCozeConfig } from './coze-config';
 
@@ -139,11 +140,10 @@ export const cozeAiAdapter: AiAdapter = {
     const { token } = cfg;
     const workflowId = cfg.cardDrawWorkflowId;
 
-    log.info({ cardId: input.cardId, cardName: input.cardName }, 'Coze drawCard');
+    log.info({ cardName: input.cardName }, 'Coze drawCard');
 
     const parameters: Record<string, unknown> = { bazi_name: input.cardName };
     if (input.question) parameters['question'] = input.question;
-    if (input.baziSummary) parameters['bazi_summary'] = input.baziSummary;
 
     const raw = await runWorkflow(token, workflowId, parameters);
     const outer = parseData(raw);
@@ -170,6 +170,9 @@ export const cozeAiAdapter: AiAdapter = {
     const workflowId = cfg.dailyInsightWorkflowId;
 
     const caiNeng = ABILITY_MARK_MAP[input.cardName] ?? '1';
+    const cardId = cardNameToId(input.cardName);
+    const dayStem = input.cardName[0];
+    const dayBranch = input.cardName[1];
     log.info({ date: input.date, cardName: input.cardName, caiNeng }, 'Coze generateDailyInsight');
 
     const raw = await runWorkflow(token, workflowId, {
@@ -185,19 +188,19 @@ export const cozeAiAdapter: AiAdapter = {
     const tip = String(inner['tip'] ?? '');
     const password = String(inner['password'] ?? '');
 
-    const dirIdx = input.cardId % LUCKY_DIRECTIONS.length;
-    const colorIdx = (input.cardId + 2) % LUCKY_COLORS.length;
+    const dirIdx = cardId % LUCKY_DIRECTIONS.length;
+    const colorIdx = (cardId + 2) % LUCKY_COLORS.length;
 
     return {
-      title: `${input.date} · ${input.cardName} · ${input.dayStem}${input.dayBranch}日`,
-      summary: blessing || `今日主卦「${input.cardName}」，${input.dayStem}${input.dayBranch}之气主导。`,
+      title: `${input.date} · ${input.cardName} · ${dayStem}${dayBranch}日`,
+      summary: blessing || `今日主卦「${input.cardName}」，${dayStem}${dayBranch}之气主导。`,
       fullText:
         tip ||
         password ||
-        `今日干支 ${input.dayStem}${input.dayBranch}，配合「${input.cardName}」之象，提示诸事宜稳中求进。`,
+        `今日干支 ${dayStem}${dayBranch}，配合「${input.cardName}」之象，提示诸事宜稳中求进。`,
       luckyDirection: LUCKY_DIRECTIONS[dirIdx],
       luckyColor: LUCKY_COLORS[colorIdx],
-      luckyNumber: (input.cardId % 9) + 1,
+      luckyNumber: (cardId % 9) + 1,
       provider: 'coze',
     };
   },

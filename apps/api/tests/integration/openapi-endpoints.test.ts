@@ -182,11 +182,7 @@ describe('POST /openapi/v1/card-insight', () => {
   const PATH = '/openapi/v1/card-insight';
 
   const validBody = {
-    cardId: 7,
     cardName: '庚午',
-    profileName: '李明',
-    gender: 'male',
-    baziSummary: '庚午日主，八字金火交战，性格刚烈果断',
   };
 
   it('成功返回 interpretation', async () => {
@@ -206,16 +202,8 @@ describe('POST /openapi/v1/card-insight', () => {
     expect(res.body.data).toHaveProperty('interpretation');
   });
 
-  it('缺少 cardId 返回 400 VALIDATION_ERROR', async () => {
-    const { cardId: _, ...rest } = validBody;
-    const body = JSON.stringify(rest);
-    const res = await request(app).post(PATH).set(hdrs('POST', PATH, body, appSecret, appId)).send(body);
-    expect(res.status).toBe(400);
-    expect(res.body.code).toBe('VALIDATION_ERROR');
-  });
-
-  it('gender 非法值返回 400 VALIDATION_ERROR', async () => {
-    const body = JSON.stringify({ ...validBody, gender: 'unknown' });
+  it('缺少 cardName 返回 400 VALIDATION_ERROR', async () => {
+    const body = JSON.stringify({});
     const res = await request(app).post(PATH).set(hdrs('POST', PATH, body, appSecret, appId)).send(body);
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('VALIDATION_ERROR');
@@ -241,7 +229,7 @@ describe('POST /openapi/v1/card-insight', () => {
 describe('GET /openapi/v1/daily-insight', () => {
   const PATH = '/openapi/v1/daily-insight';
 
-  const validQs = { date: '2026-06-15', cardId: '7', cardName: '庚午', dayStem: '庚', dayBranch: '午' };
+  const validQs = { date: '2026-06-15', cardName: '庚午' };
 
   it('成功返回每日愈见完整字段', async () => {
     const res = await request(app).get(PATH).query(validQs).set(getHdrs(PATH, appSecret, appId));
@@ -257,20 +245,13 @@ describe('GET /openapi/v1/daily-insight', () => {
   });
 
   it('缺少 date 返回 400 VALIDATION_ERROR', async () => {
-    const { date: _, ...rest } = validQs;
-    const res = await request(app).get(PATH).query(rest).set(getHdrs(PATH, appSecret, appId));
+    const res = await request(app).get(PATH).query({ cardName: '庚午' }).set(getHdrs(PATH, appSecret, appId));
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('VALIDATION_ERROR');
   });
 
   it('date 格式非法返回 400 VALIDATION_ERROR', async () => {
     const res = await request(app).get(PATH).query({ ...validQs, date: '20260615' }).set(getHdrs(PATH, appSecret, appId));
-    expect(res.status).toBe(400);
-    expect(res.body.code).toBe('VALIDATION_ERROR');
-  });
-
-  it('cardId 超出范围（61）返回 400 VALIDATION_ERROR', async () => {
-    const res = await request(app).get(PATH).query({ ...validQs, cardId: '61' }).set(getHdrs(PATH, appSecret, appId));
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('VALIDATION_ERROR');
   });
