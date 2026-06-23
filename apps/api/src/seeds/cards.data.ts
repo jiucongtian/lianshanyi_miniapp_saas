@@ -1,6 +1,6 @@
 /**
  * 60甲子卡牌静态数据
- * 从 cloudfunctions/auto_updateDailyInsight/index.js CARD_CENTRAL_MAP 迁移
+ * 数据源自旧版微信小程序/云开发实现的 CARD_CENTRAL_MAP（该实现已下线移除）
  */
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];

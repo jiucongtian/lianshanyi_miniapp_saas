@@ -1,9 +1,0 @@
-{
-  "name": "localCalculateBazi_v1_3",
-  "version": "1.3.0",
-  "description": "本地八字计算云函数 v1.3 - 使用分钟级节气精度，单一依赖文件",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "~2.6.3"
-  }
-}

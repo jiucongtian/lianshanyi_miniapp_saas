@@ -1,9 +1,0 @@
-{
-  "name": "profileManagement_v1_4",
-  "version": "1.4.0",
-  "description": "档案管理云函数 v1.4 - 使用 localCalculateBazi_v1_3",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "~2.6.3"
-  }
-}

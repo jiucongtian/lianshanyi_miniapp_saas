@@ -1,7 +1,7 @@
 /**
  * BaZi (八字) calculation library
- * Migrated from cloudfunctions/localCalculateBazi_v1_3 (single-version principle)
- * Original: core-converter/bazi-calculator.js + js-calendar-converter-v2.js
+ * Ported from the legacy WeChat Mini Program / CloudBase BaZi implementation (now removed)
+ * Core algorithm lives in ./bazi-calculator.js
  */
 
 // 天干五行映射
