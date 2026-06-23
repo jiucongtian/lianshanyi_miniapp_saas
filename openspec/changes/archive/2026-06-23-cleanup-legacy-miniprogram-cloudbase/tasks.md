@@ -45,4 +45,4 @@
 
 ## 7. Commit
 
-- [ ] 7.1 Commit in reviewable, grouped commits with Chinese messages per repo convention (e.g. `refactor: 移除遗留小程序客户端代码`, `refactor: 移除 CloudBase 云函数`, `docs: 清理遗留文档并更新架构说明`)
+- [x] 7.1 Committed in 3 grouped Chinese commits and pushed to `origin main` (`016fa16` 移除小程序客户端与 CloudBase 云函数, `9ac1b2b` 清理 Cursor 规则与小程序根配置, `10d8aa2` 清理遗留文档并刷新项目说明). Pre-existing user changes (`bazi-calculator.js`, untracked `docs/openapi-test-guide.md`) intentionally left out
