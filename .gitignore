@@ -1,11 +1,6 @@
-# 微信小程序
+# 通用
 .DS_Store
 node_modules/
-miniprogram_npm/
-
-# 云开发敏感配置
-cloudbase/cloudbaserc.json
-cloudfunctions/*/node_modules/
 
 # 环境配置文件（如果包含敏感信息）
 .env
@@ -39,3 +34,8 @@ apps/web/dist/
 apps/web/.env
 apps/web/.env.local
 apps/web/.env.production
+apps/admin/node_modules/
+apps/admin/dist/
+apps/admin/.env
+apps/admin/.env.local
+apps/admin/.env.production
