@@ -1,2 +1,0 @@
-{"_id": "user_type_guest", "typeCode": "guest", "typeName": "临时用户", "displayName": "临时用户", "description": "未注册的临时用户，功能受限", "profileQuota": 3, "permissions": ["view", "create_limited"]}
-{"_id": "user_type_normal", "typeCode": "normal", "typeName": "探索者", "displayName": "探索者", "description": "已注册的普通用户，享受基础功能", "profileQuota": 50, "permissions": ["view", "create"]}

@@ -1,71 +1,51 @@
-# TDesign 通用页面模板
+# 联山易 Lianshanyi Platform
 
-基于 TDesign 打造的通用页面模板，包含通用的登陆注册、个人中心、设置中心、信息流等等功能。
+联山易 — 自建（self-hosted）的生辰八字与六十甲子卡牌 SaaS 平台。前身为微信小程序 + 腾讯云开发（CloudBase），现已整体迁移为自建 Web 技术栈。
 
-## 模版功能预览
+## 技术栈
 
-### 首页
+| 模块 | 目录 | 技术 |
+|------|------|------|
+| 后端 API | `apps/api` | Node + TypeScript、Express、MongoDB/Mongoose、Redis、MinIO、vitest |
+| 用户端 H5 | `apps/web` | Vue 3 + Vite + Vant（axios / pinia / vue-router） |
+| 管理后台 | `apps/admin` | Vue 3 + Vite + Element Plus（axios / pinia / vue-router） |
+| 基础设施 | `docker-compose.yml` | MongoDB、Redis、MinIO |
 
-<div style="display: flex">
-  <img width="375" alt="image" src="https://tdesign.gtimg.com/miniprogram/template/home-1.png">
-  <img width="375" alt="image" src="https://tdesign.gtimg.com/miniprogram/template/home-2.png">
-</div>
-
-### 信息发布
-
-<img width="375" alt="image" src="https://tdesign.gtimg.com/miniprogram/template/publish-1.png">
-
-### 搜索页
-
-<img width="375" alt="image" src="https://tdesign.gtimg.com/miniprogram/template/search-1.png">
-
-### 个人中心
-<div style="display: flex">
-  <img width="375" alt="image" src="https://tdesign.gtimg.com/miniprogram/template/user-1.png">
-  <img width="375" alt="image" src="https://tdesign.gtimg.com/miniprogram/template/user-2.png">
-  <img width="375" alt="image" src="https://tdesign.gtimg.com/miniprogram/template/user-3.png">
-</div>
-
-
-### 设置中心
-
-<img width="375" alt="image" src="https://tdesign.gtimg.com/miniprogram/template/setting-1.png">
-
-### 消息中心
-
-<img width="375" alt="image" src="https://tdesign.gtimg.com/miniprogram/template/message-1.png">
-
-
-## 📚 文档
-
-### API 接口文档
-- [API 接口文档总览](./docs/api/README.md)
-- [Coze 生辰八字计算接口](./docs/api/coze-bazi-api.md)
-
-### 功能文档
-- [时间查询页面显示逻辑](./docs/时间查询页面显示逻辑.md)
-- [生辰八字计算需求文档](./docs/生辰八字计算需求文档.md)
-
-## 开发预览
-### 目录结构（TODO: 生成目录结构树）
-
-
-### 在开发者工具中预览
+## 快速开始
 
 ```bash
-# 安装项目依赖
-npm install
+# 安装依赖（apps/api + apps/web）
+make install
 
+# 启动完整开发栈（api + web + admin + mongo + redis + minio）
+make dev
+
+# 或：仅启动基础设施 + 本地跑 API / Web
+make dev-infra
+make dev-api
+make dev-web
+
+# 初始化数据与首个管理员
+make seed
+make admin
+
+# 后端测试
+make test-api
 ```
 
-打开[微信开发者工具](https://mp.weixin.qq.com/debug/wxadoc/dev/devtools/download.html)，导入整个项目，构建 npm 包，就可以预览示例了。
+更多命令见 [`Makefile`](./Makefile)。各子应用也可进入对应目录运行 `npm run dev | build | test | typecheck`。
 
-### 基础库版本
+## 文档
 
-最低基础库版本`^2.6.5`
+- [迁移设计文档](./docs/web-migration/README.md) — 现状分析、架构、前后端与部署设计
+- [OpenAPI 接入指南](./docs/api/openapi-integration-guide.md)
+- [管理后台 API](./docs/api/admin-api.md)
+- [生产服务器运维指南](./production-server-guide.md)
 
-## 提示找不到tdesign
-- 进入miniprogram目录
-- 执行npm install tdesign-miniprogram --production
-- 执行npm install --production
-- 微信开发者工具中点击顶部菜单栏的「工具」>「构建 npm」
+## 部署
+
+自建服务器，基于 Docker 部署。运维步骤见 [`production-server-guide.md`](./production-server-guide.md)，部署设计见 [`docs/web-migration/05-deployment.md`](./docs/web-migration/05-deployment.md)。
+
+## License
+
+MIT
