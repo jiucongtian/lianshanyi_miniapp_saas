@@ -1,0 +1,50 @@
+# ── aquai.shenxinyou.com Python 服务 Docker Compose（生产环境）─────────────
+#
+# 使用前请确认：
+#   1. build.context 路径指向源码目录（或将 Dockerfile 与源码放同目录）
+#   2. volumes 中的宿主机路径（数据目录、配置文件）按实际填写
+#   3. env_file 中的环境变量按实际服务需求补充
+#
+# 启动：cd /path/to/source && docker compose -f /path/to/docker-compose.yml up -d
+# 停止：docker compose -f /path/to/docker-compose.yml down
+# 查看日志：docker compose -f /path/to/docker-compose.yml logs -f
+
+version: '3.9'
+
+services:
+  aquai:
+    build:
+      # 将此路径修改为 Python 服务实际源码目录
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: aquai-python:latest
+    container_name: aquai-python
+    restart: unless-stopped
+    # 仅监听本机回环，由 nginx 反代对外提供服务
+    ports:
+      - '127.0.0.1:8000:8000'
+    # 环境变量文件（若有），与此 compose 文件同级放置 .env
+    env_file:
+      - .env
+    volumes:
+      # 持久化数据目录（按实际服务需求调整）
+      - aquai_data:/app/data
+      # 若服务依赖本地配置文件，按以下方式挂载：
+      # - /宿主机/config路径:/app/config:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: '20m'
+        max-file: '5'
+    healthcheck:
+      # 若服务有健康检查端点，替换下方 URL
+      test: ['CMD', 'python', '-c', 'import urllib.request; urllib.request.urlopen("http://localhost:8000/health")']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  aquai_data:
+    driver: local
