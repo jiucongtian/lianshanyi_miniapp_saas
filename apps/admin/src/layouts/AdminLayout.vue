@@ -55,6 +55,7 @@ const router = useRouter()
 
 const navItems = [
   { path: '/dashboard', title: '数据看板', icon: 'DataAnalysis' },
+  { path: '/billing', title: 'AI 账单', icon: 'Tickets' },
   { path: '/credentials', title: '凭据管理', icon: 'Key' },
   { path: '/ai-config', title: 'AI 配置', icon: 'Setting' },
   { path: '/accounts', title: '租户管理', icon: 'OfficeBuilding' },

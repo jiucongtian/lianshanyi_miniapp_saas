@@ -239,3 +239,41 @@
   "dailyInsights": { "total": 890, "last30d": 120 }
 }
 ```
+
+---
+
+## AI 账单
+
+账单入口：管理后台 `/admin/billing`。所有金额均以人民币“分”为 API 存储单位，前端展示为元。只对外部 OpenAPI 的 `card-insight`（智慧洞见）、`daily-insight`（每日愈见）及 `tutor-chat`（助学童子）创建逐笔账单；内部 Web 端及定时任务不计入此账单。
+
+调用在鉴权、权限、参数、账户检查通过后先产生 `pending` 记录。Coze 成功返回且已配置单价时为 `charged`；单价为零或使用 mock 时为 `free`；Coze 成功但未配置单价时为 `unpriced`；生成失败时为 `failed`，金额为零。401 等前置失败不产生账单记录。成功响应携带 `X-Billing-Entry-Id` 供调用方对账。已完成记录保留当时单价，不随之后调价变化；账单记录没有 90 天 TTL。
+
+### GET /admin/billing/rates
+
+返回三类接口已配置的单价；未配置的接口不在数组中。
+
+### PUT /admin/billing/rates/:product
+
+`product` 可选 `card-insight`、`daily-insight`、`tutor-chat`。
+
+```json
+{ "priceFen": 150 }
+```
+
+`priceFen` 为非负整数；`0` 表示免费。修改只影响修改后成功完成的调用。
+
+### GET /admin/billing/entries
+
+逐笔账单，按生成时间降序返回。Query：`appId`、`accountId`、`product`、`from`、`to`、`page`（默认 1）、`limit`（默认 50，最大 100）。`from` 包含，`to` 不包含，均为 ISO 8601 时间。
+
+**Response `data`**：`{ "items": [...], "meta": { "total": 100, "page": 1, "limit": 50 } }`。每条包含 `_id`、`appId`、`accountId`、账户名称快照 `accountName`、`product`、`status`、`provider`、`priceFen`、`amountFen`、`createdAt`、`completedAt`；不保存请求正文、回答、密钥或签名。短期审计日志的 `billingEntryId` 可与逐笔账单 ID 对应。
+
+### GET /admin/billing/summary
+
+使用与 `entries` 相同的筛选参数（忽略分页），按接口汇总 `total`、`charged`、`failed`、`unpriced`、`amountFen`。
+
+### GET /admin/billing/statement
+
+使用与 `entries` 相同的筛选参数，返回该范围的完整 `summary`、`items`、`total`，供后台打印 PDF 对账单。单次最多 5000 条，超过时返回 `400 EXPORT_LIMIT`，应缩小账期或 App ID 范围。导出文档是调用对账单，不是税务发票。
+
+**历史数据边界：**旧版 `OpenApiLog` 只有请求路径、状态和耗时，且 90 天后自动清理，没有可靠的提供方或单价快照；账单上线前的调用不会自动补收。

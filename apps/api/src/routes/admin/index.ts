@@ -8,6 +8,7 @@ import * as accountsCtrl from '../../controllers/admin/accounts.controller';
 import * as usersCtrl from '../../controllers/admin/users.controller';
 import * as feedbacksCtrl from '../../controllers/admin/feedbacks.controller';
 import * as logsCtrl from '../../controllers/admin/logs.controller';
+import * as billingCtrl from '../../controllers/admin/billing.controller';
 
 const router = Router();
 
@@ -55,5 +56,12 @@ router.post('/feedbacks/:tenantId/:feedbackId/review', feedbacksCtrl.markFeedbac
 router.get('/logs', logsCtrl.listLogs);
 router.get('/dashboard/usage', logsCtrl.getUsageStats);
 router.get('/dashboard/overview', logsCtrl.getOverview);
+
+// AI billing: prices are explicit, entries retain the price at generation time.
+router.get('/billing/rates', billingCtrl.listRates);
+router.put('/billing/rates/:product', billingCtrl.setRate);
+router.get('/billing/entries', billingCtrl.listEntries);
+router.get('/billing/summary', billingCtrl.getSummary);
+router.get('/billing/statement', billingCtrl.getStatement);
 
 export default router;

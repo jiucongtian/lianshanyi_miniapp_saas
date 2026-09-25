@@ -8,6 +8,7 @@ export interface IOpenApiLog extends Document {
   scope?: string;
   statusCode: number;
   code?: string;
+  billingEntryId?: string;
   latencyMs: number;
   createdAt: Date;
 }
@@ -22,6 +23,7 @@ const openApiLogSchema = new Schema<IOpenApiLog>(
     scope: { type: String },
     statusCode: { type: Number, required: true },
     code: { type: String },
+    billingEntryId: { type: String, index: true },
     latencyMs: { type: Number, required: true },
     createdAt: { type: Date, default: Date.now, expires: TTL_SECONDS },
   },

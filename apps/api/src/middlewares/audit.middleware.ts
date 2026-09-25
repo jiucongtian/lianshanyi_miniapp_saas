@@ -16,6 +16,7 @@ export function auditMiddleware(req: Request, res: Response, next: NextFunction)
       scope: undefined, // populated by route handlers if needed
       statusCode: res.statusCode,
       code: (res.locals as { code?: string }).code,
+      billingEntryId: (res.locals as { billingEntryId?: string }).billingEntryId,
       latencyMs: Date.now() - startMs,
     }).catch((err: unknown) => {
       logger.warn({ err }, 'Failed to write audit log');

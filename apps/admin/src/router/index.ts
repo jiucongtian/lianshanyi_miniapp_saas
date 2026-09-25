@@ -28,6 +28,12 @@ const router = createRouter({
           meta: { title: '凭据管理', icon: 'Key' },
         },
         {
+          path: 'billing',
+          name: 'billing',
+          component: () => import('@/pages/BillingPage.vue'),
+          meta: { title: 'AI 账单', icon: 'Tickets' },
+        },
+        {
           path: 'ai-config',
           name: 'ai-config',
           component: () => import('@/pages/AiConfigPage.vue'),
