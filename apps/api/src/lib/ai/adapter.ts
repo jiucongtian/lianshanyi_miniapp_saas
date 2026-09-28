@@ -1,7 +1,12 @@
+import { getDayGanZhi } from '../bazi';
+
 export interface CardDrawInput {
   cardName: string;
   cardId?: number;
   question?: string;
+  profileName?: string;
+  gender?: string;
+  baziSummary?: string;
 }
 
 export interface CardDrawResult {
@@ -12,6 +17,9 @@ export interface CardDrawResult {
 export interface DailyInsightInput {
   date: string;
   cardName: string;
+  cardId?: number;
+  dayStem?: string;
+  dayBranch?: string;
 }
 
 const SIXTY_JIAZI: readonly string[] = [
@@ -26,6 +34,23 @@ const SIXTY_JIAZI: readonly string[] = [
 export function cardNameToId(name: string): number {
   const idx = SIXTY_JIAZI.indexOf(name);
   return idx >= 0 ? idx + 1 : 1;
+}
+
+export function resolveDailyInsightContext(input: DailyInsightInput): {
+  cardId: number;
+  dayStem: string;
+  dayBranch: string;
+} {
+  let ganZhi: ReturnType<typeof getDayGanZhi> | undefined;
+  if (input.dayStem === undefined || input.dayBranch === undefined) {
+    const [year, month, day] = input.date.split('-').map(Number);
+    ganZhi = getDayGanZhi(year!, month!, day!);
+  }
+  return {
+    cardId: input.cardId ?? cardNameToId(input.cardName),
+    dayStem: input.dayStem ?? ganZhi!.stem,
+    dayBranch: input.dayBranch ?? ganZhi!.branch,
+  };
 }
 
 export interface DailyInsightResult {

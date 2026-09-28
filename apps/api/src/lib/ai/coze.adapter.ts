@@ -9,7 +9,7 @@ import type {
   AssistantChatInput,
   AssistantChatResult,
 } from './adapter';
-import { cardNameToId } from './adapter';
+import { resolveDailyInsightContext } from './adapter';
 import { createModuleLogger } from '../../utils/logger';
 import { resolveCozeConfig } from './coze-config';
 
@@ -140,10 +140,11 @@ export const cozeAiAdapter: AiAdapter = {
     const { token } = cfg;
     const workflowId = cfg.cardDrawWorkflowId;
 
-    log.info({ cardName: input.cardName }, 'Coze drawCard');
+    log.info({ cardId: input.cardId, cardName: input.cardName }, 'Coze drawCard');
 
     const parameters: Record<string, unknown> = { bazi_name: input.cardName };
     if (input.question) parameters['question'] = input.question;
+    if (input.baziSummary) parameters['bazi_summary'] = input.baziSummary;
 
     const raw = await runWorkflow(token, workflowId, parameters);
     const outer = parseData(raw);
@@ -170,9 +171,7 @@ export const cozeAiAdapter: AiAdapter = {
     const workflowId = cfg.dailyInsightWorkflowId;
 
     const caiNeng = ABILITY_MARK_MAP[input.cardName] ?? '1';
-    const cardId = cardNameToId(input.cardName);
-    const dayStem = input.cardName[0];
-    const dayBranch = input.cardName[1];
+    const { cardId, dayStem, dayBranch } = resolveDailyInsightContext(input);
     log.info({ date: input.date, cardName: input.cardName, caiNeng }, 'Coze generateDailyInsight');
 
     const raw = await runWorkflow(token, workflowId, {

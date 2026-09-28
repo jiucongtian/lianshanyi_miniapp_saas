@@ -8,7 +8,7 @@ import type {
   AssistantChatInput,
   AssistantChatResult,
 } from './adapter';
-import { cardNameToId } from './adapter';
+import { resolveDailyInsightContext } from './adapter';
 
 const MOCK_INTERPRETATIONS = [
   '本卦象征生机勃发，万物始生。此时宜积极进取，把握良机，凡事开拓创新，必有所成。',
@@ -32,9 +32,7 @@ export const mockAiAdapter: AiAdapter = {
 
   async generateDailyInsight(input: DailyInsightInput): Promise<DailyInsightResult> {
     await new Promise((r) => setTimeout(r, 100));
-    const cardId = cardNameToId(input.cardName);
-    const dayStem = input.cardName[0];
-    const dayBranch = input.cardName[1];
+    const { cardId, dayStem, dayBranch } = resolveDailyInsightContext(input);
     const dirIdx = cardId % DIRECTIONS.length;
     const colorIdx = (cardId + 2) % COLORS.length;
     return {

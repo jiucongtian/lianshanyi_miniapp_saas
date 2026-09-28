@@ -90,7 +90,7 @@ export const cardService = {
       : { profileName: '用户', gender: 'unknown', baziSummary: '' };
 
     const ai = await getAiAdapter();
-    const aiResult = await ai.drawCard({ cardId: drawnCardId, cardName: card.name, question });
+    const aiResult = await ai.drawCard({ profileName, gender, baziSummary, cardId: drawnCardId, cardName: card.name, question });
 
     const record = await recordRepo.create({
       userId: userOid,
@@ -135,7 +135,7 @@ export const cardService = {
       : { profileName: '用户', gender: 'unknown', baziSummary: '' };
 
     const ai = await getAiAdapter();
-    const aiResult = await ai.drawCard({ cardId, cardName: card.name, question });
+    const aiResult = await ai.drawCard({ profileName, gender, baziSummary, cardId, cardName: card.name, question });
 
     const record = await recordRepo.create({
       userId: userOid,

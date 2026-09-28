@@ -60,7 +60,13 @@ export const dailyInsightService = {
     const ganZhi = getDayGanZhi(dateParts[0]!, dateParts[1]!, dateParts[2]!);
 
     const ai = await getAiAdapter();
-    const result = await ai.generateDailyInsight({ date, cardName });
+    const result = await ai.generateDailyInsight({
+      date,
+      cardId,
+      cardName,
+      dayStem: ganZhi.stem,
+      dayBranch: ganZhi.branch,
+    });
 
     const insight = await DailyInsight.findOneAndUpdate(
       { tenantId: tenantOid, date },
