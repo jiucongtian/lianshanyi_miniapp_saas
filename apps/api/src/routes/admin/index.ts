@@ -9,6 +9,7 @@ import * as usersCtrl from '../../controllers/admin/users.controller';
 import * as feedbacksCtrl from '../../controllers/admin/feedbacks.controller';
 import * as logsCtrl from '../../controllers/admin/logs.controller';
 import * as billingCtrl from '../../controllers/admin/billing.controller';
+import * as periodCtrl from '../../controllers/admin/billing-period.controller';
 
 const router = Router();
 
@@ -63,5 +64,11 @@ router.put('/billing/rates/:product', billingCtrl.setRate);
 router.get('/billing/entries', billingCtrl.listEntries);
 router.get('/billing/summary', billingCtrl.getSummary);
 router.get('/billing/statement', billingCtrl.getStatement);
+router.get('/billing/periods/current', periodCtrl.current);
+router.post('/billing/periods/preview', periodCtrl.preview);
+router.post('/billing/periods/generate', periodCtrl.generate);
+router.get('/billing/periods/:id/entries', periodCtrl.entries);
+router.get('/billing/periods/:id/summary', periodCtrl.summary);
+router.get('/billing/periods/:id/statement', periodCtrl.statement);
 
 export default router;

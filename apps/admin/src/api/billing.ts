@@ -1,4 +1,4 @@
-import { get, put } from './client'
+import { get, post, put } from './client'
 
 export type BillingProduct = 'card-insight' | 'daily-insight' | 'tutor-chat'
 export type BillingStatus = 'pending' | 'charged' | 'free' | 'unpriced' | 'failed'
@@ -21,6 +21,40 @@ export interface BillingEntry {
   amountFen: number
   createdAt: string
   completedAt?: string
+  source?: 'live' | 'historical-inferred'
+  retainedAfterExpiry?: boolean
+}
+
+export type PeriodPrices = Record<BillingProduct, number>
+
+export interface BillingPeriodRevision {
+  number: number
+  pricesFen: PeriodPrices
+  callCount: number
+  amountFen: number
+  historicalCount: number
+  retainedCount: number
+  skippedCount: number
+  generatedAt: string
+  generatedBy: string
+}
+
+export interface BillingPeriod {
+  _id: string
+  from: string
+  to: string
+  activeRevision: number
+  revisions: BillingPeriodRevision[]
+}
+
+export interface BillingPeriodPreview {
+  callCount: number
+  amountFen: number
+  historicalCount: number
+  retainedCount: number
+  skippedCount: number
+  byProduct: Record<BillingProduct, { count: number; amountFen: number }>
+  fingerprint: string
 }
 
 export interface BillingSummary {
@@ -46,4 +80,15 @@ export const billingApi = {
     get<{ items: BillingEntry[]; meta: { total: number; page: number; limit: number } }>('/v1/admin/billing/entries', params),
   summary: (params: Record<string, unknown>) => get<BillingSummary[]>('/v1/admin/billing/summary', params),
   statement: (params: Record<string, unknown>) => get<BillingStatement>('/v1/admin/billing/statement', params),
+  period: (from: string, to: string) => get<BillingPeriod | null>('/v1/admin/billing/periods/current', { from, to }),
+  previewPeriod: (from: string, to: string, pricesFen: PeriodPrices) =>
+    post<BillingPeriodPreview>('/v1/admin/billing/periods/preview', { from, to, pricesFen }),
+  generatePeriod: (from: string, to: string, pricesFen: PeriodPrices, expectedFingerprint: string) =>
+    post<BillingPeriod>('/v1/admin/billing/periods/generate', { from, to, pricesFen, expectedFingerprint }),
+  periodEntries: (id: string, params: Record<string, unknown>) =>
+    get<{ items: BillingEntry[]; meta: { total: number; page: number; limit: number } }>(`/v1/admin/billing/periods/${id}/entries`, params),
+  periodSummary: (id: string, params: Record<string, unknown>) =>
+    get<BillingSummary[]>(`/v1/admin/billing/periods/${id}/summary`, params),
+  periodStatement: (id: string, params: Record<string, unknown>) =>
+    get<BillingStatement>(`/v1/admin/billing/periods/${id}/statement`, params),
 }

@@ -276,4 +276,13 @@
 
 使用与 `entries` 相同的筛选参数，返回该范围的完整 `summary`、`items`、`total`，供后台打印 PDF 对账单。单次最多 5000 条，超过时返回 `400 EXPORT_LIMIT`，应缩小账期或 App ID 范围。导出文档是调用对账单，不是税务发票。
 
-**历史数据边界：**旧版 `OpenApiLog` 只有请求路径、状态和耗时，且 90 天后自动清理，没有可靠的提供方或单价快照；账单上线前的调用不会自动补收。
+### 按时间段生成与重算账单
+
+管理员可为任意不超过 366 天的北京时间账期设置三类接口各自的固定单价（单位：分），先预览成功调用数与金额，再确认生成。7、8、9 月可分别设置不同价格。旧日志中 `/card-insight`、`/daily-insight`、`/tutor-chat` 及其 `/openapi/v1` 前缀版本，只有 HTTP 200 进入候选；旧调用的 Coze 提供方由运营方确认，在逐笔账单中标为 `historical-inferred`。账户 ID 优先使用调用日志的 `contextId`，缺失时使用 App ID 绑定的账户；仍无法归属则显示异常数量并拒绝生成，不静默遗漏。已有实时账单按其保存的提供方判断，mock 免费；重复生成不会把同一调用重复计费。
+
+- `GET /admin/billing/periods/current?from=<ISO>&to=<ISO>`：查询精确时间段的已生成账期及其版本；不存在返回 `null`。
+- `POST /admin/billing/periods/preview`：请求 `{ "from": "<ISO>", "to": "<ISO>", "pricesFen": { "card-insight": 100, "daily-insight": 200, "tutor-chat": 300 } }`；返回 `callCount`、`amountFen`、`historicalCount`、`retainedCount`、`skippedCount`、`byProduct` 和 `fingerprint`，不写账。
+- `POST /admin/billing/periods/generate`：在预览请求体中增加 `expectedFingerprint`；只有来源和价格仍与预览一致才生成。已存在相同账期时追加新版本并将其设为当前版本，旧版本保留；与其他已生成账期重叠时返回 `409 BILLING_PERIOD_OVERLAP`。
+- `GET /admin/billing/periods/:id/entries`、`/summary`、`/statement`：查询生成后的版本；可用 `revision` 指定旧版，并按 `appId`、`accountId`、`product` 筛选。明细支持 `page`、`limit`；对账单上限 5000 笔。
+
+生成的账期使用独立、不可变的逐笔快照。改写价格后重新生成只新增版本，不改动实时 `BillingEntry`；旧审计日志 90 天过期后，已生成账期仍可凭保存的逐笔快照重新定价。未生成前已过期的日志不能从在线库恢复，须另查备份。导出的 PDF 是对账单，不是税务发票。
