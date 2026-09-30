@@ -364,12 +364,12 @@ async function exportPdf() {
       @page{size:A4 landscape;margin:13mm}body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#222;font-size:10px}
       h1{font-size:22px;margin:0 0 8px}h2{font-size:14px;margin:24px 0 8px}.meta{color:#666;margin-bottom:12px}.total{font-size:16px;font-weight:bold}
       table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{border:1px solid #ddd;padding:5px 6px;overflow-wrap:anywhere;text-align:left}
-      th{background:#f1f5f9}tr{break-inside:avoid}.id{font-size:8px}.note{margin-top:18px;color:#666}
+      th{background:#f1f5f9}tr{break-inside:avoid}.id{font-size:8px}
       </style></head><body><h1>AI 调用对账单</h1><div class="meta">账期：${escapeHtml(period)} · App ID：${escapeHtml(appId.value || '全部')} · 账户 ID：${escapeHtml(accountId.value || '全部')} · 导出时间：${escapeHtml(formatDate(new Date().toISOString()))}（北京时间）</div>
       <div class="total">应收合计：¥${yuan(statementTotal)}　｜　逐笔记录：${statement.total}</div><h2>接口汇总</h2>
       <table><thead><tr><th>接口</th><th>记录</th><th>已计费</th><th>金额</th></tr></thead><tbody>${summaryRows || '<tr><td colspan="4">暂无记录</td></tr>'}</tbody></table>
       <h2>调用明细</h2><table><thead><tr><th>时间（北京）</th><th>App ID</th><th>账户</th><th>接口</th><th>状态</th><th>金额</th><th>记录 ID</th></tr></thead><tbody>${detailRows || '<tr><td colspan="7">暂无记录</td></tr>'}</tbody></table>
-      <p class="note">历史 Coze 归属依据运营方确认，旧日志未逐笔记录提供方；鉴权失败、生成失败与 mock 调用不计费。此文档为调用对账单，并非税务发票。</p></body></html>`)
+      </body></html>`)
     printWindow.addEventListener('load', () => { printWindow.focus(); printWindow.print() }, { once: true })
     printWindow.document.close()
   } catch (err) {
