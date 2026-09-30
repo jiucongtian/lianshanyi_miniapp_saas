@@ -286,8 +286,8 @@ async function exportPdf() {
       : await billingApi.statement({ ...bounds, ...detailFilters() })
     const statementTotal = statement.summary.reduce((sum, row) => sum + row.amountFen, 0)
     const period = `${range.value[0]} 至 ${range.value[1]}${currentPeriod.value ? ` · v${viewRevision.value}` : ' · 未生成账单'}`
-    const summaryRows = statement.summary.map((row) => `<tr><td>${escapeHtml(productLabel(row._id))}</td><td>${row.total}</td><td>${row.charged}</td><td>${row.unpriced}</td><td>${row.failed}</td><td>¥${yuan(row.amountFen)}</td></tr>`).join('')
-    const detailRows = statement.items.map((row) => `<tr><td>${escapeHtml(formatDate(row.createdAt))}</td><td>${escapeHtml(row.appId)}</td><td>${escapeHtml(row.accountName)}</td><td>${escapeHtml(row.accountId)}</td><td>${escapeHtml(productLabel(row.product))}</td><td>${escapeHtml(row.source === 'historical-inferred' ? '历史 Coze（确认）' : '实时记录')}</td><td>${escapeHtml(statusLabel(row.status))}</td><td>${row.priceFen == null ? '—' : `¥${yuan(row.priceFen)}`}</td><td>¥${yuan(row.amountFen)}</td><td class="id">${escapeHtml(row._id)}</td></tr>`).join('')
+    const summaryRows = statement.summary.map((row) => `<tr><td>${escapeHtml(productLabel(row._id))}</td><td>${row.total}</td><td>${row.charged}</td><td>¥${yuan(row.amountFen)}</td></tr>`).join('')
+    const detailRows = statement.items.map((row) => `<tr><td>${escapeHtml(formatDate(row.createdAt))}</td><td>${escapeHtml(row.appId)}</td><td>${escapeHtml(row.accountName)}</td><td>${escapeHtml(productLabel(row.product))}</td><td>${escapeHtml(statusLabel(row.status))}</td><td>¥${yuan(row.amountFen)}</td><td class="id">${escapeHtml(row._id)}</td></tr>`).join('')
     printWindow.document.open()
     printWindow.document.write(`<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>AI 调用对账单 - ${escapeHtml(period)}</title><style>
       @page{size:A4 landscape;margin:13mm}body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#222;font-size:10px}
@@ -296,8 +296,8 @@ async function exportPdf() {
       th{background:#f1f5f9}tr{break-inside:avoid}.id{font-size:8px}.note{margin-top:18px;color:#666}
       </style></head><body><h1>AI 调用对账单</h1><div class="meta">账期：${escapeHtml(period)} · App ID：${escapeHtml(appId.value || '全部')} · 账户 ID：${escapeHtml(accountId.value || '全部')} · 导出时间：${escapeHtml(formatDate(new Date().toISOString()))}（北京时间）</div>
       <div class="total">应收合计：¥${yuan(statementTotal)}　｜　逐笔记录：${statement.total}</div><h2>接口汇总</h2>
-      <table><thead><tr><th>接口</th><th>记录</th><th>已计费</th><th>待定价</th><th>失败</th><th>金额</th></tr></thead><tbody>${summaryRows || '<tr><td colspan="6">暂无记录</td></tr>'}</tbody></table>
-      <h2>调用明细</h2><table><thead><tr><th>时间（北京）</th><th>App ID</th><th>账户</th><th>账户 ID</th><th>接口</th><th>来源</th><th>状态</th><th>本期单价</th><th>金额</th><th>记录 ID</th></tr></thead><tbody>${detailRows || '<tr><td colspan="10">暂无记录</td></tr>'}</tbody></table>
+      <table><thead><tr><th>接口</th><th>记录</th><th>已计费</th><th>金额</th></tr></thead><tbody>${summaryRows || '<tr><td colspan="4">暂无记录</td></tr>'}</tbody></table>
+      <h2>调用明细</h2><table><thead><tr><th>时间（北京）</th><th>App ID</th><th>账户</th><th>接口</th><th>状态</th><th>金额</th><th>记录 ID</th></tr></thead><tbody>${detailRows || '<tr><td colspan="7">暂无记录</td></tr>'}</tbody></table>
       <p class="note">历史 Coze 归属依据运营方确认，旧日志未逐笔记录提供方；鉴权失败、生成失败与 mock 调用不计费。此文档为调用对账单，并非税务发票。</p></body></html>`)
     printWindow.addEventListener('load', () => { printWindow.focus(); printWindow.print() }, { once: true })
     printWindow.document.close()
