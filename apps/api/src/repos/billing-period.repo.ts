@@ -40,6 +40,7 @@ export const billingPeriodRepo = {
   findByRange: (from: Date, to: Date) => BillingPeriod.findOne({ from, to }).lean(),
   findById: (id: mongoose.Types.ObjectId) => BillingPeriod.findById(id).lean(),
   findOverlap: (from: Date, to: Date) => BillingPeriod.findOne({
+    deletedAt: { $exists: false },
     from: { $lt: to }, to: { $gt: from }, $nor: [{ from, to }],
   }).lean(),
   create: (from: Date, to: Date) => BillingPeriod.create({ from, to, activeRevision: 0 }),
@@ -57,7 +58,7 @@ export const billingPeriodRepo = {
   insertLines: (lines: Omit<IBillingPeriodLine, '_id'>[]) => BillingPeriodLine.insertMany(lines, { ordered: true }),
   publish: (id: mongoose.Types.ObjectId, revision: IBillingRevision) => BillingPeriod.findOneAndUpdate(
     { _id: id, buildingRevision: revision.number, activeRevision: revision.number - 1 },
-    { $set: { activeRevision: revision.number }, $unset: { buildingRevision: '', buildStartedAt: '' }, $push: { revisions: revision } },
+    { $set: { activeRevision: revision.number }, $unset: { buildingRevision: '', buildStartedAt: '', deletedAt: '' }, $push: { revisions: revision } },
     { new: true },
   ).lean(),
   releaseBuild: (id: mongoose.Types.ObjectId, revision: number) => BillingPeriod.updateOne(
@@ -78,6 +79,23 @@ export const billingPeriodRepo = {
   accounts: (ids: string[]) => Tenant.find({ _id: { $in: ids.filter((id) => mongoose.isValidObjectId(id)) } }).select('_id name').lean(),
   priorLines: (id: mongoose.Types.ObjectId, revision: number) =>
     BillingPeriodLine.find({ periodId: id, revision }).lean(),
+  async listPeriods(page: number, limit: number) {
+    const filter = { deletedAt: { $exists: false }, activeRevision: { $gt: 0 } };
+    const [items, total] = await Promise.all([
+      BillingPeriod.find(filter).sort({ from: -1, _id: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      BillingPeriod.countDocuments(filter),
+    ]);
+    return { items, total };
+  },
+  removePeriod: (id: mongoose.Types.ObjectId, revision: number, deletedBy: string) => {
+    const deletedAt = new Date();
+    return BillingPeriod.findOneAndUpdate(
+      { _id: id, activeRevision: revision, deletedAt: { $exists: false } },
+      { $set: { deletedAt, revisions: [] }, $unset: { buildingRevision: '', buildStartedAt: '' }, $push: { deletions: { revision, deletedAt, deletedBy } } },
+      { new: true },
+    ).lean();
+  },
+  deletePeriodLines: (id: mongoose.Types.ObjectId) => BillingPeriodLine.deleteMany({ periodId: id }),
   listLines: async (id: mongoose.Types.ObjectId, revision: number, filter: PeriodLineFilter, page: number, limit: number) => {
     const match = lineMatch(id, revision, filter);
     const [items, total] = await Promise.all([

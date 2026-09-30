@@ -53,6 +53,21 @@ export async function current(req: Request, res: Response, next: NextFunction): 
   } catch (error) { next(error); }
 }
 
+export async function listPeriods(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { page, limit } = parse(lineQuerySchema, req.query);
+    const result = await billingPeriodService.listPeriods(page, limit);
+    send(res, { items: result.items, meta: { total: result.total, page, limit } });
+  } catch (error) { next(error); }
+}
+
+export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { revision } = parse(z.object({ revision: z.coerce.number().int().min(1) }), req.query);
+    send(res, await billingPeriodService.remove(periodId(req), revision, req.principal!.subjectUserId!));
+  } catch (error) { next(error); }
+}
+
 export async function preview(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { from, to, pricesFen } = parse(previewSchema, req.body);

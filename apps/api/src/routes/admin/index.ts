@@ -65,6 +65,8 @@ router.get('/billing/entries', billingCtrl.listEntries);
 router.get('/billing/summary', billingCtrl.getSummary);
 router.get('/billing/statement', billingCtrl.getStatement);
 router.get('/billing/periods/current', periodCtrl.current);
+router.get('/billing/periods', periodCtrl.listPeriods);
+router.delete('/billing/periods/:id', periodCtrl.remove);
 router.post('/billing/periods/preview', periodCtrl.preview);
 router.post('/billing/periods/generate', periodCtrl.generate);
 router.get('/billing/periods/:id/entries', periodCtrl.entries);

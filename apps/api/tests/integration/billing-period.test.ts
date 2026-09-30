@@ -59,6 +59,54 @@ async function seedCalls() {
 }
 
 describe('billing periods with a real MongoDB', () => {
+  it('lists bills and deletes all their revisions without deleting source calls, then allows an expanded range', async () => {
+    await seedCalls();
+    const preview = await billingPeriodService.preview(from, to, prices);
+    const period = await billingPeriodService.generate(from, to, prices, preview.fingerprint, 'test');
+    await billingPeriodService.generate(from, to, prices, preview.fingerprint, 'test');
+    const url = `/api/v1/admin/billing/periods/${period._id}`;
+    const headers = { Authorization: `Bearer ${token}` };
+    const listing = await request(app).get('/api/v1/admin/billing/periods').set(headers);
+    expect(listing.status).toBe(200);
+    expect(listing.body.data.meta.total).toBe(1);
+    expect(listing.body.data.items[0].activeRevision).toBe(2);
+    expect((await request(app).delete(url).query({ revision: 2 })).status).toBe(401);
+    const nonAdminToken = signAccessToken({ userId: new mongoose.Types.ObjectId().toString(), tenantId: accountId.toString(), userType: 'premium', isAdmin: false, isGuest: false });
+    expect((await request(app).delete(url).set('Authorization', `Bearer ${nonAdminToken}`).query({ revision: 2 })).status).toBe(403);
+    expect((await request(app).delete(url).set(headers).query({ revision: 1 })).status).toBe(409);
+    expect(await BillingPeriodLine.countDocuments({ periodId: period._id })).toBe(8);
+    expect((await request(app).delete(url).set(headers).query({ revision: 2 })).status).toBe(200);
+    expect((await request(app).delete(url).set(headers).query({ revision: 2 })).status).toBe(200);
+    expect(await BillingPeriodLine.countDocuments({ periodId: period._id })).toBe(0);
+    expect((await BillingPeriod.findById(period._id).lean())?.revisions).toEqual([]);
+    expect((await BillingPeriod.findById(period._id).lean())?.deletions).toHaveLength(1);
+    expect(await OpenApiLog.countDocuments()).toBe(5);
+    expect(await BillingEntry.countDocuments()).toBe(2);
+    expect((await billingPeriodService.listPeriods(1, 10)).total).toBe(0);
+    expect(await billingPeriodService.findByRange(from, to)).toBeNull();
+    expect((await request(app).get(`${url}/statement`).set(headers)).status).toBe(404);
+    const expandedTo = new Date('2026-09-01T16:00:00Z');
+    const expanded = await billingPeriodService.preview(from, expandedTo, prices);
+    expect(expanded).toMatchObject({ callCount: 4, amountFen: 400 });
+    expect((await billingPeriodService.generate(from, expandedTo, prices, expanded.fingerprint, 'test')).activeRevision).toBe(1);
+  });
+
+  it('recreates an identical range with only newly generated revisions and never recovers deleted snapshots', async () => {
+    await seedCalls();
+    const preview = await billingPeriodService.preview(from, to, prices);
+    const period = await billingPeriodService.generate(from, to, prices, preview.fingerprint, 'test');
+    await billingPeriodService.remove(period._id, 1, 'test-admin');
+    const replacement = await billingPeriodService.generate(from, to, prices, preview.fingerprint, 'test');
+    expect(replacement.activeRevision).toBe(2);
+    expect(replacement.revisions.map((r) => r.number)).toEqual([2]);
+    expect(replacement.deletedAt).toBeUndefined();
+    await expect(billingPeriodService.list(period._id, 1, {}, 1, 10)).rejects.toThrow('版本不存在');
+    await billingPeriodService.remove(period._id, 2, 'test-admin');
+    await Promise.all([OpenApiLog.deleteMany({}), BillingEntry.deleteMany({})]);
+    expect(await billingPeriodService.preview(from, to, prices)).toMatchObject({ callCount: 0, retainedCount: 0 });
+    expect(await BillingPeriodLine.countDocuments()).toBe(0);
+  });
+
   it('attributes legacy calls, excludes failures and duplicate linked logs, and preserves old revisions on repricing', async () => {
     const live = await seedCalls();
     const preview = await billingPeriodService.preview(from, to, prices);

@@ -13,6 +13,25 @@
     </el-alert>
 
     <el-card class="section">
+      <template #header>
+        <div class="history-header"><span>已生成账单</span><el-button :loading="historyLoading" @click="loadHistory">刷新列表</el-button></div>
+      </template>
+      <el-table :data="history" v-loading="historyLoading" border size="small" empty-text="暂无已生成账单">
+        <el-table-column label="账期（北京时间）" min-width="240"><template #default="{ row }">{{ periodDates(row).join(' 至 ') }}</template></el-table-column>
+        <el-table-column label="当前版本" width="100"><template #default="{ row }">v{{ row.activeRevision }}</template></el-table-column>
+        <el-table-column label="调用笔数" width="100"><template #default="{ row }">{{ latestRevision(row)?.callCount }}</template></el-table-column>
+        <el-table-column label="应收金额" width="120"><template #default="{ row }">¥{{ yuan(latestRevision(row)?.amountFen ?? 0) }}</template></el-table-column>
+        <el-table-column label="生成时间" min-width="175"><template #default="{ row }">{{ formatDate(latestRevision(row)?.generatedAt ?? '') }}</template></el-table-column>
+        <el-table-column label="操作" width="200"><template #default="{ row }">
+          <el-button size="small" @click="openPeriod(row)">查看账单</el-button>
+          <el-button size="small" type="danger" :loading="deletingId === row._id" @click="deletePeriod(row)">删除</el-button>
+        </template></el-table-column>
+      </el-table>
+      <el-pagination v-model:current-page="historyPage" class="pagination" :page-size="10" :total="historyTotal" layout="total, prev, pager, next" @current-change="loadHistory" />
+      <p class="hint">查看账单后可选择历史版本、导出 PDF 或重新定价。删除会清除该账期的全部版本和账单明细，可从仍保留的调用记录重新出账；原始调用日志保留 90 天。</p>
+    </el-card>
+
+    <el-card class="section">
       <template #header>计费单价（元 / 次）</template>
       <div class="rate-list" v-loading="ratesLoading">
         <div v-for="product in products" :key="product.key" class="rate-item">
@@ -149,7 +168,58 @@ const viewRevision = ref<number | null>(null)
 const periodPreview = ref<BillingPeriodPreview | null>(null)
 const previewing = ref(false)
 const generating = ref(false)
+const history = ref<BillingPeriod[]>([])
+const historyPage = ref(1)
+const historyTotal = ref(0)
+const historyLoading = ref(false)
+const deletingId = ref<string | null>(null)
 const totalFen = computed(() => summary.value.reduce((sum, item) => sum + item.amountFen, 0))
+
+function latestRevision(period: BillingPeriod) { return period.revisions.find((item) => item.number === period.activeRevision) }
+function periodDates(period: BillingPeriod): [string, string] {
+  const date = (value: number) => new Date(value).toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' })
+  return [date(new Date(period.from).getTime()), date(new Date(period.to).getTime() - 1)]
+}
+async function loadHistory() {
+  historyLoading.value = true
+  try {
+    let result = await billingApi.periods(historyPage.value)
+    const lastPage = Math.max(1, Math.ceil(result.meta.total / 10))
+    if (historyPage.value > lastPage) {
+      historyPage.value = lastPage
+      result = await billingApi.periods(historyPage.value)
+    }
+    history.value = result.items
+    historyTotal.value = result.meta.total
+  } finally { historyLoading.value = false }
+}
+async function openPeriod(period: BillingPeriod) {
+  range.value = periodDates(period)
+  appId.value = ''
+  accountId.value = ''
+  selectedProduct.value = ''
+  page.value = 1
+  viewRevision.value = period.activeRevision
+  periodPreview.value = null
+  await load()
+  ElMessage.success('已打开所选账单，可在下方查看明细和导出 PDF')
+}
+async function deletePeriod(period: BillingPeriod) {
+  const revision = period.activeRevision
+  try {
+    await ElMessageBox.confirm(
+      `永久删除 ${periodDates(period).join(' 至 ')} 的整个账期及其所有版本和逐笔明细？当前 v${revision}，应收 ¥${yuan(latestRevision(period)?.amountFen ?? 0)}。原始调用不受影响，但日志仅保留 90 天，过期数据将无法重建。已下载的 PDF 不会自动失效。`,
+      '删除已生成账单', { type: 'warning', confirmButtonText: '确认删除整个账期', cancelButtonText: '取消' },
+    )
+  } catch { return }
+  deletingId.value = period._id
+  try {
+    await billingApi.deletePeriod(period._id, revision)
+    periodPreview.value = null
+    await Promise.all([loadHistory(), load()])
+    ElMessage.success('账单已删除，可以重新选择时间段生成')
+  } finally { deletingId.value = null }
+}
 
 function productLabel(product: BillingProduct): string { return products.find((p) => p.key === product)?.label ?? product }
 function statusLabel(status: string): string {
@@ -265,6 +335,7 @@ async function generatePeriod() {
     currentPeriod.value = period
     periodPreview.value = null
     await load()
+    await loadHistory()
     ElMessage.success(`账单 v${period.activeRevision} 已生成`)
   } finally { generating.value = false }
 }
@@ -307,12 +378,13 @@ async function exportPdf() {
   } finally { exporting.value = false }
 }
 
-onMounted(async () => { await loadRates(); await load() })
+onMounted(async () => { await loadRates(); await Promise.all([load(), loadHistory()]) })
 </script>
 
 <style scoped>
 .page-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
 .page-header h2{margin:0 0 8px}.page-header p,.hint{color:#77808c;font-size:13px;margin:0}
+.history-header{display:flex;justify-content:space-between;align-items:center}
 .notice,.section{margin-bottom:18px}.rate-list{display:flex;flex-wrap:wrap;gap:18px}.rate-item{display:flex;align-items:center;gap:10px}
 .rate-name{min-width:72px;font-weight:600}.hint{margin-top:16px}.filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
 .filters .el-input,.filters .el-select{width:190px}.summary-total{font-size:18px;margin-bottom:15px}.summary-total strong{color:#d35400}

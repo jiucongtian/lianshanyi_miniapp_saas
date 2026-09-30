@@ -1,4 +1,4 @@
-import { get, post, put } from './client'
+import { del, get, post, put } from './client'
 
 export type BillingProduct = 'card-insight' | 'daily-insight' | 'tutor-chat'
 export type BillingStatus = 'pending' | 'charged' | 'free' | 'unpriced' | 'failed'
@@ -81,6 +81,8 @@ export const billingApi = {
   summary: (params: Record<string, unknown>) => get<BillingSummary[]>('/v1/admin/billing/summary', params),
   statement: (params: Record<string, unknown>) => get<BillingStatement>('/v1/admin/billing/statement', params),
   period: (from: string, to: string) => get<BillingPeriod | null>('/v1/admin/billing/periods/current', { from, to }),
+  periods: (page: number) => get<{ items: BillingPeriod[]; meta: { total: number } }>('/v1/admin/billing/periods', { page, limit: 10 }),
+  deletePeriod: (id: string, revision: number) => del<{ deleted: boolean }>(`/v1/admin/billing/periods/${id}?revision=${revision}`),
   previewPeriod: (from: string, to: string, pricesFen: PeriodPrices) =>
     post<BillingPeriodPreview>('/v1/admin/billing/periods/preview', { from, to, pricesFen }),
   generatePeriod: (from: string, to: string, pricesFen: PeriodPrices, expectedFingerprint: string) =>

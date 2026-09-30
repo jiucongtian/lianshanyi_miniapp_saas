@@ -28,7 +28,7 @@ async function collect(from: Date, to: Date): Promise<{ candidates: Candidate[];
   const [live, logs, prior] = await Promise.all([
     billingPeriodRepo.liveEntries(from, to),
     billingPeriodRepo.legacyLogs(from, to),
-    period?.activeRevision ? billingPeriodRepo.priorLines(period._id, period.activeRevision) : [],
+    period?.activeRevision && !period.deletedAt ? billingPeriodRepo.priorLines(period._id, period.activeRevision) : [],
   ]);
   const appIds = [...new Set([...logs, ...live].map((row) => row.appId).filter((id): id is string => Boolean(id)))];
   const apps = await billingPeriodRepo.apps(appIds);
@@ -126,7 +126,30 @@ function selectedRevision(period: { activeRevision: number; revisions: { number:
 export const billingPeriodService = {
   async findByRange(from: Date, to: Date) {
     const period = await billingPeriodRepo.findByRange(from, to);
-    return period?.activeRevision ? period : null;
+    return period?.activeRevision && !period.deletedAt ? period : null;
+  },
+  async listPeriods(page: number, limit: number) {
+    return billingPeriodRepo.listPeriods(page, limit);
+  },
+  async remove(id: mongoose.Types.ObjectId, expectedRevision: number, deletedBy: string) {
+    const owner = randomUUID();
+    if (!await billingPeriodRepo.acquireGenerationLock(owner)) {
+      throw new AppError('账单正在生成或删除，请稍后再试', 409, 'BILLING_GENERATION_BUSY');
+    }
+    try {
+      const period = await billingPeriodRepo.findById(id);
+      if (!period?.activeRevision) throw new AppError('账期不存在', 404, 'BILLING_PERIOD_NOT_FOUND');
+      if (period.activeRevision !== expectedRevision) {
+        throw new AppError('账单版本已变化，请刷新列表后再删除', 409, 'BILLING_REVISION_CHANGED');
+      }
+      if (!period.deletedAt && !await billingPeriodRepo.removePeriod(id, expectedRevision, deletedBy)) {
+        throw new AppError('账单状态已变化，请刷新列表', 409, 'BILLING_REVISION_CHANGED');
+      }
+      await billingPeriodRepo.deletePeriodLines(id);
+      return { deleted: true };
+    } finally {
+      await billingPeriodRepo.releaseGenerationLock(owner);
+    }
   },
   async preview(from: Date, to: Date, pricesFen: PeriodPrices) {
     await ensureNoOverlap(from, to);
@@ -191,7 +214,7 @@ export const billingPeriodService = {
   },
   async getById(id: mongoose.Types.ObjectId) {
     const period = await billingPeriodRepo.findById(id);
-    if (!period?.activeRevision) throw new AppError('账期不存在', 404, 'BILLING_PERIOD_NOT_FOUND');
+    if (!period?.activeRevision || period.deletedAt) throw new AppError('账期不存在或已删除', 404, 'BILLING_PERIOD_NOT_FOUND');
     return period;
   },
   async list(id: mongoose.Types.ObjectId, revision: number | undefined, filter: PeriodLineFilter, page: number, limit: number) {

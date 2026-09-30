@@ -21,6 +21,8 @@ export interface IBillingPeriod {
   from: Date;
   to: Date;
   activeRevision: number;
+  deletedAt?: Date;
+  deletions: { revision: number; deletedAt: Date; deletedBy: string }[];
   buildingRevision?: number;
   buildStartedAt?: Date;
   revisions: IBillingRevision[];
@@ -67,6 +69,8 @@ const periodSchema = new Schema<IBillingPeriod>({
   from: { type: Date, required: true },
   to: { type: Date, required: true },
   activeRevision: { type: Number, required: true, default: 0 },
+  deletedAt: { type: Date },
+  deletions: { type: [{ revision: Number, deletedAt: Date, deletedBy: String }], default: [] },
   buildingRevision: { type: Number },
   buildStartedAt: { type: Date },
   revisions: { type: [revisionSchema], default: [] },
